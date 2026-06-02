@@ -485,6 +485,8 @@ function updateDropProgress(data) {
 
     document.getElementById('no-drop-message').style.display = 'none';
     document.getElementById('drop-info').style.display = 'block';
+    const skipBtn = document.getElementById('skip-game-btn');
+    if (skipBtn) skipBtn.style.display = 'block';
 
     document.getElementById('drop-name').textContent = data.drop_name;
 
@@ -550,6 +552,8 @@ function clearDropProgress() {
 
     document.getElementById('no-drop-message').style.display = 'block';
     document.getElementById('drop-info').style.display = 'none';
+    const skipBtn = document.getElementById('skip-game-btn');
+    if (skipBtn) skipBtn.style.display = 'none';
 }
 
 function addCampaign(campaignData) {
@@ -579,6 +583,7 @@ function getInventoryFilters() {
     // Get filter state from UI checkboxes and selected games array
     return {
         show_active: document.getElementById('filter-active')?.checked || false,
+        show_linked: document.getElementById('filter-linked')?.checked || false,
         show_not_linked: document.getElementById('filter-not-linked')?.checked || false,
         show_upcoming: document.getElementById('filter-upcoming')?.checked || false,
         show_expired: document.getElementById('filter-expired')?.checked || false,
@@ -597,32 +602,28 @@ function campaignMatchesFilters(campaign, filters) {
     // Calculate "finished" status: all drops claimed
     const isFinished = campaign.total_drops > 0 && campaign.claimed_drops === campaign.total_drops;
 
-    // Check if any filter is enabled
     const hasGameFilter = filters.game_name_search && filters.game_name_search.length > 0;
-    const anyFilterEnabled = filters.show_active || filters.show_not_linked ||
-        filters.show_upcoming || filters.show_expired ||
-        filters.show_finished || hasGameFilter;
 
-    // If no filters enabled, show all campaigns
-    if (!anyFilterEnabled) {
-        return true;
+    // Linked/Not Linked: AND filter (independent of status filters)
+    if (filters.show_linked && !campaign.linked) return false;
+    if (filters.show_not_linked && campaign.linked) return false;
+
+    // Status filters (OR logic among: Active, Upcoming, Expired, Finished)
+    const hasStatusFilters = filters.show_active || filters.show_upcoming ||
+        filters.show_expired || filters.show_finished;
+
+    if (hasStatusFilters) {
+        let statusMatch = false;
+        if (filters.show_active && campaign.active) statusMatch = true;
+        if (filters.show_upcoming && campaign.upcoming) statusMatch = true;
+        if (filters.show_expired && campaign.expired) statusMatch = true;
+        if (filters.show_finished && isFinished) statusMatch = true;
+        if (!statusMatch) return false;
     }
 
-    // Check status filters (OR logic - campaign matches if ANY checked filter applies)
-    let statusMatch = false;
-
-    if (filters.show_active && campaign.active) statusMatch = true;
-    if (filters.show_not_linked && !campaign.linked) statusMatch = true;
-    if (filters.show_upcoming && campaign.upcoming) statusMatch = true;
-    if (filters.show_expired && campaign.expired) statusMatch = true;
-    if (filters.show_finished && isFinished) statusMatch = true;
-
-    // If status filters are enabled but campaign doesn't match any, filter it out
-    const hasStatusFilters = filters.show_active || filters.show_not_linked ||
-        filters.show_upcoming || filters.show_expired ||
-        filters.show_finished;
-    if (hasStatusFilters && !statusMatch) {
-        return false;
+    // If nothing enabled and no game filter, show all
+    if (!hasStatusFilters && !filters.show_linked && !filters.show_not_linked && !hasGameFilter) {
+        return true;
     }
 
     // Check game name filter (AND logic with status filters, OR logic among selected games)
@@ -673,6 +674,7 @@ function onInventoryFilterChange() {
 function clearInventoryFilters() {
     // Uncheck all filter checkboxes
     document.getElementById('filter-active').checked = false;
+    document.getElementById('filter-linked').checked = false;
     document.getElementById('filter-not-linked').checked = false;
     document.getElementById('filter-upcoming').checked = false;
     document.getElementById('filter-expired').checked = false;
@@ -1084,6 +1086,7 @@ function updateSettingsUI(settings) {
     // Restore inventory filters from settings
     if (settings.inventory_filters) {
         document.getElementById('filter-active').checked = settings.inventory_filters.show_active || false;
+        document.getElementById('filter-linked').checked = settings.inventory_filters.show_linked || false;
         document.getElementById('filter-not-linked').checked = settings.inventory_filters.show_not_linked || false;
         document.getElementById('filter-upcoming').checked = settings.inventory_filters.show_upcoming || false;
         document.getElementById('filter-expired').checked = settings.inventory_filters.show_expired || false;
@@ -1353,6 +1356,18 @@ function deselectAllGames() {
     saveSettings();
 }
 
+function selectLinkedGames() {
+    const linkedGames = [...new Set(
+        Object.values(state.campaigns)
+            .filter(c => c.linked)
+            .map(c => c.game_name)
+    )].sort();
+    state.settings.games_to_watch = linkedGames;
+    renderGamesToWatch();
+    renderChannels();
+    saveSettings();
+}
+
 function addGameFromSearch() {
     const searchInput = document.getElementById('games-filter');
     const gameName = searchInput.value.trim();
@@ -1599,6 +1614,8 @@ function applyTranslations(t) {
     if (tabButtons.inventory && t.gui?.tabs) tabButtons.inventory.textContent = t.gui.tabs.inventory;
     if (tabButtons.settings && t.gui?.tabs) tabButtons.settings.textContent = t.gui.tabs.settings;
     if (tabButtons.help && t.gui?.tabs) tabButtons.help.textContent = t.gui.tabs.help;
+    const sysTabBtn = document.getElementById('tab-btn-system');
+    if (sysTabBtn && t.gui?.tabs?.system) sysTabBtn.textContent = t.gui.tabs.system;
 
     // Update Main tab - Login section
     const mainTab = document.getElementById('main-tab');
@@ -1741,9 +1758,45 @@ function applyTranslations(t) {
         const reloadBtn = document.getElementById('reload-btn');
         if (reloadBtn) reloadBtn.textContent = t.gui.settings.reload_campaigns;
 
+        const selectLinkedBtn = document.getElementById('select-linked-btn');
+        if (selectLinkedBtn && t.gui.settings.select_linked) selectLinkedBtn.textContent = t.gui.settings.select_linked;
+
+        // Password section
+        const s = t.gui.settings;
+        const el = (id) => document.getElementById(id);
+        if (s.password_header) { const e = el('settings-password-header'); if (e) e.textContent = s.password_header; }
+        if (s.password_current_label) { const e = el('pw-current-label'); if (e) e.textContent = s.password_current_label; }
+        if (s.password_current_placeholder) { const e = el('pw-current'); if (e) e.placeholder = s.password_current_placeholder; }
+        if (s.password_new_label) { const e = el('pw-new-label'); if (e) e.textContent = s.password_new_label; }
+        if (s.password_new_placeholder) { const e = el('pw-new'); if (e) e.placeholder = s.password_new_placeholder; }
+        if (s.password_confirm_label) { const e = el('pw-confirm-label'); if (e) e.textContent = s.password_confirm_label; }
+        if (s.password_confirm_placeholder) { const e = el('pw-new2'); if (e) e.placeholder = s.password_confirm_placeholder; }
+        if (s.password_save) { const e = el('pw-save-btn'); if (e) e.textContent = s.password_save; }
+        if (s.password_disable) { const e = el('pw-disable-btn'); if (e) e.textContent = s.password_disable; }
+
         // Re-render games to watch with translated empty messages
         renderGamesToWatch();
     }
+
+    // Update System tab
+    const sys = t.gui?.system;
+    if (sys) {
+        const el = (id) => document.getElementById(id);
+        if (sys.header) { const e = el('system-header'); if (e) e.textContent = sys.header; }
+        if (sys.miner_header) { const e = el('system-miner-header'); if (e) e.textContent = sys.miner_header; }
+        if (sys.miner_desc) { const e = el('system-miner-desc'); if (e) e.textContent = sys.miner_desc; }
+        if (sys.reload_btn) { const e = el('system-reload-btn'); if (e) e.textContent = sys.reload_btn; }
+        if (sys.restart_header) { const e = el('system-restart-header'); if (e) e.textContent = sys.restart_header; }
+        if (sys.restart_desc) { const e = el('system-restart-desc'); if (e) e.textContent = sys.restart_desc; }
+        if (sys.restart_btn) { const e = el('system-restart-btn'); if (e) e.textContent = sys.restart_btn; }
+        if (sys.session_header) { const e = el('system-session-header'); if (e) e.textContent = sys.session_header; }
+        if (sys.session_desc) { const e = el('system-session-desc'); if (e) e.textContent = sys.session_desc; }
+        if (sys.logout_btn) { const e = el('system-logout-btn'); if (e) e.textContent = sys.logout_btn; }
+    }
+
+    // Inventory filter labels
+    const inv = t.gui?.inventory;
+    if (inv?.filter_linked) { const e = document.getElementById('filter-linked-label'); if (e) e.textContent = inv.filter_linked; }
 
     // Update Help tab
     const helpTab = document.getElementById('help-tab');
@@ -1971,15 +2024,192 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('verify-proxy-btn').addEventListener('click', verifyProxy);
     document.getElementById('reload-btn').addEventListener('click', reloadCampaigns);
 
+    // System tab
+    document.getElementById('system-reload-btn').addEventListener('click', async () => {
+        const status = document.getElementById('system-status');
+        const sys = state.translations.gui?.system || {};
+        try {
+            await fetch('/api/reload', { method: 'POST' });
+            status.textContent = sys.reload_ok || 'Campaigns reload triggered.';
+            status.className = 'system-status success';
+        } catch (e) {
+            status.textContent = 'Error: ' + e.message;
+            status.className = 'system-status error';
+        }
+    });
+
+    document.getElementById('system-restart-btn').addEventListener('click', async () => {
+        const status = document.getElementById('system-status');
+        const sys = state.translations.gui?.system || {};
+        if (!confirm(sys.restart_confirm || 'Restart the miner? PM2 will restart it automatically.')) return;
+        try {
+            await fetch('/api/restart', { method: 'POST' });
+            status.textContent = sys.restart_ok || 'Miner restarting via PM2...';
+            status.className = 'system-status success';
+        } catch (e) {
+            status.textContent = 'Error: ' + e.message;
+            status.className = 'system-status error';
+        }
+    });
+
+    document.getElementById('system-logout-btn').addEventListener('click', () => {
+        window.location.href = '/__auth_logout';
+    });
+
+    // Account management
+    async function loadAccounts() {
+        try {
+            const r = await fetch('/api/accounts');
+            const d = await r.json();
+            const list = document.getElementById('accounts-list');
+            if (!list) return;
+            const hint = await fetch('/api/accounts/migration-hint').then(r => r.json()).catch(() => null);
+            if (hint?.has_legacy && (!d.accounts || d.accounts.length === 0)) {
+                const status = document.getElementById('accounts-status');
+                if (status) { status.textContent = 'Tipp: Du hast einen bestehenden Account. Füge ihn mit einem Label hinzu um Multi-Account zu aktivieren.'; status.style.display = 'block'; status.style.color = '#adadb8'; }
+            }
+            if (!d.accounts || d.accounts.length === 0) {
+                list.replaceChildren(makeElement('p', { style: 'font-size:.82rem;color:#adadb8;margin:0' }, 'Noch keine Accounts. Füge unten einen hinzu.'));
+                return;
+            }
+            list.replaceChildren(...d.accounts.map(acc => {
+                const card = document.createElement('div');
+                card.className = 'account-item' + (acc.active ? ' active' : '');
+                const label = document.createElement('span');
+                label.className = 'account-label';
+                label.textContent = acc.label + (acc.active ? ' ✓ (aktiv)' : '') + (acc.has_cookies ? '' : ' ⚠ (kein Login)');
+                card.appendChild(label);
+                if (!acc.active) {
+                    const switchBtn = document.createElement('button');
+                    switchBtn.className = 'account-action-btn';
+                    switchBtn.textContent = 'Switch';
+                    switchBtn.addEventListener('click', () => switchToAccount(acc.label));
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'account-action-btn danger';
+                    deleteBtn.textContent = '✕';
+                    deleteBtn.title = 'Account löschen';
+                    deleteBtn.addEventListener('click', () => deleteAccount(acc.label));
+                    card.appendChild(switchBtn);
+                    card.appendChild(deleteBtn);
+                }
+                return card;
+            }));
+        } catch (e) {}
+    }
+
+    async function switchToAccount(label) {
+        const status = document.getElementById('accounts-status');
+        if (status) { status.textContent = `Wechsle zu "${label}"… Miner startet neu (~5s)`; status.style.display = 'block'; status.style.color = '#9147ff'; }
+        try { await fetch('/api/accounts/switch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ label }) }); } catch (e) {}
+    }
+
+    async function deleteAccount(label) {
+        if (!confirm(`Account "${label}" löschen? Cookies und Settings werden gelöscht.`)) return;
+        try {
+            const r = await fetch('/api/accounts/' + encodeURIComponent(label), { method: 'DELETE' });
+            const d = await r.json();
+            if (r.ok) loadAccounts();
+            else { const s = document.getElementById('accounts-status'); if (s) { s.textContent = d.detail || 'Fehler'; s.style.display = 'block'; s.style.color = '#eb4a4a'; } }
+        } catch (e) {}
+    }
+
+    loadAccounts();
+
+    document.getElementById('add-account-btn')?.addEventListener('click', async () => {
+        const label = document.getElementById('new-account-label')?.value?.trim();
+        const status = document.getElementById('accounts-status');
+        if (!label) { if (status) { status.textContent = 'Bitte zuerst ein Label eingeben.'; status.style.display = 'block'; status.style.color = '#eb4a4a'; } return; }
+        try {
+            const r = await fetch('/api/accounts/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ label }) });
+            const d = await r.json();
+            if (r.ok) {
+                if (status) { status.textContent = `Account "${label}" erstellt. Miner startet neu für Login…`; status.style.display = 'block'; status.style.color = '#9147ff'; }
+                document.getElementById('new-account-label').value = '';
+            } else {
+                if (status) { status.textContent = d.detail || 'Fehler'; status.style.display = 'block'; status.style.color = '#eb4a4a'; }
+            }
+        } catch (e) {}
+    });
+
+    // Password management
+    async function loadPwStatus() {
+        try {
+            const r = await fetch('/api/auth/status');
+            const d = await r.json();
+            const badge = document.getElementById('pw-status-badge');
+            const s = state.translations.gui?.settings || {};
+            if (badge) badge.textContent = d.password_set
+                ? (s.password_status_active || '🔒 Login active — Password set')
+                : (s.password_status_inactive || '🔓 No login — publicly accessible');
+        } catch {}
+    }
+    loadPwStatus();
+
+    function showPwResult(msg, ok) {
+        const el = document.getElementById('pw-result');
+        if (!el) return;
+        el.textContent = msg;
+        el.style.display = 'block';
+        el.style.color = ok ? '#4caf50' : '#eb4a4a';
+        setTimeout(() => { el.style.display = 'none'; }, 4000);
+    }
+
+    document.getElementById('pw-save-btn').addEventListener('click', async () => {
+        const cur = document.getElementById('pw-current').value;
+        const nw = document.getElementById('pw-new').value;
+        const nw2 = document.getElementById('pw-new2').value;
+        const s = state.translations.gui?.settings || {};
+        if (nw !== nw2) { showPwResult(s.password_mismatch || "Passwords don't match.", false); return; }
+        try {
+            const r = await fetch('/api/auth/change-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ current_password: cur, new_password: nw })
+            });
+            const d = await r.json();
+            if (r.ok) {
+                showPwResult(nw ? (s.password_saved || 'Password saved.') : (s.password_disabled_msg || 'Login disabled.'), true);
+                document.getElementById('pw-current').value = '';
+                document.getElementById('pw-new').value = '';
+                document.getElementById('pw-new2').value = '';
+                loadPwStatus();
+                if (!nw) setTimeout(() => window.location.reload(), 1500);
+            } else {
+                showPwResult(d.detail || 'Fehler', false);
+            }
+        } catch (e) { showPwResult('Fehler: ' + e.message, false); }
+    });
+
+    document.getElementById('pw-disable-btn').addEventListener('click', async () => {
+        if (!confirm('Login wirklich deaktivieren? Jeder mit der URL kann dann die App öffnen.')) return;
+        const cur = document.getElementById('pw-current').value;
+        try {
+            const r = await fetch('/api/auth/disable-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ current_password: cur })
+            });
+            const d = await r.json();
+            if (r.ok) {
+                showPwResult('Login deaktiviert.', true);
+                loadPwStatus();
+                setTimeout(() => window.location.reload(), 1500);
+            } else {
+                showPwResult(d.detail || 'Fehler', false);
+            }
+        } catch (e) { showPwResult('Fehler: ' + e.message, false); }
+    });
 
     // Games to watch management
     document.getElementById('select-all-btn').addEventListener('click', selectAllGames);
     document.getElementById('deselect-all-btn').addEventListener('click', deselectAllGames);
+    document.getElementById('select-linked-btn').addEventListener('click', selectLinkedGames);
     document.getElementById('add-game-btn').addEventListener('click', addGameFromSearch);
     document.getElementById('games-filter').addEventListener('input', renderGamesToWatch);
 
     // Inventory filters
     document.getElementById('filter-active').addEventListener('change', onInventoryFilterChange);
+    document.getElementById('filter-linked').addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-not-linked').addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-upcoming').addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-expired').addEventListener('change', onInventoryFilterChange);
@@ -2015,6 +2245,22 @@ document.addEventListener('DOMContentLoaded', () => {
             closeGameDropdown();
         }
     });
+
+    // Skip game button
+    const skipGameBtn = document.getElementById('skip-game-btn');
+    if (skipGameBtn) {
+        skipGameBtn.addEventListener('click', async () => {
+            skipGameBtn.disabled = true;
+            skipGameBtn.textContent = '⏳ Switching...';
+            try {
+                await fetch('/api/skip-game', { method: 'POST' });
+            } catch (e) {}
+            setTimeout(() => {
+                skipGameBtn.disabled = false;
+                skipGameBtn.textContent = '⏭ Skip Game';
+            }, 3000);
+        });
+    }
 
     // Manual mode controls
     const exitManualBtn = document.getElementById('exit-manual-btn');
