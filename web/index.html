@@ -5,7 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Twitch Drops Miner</title>
-    <link rel="icon" type="image/png" href="/static/favicon.png">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" href="/logo.png">
+    <link rel="apple-touch-icon" href="/logo.png">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#9147ff">
     <link rel="stylesheet" href="/static/styles.css">
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
@@ -14,7 +18,7 @@
     <div class="container">
         <header>
             <div class="header-top">
-                <h1>🎮 Twitch Drops Miner</h1>
+                <h1><img src="/logo.png" style="width:28px;height:28px;vertical-align:middle;margin-right:8px;border-radius:4px"> Twitch Drops Miner</h1>
                 <div class="header-controls">
                     <label for="language" class="language-selector">
                         <span>Language:</span>
@@ -44,6 +48,7 @@
             <button class="tab-button active" data-tab="main">Main</button>
             <button class="tab-button" data-tab="inventory">Inventory</button>
             <button class="tab-button" data-tab="settings">Settings</button>
+            <button class="tab-button" data-tab="system" id="tab-btn-system">System</button>
             <button class="tab-button" data-tab="help">Help</button>
         </nav>
 
@@ -81,6 +86,7 @@
                             </div>
                             <div class="drop-name" id="drop-name"></div>
                             <div class="drop-game" id="drop-game"></div>
+                            <button id="skip-game-btn" class="skip-game-btn" title="Skip current game and switch to next available channel" style="display:none">⏭ Skip Game</button>
                             <div class="progress-bar">
                                 <div class="progress-fill" id="progress-fill"></div>
                             </div>
@@ -120,6 +126,10 @@
                         <label class="filter-checkbox">
                             <input type="checkbox" id="filter-active" />
                             <span>Active</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" id="filter-linked" />
+                            <span id="filter-linked-label">Linked</span>
                         </label>
                         <label class="filter-checkbox">
                             <input type="checkbox" id="filter-not-linked" checked />
@@ -242,6 +252,7 @@
                         <div class="filter-actions">
                             <button id="select-all-btn" class="small-btn">Select All</button>
                             <button id="deselect-all-btn" class="small-btn">Deselect All</button>
+                            <button id="select-linked-btn" class="small-btn">Select Linked</button>
                             <button id="add-game-btn" class="small-btn">Add Game</button>
                         </div>
                     </div>
@@ -265,10 +276,64 @@
                         <button id="reload-btn" class="action-button">Reload</button>
                     </div>
                 </section>
+
+                <section class="settings-section">
+                    <h2 id="settings-password-header">Login & Password</h2>
+                    <div id="pw-status-badge" style="margin-bottom:12px;font-size:.85rem;color:#adadb8"></div>
+
+                    <label id="pw-current-label" style="display:block;margin-bottom:6px;font-size:.9rem;font-weight:500">Current Password</label>
+                    <input type="password" id="pw-current" placeholder="Leave empty if no password set" style="margin-bottom:10px">
+
+                    <label id="pw-new-label" style="display:block;margin-bottom:6px;font-size:.9rem;font-weight:500">New Password</label>
+                    <input type="password" id="pw-new" placeholder="New password (empty = disable login)" style="margin-bottom:10px">
+
+                    <label id="pw-confirm-label" style="display:block;margin-bottom:6px;font-size:.9rem;font-weight:500">Confirm New Password</label>
+                    <input type="password" id="pw-new2" placeholder="Confirm" style="margin-bottom:12px">
+
+                    <div style="display:flex;gap:8px;flex-wrap:wrap">
+                        <button id="pw-save-btn" class="action-button">Save Password</button>
+                        <button id="pw-disable-btn" class="action-button" style="background:transparent;border:1px solid #3d3d4a;color:#adadb8">Disable Login</button>
+                    </div>
+                    <div id="pw-result" style="margin-top:10px;font-size:.85rem;display:none"></div>
+                </section>
             </div>
         </div>
 
         <!-- Help Tab -->
+        <div id="system-tab" class="tab-content">
+            <div class="settings-section">
+                <h2 id="system-header">System</h2>
+                <div class="system-controls">
+                    <div class="system-card">
+                        <h3 id="system-miner-header">Miner</h3>
+                        <p id="system-miner-desc">Reload campaigns and restart the mining loop.</p>
+                        <button id="system-reload-btn" class="btn-primary">Reload Campaigns</button>
+                    </div>
+                    <div class="system-card danger">
+                        <h3 id="system-restart-header">Restart</h3>
+                        <p id="system-restart-desc">Stop the miner process. PM2 will restart it automatically.</p>
+                        <button id="system-restart-btn" class="btn-danger">Restart Miner</button>
+                    </div>
+                    <div class="system-card">
+                        <h3 id="system-session-header">Session</h3>
+                        <p id="system-session-desc">Log out of the web interface.</p>
+                        <button id="system-logout-btn" class="btn-secondary">Logout</button>
+                    </div>
+                </div>
+                <div id="system-status" class="system-status"></div>
+
+                <div class="system-card" id="accounts-card" style="margin-top:16px">
+                    <h3 id="system-accounts-header">Accounts</h3>
+                    <div id="accounts-list" class="accounts-list" style="margin-top:10px"></div>
+                    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+                        <input type="text" id="new-account-label" placeholder="Label (z.B. Main, Alt)" style="flex:1;min-width:120px;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:6px;padding:7px 10px;color:var(--text-primary);font-size:.85rem;outline:none">
+                        <button id="add-account-btn" class="btn-primary" style="width:auto;padding:7px 14px;font-size:.85rem">+ Add Account</button>
+                    </div>
+                    <div id="accounts-status" style="margin-top:8px;font-size:.82rem;display:none"></div>
+                </div>
+            </div>
+        </div>
+
         <div id="help-tab" class="tab-content">
             <div class="help-content">
                 <h2 id="help-about-header">About Twitch Drops Miner</h2>
