@@ -5,12 +5,129 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import json
+import os
+import secrets
+
 import socketio
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from starlette.middleware.base import BaseHTTPMiddleware
+
+_DATA_DIR = Path(__file__).parent.parent.parent / "data"
+_WEB_CONFIG_FILE = _DATA_DIR / "web_config.json"
+
+_SHARED_CSS = """
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0e0e10;color:#efeff1;font-family:system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+.card{background:#18181b;border:1px solid #2d2d35;border-radius:12px;padding:32px;width:100%;max-width:380px;text-align:center}
+.logo{width:90px;height:90px;margin:0 auto 16px;display:block}
+h1{font-size:1.2rem;margin-bottom:6px;color:#efeff1}
+.subtitle{font-size:.85rem;color:#adadb8;margin-bottom:24px}
+input{width:100%;background:#0e0e10;border:1px solid #3d3d4a;border-radius:8px;padding:10px 14px;color:#efeff1;font-size:.95rem;margin-bottom:12px;outline:none;text-align:left}
+input:focus{border-color:#9147ff}
+.btn{width:100%;border:none;border-radius:8px;padding:11px;font-size:.95rem;font-weight:600;cursor:pointer;margin-bottom:8px}
+.btn-primary{background:#9147ff;color:#fff}
+.btn-primary:hover{background:#7d3ce0}
+.btn-ghost{background:transparent;color:#adadb8;border:1px solid #3d3d4a}
+.btn-ghost:hover{background:#2d2d35}
+.err{color:#eb4a4a;font-size:.85rem;margin-bottom:12px;text-align:left}
+.info{color:#adadb8;font-size:.82rem;margin-bottom:12px;text-align:left;line-height:1.5}
+hr{border:none;border-top:1px solid #2d2d35;margin:16px 0}
+"""
+
+
+def _load_web_config() -> dict:
+    if _WEB_CONFIG_FILE.exists():
+        try:
+            return json.loads(_WEB_CONFIG_FILE.read_text())
+        except Exception:
+            pass
+    return {}
+
+
+def _save_web_config(config: dict) -> None:
+    _DATA_DIR.mkdir(exist_ok=True)
+    _WEB_CONFIG_FILE.write_text(json.dumps(config, indent=2))
+
+
+def _get_password() -> str:
+    cfg = _load_web_config()
+    # Config file takes priority over env var once setup is done
+    if cfg.get("setup_done"):
+        return cfg.get("password", "")
+    return os.environ.get("WEB_PASSWORD", "")
+
+
+def _is_setup_done() -> bool:
+    return _load_web_config().get("setup_done", False)
+
+
+_UNPROTECTED_PATHS = {
+    "/__auth_login", "/__auth_login_page",
+    "/__setup", "/__setup_post",
+    "/favicon.ico", "/logo.png", "/manifest.json",
+}
+
+_LOGIN_HTML = """<!DOCTYPE html>
+<html lang="de"><head><meta charset="utf-8"><title>TwitchDropsMiner</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<style>{css}</style></head>
+<body><div class="card">
+<img class="logo" src="/logo.png" alt="TwitchDropsMiner">
+<h1>TwitchDropsMiner</h1>
+<p class="subtitle">Web Interface</p>
+{{error}}
+<form method="POST" action="/__auth_login">
+<input type="password" name="password" placeholder="Passwort" autofocus autocomplete="current-password">
+<button class="btn btn-primary" type="submit">Einloggen</button>
+</form></div></body></html>""".format(css=_SHARED_CSS)
+
+_SETUP_HTML = """<!DOCTYPE html>
+<html lang="de"><head><meta charset="utf-8"><title>TwitchDropsMiner – Setup</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<style>{css}</style></head>
+<body><div class="card">
+<img class="logo" src="/logo.png" alt="TwitchDropsMiner">
+<h1>Willkommen!</h1>
+<p class="subtitle">Erstmalige Einrichtung</p>
+{{error}}
+<p class="info">Möchtest du den Zugang mit einem Passwort schützen?<br>
+Du kannst dies später in den Einstellungen ändern.</p>
+<form method="POST" action="/__setup_post">
+<input type="password" name="password" placeholder="Passwort festlegen (optional)" autocomplete="new-password">
+<input type="password" name="password2" placeholder="Passwort wiederholen" autocomplete="new-password">
+<button class="btn btn-primary" type="submit" name="action" value="set">Mit Passwort starten</button>
+<hr>
+<button class="btn btn-ghost" type="submit" name="action" value="skip">Ohne Passwort starten</button>
+</form></div></body></html>""".format(css=_SHARED_CSS)
+
+
+def _render_template(template: str, error: str = "") -> str:
+    return template.replace("{error}", error)
+
+
+class PasswordAuthMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        path = request.url.path
+        # First-time setup: redirect everything to setup page
+        if not _is_setup_done() and path not in _UNPROTECTED_PATHS:
+            return RedirectResponse("/__setup", status_code=302)
+        # Public paths always pass through
+        if path in _UNPROTECTED_PATHS:
+            return await call_next(request)
+        pw = _get_password()
+        if not pw:
+            return await call_next(request)
+        session = request.cookies.get("__tdm_session", "")
+        if secrets.compare_digest(session, pw):
+            return await call_next(request)
+        return HTMLResponse(_render_template(_LOGIN_HTML), status_code=401)
 
 
 if TYPE_CHECKING:
@@ -25,10 +142,13 @@ logger = logging.getLogger("TwitchDrops")
 # Create FastAPI app
 app = FastAPI(title="Twitch Drops Miner Web", version="1.0.0")
 
+# Add auth middleware (if WEB_PASSWORD env var is set)
+app.add_middleware(PasswordAuthMiddleware)
+
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify exact origins
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -80,6 +200,82 @@ class SettingsUpdate(BaseModel):
 
 class ProxyVerifyRequest(BaseModel):
     proxy: str
+
+
+# ==================== Auth Endpoints ====================
+
+
+@app.get("/__setup", response_class=HTMLResponse)
+async def setup_page():
+    if _is_setup_done():
+        return RedirectResponse("/", status_code=302)
+    return HTMLResponse(_render_template(_SETUP_HTML))
+
+
+@app.post("/__setup_post")
+async def setup_post(request: Request):
+    if _is_setup_done():
+        return RedirectResponse("/", status_code=302)
+    form = await request.form()
+    action = form.get("action", "skip")
+    if action == "set":
+        pw = form.get("password", "")
+        pw2 = form.get("password2", "")
+        if not pw:
+            return HTMLResponse(_render_template(_SETUP_HTML, '<p class="err">Bitte ein Passwort eingeben.</p>'))
+        if pw != pw2:
+            return HTMLResponse(_render_template(_SETUP_HTML, '<p class="err">Passwörter stimmen nicht überein.</p>'))
+        _save_web_config({"setup_done": True, "password": pw})
+        resp = RedirectResponse("/", status_code=303)
+        resp.set_cookie("__tdm_session", pw, httponly=True, samesite="lax", max_age=60*60*24*30)
+        return resp
+    else:
+        _save_web_config({"setup_done": True, "password": ""})
+        return RedirectResponse("/", status_code=303)
+
+
+@app.post("/__auth_login")
+async def auth_login_post(request: Request):
+    form = await request.form()
+    pw = form.get("password", "")
+    current_pw = _get_password()
+    if current_pw and secrets.compare_digest(pw, current_pw):
+        resp = RedirectResponse("/", status_code=303)
+        resp.set_cookie("__tdm_session", current_pw, httponly=True, samesite="lax", max_age=60*60*24*30)
+        return resp
+    return HTMLResponse(_render_template(_LOGIN_HTML, '<p class="err">Falsches Passwort</p>'), status_code=401)
+
+
+@app.get("/__auth_logout")
+async def auth_logout():
+    resp = RedirectResponse("/__auth_login_page", status_code=303)
+    resp.delete_cookie("__tdm_session")
+    return resp
+
+
+@app.get("/__auth_login_page", response_class=HTMLResponse)
+async def auth_login_page():
+    return HTMLResponse(_render_template(_LOGIN_HTML))
+
+
+# ==================== Static Assets ====================
+
+_web_dir = Path(__file__).parent.parent.parent / "web"
+
+
+@app.get("/favicon.ico")
+async def favicon():
+    return FileResponse(_web_dir / "favicon.ico", media_type="image/x-icon")
+
+
+@app.get("/logo.png")
+async def logo():
+    return FileResponse(_web_dir / "logo.png", media_type="image/png")
+
+
+@app.get("/manifest.json")
+async def manifest():
+    return FileResponse(_web_dir / "manifest.json", media_type="application/manifest+json")
 
 
 # ==================== REST API Endpoints ====================
@@ -326,6 +522,30 @@ async def trigger_close():
     return {"success": True}
 
 
+@app.post("/api/restart")
+async def trigger_restart():
+    """Restart via PM2 (stop + auto-restart by PM2)"""
+    import subprocess
+
+    async def _restart():
+        await asyncio.sleep(1)
+        subprocess.Popen(["pm2", "restart", "twitchdrops"])
+
+    asyncio.create_task(_restart())
+    return {"success": True}
+
+
+@app.post("/api/skip-game")
+async def skip_game():
+    """Skip current game and trigger channel switch to next available"""
+    if not twitch_client:
+        raise HTTPException(status_code=503, detail="Twitch client not initialized")
+
+    from src.config import State
+    twitch_client.change_state(State.CHANNEL_SWITCH)
+    return {"success": True}
+
+
 @app.post("/api/mode/exit-manual")
 async def exit_manual_mode():
     """Exit manual mode and return to automatic channel selection"""
@@ -337,6 +557,141 @@ async def exit_manual_mode():
 
     twitch_client.exit_manual_mode("User requested")
     return {"success": True}
+
+
+class PasswordChangeRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
+class PasswordDisableRequest(BaseModel):
+    current_password: str
+
+
+@app.post("/api/auth/change-password")
+async def change_password(data: PasswordChangeRequest, request: Request):
+    current_pw = _get_password()
+    if current_pw and not secrets.compare_digest(data.current_password, current_pw):
+        raise HTTPException(status_code=403, detail="Aktuelles Passwort falsch")
+    cfg = _load_web_config()
+    cfg["password"] = data.new_password
+    cfg["setup_done"] = True
+    _save_web_config(cfg)
+    resp_data = {"success": True}
+    # Update session cookie to new password
+    from fastapi.responses import JSONResponse
+    response = JSONResponse(resp_data)
+    if data.new_password:
+        response.set_cookie("__tdm_session", data.new_password, httponly=True, samesite="lax", max_age=60*60*24*30)
+    else:
+        response.delete_cookie("__tdm_session")
+    return response
+
+
+@app.post("/api/auth/disable-password")
+async def disable_password(data: PasswordDisableRequest):
+    current_pw = _get_password()
+    if current_pw and not secrets.compare_digest(data.current_password, current_pw):
+        raise HTTPException(status_code=403, detail="Aktuelles Passwort falsch")
+    cfg = _load_web_config()
+    cfg["password"] = ""
+    cfg["setup_done"] = True
+    _save_web_config(cfg)
+    from fastapi.responses import JSONResponse
+    response = JSONResponse({"success": True})
+    response.delete_cookie("__tdm_session")
+    return response
+
+
+@app.get("/api/auth/status")
+async def auth_status():
+    return {"password_set": bool(_get_password())}
+
+
+# ==================== Account Management ====================
+
+@app.get("/api/accounts")
+async def list_accounts():
+    """List all saved accounts and the currently active one"""
+    cfg = _load_web_config()
+    active = cfg.get("active_account", "")
+    accounts_dir = _DATA_DIR / "accounts"
+    accounts = []
+    if accounts_dir.exists():
+        for d in sorted(accounts_dir.iterdir()):
+            if d.is_dir():
+                has_cookies = (d / "cookies.jar").exists()
+                accounts.append({"label": d.name, "active": d.name == active, "has_cookies": has_cookies})
+    return {"accounts": accounts, "active": active}
+
+
+class AccountSwitchRequest(BaseModel):
+    label: str
+
+
+@app.post("/api/accounts/switch")
+async def switch_account(data: AccountSwitchRequest):
+    """Switch active account and restart"""
+    cfg = _load_web_config()
+    account_dir = _DATA_DIR / "accounts" / data.label
+    if not account_dir.exists():
+        raise HTTPException(status_code=404, detail="Account not found")
+    cfg["active_account"] = data.label
+    _save_web_config(cfg)
+    async def _restart():
+        await asyncio.sleep(1)
+        import subprocess
+        subprocess.Popen(["pm2", "restart", "twitchdrops"])
+    asyncio.create_task(_restart())
+    return {"success": True}
+
+
+class AccountAddRequest(BaseModel):
+    label: str
+
+
+@app.post("/api/accounts/add")
+async def add_account(data: AccountAddRequest):
+    """Create a new account slot, switch to it, and restart for fresh login"""
+    label = data.label.strip()
+    if not label or any(c in label for c in "/\\."):
+        raise HTTPException(status_code=400, detail="Invalid account label")
+    account_dir = _DATA_DIR / "accounts" / label
+    if account_dir.exists():
+        raise HTTPException(status_code=409, detail="Account label already exists")
+    account_dir.mkdir(parents=True, exist_ok=True)
+    cfg = _load_web_config()
+    cfg["active_account"] = label
+    _save_web_config(cfg)
+    async def _restart():
+        await asyncio.sleep(1)
+        import subprocess
+        subprocess.Popen(["pm2", "restart", "twitchdrops"])
+    asyncio.create_task(_restart())
+    return {"success": True}
+
+
+@app.delete("/api/accounts/{label}")
+async def remove_account(label: str):
+    """Delete an account (cannot delete the active account)"""
+    import shutil
+    cfg = _load_web_config()
+    if cfg.get("active_account") == label:
+        raise HTTPException(status_code=400, detail="Cannot delete the active account. Switch first.")
+    account_dir = _DATA_DIR / "accounts" / label
+    if not account_dir.exists():
+        raise HTTPException(status_code=404, detail="Account not found")
+    shutil.rmtree(account_dir)
+    return {"success": True}
+
+
+@app.get("/api/accounts/migration-hint")
+async def migration_hint():
+    """Returns hint if legacy cookies exist but no accounts are configured"""
+    legacy_cookies = (_DATA_DIR / "cookies.jar").exists()
+    cfg = _load_web_config()
+    has_active = bool(cfg.get("active_account"))
+    return {"has_legacy": legacy_cookies and not has_active, "migrated": has_active}
 
 
 # ==================== Socket.IO Events ====================
