@@ -3,16 +3,26 @@
 > 🎮 **Automate Twitch Drop Farming — Effortlessly, Headlessly, and Bandwidth-Free**
 
 <p align="center">
-  <a href="https://github.com/rangermix/TwitchDropsMiner/stargazers"><img src="https://img.shields.io/github/stars/rangermix/TwitchDropsMiner?style=for-the-badge&color=yellow" alt="Stars"></a>
-  <a href="https://github.com/rangermix/TwitchDropsMiner/releases"><img src="https://img.shields.io/github/v/release/rangermix/TwitchDropsMiner?style=for-the-badge&color=brightgreen" alt="Release"></a>
-  <a href="https://hub.docker.com/r/rangermix/twitch-drops-miner"><img src="https://img.shields.io/docker/pulls/rangermix/twitch-drops-miner?style=for-the-badge&color=blue" alt="Docker Pulls"></a>
-  <a href="https://github.com/rangermix/TwitchDropsMiner/blob/main/LICENSE"><img src="https://img.shields.io/github/license/rangermix/TwitchDropsMiner?style=for-the-badge&color=orange" alt="License"></a>
+  <a href="https://github.com/SimpliAj/twitchdropsminer/stargazers"><img src="https://img.shields.io/github/stars/SimpliAj/twitchdropsminer?style=for-the-badge&color=yellow" alt="Stars"></a>
+  <a href="https://github.com/SimpliAj/twitchdropsminer/releases"><img src="https://img.shields.io/github/v/release/SimpliAj/twitchdropsminer?style=for-the-badge&color=brightgreen" alt="Release"></a>
+  <a href="https://github.com/SimpliAj/twitchdropsminer/blob/main/LICENSE"><img src="https://img.shields.io/github/license/SimpliAj/twitchdropsminer?style=for-the-badge&color=orange" alt="License"></a>
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/Python-3.12+-blue?style=for-the-badge&logo=python" alt="Python"></a>
 </p>
 
-A modern, AI-assisted fork of [DevilXD/TwitchDropsMiner](https://github.com/DevilXD/TwitchDropsMiner) — rebuilt for reliability, simplicity, and automation.  
+A fork of [rangermix/TwitchDropsMiner](https://github.com/rangermix/TwitchDropsMiner) with multi-account support and an improved web UI.  
 **Twitch Drops Miner** lets you automatically farm Twitch drops without ever opening a stream.  
 No more tab juggling, channel switching, or missing rewards — just set it, forget it, and collect.
+
+---
+
+## 🔀 What's Different in This Fork
+
+This fork extends [rangermix/TwitchDropsMiner](https://github.com/rangermix/TwitchDropsMiner) with:
+
+- 👥 **Multi-Account Support** — Run multiple Twitch accounts from a single instance; each account gets its own isolated `data/accounts/<name>/` directory for cookies and settings
+- ⚙️ **System Tab in Web UI** — Add, switch, and remove accounts directly from the browser without touching config files
+- 🔌 **REST API for Account Management** — Full CRUD via `/api/accounts` endpoints (list, add, switch, remove)
+- 🔄 **`update.sh` Script** — One-command update that preserves your `data/accounts/` directory and all customizations
 
 ---
 
@@ -100,21 +110,10 @@ Make sure your Twitch account is linked to your game accounts →
 
 ---
 
-## 💖 Support the Project
+## 💬 Contributing
 
-If TwitchDropsMiner saves you time or bandwidth, please consider supporting continued development:
-
-<div align="center">
-
-[![Buy Me a Coffee](https://i.imgur.com/cL95gzE.png)](https://buymeacoffee.com/rangermix)
-
-⭐ **Star this repo** → it really helps visibility!  
-💬 [Open an issue](../../issues) or [submit a PR](../../pulls) if you want to contribute.
-
-</div>
-
-You can also support the original author [@DevilXD](https://github.com/DevilXD):  
-👉 [buymeacoffee.com/DevilXD](https://www.buymeacoffee.com/DevilXD) or [Patreon](https://www.patreon.com/bePatron?u=26937862).
+⭐ **Star this repo** if it's useful!  
+💬 [Open an issue](../../issues) or [submit a PR](../../pulls) for bugs and improvements.
 
 ---
 
