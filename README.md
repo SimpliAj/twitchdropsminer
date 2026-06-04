@@ -22,6 +22,7 @@ This fork extends [rangermix/TwitchDropsMiner](https://github.com/rangermix/Twit
 - 👥 **Multi-Account Support** — Run multiple Twitch accounts from a single instance; each account gets its own isolated `data/accounts/<name>/` directory for cookies and settings
 - ⚙️ **System Tab in Web UI** — Add, switch, and remove accounts directly from the browser without touching config files
 - 🔌 **REST API for Account Management** — Full CRUD via `/api/accounts` endpoints (list, add, switch, remove)
+- 🔒 **Dashboard Password Protection** — Set `WEB_PASSWORD` env var to lock the web UI with a session cookie (safe to expose publicly)
 - 🔄 **`update.sh` Script** — One-command update that preserves your `data/accounts/` directory and all customizations
 
 ---
@@ -87,6 +88,27 @@ Visit 👉 **<http://localhost:8080>**
 📝 **Tip:**  
 Make sure your Twitch account is linked to your game accounts →  
 👉 [https://www.twitch.tv/drops/campaigns](https://www.twitch.tv/drops/campaigns)
+
+---
+
+## 🔒 Dashboard Password (Remote Access)
+
+To protect the web UI when exposing it publicly (e.g. running on a VPS), set the `WEB_PASSWORD` environment variable:
+
+```bash
+# From source
+WEB_PASSWORD=yourpassword uv run main.py
+```
+
+```yaml
+# Docker Compose
+environment:
+  - WEB_PASSWORD=yourpassword
+```
+
+The dashboard will show a password prompt on first visit. Auth is stored as a 30-day session cookie. Change or remove the password from the **Settings** tab in the web UI at any time.
+
+> **No `WEB_PASSWORD` set?** The dashboard is open to anyone who can reach the port — fine for localhost, not for public servers.
 
 ---
 
