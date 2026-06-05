@@ -345,12 +345,16 @@ class MessageHandlerService:
                             }
                         })
                     )
-                    logger.info(f"Claimed channel points via GQL poll on {channel_login}")
+                    logger.info(f"Claimed channel points via GQL poll on {channel_login} | claim data: {available_claim}")
                     # Discord webhook for channel points claim
                     webhook_url = self._twitch.settings.discord_webhook_points
                     if webhook_url:
-                        bonus = available_claim.get("pointGain", {}) or {}
-                        bonus_amount = bonus.get("totalPoints", 0) or 0
+                        # Try multiple known field names for bonus amount
+                        bonus = (available_claim.get("pointsEarnedForClaim")
+                                 or available_claim.get("pointGain")
+                                 or available_claim.get("point_gain") or {})
+                        bonus_amount = (bonus.get("totalPoints")
+                                        or bonus.get("total_points") or 0)
                         asyncio.create_task(self._send_discord_webhook(webhook_url, {
                             "embeds": [{
                                 "title": "💰 Bonus Chest Claimed!",
