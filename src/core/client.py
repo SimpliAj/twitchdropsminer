@@ -230,6 +230,16 @@ class Twitch:
                     if idle_ch is not None:
                         self.gui.status.update(f"💤 Idle watching: {idle_ch.name}")
                         self.watch(idle_ch, update_status=False)
+                        # Subscribe community points topic for idle channel
+                        if self.settings.claim_channel_points:
+                            self.websocket.add_topics([
+                                WebsocketTopic(
+                                    "Channel",
+                                    "CommunityPoints",
+                                    idle_ch.id,
+                                    self._message_handler_service.process_community_points,
+                                )
+                            ])
                 # clear the flag and wait until it's set again
                 self._state_change.clear()
             elif self._state is State.INVENTORY_FETCH:
