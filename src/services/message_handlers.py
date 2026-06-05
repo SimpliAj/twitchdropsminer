@@ -255,6 +255,13 @@ class MessageHandlerService:
             drop.update_minutes(message["data"]["current_progress_min"])
 
     @task_wrapper
+    async def process_idle_stream_state(self, channel_id: int, message: JsonType) -> None:
+        """Handle stream-down for idle watch channels — re-enter IDLE to pick next channel."""
+        if message.get("type") == "stream-down":
+            logger.info(f"Idle channel {channel_id} went offline, switching...")
+            self._twitch.change_state(State.IDLE)
+
+    @task_wrapper
     async def process_community_points(self, channel_id: int, message: JsonType) -> None:
         msg_type = message.get("type", "")
         logger.info(f"Community points event on {channel_id}: type={msg_type}")
