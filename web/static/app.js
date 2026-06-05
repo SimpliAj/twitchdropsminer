@@ -694,9 +694,11 @@ function campaignMatchesFilters(campaign, filters) {
     // Hide finished: if show_finished is false AND campaign is finished → hide it
     if (!filters.show_finished && isFinished) return false;
 
+    // Hide not-linked: if show_not_linked is false AND campaign is not linked → hide it
+    if (!filters.show_not_linked && !campaign.linked) return false;
+
     // Linked/Not Linked: AND filter (independent of status filters)
     if (filters.show_linked && !campaign.linked) return false;
-    if (filters.show_not_linked && campaign.linked) return false;
 
     // Status filters (OR logic among: Active, Upcoming, Expired)
     const hasStatusFilters = filters.show_active || filters.show_upcoming || filters.show_expired;
