@@ -154,7 +154,15 @@ socket.on('initial_state', (data) => {
         renderWantedItems(data.wanted_items);
     }
 
-    // Restore channel points for currently watched channel
+    // Restore persisted channel points history
+    if (data.channel_points_history) {
+        for (const [login, balance] of Object.entries(data.channel_points_history)) {
+            channelPointsTracker[login] = { balance, lastClaimed: null };
+        }
+        renderPointsTracker();
+    }
+
+    // Restore channel points for currently watched channel (also updates tracker)
     if (data.watching_channel?.login) {
         fetchChannelPoints(data.watching_channel.login);
     }
