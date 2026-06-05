@@ -199,6 +199,8 @@ class WatchService:
         by falling back to GQL queries or minute bumping.
         """
         interval: float = WATCH_INTERVAL.total_seconds()
+        _cp_poll_counter: int = 0
+        _CP_POLL_EVERY: int = 3  # poll every ~3 iterations ≈ 60s
 
         while True:
             channel: Channel = await self._twitch.watching_channel.get()
@@ -266,5 +268,18 @@ class WatchService:
                         handled = True
                     else:
                         logger.log(CALL, "No active drop could be determined")
+
+            # Periodic channel points poll (every ~60s)
+            _cp_poll_counter += 1
+            if (
+                _cp_poll_counter >= _CP_POLL_EVERY
+                and self._twitch.settings.claim_channel_points
+            ):
+                _cp_poll_counter = 0
+                asyncio.create_task(
+                    self._twitch._message_handler_service._emit_channel_points(
+                        channel._login, channel.id
+                    )
+                )
 
             await self.watch_sleep(interval - min(time() - last_sent, interval))
