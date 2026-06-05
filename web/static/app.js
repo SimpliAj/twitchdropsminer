@@ -190,7 +190,23 @@ socket.on('channels_batch_update', (data) => {
 
 socket.on('channel_watching', (data) => {
     setWatchingChannel(data.id);
+    // Fetch channel points for the newly watched channel
+    if (data.login) fetchChannelPoints(data.login);
 });
+
+async function fetchChannelPoints(login) {
+    try {
+        const resp = await fetch(`/api/channel-points/${encodeURIComponent(login)}`);
+        if (!resp.ok) return;
+        const data = await resp.json();
+        const panel = document.getElementById('channel-points-panel');
+        if (panel) {
+            panel.style.display = '';
+            document.getElementById('channel-points-channel').textContent = data.channel;
+            document.getElementById('channel-points-balance').textContent = (data.balance || 0).toLocaleString() + ' pts';
+        }
+    } catch {}
+}
 
 socket.on('channel_watching_clear', () => {
     clearWatchingChannel();
@@ -245,6 +261,22 @@ socket.on('login_clear', (data) => {
 
 socket.on('settings_updated', (data) => {
     updateSettingsUI(data);
+});
+
+socket.on('channel_points_update', (data) => {
+    const panel = document.getElementById('channel-points-panel');
+    const channelEl = document.getElementById('channel-points-channel');
+    const balanceEl = document.getElementById('channel-points-balance');
+    const claimedEl = document.getElementById('channel-points-claimed');
+    if (!panel) return;
+    panel.style.display = '';
+    channelEl.textContent = data.channel_login;
+    balanceEl.textContent = data.balance.toLocaleString() + ' pts';
+    if (data.claimed_amount > 0) {
+        claimedEl.textContent = `+${data.claimed_amount} bonus claimed!`;
+        claimedEl.style.opacity = '1';
+        setTimeout(() => { claimedEl.style.opacity = '0'; }, 3000);
+    }
 });
 
 socket.on('games_available', (data) => {
