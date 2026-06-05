@@ -264,7 +264,7 @@ class MessageHandlerService:
     @task_wrapper
     async def process_community_points(self, channel_id: int, message: JsonType) -> None:
         msg_type = message.get("type", "")
-        logger.info(f"Community points event on {channel_id}: type={msg_type}")
+        logger.info(f"Community points event on {channel_id}: type={msg_type} | raw={message}")
         if not self._twitch.settings.claim_channel_points:
             return
         if msg_type != "claim-available":
@@ -301,22 +301,28 @@ class MessageHandlerService:
                     {"channelLogin": channel_login}
                 )
             )
-            # Try multiple known response shapes for ChannelPointsContext
             data = resp.get("data") or {}
-            points: int = 0
-            # Shape 1: data.community.channel.self.communityPoints.balance
+            cp = {}
             try:
-                points = (
-                    data["community"]["channel"]["self"]["communityPoints"]["balance"]
-                )
+                cp = data["community"]["channel"]["self"]["communityPoints"]
             except (KeyError, TypeError):
                 pass
-            # Shape 2: data.channel.self.communityPoints.balance
-            if not points:
+            points: int = cp.get("balance", 0)
+            # Claim available chest via GQL polling (fallback if PubSub misses it)
+            available_claim = cp.get("availableClaim")
+            if available_claim and available_claim.get("id"):
                 try:
-                    points = data["channel"]["self"]["communityPoints"]["balance"]
-                except (KeyError, TypeError):
-                    pass
+                    await self._twitch.gql_request(
+                        GQL_OPERATIONS["ClaimCommunityPoints"].with_variables({
+                            "input": {
+                                "claimID": available_claim["id"],
+                                "channelID": str(channel_id),
+                            }
+                        })
+                    )
+                    logger.info(f"Claimed channel points via GQL poll on {channel_login}")
+                except Exception as claim_e:
+                    logger.debug(f"GQL claim failed for {channel_login}: {claim_e}")
             await self._twitch.gui._broadcaster.emit("channel_points_update", {
                 "channel_id": channel_id,
                 "channel_login": channel_login,

@@ -390,16 +390,10 @@ async def get_channel_points(channel_login: str):
             GQL_OPERATIONS["ChannelPointsContext"].with_variables({"channelLogin": channel_login})
         )
         data = resp.get("data") or {}
-        points: int = 0
         try:
-            points = data["community"]["channel"]["self"]["communityPoints"]["balance"]
+            points: int = data["community"]["channel"]["self"]["communityPoints"]["balance"]
         except (KeyError, TypeError):
-            pass
-        if not points:
-            try:
-                points = data["channel"]["self"]["communityPoints"]["balance"]
-            except (KeyError, TypeError):
-                pass
+            points = 0
         # Persist
         if points:
             from src.config import DATA_DIR
