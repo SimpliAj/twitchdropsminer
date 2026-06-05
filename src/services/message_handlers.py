@@ -256,9 +256,11 @@ class MessageHandlerService:
 
     @task_wrapper
     async def process_community_points(self, channel_id: int, message: JsonType) -> None:
+        msg_type = message.get("type", "")
+        logger.info(f"Community points event on {channel_id}: type={msg_type}")
         if not self._twitch.settings.claim_channel_points:
             return
-        if message.get("type") != "claim-available":
+        if msg_type != "claim-available":
             return
         claim = message.get("data", {}).get("claim", {})
         claim_id = claim.get("id")
