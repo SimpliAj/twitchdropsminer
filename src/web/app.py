@@ -744,6 +744,14 @@ async def connect(sid, environ):
                 "manual_mode": twitch_client.get_manual_mode_info(),
                 "current_drop": gui_manager.progress.get_current_drop(),
                 "wanted_items": gui_manager.get_wanted_game_tree(),
+                "watching_channel": (
+                    {
+                        "id": ch.id,
+                        "login": ch._login,
+                    }
+                    if (ch := twitch_client.watching_channel.get_with_default(None)) is not None
+                    else None
+                ),
             },
             room=sid,
         )

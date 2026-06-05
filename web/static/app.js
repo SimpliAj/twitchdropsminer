@@ -153,6 +153,11 @@ socket.on('initial_state', (data) => {
     if (data.wanted_items) {
         renderWantedItems(data.wanted_items);
     }
+
+    // Restore channel points for currently watched channel
+    if (data.watching_channel?.login) {
+        fetchChannelPoints(data.watching_channel.login);
+    }
 });
 
 socket.on('status_update', (data) => {
