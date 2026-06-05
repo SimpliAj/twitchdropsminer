@@ -52,7 +52,8 @@
             "main": "主要",
             "inventory": "庫存",
             "settings": "設置",
-            "help": "幫助"
+            "help": "幫助",
+            "system": "System"
         },
         "login": {
             "name": "登入 Twitch",
@@ -122,7 +123,8 @@
                 "other": "其他",
                 "clear": "清除過濾器",
                 "search_placeholder": "搜尋遊戲..."
-            }
+            },
+            "filter_linked": "Linked"
         },
         "settings": {
             "general": {
@@ -147,7 +149,22 @@
             "minimum_refresh": "最小重新整理間隔（分鐘）：",
             "reload_campaigns": "重新載入活動",
             "mining_benefits": "挖掘獎勵",
-            "mining_benefits_help": "選擇您想要獲取的掉落類型。"
+            "mining_benefits_help": "選擇您想要獲取的掉落類型。",
+            "select_linked": "Select Linked",
+            "password_header": "Login & Password",
+            "password_current_label": "Current Password",
+            "password_current_placeholder": "Leave empty if no password set",
+            "password_new_label": "New Password",
+            "password_new_placeholder": "New password (empty = disable login)",
+            "password_confirm_label": "Confirm New Password",
+            "password_confirm_placeholder": "Confirm",
+            "password_save": "Save Password",
+            "password_disable": "Disable Login",
+            "password_saved": "Password saved.",
+            "password_disabled_msg": "Login disabled.",
+            "password_mismatch": "Passwords don't match.",
+            "password_status_active": "🔒 Login active — Password set",
+            "password_status_inactive": "🔓 No login — publicly accessible"
         },
         "help": {
             "about": "關於 Twitch Drops Miner",
@@ -204,6 +221,21 @@
         "wanted": {
             "name": "期望掉落隊列",
             "none": "隊列中沒有期望的掉落..."
+        },
+        "system": {
+            "header": "System",
+            "miner_header": "Miner",
+            "miner_desc": "Reload campaigns and restart the mining loop.",
+            "reload_btn": "Reload Campaigns",
+            "restart_header": "Restart",
+            "restart_desc": "Stop the miner process. PM2 will restart it automatically.",
+            "restart_btn": "Restart Miner",
+            "session_header": "Session",
+            "session_desc": "Log out of the web interface.",
+            "logout_btn": "Logout",
+            "reload_ok": "Campaigns reload triggered.",
+            "restart_confirm": "Restart the miner? PM2 will restart it automatically.",
+            "restart_ok": "Miner stopping — will restart via PM2 in a few seconds."
         }
     }
 }

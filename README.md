@@ -22,20 +22,26 @@ This fork extends [rangermix/TwitchDropsMiner](https://github.com/rangermix/Twit
 - 👥 **Multi-Account Support** — Run multiple Twitch accounts from a single instance; each account gets its own isolated `data/accounts/<name>/` directory for cookies and settings
 - ⚙️ **System Tab in Web UI** — Add, switch, and remove accounts directly from the browser without touching config files
 - 🔌 **REST API for Account Management** — Full CRUD via `/api/accounts` endpoints (list, add, switch, remove)
-- 🔒 **Dashboard Password Protection** — Set `WEB_PASSWORD` env var to lock the web UI with a session cookie (safe to expose publicly)
+- 🔒 **Dashboard Password Protection** — Set `WEB_PASSWORD` env var to lock the web UI behind a password (safe to expose publicly)
+- 💰 **Channel Points Auto-Claimer** — Automatically claims bonus channel point chests every 60 seconds via GQL polling. Toggle in Settings.
+- 💤 **Idle Watch** — When no drop campaigns are active, watches configured favorite channels to earn channel points. Supports multiple channels with priority ordering and automatic switching.
+- 📊 **Channel Points Tracker** — Real-time balance display in the web UI with per-channel history, auto-refresh every 5 minutes, and persistent storage across restarts (`data/channel_points.json`).
 - 🔄 **`update.sh` Script** — One-command update that preserves your `data/accounts/` directory and all customizations
 
 ---
 
 ## ✨ Features
 
-- 🚀 **Streamless Mining** — Earn drops without streaming video by sending Twitch GraphQL watch events
+- 🚀 **Streamless Mining** — Earn drops without streaming video by sending Twitch watch events
 - 🔍 **Automatic Campaign Discovery** — Detects new drop events automatically
 - ⚙️ **Auto Channel Switching** — Always mines the best available stream
 - 💾 **Persistent Login** — OAuth login saved via cookies
 - 🕹️ **Simple Web UI** — Manage everything from your browser
 - 🛡️ **Safe Frontend Rendering** — Dynamic UI content is rendered with DOM APIs to avoid HTML injection
 - 🧩 **Docker-Ready** — One command to deploy anywhere
+- 💰 **Channel Points Auto-Claimer** — Bonus chests claimed within 60s automatically
+- 💤 **Idle Watch** — Earns channel points on favorite channels when no drops are active
+- 📊 **Channel Points Tracker** — Live balance display with persistent history
 
 ---
 

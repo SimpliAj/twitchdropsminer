@@ -49,7 +49,8 @@
             "main": "Hauptseite",
             "inventory": "Inventar",
             "settings": "Einstellungen",
-            "help": "Hilfe"
+            "help": "Hilfe",
+            "system": "System"
         },
         "login": {
             "name": "Login",
@@ -119,7 +120,8 @@
                 "other": "Andere",
                 "clear": "Filter löschen",
                 "search_placeholder": "Spiele suchen..."
-            }
+            },
+            "filter_linked": "Gelinkt"
         },
         "settings": {
             "general": {
@@ -144,7 +146,22 @@
             "connection_quality": "Verbindungsqualität:",
             "minimum_refresh": "Minimales Aktualisierungsintervall (Minuten):",
             "mining_benefits": "Mining-Vorteile",
-            "mining_benefits_help": "Wählen Sie, welche Arten von Drops Sie minen möchten."
+            "mining_benefits_help": "Wählen Sie, welche Arten von Drops Sie minen möchten.",
+            "select_linked": "Gelinkte auswählen",
+            "password_header": "Login & Passwort",
+            "password_current_label": "Aktuelles Passwort",
+            "password_current_placeholder": "Leer lassen wenn kein Passwort gesetzt",
+            "password_new_label": "Neues Passwort",
+            "password_new_placeholder": "Neues Passwort (leer = Login deaktivieren)",
+            "password_confirm_label": "Neues Passwort wiederholen",
+            "password_confirm_placeholder": "Wiederholen",
+            "password_save": "Passwort speichern",
+            "password_disable": "Login deaktivieren",
+            "password_saved": "Passwort gespeichert.",
+            "password_disabled_msg": "Login deaktiviert.",
+            "password_mismatch": "Passwörter stimmen nicht überein.",
+            "password_status_active": "🔒 Login aktiv — Passwort gesetzt",
+            "password_status_inactive": "🔓 Kein Login — öffentlich erreichbar"
         },
         "help": {
             "about": "Über Twitch Drops Miner",
@@ -201,6 +218,21 @@
         "wanted": {
             "name": "Wunsch-Drops Warteschlange",
             "none": "Keine Wunsch-Drops in der Warteschlange..."
+        },
+        "system": {
+            "header": "System",
+            "miner_header": "Miner",
+            "miner_desc": "Kampagnen neu laden und Mining-Schleife neu starten.",
+            "reload_btn": "Kampagnen neu laden",
+            "restart_header": "Neustart",
+            "restart_desc": "Stoppt den Prozess. PM2 startet ihn automatisch neu.",
+            "restart_btn": "Miner neu starten",
+            "session_header": "Sitzung",
+            "session_desc": "Vom Web-Interface abmelden.",
+            "logout_btn": "Abmelden",
+            "reload_ok": "Kampagnen-Reload ausgelöst.",
+            "restart_confirm": "Miner neu starten? PM2 startet ihn automatisch neu.",
+            "restart_ok": "Miner stoppt — wird in wenigen Sekunden via PM2 neu gestartet."
         }
     }
 }
