@@ -217,6 +217,24 @@
                 </section>
 
                 <section class="settings-section">
+                    <h2>Channel Points</h2>
+                    <label>
+                        <input type="checkbox" id="claim-channel-points"> Auto-claim bonus channel points
+                    </label>
+                    <small class="help-text-inline">Automatically claims the bonus chest when it appears on watched channels.</small>
+                </section>
+
+                <section class="settings-section">
+                    <h2>Idle Watch</h2>
+                    <p class="help-text">Channels to watch when no drops are available. Add in priority order.</p>
+                    <div style="display:flex;gap:8px;margin-bottom:8px;">
+                        <input type="text" id="idle-channel-input" placeholder="Channel name..." style="flex:1;">
+                        <button id="idle-channel-add-btn" class="secondary-btn">Add</button>
+                    </div>
+                    <div id="idle-channels-list" class="sortable-list"></div>
+                </section>
+
+                <section class="settings-section">
                     <h2 id="settings-benefits-header">Mining Benefits</h2>
                     <p id="settings-benefits-help" class="help-text">Select which types of drops you want to
                         mine.</p>
@@ -303,6 +321,16 @@
         <div id="system-tab" class="tab-content">
             <div class="settings-section">
                 <h2 id="system-header">System</h2>
+                <div class="system-card" id="accounts-card" style="margin-bottom:16px">
+                    <h3 id="system-accounts-header">Accounts</h3>
+                    <div id="accounts-list" class="accounts-list" style="margin-top:10px"></div>
+                    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+                        <input type="text" id="new-account-label" placeholder="Label (z.B. Main, Alt)" style="flex:1;min-width:120px;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:6px;padding:7px 10px;color:var(--text-primary);font-size:.85rem;outline:none">
+                        <button id="add-account-btn" class="btn-primary" style="width:auto;padding:7px 14px;font-size:.85rem">+ Add Account</button>
+                    </div>
+                    <div id="accounts-status" style="margin-top:8px;font-size:.82rem;display:none"></div>
+                </div>
+
                 <div class="system-controls">
                     <div class="system-card">
                         <h3 id="system-miner-header">Miner</h3>
@@ -321,16 +349,6 @@
                     </div>
                 </div>
                 <div id="system-status" class="system-status"></div>
-
-                <div class="system-card" id="accounts-card" style="margin-top:16px">
-                    <h3 id="system-accounts-header">Accounts</h3>
-                    <div id="accounts-list" class="accounts-list" style="margin-top:10px"></div>
-                    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-                        <input type="text" id="new-account-label" placeholder="Label (z.B. Main, Alt)" style="flex:1;min-width:120px;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:6px;padding:7px 10px;color:var(--text-primary);font-size:.85rem;outline:none">
-                        <button id="add-account-btn" class="btn-primary" style="width:auto;padding:7px 14px;font-size:.85rem">+ Add Account</button>
-                    </div>
-                    <div id="accounts-status" style="margin-top:8px;font-size:.82rem;display:none"></div>
-                </div>
             </div>
         </div>
 

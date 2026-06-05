@@ -13,6 +13,7 @@ import aiohttp
 from src.api import GQLClient, HTTPClient
 from src.auth import _AuthState
 from src.config import (
+    GQL_OPERATIONS,
     MAX_CHANNELS,
     ClientType,
     State,
@@ -223,6 +224,12 @@ class Twitch:
             if self._state is State.IDLE:
                 self.gui.status.update(_.t["gui"]["status"]["idle"])
                 self.stop_watching()
+                # Try idle watch if channels are configured
+                if self.settings.idle_channels:
+                    idle_ch = await self._fetch_idle_channel()
+                    if idle_ch is not None:
+                        self.gui.status.update(f"💤 Idle watching: {idle_ch.name}")
+                        self.watch(idle_ch, update_status=False)
                 # clear the flag and wait until it's set again
                 self._state_change.clear()
             elif self._state is State.INVENTORY_FETCH:
@@ -356,7 +363,10 @@ class Twitch:
                 for game in no_acl:
                     # for every campaign without an ACL, for it's game,
                     # add a list of live channels with drops enabled
-                    new_channels.update(await self.get_live_streams(game, drops_enabled=True))
+                    try:
+                        new_channels.update(await self.get_live_streams(game, drops_enabled=True))
+                    except Exception:
+                        pass
                 # sort them descending by viewers, by priority and by game priority
                 # NOTE: Viewers sort also ensures ONLINE channels are sorted to the top
                 # NOTE: We can drop using the set now, because there's no more channels being added
@@ -399,6 +409,15 @@ class Twitch:
                             self._message_handler_service.process_stream_update,
                         )
                     )
+                    if self.settings.claim_channel_points:
+                        to_add_topics.append(
+                            WebsocketTopic(
+                                "Channel",
+                                "CommunityPoints",
+                                channel_id,
+                                self._message_handler_service.process_community_points,
+                            )
+                        )
                 self.websocket.add_topics(to_add_topics)
                 # relink watching channel after cleanup
                 # NOTE: this replaces 'self.watching_channel's internal value with the new object
@@ -502,6 +521,29 @@ class Twitch:
                 # we've been requested to exit the application
                 break
             await self._state_change.wait()
+
+    async def _fetch_idle_channel(self) -> Channel | None:
+        """Return the first online idle channel from settings, or None."""
+        from src.models.channel import Stream
+        for login in self.settings.idle_channels:
+            try:
+                response = await self.gql_request(
+                    GQL_OPERATIONS["GetStreamInfo"].with_variables({"channel": login})
+                )
+                user_data = response["data"]["user"]
+                if not user_data or not user_data.get("stream"):
+                    continue
+                channel = Channel(
+                    self,
+                    id=user_data["id"],
+                    login=login,
+                    display_name=user_data.get("displayName"),
+                )
+                channel._stream = Stream.from_get_stream(channel, user_data)
+                return channel
+            except Exception as exc:
+                logger.debug(f"Idle channel fetch failed for {login}: {exc}")
+        return None
 
     def can_watch(self, channel: Channel) -> bool:
         """Delegate to WatchService."""

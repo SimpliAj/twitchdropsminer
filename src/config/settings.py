@@ -47,6 +47,8 @@ default_settings = {
         "UNKNOWN": True,
     },
     "proxy": "",
+    "claim_channel_points": True,
+    "idle_channels": [],
 }
 
 
@@ -60,6 +62,8 @@ class Settings:
     minimum_refresh_interval_minutes: int
     mining_benefits: dict[str, bool]
     proxy: str
+    claim_channel_points: bool
+    idle_channels: list[str]
 
     def __init__(self):
         self.load()

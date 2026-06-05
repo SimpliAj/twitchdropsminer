@@ -253,6 +253,29 @@ class MessageHandlerService:
             drop.update_minutes(message["data"]["current_progress_min"])
 
     @task_wrapper
+    async def process_community_points(self, channel_id: int, message: JsonType) -> None:
+        if not self._twitch.settings.claim_channel_points:
+            return
+        if message.get("type") != "claim-available":
+            return
+        claim = message.get("data", {}).get("claim", {})
+        claim_id = claim.get("id")
+        if not claim_id:
+            return
+        try:
+            await self._twitch.gql_request(
+                GQL_OPERATIONS["ClaimCommunityPoints"].with_variables({
+                    "input": {
+                        "claimID": claim_id,
+                        "channelID": str(channel_id),
+                    }
+                })
+            )
+            logger.info(f"Claimed channel points on channel {channel_id}")
+        except Exception as e:
+            logger.warning(f"Failed to claim channel points on {channel_id}: {e}")
+
+    @task_wrapper
     async def process_notifications(self, user_id: int, message: JsonType) -> None:
         """
         Process websocket notification updates.
