@@ -522,27 +522,29 @@ class Twitch:
                 break
             await self._state_change.wait()
 
+    async def _fetch_idle_channel_by_login(self, login: str) -> Channel | None:
+        """Fetch a specific channel by login and return it if online."""
+        from src.models.channel import Stream
+        try:
+            response = await self.gql_request(
+                GQL_OPERATIONS["GetStreamInfo"].with_variables({"channel": login})
+            )
+            user_data = response["data"]["user"]
+            if not user_data or not user_data.get("stream"):
+                return None
+            channel = Channel(self, id=user_data["id"], login=login, display_name=user_data.get("displayName"))
+            channel._stream = Stream.from_get_stream(channel, user_data)
+            return channel
+        except Exception as exc:
+            logger.debug(f"Idle channel fetch failed for {login}: {exc}")
+            return None
+
     async def _fetch_idle_channel(self) -> Channel | None:
         """Return the first online idle channel from settings, or None."""
-        from src.models.channel import Stream
         for login in self.settings.idle_channels:
-            try:
-                response = await self.gql_request(
-                    GQL_OPERATIONS["GetStreamInfo"].with_variables({"channel": login})
-                )
-                user_data = response["data"]["user"]
-                if not user_data or not user_data.get("stream"):
-                    continue
-                channel = Channel(
-                    self,
-                    id=user_data["id"],
-                    login=login,
-                    display_name=user_data.get("displayName"),
-                )
-                channel._stream = Stream.from_get_stream(channel, user_data)
+            channel = await self._fetch_idle_channel_by_login(login)
+            if channel is not None:
                 return channel
-            except Exception as exc:
-                logger.debug(f"Idle channel fetch failed for {login}: {exc}")
         return None
 
     def can_watch(self, channel: Channel) -> bool:

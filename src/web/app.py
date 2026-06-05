@@ -395,6 +395,30 @@ async def get_channel_points(channel_login: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/api/idle-watch/switch")
+async def idle_watch_switch():
+    """Switch to the next configured idle channel."""
+    if not gui_manager or not twitch_client:
+        raise HTTPException(status_code=503, detail="Not ready")
+    idle_channels = twitch_client.settings.idle_channels
+    if not idle_channels:
+        raise HTTPException(status_code=400, detail="No idle channels configured")
+    current = twitch_client.watching_channel.get_with_default(None)
+    current_login = current._login if current else None
+    # Find next channel after current
+    try:
+        idx = idle_channels.index(current_login) if current_login in idle_channels else -1
+    except ValueError:
+        idx = -1
+    next_login = idle_channels[(idx + 1) % len(idle_channels)]
+    channel = await twitch_client._fetch_idle_channel_by_login(next_login)
+    if channel is None:
+        raise HTTPException(status_code=404, detail=f"{next_login} is offline")
+    twitch_client.watch(channel, update_status=False)
+    twitch_client.gui.status.update(f"💤 Idle watching: {channel.name}")
+    return {"switched_to": next_login}
+
+
 @app.get("/api/settings")
 async def get_settings():
     """Get current settings"""
