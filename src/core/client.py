@@ -226,8 +226,10 @@ class Twitch:
                 self.stop_watching()
                 # Try idle watch if channels are configured
                 if self.settings.idle_channels:
+                    logger.info(f"Idle watch: trying channels {self.settings.idle_channels}")
                     idle_ch = await self._fetch_idle_channel()
                     if idle_ch is not None:
+                        logger.info(f"Idle watch: watching {idle_ch.name} (id={idle_ch.id})")
                         self.gui.status.update(f"💤 Idle watching: {idle_ch.name}")
                         self.watch(idle_ch, update_status=False)
                         # Subscribe community points topic for idle channel
@@ -240,6 +242,9 @@ class Twitch:
                                     self._message_handler_service.process_community_points,
                                 )
                             ])
+                            logger.info(f"Idle watch: subscribed CommunityPoints for {idle_ch.name}")
+                    else:
+                        logger.info("Idle watch: no idle channels online")
                 # clear the flag and wait until it's set again
                 self._state_change.clear()
             elif self._state is State.INVENTORY_FETCH:
