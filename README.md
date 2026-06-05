@@ -26,6 +26,7 @@ This fork extends [rangermix/TwitchDropsMiner](https://github.com/rangermix/Twit
 - 💰 **Channel Points Auto-Claimer** — Automatically claims bonus channel point chests every 60 seconds via GQL polling. Toggle in Settings.
 - 💤 **Idle Watch** — When no drop campaigns are active, watches configured favorite channels to earn channel points. Supports multiple channels with priority ordering and automatic switching.
 - 📊 **Channel Points Tracker** — Real-time balance display in the web UI with per-channel history, auto-refresh every 5 minutes, and persistent storage across restarts (`data/channel_points.json`).
+- 🔔 **Discord Webhook Notifications** — Get notified in Discord when a drop is claimed or a channel points bonus chest is collected. Configure two separate webhooks in the Settings tab.
 - 📱 **Mobile-Responsive UI** — Dashboard works on phone browsers with proper `@media` breakpoints (768px and 480px)
 - 🔄 **`update.sh` Script** — One-command update that preserves your `data/accounts/` directory and all customizations
 
