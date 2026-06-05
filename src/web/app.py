@@ -305,7 +305,10 @@ async def serve_index():
         f"Looking for web files: __file__={__file__}, web_dir={web_dir}, index_file={index_file}, exists={index_file.exists()}"
     )
     if index_file.exists():
-        return FileResponse(index_file)
+        return FileResponse(index_file, headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate",
+            "Pragma": "no-cache",
+        })
     return HTMLResponse(
         content=f"<h1>Twitch Drops Miner</h1><p>Web interface files not found. Please check installation.</p><p>Debug: Looking for {index_file}</p>",
         status_code=500,
@@ -843,6 +846,17 @@ async def get_wanted_items(sid):
     """Client requested wanted items list"""
     if gui_manager:
         await sio.emit("wanted_items_update", gui_manager.get_wanted_game_tree(), to=sid)
+
+
+# Serve app.js with no-cache so PWA always gets the latest version
+@app.get("/static/app.js")
+async def serve_app_js():
+    web_dir_path = Path(__file__).parent.parent.parent / "web"
+    js_file = web_dir_path / "static" / "app.js"
+    return FileResponse(js_file, headers={
+        "Cache-Control": "no-store, no-cache, must-revalidate",
+        "Content-Type": "application/javascript",
+    })
 
 
 # Mount static files (CSS, JS, images)
