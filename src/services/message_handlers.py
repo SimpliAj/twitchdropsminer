@@ -260,8 +260,12 @@ class MessageHandlerService:
             return
         claim = message.get("data", {}).get("claim", {})
         claim_id = claim.get("id")
+        point_gain = claim.get("point_gain", {})
+        claimed_amount = point_gain.get("total_points", 0) if point_gain else 0
         if not claim_id:
             return
+        channel = self._twitch.channels.get(channel_id)
+        channel_login = channel._login if channel else str(channel_id)
         try:
             await self._twitch.gql_request(
                 GQL_OPERATIONS["ClaimCommunityPoints"].with_variables({
@@ -271,9 +275,45 @@ class MessageHandlerService:
                     }
                 })
             )
-            logger.info(f"Claimed channel points on channel {channel_id}")
+            logger.info(f"Claimed channel points on {channel_login} (+{claimed_amount})")
+            # Fetch updated balance and broadcast to UI
+            await self._emit_channel_points(channel_login, channel_id, claimed_amount)
         except Exception as e:
-            logger.warning(f"Failed to claim channel points on {channel_id}: {e}")
+            logger.warning(f"Failed to claim channel points on {channel_login}: {e}")
+
+    async def _emit_channel_points(
+        self, channel_login: str, channel_id: int, claimed_amount: int = 0
+    ) -> None:
+        try:
+            resp = await self._twitch.gql_request(
+                GQL_OPERATIONS["ChannelPointsContext"].with_variables(
+                    {"channelLogin": channel_login}
+                )
+            )
+            # Try multiple known response shapes for ChannelPointsContext
+            data = resp.get("data") or {}
+            points: int = 0
+            # Shape 1: data.community.channel.self.communityPoints.balance
+            try:
+                points = (
+                    data["community"]["channel"]["self"]["communityPoints"]["balance"]
+                )
+            except (KeyError, TypeError):
+                pass
+            # Shape 2: data.channel.self.communityPoints.balance
+            if not points:
+                try:
+                    points = data["channel"]["self"]["communityPoints"]["balance"]
+                except (KeyError, TypeError):
+                    pass
+            await self._twitch.gui._broadcaster.emit("channel_points_update", {
+                "channel_id": channel_id,
+                "channel_login": channel_login,
+                "balance": points,
+                "claimed_amount": claimed_amount,
+            })
+        except Exception as e:
+            logger.debug(f"Could not fetch channel points balance for {channel_login}: {e}")
 
     @task_wrapper
     async def process_notifications(self, user_id: int, message: JsonType) -> None:

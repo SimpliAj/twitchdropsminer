@@ -369,6 +369,32 @@ async def get_console_history():
     return {"lines": gui_manager.output.get_history()}
 
 
+@app.get("/api/channel-points/{channel_login}")
+async def get_channel_points(channel_login: str):
+    """Fetch current channel points balance for a channel."""
+    if not gui_manager or not gui_manager._twitch:
+        raise HTTPException(status_code=503, detail="Not ready")
+    try:
+        from src.config import GQL_OPERATIONS
+        resp = await gui_manager._twitch.gql_request(
+            GQL_OPERATIONS["ChannelPointsContext"].with_variables({"channelLogin": channel_login})
+        )
+        data = resp.get("data") or {}
+        points: int = 0
+        try:
+            points = data["community"]["channel"]["self"]["communityPoints"]["balance"]
+        except (KeyError, TypeError):
+            pass
+        if not points:
+            try:
+                points = data["channel"]["self"]["communityPoints"]["balance"]
+            except (KeyError, TypeError):
+                pass
+        return {"channel": channel_login, "balance": points}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/api/settings")
 async def get_settings():
     """Get current settings"""
