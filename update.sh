@@ -137,6 +137,17 @@ for f in sorted(LANG_DIR.glob("*.json")):
 print(f"  Language files updated: {updated}")
 PYEOF
 
+# Update app.js cache-bust hash in index.html
+if command -v md5sum &>/dev/null; then
+    HASH=$(md5sum web/static/app.js | cut -c1-8)
+elif command -v md5 &>/dev/null; then
+    HASH=$(md5 -q web/static/app.js | cut -c1-8)
+fi
+if [ -n "$HASH" ]; then
+    sed -i "s|app.js?v=[a-f0-9]*|app.js?v=$HASH|g" web/index.html
+    echo "  Cache hash updated: $HASH"
+fi
+
 # Restart via PM2
 echo ""
 echo "Restarting miner..."
