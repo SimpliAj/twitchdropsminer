@@ -88,8 +88,18 @@ Visit 👉 **<http://localhost:8080>**
 1. Open `http://localhost:8080`
 2. Login with your Twitch account (OAuth device flow)
 3. The miner auto-fetches available campaigns
-4. Select games you want to farm, or type a custom game and click **Add Game** → click **Reload**
-5. TDM starts mining drops automatically 🎉
+4. Go to **Settings → Games to Watch** and select games:
+   - **Select Linked** — auto-selects games where your account is linked
+   - **Add Game** — add any custom game by name
+   - **Drag to reorder** — top = highest priority
+   - **Select All / Deselect All** for quick changes
+5. Click **Reload** to apply changes
+6. TDM starts mining drops automatically 🎉
+
+**Channel Points (Settings tab):**
+- Enable **Auto-claim bonus channel points** to claim chests automatically
+- Add channels to **Idle Watch** to earn points when no drops are active
+- Balance is shown in the **Main tab** and updates every 5 minutes
 
 📝 **Tip:**  
 Make sure your Twitch account is linked to your game accounts →  
