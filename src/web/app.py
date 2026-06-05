@@ -66,6 +66,16 @@ def _is_setup_done() -> bool:
     return _load_web_config().get("setup_done", False)
 
 
+def _load_channel_points_history() -> dict:
+    try:
+        p = _DATA_DIR / "channel_points.json"
+        if p.exists():
+            return json.loads(p.read_text())
+    except Exception:
+        pass
+    return {}
+
+
 _UNPROTECTED_PATHS = {
     "/__auth_login", "/__auth_login_page",
     "/__setup", "/__setup_post",
@@ -390,6 +400,13 @@ async def get_channel_points(channel_login: str):
                 points = data["channel"]["self"]["communityPoints"]["balance"]
             except (KeyError, TypeError):
                 pass
+        # Persist
+        if points:
+            from src.config import DATA_DIR
+            from src.utils import json_load, json_save
+            history = json_load(DATA_DIR / "channel_points.json", {})
+            history[channel_login] = points
+            json_save(DATA_DIR / "channel_points.json", history)
         return {"channel": channel_login, "balance": points}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -776,6 +793,7 @@ async def connect(sid, environ):
                     if (ch := twitch_client.watching_channel.get_with_default(None)) is not None
                     else None
                 ),
+                "channel_points_history": _load_channel_points_history(),
             },
             room=sid,
         )
