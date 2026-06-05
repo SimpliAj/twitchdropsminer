@@ -233,6 +233,8 @@ class Twitch:
                 # Try idle watch if channels are configured
                 if self.settings.idle_channels:
                     logger.info(f"Idle watch: trying channels {self.settings.idle_channels}")
+                    # Also refresh if already watching an idle channel (broadcast_id may have changed)
+                    current = self.watching_channel.get_with_default(None)
                     idle_ch = await self._fetch_idle_channel()
                     if idle_ch is not None:
                         logger.info(f"Idle watch: watching {idle_ch.name} (id={idle_ch.id})")

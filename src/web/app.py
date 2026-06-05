@@ -406,6 +406,27 @@ async def get_channel_points(channel_login: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/api/idle-watch/status")
+async def idle_watch_status():
+    """Check if the current idle channel is online."""
+    if not twitch_client:
+        raise HTTPException(status_code=503, detail="Not ready")
+    ch = twitch_client.watching_channel.get_with_default(None)
+    if ch is None:
+        return {"watching": None, "online": False}
+    # Re-fetch stream info to get current status
+    try:
+        from src.config import GQL_OPERATIONS
+        resp = await twitch_client.gql_request(
+            GQL_OPERATIONS["GetStreamInfo"].with_variables({"channel": ch._login})
+        )
+        user_data = resp["data"]["user"]
+        online = bool(user_data and user_data.get("stream"))
+        return {"watching": ch._login, "online": online, "display_name": ch.name}
+    except Exception:
+        return {"watching": ch._login, "online": ch.online}
+
+
 @app.post("/api/idle-watch/switch")
 async def idle_watch_switch():
     """Switch to the next configured idle channel."""
