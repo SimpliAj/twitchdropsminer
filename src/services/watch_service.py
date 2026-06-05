@@ -216,6 +216,11 @@ class WatchService:
 
             if not succeeded:
                 logger.log(CALL, f"Watch requested failed for channel: {channel.name}")
+            else:
+                logger.info(f"Watch sent OK: {channel.name} (broadcast_id={channel._stream.broadcast_id if channel._stream else 'none'})")
+                # Also send via Spade URL for idle channels (may credit channel points)
+                if channel not in self._twitch.channels.values():
+                    asyncio.create_task(channel._send_watch_spade())
 
             # wait ~20 seconds for a progress update
             await asyncio.sleep(20)
