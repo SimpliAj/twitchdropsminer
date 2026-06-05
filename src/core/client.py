@@ -232,17 +232,25 @@ class Twitch:
                         logger.info(f"Idle watch: watching {idle_ch.name} (id={idle_ch.id})")
                         self.gui.status.update(f"💤 Idle watching: {idle_ch.name}")
                         self.watch(idle_ch, update_status=False)
-                        # Subscribe community points topic for idle channel
+                        idle_topics: list[WebsocketTopic] = [
+                            WebsocketTopic(
+                                "Channel",
+                                "StreamState",
+                                idle_ch.id,
+                                self._message_handler_service.process_idle_stream_state,
+                            )
+                        ]
                         if self.settings.claim_channel_points:
-                            self.websocket.add_topics([
+                            idle_topics.append(
                                 WebsocketTopic(
                                     "Channel",
                                     "CommunityPoints",
                                     idle_ch.id,
                                     self._message_handler_service.process_community_points,
                                 )
-                            ])
-                            logger.info(f"Idle watch: subscribed CommunityPoints for {idle_ch.name}")
+                            )
+                        self.websocket.add_topics(idle_topics)
+                        logger.info(f"Idle watch: subscribed StreamState+CommunityPoints for {idle_ch.name}")
                     else:
                         logger.info("Idle watch: no idle channels online")
                 # clear the flag and wait until it's set again
