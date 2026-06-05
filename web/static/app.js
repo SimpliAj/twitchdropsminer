@@ -206,6 +206,8 @@ async function fetchChannelPoints(login) {
         const data = await resp.json();
         document.getElementById('channel-points-channel').textContent = data.channel;
         document.getElementById('channel-points-balance').textContent = (data.balance || 0).toLocaleString() + ' pts';
+        channelPointsTracker[data.channel] = { balance: data.balance || 0, lastClaimed: channelPointsTracker[data.channel]?.lastClaimed || null };
+        renderPointsTracker();
     } catch {}
 }
 
@@ -266,6 +268,9 @@ socket.on('settings_updated', (data) => {
     updateSettingsUI(data);
 });
 
+// channel points tracker: { login -> { balance, lastClaimed } }
+const channelPointsTracker = {};
+
 socket.on('channel_points_update', (data) => {
     const channelEl = document.getElementById('channel-points-channel');
     const balanceEl = document.getElementById('channel-points-balance');
@@ -273,12 +278,38 @@ socket.on('channel_points_update', (data) => {
     if (!channelEl) return;
     channelEl.textContent = data.channel_login;
     balanceEl.textContent = data.balance.toLocaleString() + ' pts';
+    // Save to tracker
+    channelPointsTracker[data.channel_login] = {
+        balance: data.balance,
+        lastClaimed: data.claimed_amount > 0 ? Date.now() : (channelPointsTracker[data.channel_login]?.lastClaimed || null)
+    };
+    renderPointsTracker();
     if (data.claimed_amount > 0) {
         claimedEl.textContent = `+${data.claimed_amount} bonus claimed!`;
         claimedEl.style.opacity = '1';
         setTimeout(() => { claimedEl.style.opacity = '0'; }, 3000);
     }
 });
+
+function renderPointsTracker() {
+    let el = document.getElementById('points-tracker-list');
+    if (!el) return;
+    el.innerHTML = '';
+    for (const [login, info] of Object.entries(channelPointsTracker)) {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(128,128,128,0.15);font-size:0.9rem;';
+        const nameEl = document.createElement('span');
+        nameEl.textContent = login;
+        nameEl.style.fontWeight = '500';
+        const balEl = document.createElement('span');
+        balEl.textContent = (info.balance || 0).toLocaleString() + ' pts';
+        row.appendChild(nameEl);
+        row.appendChild(balEl);
+        el.appendChild(row);
+    }
+    document.getElementById('points-tracker-section').style.display =
+        Object.keys(channelPointsTracker).length ? '' : 'none';
+}
 
 socket.on('games_available', (data) => {
     state.availableGames = data.games;
@@ -2080,6 +2111,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Channel points toggle
     document.getElementById('claim-channel-points')?.addEventListener('change', saveSettings);
+
+    // Idle watch switch button
+    document.getElementById('idle-switch-btn')?.addEventListener('click', async () => {
+        const btn = document.getElementById('idle-switch-btn');
+        btn.disabled = true;
+        btn.textContent = '⏳';
+        try {
+            const resp = await fetch('/api/idle-watch/switch', { method: 'POST' });
+            const data = await resp.json();
+            if (resp.ok) {
+                btn.textContent = `✓ ${data.switched_to}`;
+                setTimeout(() => { btn.textContent = '⏭ Switch'; }, 2000);
+                fetchChannelPoints(data.switched_to);
+            } else {
+                btn.textContent = data.detail || 'Error';
+                setTimeout(() => { btn.textContent = '⏭ Switch'; }, 2000);
+            }
+        } catch {
+            btn.textContent = 'Error';
+            setTimeout(() => { btn.textContent = '⏭ Switch'; }, 2000);
+        }
+        btn.disabled = false;
+    });
 
     // Idle channels add button
     document.getElementById('idle-channel-add-btn')?.addEventListener('click', () => {
