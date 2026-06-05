@@ -47,38 +47,38 @@ This fork extends [rangermix/TwitchDropsMiner](https://github.com/rangermix/Twit
 
 ---
 
-## 🧰 Quick Start (Docker Recommended)
+## 🧰 Quick Start
 
-### 🐳 Using Pre-Built Image (Docker run)
+### 🐳 Build from Source with Docker (Recommended)
 
 ```bash
-docker pull rangermix/twitch-drops-miner:latest
-docker run -d -p 8080:8080 -v $(pwd)/data:/app/data rangermix/twitch-drops-miner:latest
+git clone https://github.com/SimpliAj/twitchdropsminer.git
+cd twitchdropsminer
+docker compose up -d
 ```
 
-### 📦 Using Docker Compose
+### 📦 Docker Compose with custom options
 
 ```yaml
 services:
   twitch-drops-miner:
-    image: rangermix/twitch-drops-miner:latest
+    build: .
     ports:
       - "8080:8080"
     volumes:
       - ./data:/app/data
-      # optional, use if you want to persist logs
       - ./logs:/app/logs
     environment:
-      # Set timezone (optional, defaults to UTC)
-      - TZ=Australia/Sydney
+      - TZ=Europe/Vienna        # Set your timezone
+      - WEB_PASSWORD=yourpassword  # Optional: lock the dashboard
     restart: unless-stopped
 ```
 
-### 🧑‍💻 From Source (for Developers)
+### 🧑‍💻 From Source (without Docker)
 
 ```bash
-uv sync
-uv run main.py
+pip install -e .
+python main.py
 ```
 
 Visit 👉 **<http://localhost:8080>**
