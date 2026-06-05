@@ -52,7 +52,8 @@
             "main": "Головна",
             "inventory": "Інвентар",
             "settings": "Налаштування",
-            "help": "Інформація"
+            "help": "Інформація",
+            "system": "System"
         },
         "login": {
             "name": "Форма для входу",
@@ -122,7 +123,8 @@
                 "other": "Інше",
                 "clear": "Очистити фільтри",
                 "search_placeholder": "Пошук ігор..."
-            }
+            },
+            "filter_linked": "Linked"
         },
         "settings": {
             "general": {
@@ -147,7 +149,22 @@
             "minimum_refresh": "Мінімальний інтервал оновлення (хвилини):",
             "reload_campaigns": "Перезавантажити кампанії",
             "mining_benefits": "Переваги майнінгу",
-            "mining_benefits_help": "Виберіть типи drops, які ви хочете майнити."
+            "mining_benefits_help": "Виберіть типи drops, які ви хочете майнити.",
+            "select_linked": "Select Linked",
+            "password_header": "Login & Password",
+            "password_current_label": "Current Password",
+            "password_current_placeholder": "Leave empty if no password set",
+            "password_new_label": "New Password",
+            "password_new_placeholder": "New password (empty = disable login)",
+            "password_confirm_label": "Confirm New Password",
+            "password_confirm_placeholder": "Confirm",
+            "password_save": "Save Password",
+            "password_disable": "Disable Login",
+            "password_saved": "Password saved.",
+            "password_disabled_msg": "Login disabled.",
+            "password_mismatch": "Passwords don't match.",
+            "password_status_active": "🔒 Login active — Password set",
+            "password_status_inactive": "🔓 No login — publicly accessible"
         },
         "help": {
             "about": "Про Twitch Drops Miner",
@@ -204,6 +221,21 @@
         "wanted": {
             "name": "Черга бажаних дропів",
             "none": "Немає бажаних дропів у черзі..."
+        },
+        "system": {
+            "header": "System",
+            "miner_header": "Miner",
+            "miner_desc": "Reload campaigns and restart the mining loop.",
+            "reload_btn": "Reload Campaigns",
+            "restart_header": "Restart",
+            "restart_desc": "Stop the miner process. PM2 will restart it automatically.",
+            "restart_btn": "Restart Miner",
+            "session_header": "Session",
+            "session_desc": "Log out of the web interface.",
+            "logout_btn": "Logout",
+            "reload_ok": "Campaigns reload triggered.",
+            "restart_confirm": "Restart the miner? PM2 will restart it automatically.",
+            "restart_ok": "Miner stopping — will restart via PM2 in a few seconds."
         }
     }
 }
