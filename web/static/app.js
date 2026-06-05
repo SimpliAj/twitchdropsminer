@@ -199,17 +199,15 @@ async function fetchChannelPoints(login) {
         const resp = await fetch(`/api/channel-points/${encodeURIComponent(login)}`);
         if (!resp.ok) return;
         const data = await resp.json();
-        const panel = document.getElementById('channel-points-panel');
-        if (panel) {
-            panel.style.display = '';
-            document.getElementById('channel-points-channel').textContent = data.channel;
-            document.getElementById('channel-points-balance').textContent = (data.balance || 0).toLocaleString() + ' pts';
-        }
+        document.getElementById('channel-points-channel').textContent = data.channel;
+        document.getElementById('channel-points-balance').textContent = (data.balance || 0).toLocaleString() + ' pts';
     } catch {}
 }
 
 socket.on('channel_watching_clear', () => {
     clearWatchingChannel();
+    document.getElementById('channel-points-channel').textContent = '—';
+    document.getElementById('channel-points-balance').textContent = 'not watching';
 });
 
 socket.on('drop_progress', (data) => {
@@ -264,12 +262,10 @@ socket.on('settings_updated', (data) => {
 });
 
 socket.on('channel_points_update', (data) => {
-    const panel = document.getElementById('channel-points-panel');
     const channelEl = document.getElementById('channel-points-channel');
     const balanceEl = document.getElementById('channel-points-balance');
     const claimedEl = document.getElementById('channel-points-claimed');
-    if (!panel) return;
-    panel.style.display = '';
+    if (!channelEl) return;
     channelEl.textContent = data.channel_login;
     balanceEl.textContent = data.balance.toLocaleString() + ' pts';
     if (data.claimed_amount > 0) {
