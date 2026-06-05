@@ -208,6 +208,8 @@ class SettingsUpdate(BaseModel):
     mining_benefits: dict[str, bool] | None = None
     claim_channel_points: bool | None = None
     idle_channels: list[str] | None = None
+    discord_webhook_drops: str | None = None
+    discord_webhook_points: str | None = None
 
 
 class ProxyVerifyRequest(BaseModel):

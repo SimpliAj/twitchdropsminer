@@ -1205,6 +1205,12 @@ function updateSettingsUI(settings) {
     const cpEl = document.getElementById('claim-channel-points');
     if (cpEl) cpEl.checked = settings.claim_channel_points !== false;
 
+    // Discord webhooks
+    const dwDrops = document.getElementById('discord-webhook-drops');
+    if (dwDrops) dwDrops.value = settings.discord_webhook_drops || '';
+    const dwPoints = document.getElementById('discord-webhook-points');
+    if (dwPoints) dwPoints.value = settings.discord_webhook_points || '';
+
     // Idle channels list
     renderIdleChannels(settings.idle_channels || []);
 
@@ -1657,7 +1663,9 @@ async function saveSettings() {
             "UNKNOWN": document.getElementById('mining-benefit-unknown')?.checked
         },
         claim_channel_points: document.getElementById('claim-channel-points')?.checked ?? true,
-        idle_channels: state.settings.idle_channels || []
+        idle_channels: state.settings.idle_channels || [],
+        discord_webhook_drops: document.getElementById('discord-webhook-drops')?.value || '',
+        discord_webhook_points: document.getElementById('discord-webhook-points')?.value || ''
     };
 
     try {
@@ -2134,6 +2142,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Channel points toggle
     document.getElementById('claim-channel-points')?.addEventListener('change', saveSettings);
+
+    // Discord webhook inputs
+    document.getElementById('discord-webhook-drops')?.addEventListener('change', saveSettings);
+    document.getElementById('discord-webhook-points')?.addEventListener('change', saveSettings);
 
     // Idle watch switch button
     document.getElementById('idle-switch-btn')?.addEventListener('click', async () => {

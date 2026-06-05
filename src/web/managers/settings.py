@@ -107,6 +107,12 @@ class SettingsManager:
         self.check_and_update_setting(
             "idle_channels", settings_data.get("idle_channels")
         )
+        self.check_and_update_setting(
+            "discord_webhook_drops", settings_data.get("discord_webhook_drops")
+        )
+        self.check_and_update_setting(
+            "discord_webhook_points", settings_data.get("discord_webhook_points")
+        )
 
         self._settings.save()
         asyncio.create_task(self._broadcaster.emit("settings_updated", self.get_settings()))
