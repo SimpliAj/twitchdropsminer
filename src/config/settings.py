@@ -49,6 +49,8 @@ default_settings = {
     "proxy": "",
     "claim_channel_points": True,
     "idle_channels": [],
+    "discord_webhook_drops": "",
+    "discord_webhook_points": "",
 }
 
 
@@ -64,6 +66,8 @@ class Settings:
     proxy: str
     claim_channel_points: bool
     idle_channels: list[str]
+    discord_webhook_drops: str
+    discord_webhook_points: str
 
     def __init__(self):
         self.load()

@@ -240,6 +240,20 @@
                 </section>
 
                 <section class="settings-section">
+                    <h2>Discord Notifications</h2>
+                    <label>
+                        Drop Claimed Webhook:
+                        <input type="text" id="discord-webhook-drops" placeholder="https://discord.com/api/webhooks/...">
+                    </label>
+                    <small class="help-text-inline" style="margin-bottom:10px;display:block;">Fires when a Twitch drop is successfully claimed.</small>
+                    <label>
+                        Channel Points Webhook:
+                        <input type="text" id="discord-webhook-points" placeholder="https://discord.com/api/webhooks/...">
+                    </label>
+                    <small class="help-text-inline">Fires when a bonus channel point chest is claimed.</small>
+                </section>
+
+                <section class="settings-section">
                     <h2>Idle Watch</h2>
                     <p class="help-text">Channels to watch when no drops are available. Add in priority order.</p>
                     <div style="display:flex;gap:8px;margin-bottom:8px;">
