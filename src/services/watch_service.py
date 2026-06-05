@@ -13,7 +13,7 @@ from contextlib import suppress
 from time import time
 from typing import TYPE_CHECKING, NoReturn
 
-from src.config import CALL, GQL_OPERATIONS, WATCH_INTERVAL
+from src.config import CALL, GQL_OPERATIONS, WATCH_INTERVAL, WebsocketTopic
 from src.exceptions import GQLException
 from src.i18n import _
 from src.utils import task_wrapper
@@ -123,6 +123,22 @@ class WatchService:
         """
         self._twitch.gui.channels.set_watching(channel)
         self._twitch.watching_channel.set(channel)
+        # Subscribe CommunityPoints for this channel (only if enabled, 1 topic = safe)
+        if self._twitch.settings.claim_channel_points:
+            prev = self._twitch._watching_cp_topic_id
+            new_topic_id = WebsocketTopic.as_str("Channel", "CommunityPoints", channel.id)
+            if prev != new_topic_id:
+                if prev:
+                    self._twitch.websocket.remove_topics([prev])
+                self._twitch.websocket.add_topics([
+                    WebsocketTopic(
+                        "Channel",
+                        "CommunityPoints",
+                        channel.id,
+                        self._twitch._message_handler_service.process_community_points,
+                    )
+                ])
+                self._twitch._watching_cp_topic_id = new_topic_id
 
         if update_status:
             # Check if manual mode is active for custom status message

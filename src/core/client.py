@@ -73,6 +73,8 @@ class Twitch:
         # Storing and watching channels
         self.channels: OrderedDict[int, Channel] = OrderedDict()
         self.watching_channel: AwaitableValue[Channel] = AwaitableValue()
+        self._idle_topic_ids: list[str] = []
+        self._watching_cp_topic_id: str = ""  # CommunityPoints topic for current watching channel
         self._watching_task: asyncio.Task[None] | None = None
         self._watching_restart = asyncio.Event()
         # Manual mode tracking
@@ -224,6 +226,10 @@ class Twitch:
             if self._state is State.IDLE:
                 self.gui.status.update(_.t["gui"]["status"]["idle"])
                 self.stop_watching()
+                # Remove any previously added idle channel topics to prevent accumulation
+                if self._idle_topic_ids:
+                    self.websocket.remove_topics(self._idle_topic_ids)
+                    self._idle_topic_ids = []
                 # Try idle watch if channels are configured
                 if self.settings.idle_channels:
                     logger.info(f"Idle watch: trying channels {self.settings.idle_channels}")
@@ -240,17 +246,9 @@ class Twitch:
                                 self._message_handler_service.process_idle_stream_state,
                             )
                         ]
-                        if self.settings.claim_channel_points:
-                            idle_topics.append(
-                                WebsocketTopic(
-                                    "Channel",
-                                    "CommunityPoints",
-                                    idle_ch.id,
-                                    self._message_handler_service.process_community_points,
-                                )
-                            )
+                        self._idle_topic_ids = [str(t) for t in idle_topics]
                         self.websocket.add_topics(idle_topics)
-                        logger.info(f"Idle watch: subscribed StreamState+CommunityPoints for {idle_ch.name}")
+                        logger.info(f"Idle watch: subscribed StreamState for {idle_ch.name} (CommunityPoints via watch())")
                     else:
                         logger.info("Idle watch: no idle channels online")
                 # clear the flag and wait until it's set again
@@ -432,15 +430,6 @@ class Twitch:
                             self._message_handler_service.process_stream_update,
                         )
                     )
-                    if self.settings.claim_channel_points:
-                        to_add_topics.append(
-                            WebsocketTopic(
-                                "Channel",
-                                "CommunityPoints",
-                                channel_id,
-                                self._message_handler_service.process_community_points,
-                            )
-                        )
                 self.websocket.add_topics(to_add_topics)
                 # relink watching channel after cleanup
                 # NOTE: this replaces 'self.watching_channel's internal value with the new object
