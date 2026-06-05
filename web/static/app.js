@@ -165,6 +165,7 @@ socket.on('initial_state', (data) => {
     // Restore channel points for currently watched channel (also updates tracker)
     if (data.watching_channel?.login) {
         fetchChannelPoints(data.watching_channel.login);
+        startPointsAutoRefresh(data.watching_channel.login);
     }
 });
 
@@ -203,9 +204,13 @@ socket.on('channels_batch_update', (data) => {
 
 socket.on('channel_watching', (data) => {
     setWatchingChannel(data.id);
-    // Fetch channel points for the newly watched channel
-    if (data.login) fetchChannelPoints(data.login);
+    if (data.login) {
+        fetchChannelPoints(data.login);
+        startPointsAutoRefresh(data.login);
+    }
 });
+
+let _pointsRefreshInterval = null;
 
 async function fetchChannelPoints(login) {
     try {
@@ -219,8 +224,18 @@ async function fetchChannelPoints(login) {
     } catch {}
 }
 
+function startPointsAutoRefresh(login) {
+    if (_pointsRefreshInterval) clearInterval(_pointsRefreshInterval);
+    _pointsRefreshInterval = setInterval(() => fetchChannelPoints(login), 5 * 60 * 1000); // every 5 min
+}
+
+function stopPointsAutoRefresh() {
+    if (_pointsRefreshInterval) { clearInterval(_pointsRefreshInterval); _pointsRefreshInterval = null; }
+}
+
 socket.on('channel_watching_clear', () => {
     clearWatchingChannel();
+    stopPointsAutoRefresh();
     document.getElementById('channel-points-channel').textContent = '—';
     document.getElementById('channel-points-balance').textContent = 'not watching';
 });
