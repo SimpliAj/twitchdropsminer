@@ -52,7 +52,8 @@
             "main": "Utama",
             "inventory": "Inventaris",
             "settings": "Parameter",
-            "help": "Bantuan"
+            "help": "Bantuan",
+            "system": "System"
         },
         "login": {
             "name": "Formulir masuk",
@@ -122,7 +123,8 @@
                 "other": "Lainnya",
                 "clear": "Hapus Filter",
                 "search_placeholder": "Cari game..."
-            }
+            },
+            "filter_linked": "Linked"
         },
         "settings": {
             "general": {
@@ -147,7 +149,22 @@
             "minimum_refresh": "Interval Refresh Minimum (menit):",
             "reload_campaigns": "Muat Ulang Kampanye",
             "mining_benefits": "Manfaat Penambangan",
-            "mining_benefits_help": "Pilih jenis drops yang ingin Anda tambang."
+            "mining_benefits_help": "Pilih jenis drops yang ingin Anda tambang.",
+            "select_linked": "Select Linked",
+            "password_header": "Login & Password",
+            "password_current_label": "Current Password",
+            "password_current_placeholder": "Leave empty if no password set",
+            "password_new_label": "New Password",
+            "password_new_placeholder": "New password (empty = disable login)",
+            "password_confirm_label": "Confirm New Password",
+            "password_confirm_placeholder": "Confirm",
+            "password_save": "Save Password",
+            "password_disable": "Disable Login",
+            "password_saved": "Password saved.",
+            "password_disabled_msg": "Login disabled.",
+            "password_mismatch": "Passwords don't match.",
+            "password_status_active": "🔒 Login active — Password set",
+            "password_status_inactive": "🔓 No login — publicly accessible"
         },
         "help": {
             "about": "Tentang Twitch Drops Miner",
@@ -204,6 +221,21 @@
         "wanted": {
             "name": "Antrean Drops yang Diinginkan",
             "none": "Tidak ada drops yang diinginkan dalam antrean..."
+        },
+        "system": {
+            "header": "System",
+            "miner_header": "Miner",
+            "miner_desc": "Reload campaigns and restart the mining loop.",
+            "reload_btn": "Reload Campaigns",
+            "restart_header": "Restart",
+            "restart_desc": "Stop the miner process. PM2 will restart it automatically.",
+            "restart_btn": "Restart Miner",
+            "session_header": "Session",
+            "session_desc": "Log out of the web interface.",
+            "logout_btn": "Logout",
+            "reload_ok": "Campaigns reload triggered.",
+            "restart_confirm": "Restart the miner? PM2 will restart it automatically.",
+            "restart_ok": "Miner stopping — will restart via PM2 in a few seconds."
         }
     }
 }
