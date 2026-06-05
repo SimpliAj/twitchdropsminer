@@ -1114,6 +1114,13 @@ function updateSettingsUI(settings) {
     }
 
 
+    // Channel points toggle
+    const cpEl = document.getElementById('claim-channel-points');
+    if (cpEl) cpEl.checked = settings.claim_channel_points !== false;
+
+    // Idle channels list
+    renderIdleChannels(settings.idle_channels || []);
+
     // Update games to watch lists
     renderGamesToWatch();
 
@@ -1165,6 +1172,30 @@ socket.on('games_available', (data) => {
     availableGames = new Set(data.games || []);
     renderGamesToWatch();
 });
+
+function renderIdleChannels(channels) {
+    state.settings.idle_channels = channels;
+    const container = document.getElementById('idle-channels-list');
+    if (!container) return;
+    container.innerHTML = '';
+    channels.forEach((ch, idx) => {
+        const item = document.createElement('div');
+        item.className = 'sortable-item';
+        const label = document.createElement('span');
+        label.textContent = ch;
+        const btn = document.createElement('button');
+        btn.className = 'remove-btn';
+        btn.textContent = '✕';
+        btn.addEventListener('click', () => {
+            state.settings.idle_channels.splice(idx, 1);
+            renderIdleChannels([...state.settings.idle_channels]);
+            saveSettings();
+        });
+        item.appendChild(label);
+        item.appendChild(btn);
+        container.appendChild(item);
+    });
+}
 
 function renderGamesToWatch() {
     const selectedGames = state.settings.games_to_watch || [];
@@ -1537,7 +1568,9 @@ async function saveSettings() {
             "BADGE": document.getElementById('mining-benefit-badge')?.checked,
             "EMOTE": document.getElementById('mining-benefit-emote')?.checked,
             "UNKNOWN": document.getElementById('mining-benefit-unknown')?.checked
-        }
+        },
+        claim_channel_points: document.getElementById('claim-channel-points')?.checked ?? true,
+        idle_channels: state.settings.idle_channels || []
     };
 
     try {
@@ -1989,6 +2022,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.tab-button').forEach(button => {
         button.addEventListener('click', () => {
             switchTab(button.dataset.tab);
+            if (button.dataset.tab === 'system') loadAccounts();
         });
     });
 
@@ -2010,6 +2044,26 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('language').addEventListener('change', saveSettings);
     document.getElementById('connection-quality').addEventListener('change', saveSettings);
     document.getElementById('minimum-refresh-interval').addEventListener('change', saveSettings);
+
+    // Channel points toggle
+    document.getElementById('claim-channel-points')?.addEventListener('change', saveSettings);
+
+    // Idle channels add button
+    document.getElementById('idle-channel-add-btn')?.addEventListener('click', () => {
+        const input = document.getElementById('idle-channel-input');
+        const val = input.value.trim().toLowerCase();
+        if (!val) return;
+        const channels = state.settings.idle_channels || [];
+        if (!channels.includes(val)) {
+            channels.push(val);
+            renderIdleChannels([...channels]);
+            saveSettings();
+        }
+        input.value = '';
+    });
+    document.getElementById('idle-channel-input')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') document.getElementById('idle-channel-add-btn').click();
+    });
     // Proxy uses a manual "Set Proxy" button instead of auto-save
     document.getElementById('set-proxy-btn').addEventListener('click', () => {
         const proxyInput = document.getElementById('proxy-url');
