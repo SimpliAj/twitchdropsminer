@@ -11,6 +11,8 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING
 
+import aiohttp
+
 from src.config import CALL, DATA_DIR, GQL_OPERATIONS, State
 from src.i18n import _
 from src.utils import json_load, json_save, task_wrapper
@@ -212,6 +214,20 @@ class MessageHandlerService:
             campaign = drop.campaign
             await drop.claim()
             drop.display()
+            # Discord webhook for drop claim
+            webhook_url = self._twitch.settings.discord_webhook_drops
+            if webhook_url and drop.is_claimed:
+                asyncio.create_task(self._send_discord_webhook(webhook_url, {
+                    "embeds": [{
+                        "title": "🎁 Drop Claimed!",
+                        "color": 0x9147ff,
+                        "fields": [
+                            {"name": "Game", "value": campaign.game.name, "inline": True},
+                            {"name": "Drop", "value": drop.name, "inline": True},
+                            {"name": "Reward", "value": drop.rewards_text(), "inline": False},
+                        ],
+                    }]
+                }))
 
             # About 4-20s after claiming the drop, next drop can be started
             # by re-sending the watch payload. We can test for it by fetching the current drop
@@ -253,6 +269,15 @@ class MessageHandlerService:
         if drop is not None and drop.can_earn(self._twitch.watching_channel.get_with_default(None)):
             # the received payload is for the drop we expected
             drop.update_minutes(message["data"]["current_progress_min"])
+
+    async def _send_discord_webhook(self, url: str, payload: dict) -> None:
+        if not url:
+            return
+        try:
+            async with aiohttp.ClientSession() as session:
+                await session.post(url, json=payload, timeout=aiohttp.ClientTimeout(total=10))
+        except Exception as e:
+            logger.debug(f"Discord webhook failed: {e}")
 
     @task_wrapper
     async def process_idle_stream_state(self, channel_id: int, message: JsonType) -> None:
@@ -321,6 +346,22 @@ class MessageHandlerService:
                         })
                     )
                     logger.info(f"Claimed channel points via GQL poll on {channel_login}")
+                    # Discord webhook for channel points claim
+                    webhook_url = self._twitch.settings.discord_webhook_points
+                    if webhook_url:
+                        bonus = available_claim.get("pointGain", {}) or {}
+                        bonus_amount = bonus.get("totalPoints", 0) or 0
+                        asyncio.create_task(self._send_discord_webhook(webhook_url, {
+                            "embeds": [{
+                                "title": "💰 Bonus Chest Claimed!",
+                                "color": 0xffd700,
+                                "fields": [
+                                    {"name": "Channel", "value": channel_login, "inline": True},
+                                    {"name": "Bonus", "value": f"+{bonus_amount} pts" if bonus_amount else "Claimed", "inline": True},
+                                    {"name": "Balance", "value": f"{points:,} pts", "inline": True},
+                                ],
+                            }]
+                        }))
                 except Exception as claim_e:
                     logger.debug(f"GQL claim failed for {channel_login}: {claim_e}")
             await self._twitch.gui._broadcaster.emit("channel_points_update", {
