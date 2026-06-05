@@ -101,6 +101,12 @@ class SettingsManager:
         should_trigger_update |= self.check_and_update_setting(
             "mining_benefits", settings_data.get("mining_benefits"), True
         )
+        self.check_and_update_setting(
+            "claim_channel_points", settings_data.get("claim_channel_points")
+        )
+        self.check_and_update_setting(
+            "idle_channels", settings_data.get("idle_channels")
+        )
 
         self._settings.save()
         asyncio.create_task(self._broadcaster.emit("settings_updated", self.get_settings()))
