@@ -11,9 +11,11 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING
 
-from src.config import CALL, GQL_OPERATIONS, State
+from src.config import CALL, DATA_DIR, GQL_OPERATIONS, State
 from src.i18n import _
-from src.utils import task_wrapper
+from src.utils import json_load, json_save, task_wrapper
+
+_POINTS_FILE = DATA_DIR / "channel_points.json"
 
 
 if TYPE_CHECKING:
@@ -312,6 +314,11 @@ class MessageHandlerService:
                 "balance": points,
                 "claimed_amount": claimed_amount,
             })
+            # Persist balance
+            if points:
+                history = json_load(_POINTS_FILE, {})
+                history[channel_login] = points
+                json_save(_POINTS_FILE, history)
         except Exception as e:
             logger.debug(f"Could not fetch channel points balance for {channel_login}: {e}")
 
