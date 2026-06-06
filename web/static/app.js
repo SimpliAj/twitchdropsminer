@@ -1206,6 +1206,8 @@ function updateSettingsUI(settings) {
     const claimCpEl = document.getElementById('claim-channel-points');
     if (claimCpEl) claimCpEl.checked = settings.claim_channel_points !== false;
 
+    renderIdleChannels(settings.idle_channels || []);
+
     // Re-render inventory to apply filters
     renderInventory();
 }
@@ -1251,6 +1253,30 @@ socket.on('games_available', (data) => {
     availableGames = new Set(data.games || []);
     renderGamesToWatch();
 });
+
+function renderIdleChannels(channels) {
+    state.settings.idle_channels = channels;
+    const container = document.getElementById('idle-channels-list');
+    if (!container) return;
+    container.replaceChildren();
+    channels.forEach((ch, idx) => {
+        const item = document.createElement('div');
+        item.className = 'sortable-item';
+        const label = document.createElement('span');
+        label.textContent = ch;
+        const btn = document.createElement('button');
+        btn.className = 'remove-btn';
+        btn.textContent = '✕';
+        btn.addEventListener('click', () => {
+            state.settings.idle_channels.splice(idx, 1);
+            renderIdleChannels([...state.settings.idle_channels]);
+            saveSettings();
+        });
+        item.appendChild(label);
+        item.appendChild(btn);
+        container.appendChild(item);
+    });
+}
 
 function renderGamesToWatch() {
     const selectedGames = state.settings.games_to_watch || [];
@@ -1615,6 +1641,7 @@ async function saveSettings() {
         discord_webhook_drops: document.getElementById('discord-webhook-drops')?.value || '',
         discord_webhook_points: document.getElementById('discord-webhook-points')?.value || '',
         claim_channel_points: document.getElementById('claim-channel-points')?.checked ?? true,
+        idle_channels: state.settings.idle_channels || [],
     };
 
     try {
@@ -2091,6 +2118,21 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('discord-webhook-drops')?.addEventListener('blur', saveSettings);
     document.getElementById('discord-webhook-points')?.addEventListener('blur', saveSettings);
     document.getElementById('claim-channel-points')?.addEventListener('change', saveSettings);
+    document.getElementById('idle-channel-add-btn')?.addEventListener('click', () => {
+        const input = document.getElementById('idle-channel-input');
+        const val = input.value.trim().toLowerCase();
+        if (!val) return;
+        const channels = state.settings.idle_channels || [];
+        if (!channels.includes(val)) {
+            channels.push(val);
+            renderIdleChannels([...channels]);
+            saveSettings();
+        }
+        input.value = '';
+    });
+    document.getElementById('idle-channel-input')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') document.getElementById('idle-channel-add-btn').click();
+    });
 
     // Inventory game search dropdown
     const gameSearchInput = document.getElementById('inventory-game-search');
