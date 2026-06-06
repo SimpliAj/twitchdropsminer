@@ -14,7 +14,7 @@ from time import time
 from typing import TYPE_CHECKING, NoReturn
 
 from src.config import CALL, GQL_OPERATIONS, WATCH_INTERVAL, WebsocketTopic
-from src.exceptions import GQLException
+from src.exceptions import GQLException, MinerException
 from src.i18n import _
 from src.utils import task_wrapper
 
@@ -130,15 +130,18 @@ class WatchService:
             if prev != new_topic_id:
                 if prev:
                     self._twitch.websocket.remove_topics([prev])
-                self._twitch.websocket.add_topics([
-                    WebsocketTopic(
-                        "Channel",
-                        "CommunityPoints",
-                        channel.id,
-                        self._twitch._message_handler_service.process_community_points,
-                    )
-                ])
-                self._twitch._watching_cp_topic_id = new_topic_id
+                try:
+                    self._twitch.websocket.add_topics([
+                        WebsocketTopic(
+                            "Channel",
+                            "CommunityPoints",
+                            channel.id,
+                            self._twitch._message_handler_service.process_community_points,
+                        )
+                    ])
+                    self._twitch._watching_cp_topic_id = new_topic_id
+                except MinerException:
+                    logger.warning(f"Topic limit reached — CommunityPoints not subscribed for {channel.name}")
 
         if update_status:
             # Check if manual mode is active for custom status message
