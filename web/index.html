@@ -247,12 +247,18 @@
                     <h2>Discord Notifications</h2>
                     <label>
                         Drop Claimed Webhook:
-                        <input type="text" id="discord-webhook-drops" placeholder="https://discord.com/api/webhooks/...">
+                        <div style="display:flex;gap:8px;">
+                            <input type="text" id="discord-webhook-drops" placeholder="https://discord.com/api/webhooks/..." style="flex:1;">
+                            <button class="secondary-btn" onclick="testWebhook('drops')" style="white-space:nowrap;">Test</button>
+                        </div>
                     </label>
                     <small class="help-text-inline" style="margin-bottom:10px;display:block;">Fires when a Twitch drop is successfully claimed.</small>
                     <label>
                         Channel Points Webhook:
-                        <input type="text" id="discord-webhook-points" placeholder="https://discord.com/api/webhooks/...">
+                        <div style="display:flex;gap:8px;">
+                            <input type="text" id="discord-webhook-points" placeholder="https://discord.com/api/webhooks/..." style="flex:1;">
+                            <button class="secondary-btn" onclick="testWebhook('points')" style="white-space:nowrap;">Test</button>
+                        </div>
                     </label>
                     <small class="help-text-inline">Fires when a bonus channel point chest is claimed.</small>
                 </section>
