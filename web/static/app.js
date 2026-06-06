@@ -692,33 +692,30 @@ function campaignMatchesFilters(campaign, filters) {
 
     const hasGameFilter = filters.game_name_search && filters.game_name_search.length > 0;
 
-    // Hide sub drops: campaigns where all drops have 0-minute timers
+    // Sub drops (0-min timer): always hide unless explicitly shown (independent filter)
     const isSubDrop = campaign.drops && campaign.drops.length > 0 &&
         campaign.drops.every(d => d.required_minutes === 0);
     if (!filters.show_sub_drops && isSubDrop) return false;
 
-    // Hide finished: if show_finished is false AND campaign is finished → hide it
-    if (!filters.show_finished && isFinished) return false;
-
-    // Hide not-linked: if show_not_linked is false AND campaign is not linked → hide it
-    if (!filters.show_not_linked && !campaign.linked) return false;
-
-    // Linked/Not Linked: AND filter (independent of status filters)
+    // Linked filter: AND filter, independent of status filters
     if (filters.show_linked && !campaign.linked) return false;
 
-    // Status filters (OR logic among: Active, Upcoming, Expired)
-    const hasStatusFilters = filters.show_active || filters.show_upcoming || filters.show_expired;
+    // Status + not-linked + finished: OR logic — campaign shown if it matches ANY checked filter
+    const hasStatusFilters = filters.show_active || filters.show_upcoming || filters.show_expired ||
+        filters.show_not_linked || filters.show_finished;
 
     if (hasStatusFilters) {
         let statusMatch = false;
         if (filters.show_active && campaign.active) statusMatch = true;
         if (filters.show_upcoming && campaign.upcoming) statusMatch = true;
         if (filters.show_expired && campaign.expired) statusMatch = true;
+        if (filters.show_not_linked && !campaign.linked) statusMatch = true;
+        if (filters.show_finished && isFinished) statusMatch = true;
         if (!statusMatch) return false;
     }
 
-    // If nothing enabled and no game filter, show all
-    if (!hasStatusFilters && !filters.show_linked && !filters.show_not_linked && !hasGameFilter) {
+    // If no filters at all → show all remaining
+    if (!hasStatusFilters && !filters.show_linked && !hasGameFilter) {
         return true;
     }
 
