@@ -692,34 +692,24 @@ function campaignMatchesFilters(campaign, filters) {
 
     const hasGameFilter = filters.game_name_search && filters.game_name_search.length > 0;
 
-    // Sub drops (0-min timer): always hide unless explicitly shown (independent filter)
+    // Exclusion filters: always hide these types unless checkbox is ON
     const isSubDrop = campaign.drops && campaign.drops.length > 0 &&
         campaign.drops.every(d => d.required_minutes === 0);
     if (!filters.show_sub_drops && isSubDrop) return false;
+    if (!filters.show_finished && isFinished) return false;
 
-    // Check if any filter is enabled (original OR logic)
-    const anyFilterEnabled = filters.show_active || filters.show_upcoming ||
-        filters.show_expired || filters.show_finished ||
-        filters.show_linked || filters.show_not_linked || hasGameFilter;
-
-    if (!anyFilterEnabled) {
-        return true;
-    }
-
-    // Linked/Not Linked: AND filters (applied on top of status filters)
+    // Linked/Not Linked: AND filters (narrow down what's shown)
     if (filters.show_linked && !campaign.linked) return false;
     if (filters.show_not_linked && campaign.linked) return false;
 
-    // Status filters: OR logic — shown if ANY checked filter matches
-    const hasStatusFilters = filters.show_active || filters.show_upcoming ||
-        filters.show_expired || filters.show_finished;
+    // Status filters: OR logic — if any status filter is on, show only matching
+    const hasStatusFilters = filters.show_active || filters.show_upcoming || filters.show_expired;
 
     if (hasStatusFilters) {
         let statusMatch = false;
         if (filters.show_active && campaign.active) statusMatch = true;
         if (filters.show_upcoming && campaign.upcoming) statusMatch = true;
         if (filters.show_expired && campaign.expired) statusMatch = true;
-        if (filters.show_finished && isFinished) statusMatch = true;
         if (!statusMatch) return false;
     }
 
