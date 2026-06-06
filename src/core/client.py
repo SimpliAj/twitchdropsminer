@@ -21,6 +21,7 @@ from src.config import (
 )
 from src.exceptions import (
     ExitRequest,
+    MinerException,
     RequestException,
 )
 from src.i18n import _
@@ -432,7 +433,10 @@ class Twitch:
                             self._message_handler_service.process_stream_update,
                         )
                     )
-                self.websocket.add_topics(to_add_topics)
+                try:
+                    self.websocket.add_topics(to_add_topics)
+                except MinerException:
+                    logger.warning("Topic limit reached — too many channels, some won't be tracked")
                 # relink watching channel after cleanup
                 # NOTE: this replaces 'self.watching_channel's internal value with the new object
                 # Don't call stop_watching() here - let CHANNEL_SWITCH handle it to avoid clearing drop display
