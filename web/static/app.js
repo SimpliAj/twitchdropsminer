@@ -1197,6 +1197,12 @@ function updateSettingsUI(settings) {
     // Re-render channels list to apply filter based on updated games to watch
     renderChannels();
 
+    // Restore discord webhook fields
+    const webhookDropsEl = document.getElementById('discord-webhook-drops');
+    if (webhookDropsEl) webhookDropsEl.value = settings.discord_webhook_drops || '';
+    const webhookPointsEl = document.getElementById('discord-webhook-points');
+    if (webhookPointsEl) webhookPointsEl.value = settings.discord_webhook_points || '';
+
     // Re-render inventory to apply filters
     renderInventory();
 }
@@ -1602,7 +1608,9 @@ async function saveSettings() {
             "BADGE": document.getElementById('mining-benefit-badge')?.checked,
             "EMOTE": document.getElementById('mining-benefit-emote')?.checked,
             "UNKNOWN": document.getElementById('mining-benefit-unknown')?.checked
-        }
+        },
+        discord_webhook_drops: document.getElementById('discord-webhook-drops')?.value || '',
+        discord_webhook_points: document.getElementById('discord-webhook-points')?.value || '',
     };
 
     try {
@@ -2076,7 +2084,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('mining-benefit-badge').addEventListener('change', saveSettings);
     document.getElementById('mining-benefit-emote').addEventListener('change', saveSettings);
     document.getElementById('mining-benefit-unknown').addEventListener('change', saveSettings);
-
+    document.getElementById('discord-webhook-drops')?.addEventListener('blur', saveSettings);
+    document.getElementById('discord-webhook-points')?.addEventListener('blur', saveSettings);
 
     // Inventory game search dropdown
     const gameSearchInput = document.getElementById('inventory-game-search');
