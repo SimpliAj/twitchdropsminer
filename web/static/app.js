@@ -662,7 +662,8 @@ function getInventoryFilters() {
         show_benefit_item: document.getElementById('filter-benefit-item')?.checked !== false,
         show_benefit_badge: document.getElementById('filter-benefit-badge')?.checked !== false,
         show_benefit_emote: document.getElementById('filter-benefit-emote')?.checked !== false,
-        show_benefit_other: document.getElementById('filter-benefit-other')?.checked !== false
+        show_benefit_other: document.getElementById('filter-benefit-other')?.checked !== false,
+        show_sub_drops: document.getElementById('filter-sub-drops')?.checked || false,
     };
 }
 
@@ -1180,6 +1181,7 @@ function updateSettingsUI(settings) {
         if (document.getElementById('filter-benefit-badge')) document.getElementById('filter-benefit-badge').checked = settings.inventory_filters.show_benefit_badge !== false;
         if (document.getElementById('filter-benefit-emote')) document.getElementById('filter-benefit-emote').checked = settings.inventory_filters.show_benefit_emote !== false;
         if (document.getElementById('filter-benefit-other')) document.getElementById('filter-benefit-other').checked = settings.inventory_filters.show_benefit_other !== false;
+        if (document.getElementById('filter-sub-drops')) document.getElementById('filter-sub-drops').checked = settings.inventory_filters.show_sub_drops || false;
     }
 
     // Restore mining benefit filters
@@ -2108,6 +2110,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('filter-benefit-badge').addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-benefit-emote').addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-benefit-other').addEventListener('change', onInventoryFilterChange);
+    document.getElementById('filter-sub-drops')?.addEventListener('change', onInventoryFilterChange);
     document.getElementById('clear-filters-btn').addEventListener('click', clearInventoryFilters);
 
     // Mining benefit settings
