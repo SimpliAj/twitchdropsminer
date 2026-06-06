@@ -273,7 +273,26 @@ class Twitch:
                     if not campaign.upcoming:
                         for drop in campaign.drops:
                             if drop.can_claim:
-                                await drop.claim()
+                                claimed = await drop.claim()
+                                if claimed:
+                                    webhook_url = self.settings.discord_webhook_drops
+                                    if webhook_url:
+                                        asyncio.create_task(
+                                            self._message_handler_service._send_discord_webhook(
+                                                webhook_url,
+                                                {
+                                                    "embeds": [{
+                                                        "title": "🎁 Drop Claimed!",
+                                                        "color": 0x9147ff,
+                                                        "fields": [
+                                                            {"name": "Game", "value": campaign.game.name, "inline": True},
+                                                            {"name": "Drop", "value": drop.name, "inline": True},
+                                                            {"name": "Reward", "value": drop.rewards_text(), "inline": False},
+                                                        ],
+                                                    }]
+                                                },
+                                            )
+                                        )
                 # figure out which games we want based on games_to_watch whitelist
                 self.wanted_games.clear()
                 games_to_watch: list[str] = self.settings.games_to_watch
