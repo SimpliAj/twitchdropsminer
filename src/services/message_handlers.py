@@ -312,6 +312,19 @@ class MessageHandlerService:
                 })
             )
             logger.info(f"Claimed channel points on {channel_login} (+{claimed_amount})")
+            # Send Discord webhook for WebSocket-path claim
+            webhook_url = self._twitch.settings.discord_webhook_points
+            if webhook_url and claimed_amount:
+                asyncio.create_task(self._send_discord_webhook(webhook_url, {
+                    "embeds": [{
+                        "title": "💰 Bonus Chest Claimed!",
+                        "color": 0xffd700,
+                        "fields": [
+                            {"name": "Channel", "value": channel_login, "inline": True},
+                            {"name": "Bonus", "value": f"+{claimed_amount} pts", "inline": True},
+                        ],
+                    }]
+                }))
             # Fetch updated balance and broadcast to UI
             await self._emit_channel_points(channel_login, channel_id, claimed_amount)
         except Exception as e:

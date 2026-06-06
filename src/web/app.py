@@ -529,6 +529,30 @@ async def verify_proxy(request: ProxyVerifyRequest):
         return {"success": False, "message": f"Connection failed: {str(e)}"}
 
 
+@app.post("/api/settings/test-webhook")
+async def test_webhook(request: Request):
+    """Send a test message to a Discord webhook URL"""
+    import aiohttp
+    body = await request.json()
+    url = body.get("url", "").strip()
+    if not url:
+        return {"success": False, "message": "No URL provided"}
+    try:
+        async with aiohttp.ClientSession() as session:
+            resp = await session.post(url, json={
+                "embeds": [{
+                    "title": "✅ Webhook Test",
+                    "description": "TwitchDropsMiner webhook is working!",
+                    "color": 0x9147ff,
+                }]
+            }, timeout=aiohttp.ClientTimeout(total=10))
+            if resp.status in (200, 204):
+                return {"success": True, "message": "Sent!"}
+            return {"success": False, "message": f"HTTP {resp.status}"}
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
+
 @app.get("/api/version")
 async def get_version():
     """Get current application version and check for updates"""

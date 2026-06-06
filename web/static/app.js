@@ -1658,6 +1658,23 @@ async function saveSettings() {
     }
 }
 
+async function testWebhook(type) {
+    const id = type === 'drops' ? 'discord-webhook-drops' : 'discord-webhook-points';
+    const url = document.getElementById(id)?.value.trim();
+    if (!url) { alert('No webhook URL set.'); return; }
+    try {
+        const resp = await fetch('/api/settings/test-webhook', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url })
+        });
+        const data = await resp.json();
+        alert(data.success ? '✅ ' + data.message : '❌ ' + data.message);
+    } catch (e) {
+        alert('❌ Request failed: ' + e.message);
+    }
+}
+
 async function fetchAndPopulateLanguages() {
     try {
         const response = await fetch('/api/languages');
