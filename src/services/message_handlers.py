@@ -393,7 +393,7 @@ class MessageHandlerService:
                 history[channel_login] = points
                 json_save(_POINTS_FILE, history)
         except Exception as e:
-            logger.debug(f"Could not fetch channel points balance for {channel_login}: {e}")
+            logger.warning(f"Could not fetch channel points balance for {channel_login}: {e}")
 
     @task_wrapper
     async def process_notifications(self, user_id: int, message: JsonType) -> None:
