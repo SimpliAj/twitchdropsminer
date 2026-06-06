@@ -217,17 +217,18 @@ class MessageHandlerService:
             # Discord webhook for drop claim
             webhook_url = self._twitch.settings.discord_webhook_drops
             if webhook_url and drop.is_claimed:
-                asyncio.create_task(self._send_discord_webhook(webhook_url, {
-                    "embeds": [{
-                        "title": "🎁 Drop Claimed!",
-                        "color": 0x9147ff,
-                        "fields": [
-                            {"name": "Game", "value": campaign.game.name, "inline": True},
-                            {"name": "Drop", "value": drop.name, "inline": True},
-                            {"name": "Reward", "value": drop.rewards_text(), "inline": False},
-                        ],
-                    }]
-                }))
+                embed: dict = {
+                    "title": "🎁 Drop Claimed!",
+                    "color": 0x9147ff,
+                    "fields": [
+                        {"name": "Game", "value": campaign.game.name, "inline": True},
+                        {"name": "Drop", "value": drop.name, "inline": True},
+                        {"name": "Reward", "value": drop.rewards_text(), "inline": False},
+                    ],
+                }
+                if drop.benefits:
+                    embed["thumbnail"] = {"url": drop.benefits[0].image_url}
+                asyncio.create_task(self._send_discord_webhook(webhook_url, {"embeds": [embed]}))
 
             # About 4-20s after claiming the drop, next drop can be started
             # by re-sending the watch payload. We can test for it by fetching the current drop

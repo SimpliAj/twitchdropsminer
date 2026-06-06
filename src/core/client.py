@@ -277,20 +277,20 @@ class Twitch:
                                 if claimed:
                                     webhook_url = self.settings.discord_webhook_drops
                                     if webhook_url:
+                                        embed: dict = {
+                                            "title": "🎁 Drop Claimed!",
+                                            "color": 0x9147ff,
+                                            "fields": [
+                                                {"name": "Game", "value": campaign.game.name, "inline": True},
+                                                {"name": "Drop", "value": drop.name, "inline": True},
+                                                {"name": "Reward", "value": drop.rewards_text(), "inline": False},
+                                            ],
+                                        }
+                                        if drop.benefits:
+                                            embed["thumbnail"] = {"url": drop.benefits[0].image_url}
                                         asyncio.create_task(
                                             self._message_handler_service._send_discord_webhook(
-                                                webhook_url,
-                                                {
-                                                    "embeds": [{
-                                                        "title": "🎁 Drop Claimed!",
-                                                        "color": 0x9147ff,
-                                                        "fields": [
-                                                            {"name": "Game", "value": campaign.game.name, "inline": True},
-                                                            {"name": "Drop", "value": drop.name, "inline": True},
-                                                            {"name": "Reward", "value": drop.rewards_text(), "inline": False},
-                                                        ],
-                                                    }]
-                                                },
+                                                webhook_url, {"embeds": [embed]}
                                             )
                                         )
                 # figure out which games we want based on games_to_watch whitelist
