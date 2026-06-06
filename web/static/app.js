@@ -9,7 +9,8 @@ const state = {
     settings: {},
     currentDrop: null,
     countdownTimer: null,  // Track the active countdown timer
-    translations: {}  // Store current translations
+    translations: {},  // Store current translations
+    sessionPoints: {}  // channel_login -> { balance, claimed }
 };
 
 // ==================== Version Checking ====================
@@ -154,19 +155,31 @@ socket.on('initial_state', (data) => {
         renderWantedItems(data.wanted_items);
     }
 
-    // Restore persisted channel points history
     if (data.channel_points_history) {
-        for (const [login, balance] of Object.entries(data.channel_points_history)) {
-            channelPointsTracker[login] = { balance, lastClaimed: null };
-        }
+        Object.entries(data.channel_points_history).forEach(([login, balance]) => {
+            if (!state.sessionPoints[login]) {
+                state.sessionPoints[login] = { balance, claimed: 0 };
+            }
+        });
         renderPointsTracker();
     }
 
-    // Restore channel points for currently watched channel (also updates tracker)
-    if (data.watching_channel?.login) {
-        fetchChannelPoints(data.watching_channel.login);
-        startPointsAutoRefresh(data.watching_channel.login);
+    if (data.watching_channel) {
+        updateChannelPointsDisplay(data.watching_channel.login, null);
     }
+});
+
+socket.on('channel_points_update', (data) => {
+    const login = data.channel_login;
+    const balance = data.balance || 0;
+    const claimed = data.claimed_amount || 0;
+    if (!state.sessionPoints[login]) {
+        state.sessionPoints[login] = { balance: 0, claimed: 0 };
+    }
+    state.sessionPoints[login].balance = balance;
+    state.sessionPoints[login].claimed += claimed;
+    updateChannelPointsDisplay(login, claimed);
+    renderPointsTracker();
 });
 
 socket.on('status_update', (data) => {
@@ -204,40 +217,11 @@ socket.on('channels_batch_update', (data) => {
 
 socket.on('channel_watching', (data) => {
     setWatchingChannel(data.id);
-    if (data.login) {
-        fetchChannelPoints(data.login);
-        startPointsAutoRefresh(data.login);
-    }
+    if (data.login) updateChannelPointsDisplay(data.login, null);
 });
-
-let _pointsRefreshInterval = null;
-
-async function fetchChannelPoints(login) {
-    try {
-        const resp = await fetch(`/api/channel-points/${encodeURIComponent(login)}`);
-        if (!resp.ok) return;
-        const data = await resp.json();
-        document.getElementById('channel-points-channel').textContent = data.channel;
-        document.getElementById('channel-points-balance').textContent = (data.balance || 0).toLocaleString() + ' pts';
-        channelPointsTracker[data.channel] = { balance: data.balance || 0, lastClaimed: channelPointsTracker[data.channel]?.lastClaimed || null };
-        renderPointsTracker();
-    } catch {}
-}
-
-function startPointsAutoRefresh(login) {
-    if (_pointsRefreshInterval) clearInterval(_pointsRefreshInterval);
-    _pointsRefreshInterval = setInterval(() => fetchChannelPoints(login), 5 * 60 * 1000); // every 5 min
-}
-
-function stopPointsAutoRefresh() {
-    if (_pointsRefreshInterval) { clearInterval(_pointsRefreshInterval); _pointsRefreshInterval = null; }
-}
 
 socket.on('channel_watching_clear', () => {
     clearWatchingChannel();
-    stopPointsAutoRefresh();
-    document.getElementById('channel-points-channel').textContent = '—';
-    document.getElementById('channel-points-balance').textContent = 'not watching';
 });
 
 socket.on('drop_progress', (data) => {
@@ -291,49 +275,6 @@ socket.on('settings_updated', (data) => {
     updateSettingsUI(data);
 });
 
-// channel points tracker: { login -> { balance, lastClaimed } }
-const channelPointsTracker = {};
-
-socket.on('channel_points_update', (data) => {
-    const channelEl = document.getElementById('channel-points-channel');
-    const balanceEl = document.getElementById('channel-points-balance');
-    const claimedEl = document.getElementById('channel-points-claimed');
-    if (!channelEl) return;
-    channelEl.textContent = data.channel_login;
-    balanceEl.textContent = data.balance.toLocaleString() + ' pts';
-    // Save to tracker
-    channelPointsTracker[data.channel_login] = {
-        balance: data.balance,
-        lastClaimed: data.claimed_amount > 0 ? Date.now() : (channelPointsTracker[data.channel_login]?.lastClaimed || null)
-    };
-    renderPointsTracker();
-    if (data.claimed_amount > 0) {
-        claimedEl.textContent = `+${data.claimed_amount} bonus claimed!`;
-        claimedEl.style.opacity = '1';
-        setTimeout(() => { claimedEl.style.opacity = '0'; }, 3000);
-    }
-});
-
-function renderPointsTracker() {
-    let el = document.getElementById('points-tracker-list');
-    if (!el) return;
-    el.innerHTML = '';
-    for (const [login, info] of Object.entries(channelPointsTracker)) {
-        const row = document.createElement('div');
-        row.style.cssText = 'display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(128,128,128,0.15);font-size:0.9rem;';
-        const nameEl = document.createElement('span');
-        nameEl.textContent = login;
-        nameEl.style.fontWeight = '500';
-        const balEl = document.createElement('span');
-        balEl.textContent = (info.balance || 0).toLocaleString() + ' pts';
-        row.appendChild(nameEl);
-        row.appendChild(balEl);
-        el.appendChild(row);
-    }
-    document.getElementById('points-tracker-section').style.display =
-        Object.keys(channelPointsTracker).length ? '' : 'none';
-}
-
 socket.on('games_available', (data) => {
     state.availableGames = data.games;
 });
@@ -379,6 +320,52 @@ socket.on('wanted_items_update', (data) => {
 });
 
 // ==================== UI Update Functions ====================
+
+function updateChannelPointsDisplay(login, claimedAmount) {
+    const channelEl = document.getElementById('channel-points-channel');
+    const balanceEl = document.getElementById('channel-points-balance');
+    const claimedEl = document.getElementById('channel-points-claimed');
+    if (!channelEl || !balanceEl) return;
+
+    const pts = state.sessionPoints[login];
+    channelEl.textContent = login;
+    balanceEl.textContent = pts ? `${pts.balance.toLocaleString()} pts` : '0 pts';
+
+    if (claimedAmount && claimedEl) {
+        claimedEl.textContent = `+${claimedAmount.toLocaleString()} pts`;
+        claimedEl.style.opacity = '1';
+        setTimeout(() => { claimedEl.style.opacity = '0'; }, 3000);
+    }
+}
+
+function renderPointsTracker() {
+    const section = document.getElementById('points-tracker-section');
+    const list = document.getElementById('points-tracker-list');
+    if (!section || !list) return;
+
+    const entries = Object.entries(state.sessionPoints);
+    if (entries.length === 0) {
+        section.style.display = 'none';
+        return;
+    }
+
+    section.style.display = 'block';
+    list.replaceChildren();
+    entries
+        .sort((a, b) => b[1].balance - a[1].balance)
+        .forEach(([login, data]) => {
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex;justify-content:space-between;padding:2px 0;font-size:0.85rem;';
+            const nameEl = document.createElement('span');
+            nameEl.textContent = login;
+            nameEl.style.color = 'var(--accent-color,#9147ff)';
+            const ptsEl = document.createElement('span');
+            ptsEl.textContent = `${data.balance.toLocaleString()} pts`;
+            row.appendChild(nameEl);
+            row.appendChild(ptsEl);
+            list.appendChild(row);
+        });
+}
 
 function updateStatus(status) {
     document.getElementById('status-text').textContent = status;
@@ -572,8 +559,6 @@ function updateDropProgress(data) {
 
     document.getElementById('no-drop-message').style.display = 'none';
     document.getElementById('drop-info').style.display = 'block';
-    const skipBtn = document.getElementById('skip-game-btn');
-    if (skipBtn) skipBtn.style.display = 'block';
 
     document.getElementById('drop-name').textContent = data.drop_name;
 
@@ -639,8 +624,6 @@ function clearDropProgress() {
 
     document.getElementById('no-drop-message').style.display = 'block';
     document.getElementById('drop-info').style.display = 'none';
-    const skipBtn = document.getElementById('skip-game-btn');
-    if (skipBtn) skipBtn.style.display = 'none';
 }
 
 function addCampaign(campaignData) {
@@ -670,11 +653,9 @@ function getInventoryFilters() {
     // Get filter state from UI checkboxes and selected games array
     return {
         show_active: document.getElementById('filter-active')?.checked || false,
-        show_linked: document.getElementById('filter-linked')?.checked || false,
         show_not_linked: document.getElementById('filter-not-linked')?.checked || false,
         show_upcoming: document.getElementById('filter-upcoming')?.checked || false,
         show_expired: document.getElementById('filter-expired')?.checked || false,
-        show_sub_drops: document.getElementById('filter-sub-drops')?.checked || false,
         show_finished: document.getElementById('filter-finished')?.checked || false,
         game_name_search: [...selectedInventoryGames],  // Array of selected game names
         // Benefit type filters (default to true if checkbox doesn't exist)
@@ -690,27 +671,38 @@ function campaignMatchesFilters(campaign, filters) {
     // Calculate "finished" status: all drops claimed
     const isFinished = campaign.total_drops > 0 && campaign.claimed_drops === campaign.total_drops;
 
-    const hasGameFilter = filters.game_name_search && filters.game_name_search.length > 0;
-
-    // Exclusion filters: always hide these types unless checkbox is ON
-    const isSubDrop = campaign.drops && campaign.drops.length > 0 &&
-        campaign.drops.every(d => d.required_minutes === 0);
-    if (!filters.show_sub_drops && isSubDrop) return false;
+    // Always hide finished campaigns unless explicitly shown (fix #52)
     if (!filters.show_finished && isFinished) return false;
 
-    // Linked/Not Linked: AND filters (narrow down what's shown)
-    if (filters.show_linked && !campaign.linked) return false;
-    if (filters.show_not_linked && campaign.linked) return false;
+    // Always hide not-linked campaigns unless explicitly shown (fix #51)
+    if (!filters.show_not_linked && !campaign.linked) return false;
 
-    // Status filters: OR logic — if any status filter is on, show only matching
-    const hasStatusFilters = filters.show_active || filters.show_upcoming || filters.show_expired;
+    // Check if any filter is enabled
+    const hasGameFilter = filters.game_name_search && filters.game_name_search.length > 0;
+    const anyFilterEnabled = filters.show_active || filters.show_not_linked ||
+        filters.show_upcoming || filters.show_expired ||
+        filters.show_finished || hasGameFilter;
 
-    if (hasStatusFilters) {
-        let statusMatch = false;
-        if (filters.show_active && campaign.active) statusMatch = true;
-        if (filters.show_upcoming && campaign.upcoming) statusMatch = true;
-        if (filters.show_expired && campaign.expired) statusMatch = true;
-        if (!statusMatch) return false;
+    // If no filters enabled, show all remaining campaigns
+    if (!anyFilterEnabled) {
+        return true;
+    }
+
+    // Check status filters (OR logic - campaign matches if ANY checked filter applies)
+    let statusMatch = false;
+
+    if (filters.show_active && campaign.active) statusMatch = true;
+    if (filters.show_not_linked && !campaign.linked) statusMatch = true;
+    if (filters.show_upcoming && campaign.upcoming) statusMatch = true;
+    if (filters.show_expired && campaign.expired) statusMatch = true;
+    if (filters.show_finished && isFinished) statusMatch = true;
+
+    // If status filters are enabled but campaign doesn't match any, filter it out
+    const hasStatusFilters = filters.show_active || filters.show_not_linked ||
+        filters.show_upcoming || filters.show_expired ||
+        filters.show_finished;
+    if (hasStatusFilters && !statusMatch) {
+        return false;
     }
 
     // Check game name filter (AND logic with status filters, OR logic among selected games)
@@ -761,8 +753,6 @@ function onInventoryFilterChange() {
 function clearInventoryFilters() {
     // Uncheck all filter checkboxes
     document.getElementById('filter-active').checked = false;
-    document.getElementById('filter-linked').checked = false;
-    if (document.getElementById('filter-sub-drops')) document.getElementById('filter-sub-drops').checked = false;
     document.getElementById('filter-not-linked').checked = false;
     document.getElementById('filter-upcoming').checked = false;
     document.getElementById('filter-expired').checked = false;
@@ -1174,8 +1164,6 @@ function updateSettingsUI(settings) {
     // Restore inventory filters from settings
     if (settings.inventory_filters) {
         document.getElementById('filter-active').checked = settings.inventory_filters.show_active || false;
-        document.getElementById('filter-linked').checked = settings.inventory_filters.show_linked || false;
-        if (document.getElementById('filter-sub-drops')) document.getElementById('filter-sub-drops').checked = settings.inventory_filters.show_sub_drops || false;
         document.getElementById('filter-not-linked').checked = settings.inventory_filters.show_not_linked || false;
         document.getElementById('filter-upcoming').checked = settings.inventory_filters.show_upcoming || false;
         document.getElementById('filter-expired').checked = settings.inventory_filters.show_expired || false;
@@ -1202,19 +1190,6 @@ function updateSettingsUI(settings) {
         if (document.getElementById('mining-benefit-unknown')) document.getElementById('mining-benefit-unknown').checked = settings.mining_benefits.UNKNOWN;
     }
 
-
-    // Channel points toggle
-    const cpEl = document.getElementById('claim-channel-points');
-    if (cpEl) cpEl.checked = settings.claim_channel_points !== false;
-
-    // Discord webhooks
-    const dwDrops = document.getElementById('discord-webhook-drops');
-    if (dwDrops) dwDrops.value = settings.discord_webhook_drops || '';
-    const dwPoints = document.getElementById('discord-webhook-points');
-    if (dwPoints) dwPoints.value = settings.discord_webhook_points || '';
-
-    // Idle channels list
-    renderIdleChannels(settings.idle_channels || []);
 
     // Update games to watch lists
     renderGamesToWatch();
@@ -1267,30 +1242,6 @@ socket.on('games_available', (data) => {
     availableGames = new Set(data.games || []);
     renderGamesToWatch();
 });
-
-function renderIdleChannels(channels) {
-    state.settings.idle_channels = channels;
-    const container = document.getElementById('idle-channels-list');
-    if (!container) return;
-    container.innerHTML = '';
-    channels.forEach((ch, idx) => {
-        const item = document.createElement('div');
-        item.className = 'sortable-item';
-        const label = document.createElement('span');
-        label.textContent = ch;
-        const btn = document.createElement('button');
-        btn.className = 'remove-btn';
-        btn.textContent = '✕';
-        btn.addEventListener('click', () => {
-            state.settings.idle_channels.splice(idx, 1);
-            renderIdleChannels([...state.settings.idle_channels]);
-            saveSettings();
-        });
-        item.appendChild(label);
-        item.appendChild(btn);
-        container.appendChild(item);
-    });
-}
 
 function renderGamesToWatch() {
     const selectedGames = state.settings.games_to_watch || [];
@@ -1482,18 +1433,6 @@ function deselectAllGames() {
     saveSettings();
 }
 
-function selectLinkedGames() {
-    const linkedGames = [...new Set(
-        Object.values(state.campaigns)
-            .filter(c => c.linked)
-            .map(c => c.game_name)
-    )].sort();
-    state.settings.games_to_watch = linkedGames;
-    renderGamesToWatch();
-    renderChannels();
-    saveSettings();
-}
-
 function addGameFromSearch() {
     const searchInput = document.getElementById('games-filter');
     const gameName = searchInput.value.trim();
@@ -1663,11 +1602,7 @@ async function saveSettings() {
             "BADGE": document.getElementById('mining-benefit-badge')?.checked,
             "EMOTE": document.getElementById('mining-benefit-emote')?.checked,
             "UNKNOWN": document.getElementById('mining-benefit-unknown')?.checked
-        },
-        claim_channel_points: document.getElementById('claim-channel-points')?.checked ?? true,
-        idle_channels: state.settings.idle_channels || [],
-        discord_webhook_drops: document.getElementById('discord-webhook-drops')?.value || '',
-        discord_webhook_points: document.getElementById('discord-webhook-points')?.value || ''
+        }
     };
 
     try {
@@ -1744,8 +1679,6 @@ function applyTranslations(t) {
     if (tabButtons.inventory && t.gui?.tabs) tabButtons.inventory.textContent = t.gui.tabs.inventory;
     if (tabButtons.settings && t.gui?.tabs) tabButtons.settings.textContent = t.gui.tabs.settings;
     if (tabButtons.help && t.gui?.tabs) tabButtons.help.textContent = t.gui.tabs.help;
-    const sysTabBtn = document.getElementById('tab-btn-system');
-    if (sysTabBtn && t.gui?.tabs?.system) sysTabBtn.textContent = t.gui.tabs.system;
 
     // Update Main tab - Login section
     const mainTab = document.getElementById('main-tab');
@@ -1888,45 +1821,9 @@ function applyTranslations(t) {
         const reloadBtn = document.getElementById('reload-btn');
         if (reloadBtn) reloadBtn.textContent = t.gui.settings.reload_campaigns;
 
-        const selectLinkedBtn = document.getElementById('select-linked-btn');
-        if (selectLinkedBtn && t.gui.settings.select_linked) selectLinkedBtn.textContent = t.gui.settings.select_linked;
-
-        // Password section
-        const s = t.gui.settings;
-        const el = (id) => document.getElementById(id);
-        if (s.password_header) { const e = el('settings-password-header'); if (e) e.textContent = s.password_header; }
-        if (s.password_current_label) { const e = el('pw-current-label'); if (e) e.textContent = s.password_current_label; }
-        if (s.password_current_placeholder) { const e = el('pw-current'); if (e) e.placeholder = s.password_current_placeholder; }
-        if (s.password_new_label) { const e = el('pw-new-label'); if (e) e.textContent = s.password_new_label; }
-        if (s.password_new_placeholder) { const e = el('pw-new'); if (e) e.placeholder = s.password_new_placeholder; }
-        if (s.password_confirm_label) { const e = el('pw-confirm-label'); if (e) e.textContent = s.password_confirm_label; }
-        if (s.password_confirm_placeholder) { const e = el('pw-new2'); if (e) e.placeholder = s.password_confirm_placeholder; }
-        if (s.password_save) { const e = el('pw-save-btn'); if (e) e.textContent = s.password_save; }
-        if (s.password_disable) { const e = el('pw-disable-btn'); if (e) e.textContent = s.password_disable; }
-
         // Re-render games to watch with translated empty messages
         renderGamesToWatch();
     }
-
-    // Update System tab
-    const sys = t.gui?.system;
-    if (sys) {
-        const el = (id) => document.getElementById(id);
-        if (sys.header) { const e = el('system-header'); if (e) e.textContent = sys.header; }
-        if (sys.miner_header) { const e = el('system-miner-header'); if (e) e.textContent = sys.miner_header; }
-        if (sys.miner_desc) { const e = el('system-miner-desc'); if (e) e.textContent = sys.miner_desc; }
-        if (sys.reload_btn) { const e = el('system-reload-btn'); if (e) e.textContent = sys.reload_btn; }
-        if (sys.restart_header) { const e = el('system-restart-header'); if (e) e.textContent = sys.restart_header; }
-        if (sys.restart_desc) { const e = el('system-restart-desc'); if (e) e.textContent = sys.restart_desc; }
-        if (sys.restart_btn) { const e = el('system-restart-btn'); if (e) e.textContent = sys.restart_btn; }
-        if (sys.session_header) { const e = el('system-session-header'); if (e) e.textContent = sys.session_header; }
-        if (sys.session_desc) { const e = el('system-session-desc'); if (e) e.textContent = sys.session_desc; }
-        if (sys.logout_btn) { const e = el('system-logout-btn'); if (e) e.textContent = sys.logout_btn; }
-    }
-
-    // Inventory filter labels
-    const inv = t.gui?.inventory;
-    if (inv?.filter_linked) { const e = document.getElementById('filter-linked-label'); if (e) e.textContent = inv.filter_linked; }
 
     // Update Help tab
     const helpTab = document.getElementById('help-tab');
@@ -2119,7 +2016,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.tab-button').forEach(button => {
         button.addEventListener('click', () => {
             switchTab(button.dataset.tab);
-            if (button.dataset.tab === 'system') loadAccounts();
         });
     });
 
@@ -2141,53 +2037,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('language').addEventListener('change', saveSettings);
     document.getElementById('connection-quality').addEventListener('change', saveSettings);
     document.getElementById('minimum-refresh-interval').addEventListener('change', saveSettings);
-
-    // Channel points toggle
-    document.getElementById('claim-channel-points')?.addEventListener('change', saveSettings);
-
-    // Discord webhook inputs
-    document.getElementById('discord-webhook-drops')?.addEventListener('change', saveSettings);
-    document.getElementById('discord-webhook-points')?.addEventListener('change', saveSettings);
-
-    // Idle watch switch button
-    document.getElementById('idle-switch-btn')?.addEventListener('click', async () => {
-        const btn = document.getElementById('idle-switch-btn');
-        btn.disabled = true;
-        btn.textContent = '⏳';
-        try {
-            const resp = await fetch('/api/idle-watch/switch', { method: 'POST' });
-            const data = await resp.json();
-            if (resp.ok) {
-                btn.textContent = `✓ ${data.switched_to}`;
-                setTimeout(() => { btn.textContent = '⏭ Switch'; }, 2000);
-                fetchChannelPoints(data.switched_to);
-            } else {
-                btn.textContent = data.detail || 'Error';
-                setTimeout(() => { btn.textContent = '⏭ Switch'; }, 2000);
-            }
-        } catch {
-            btn.textContent = 'Error';
-            setTimeout(() => { btn.textContent = '⏭ Switch'; }, 2000);
-        }
-        btn.disabled = false;
-    });
-
-    // Idle channels add button
-    document.getElementById('idle-channel-add-btn')?.addEventListener('click', () => {
-        const input = document.getElementById('idle-channel-input');
-        const val = input.value.trim().toLowerCase();
-        if (!val) return;
-        const channels = state.settings.idle_channels || [];
-        if (!channels.includes(val)) {
-            channels.push(val);
-            renderIdleChannels([...channels]);
-            saveSettings();
-        }
-        input.value = '';
-    });
-    document.getElementById('idle-channel-input')?.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') document.getElementById('idle-channel-add-btn').click();
-    });
     // Proxy uses a manual "Set Proxy" button instead of auto-save
     document.getElementById('set-proxy-btn').addEventListener('click', () => {
         const proxyInput = document.getElementById('proxy-url');
@@ -2202,196 +2051,18 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('verify-proxy-btn').addEventListener('click', verifyProxy);
     document.getElementById('reload-btn').addEventListener('click', reloadCampaigns);
 
-    // System tab
-    document.getElementById('system-reload-btn').addEventListener('click', async () => {
-        const status = document.getElementById('system-status');
-        const sys = state.translations.gui?.system || {};
-        try {
-            await fetch('/api/reload', { method: 'POST' });
-            status.textContent = sys.reload_ok || 'Campaigns reload triggered.';
-            status.className = 'system-status success';
-        } catch (e) {
-            status.textContent = 'Error: ' + e.message;
-            status.className = 'system-status error';
-        }
-    });
-
-    document.getElementById('system-restart-btn').addEventListener('click', async () => {
-        const status = document.getElementById('system-status');
-        const sys = state.translations.gui?.system || {};
-        if (!confirm(sys.restart_confirm || 'Restart the miner? PM2 will restart it automatically.')) return;
-        try {
-            await fetch('/api/restart', { method: 'POST' });
-            status.textContent = sys.restart_ok || 'Miner restarting via PM2...';
-            status.className = 'system-status success';
-        } catch (e) {
-            status.textContent = 'Error: ' + e.message;
-            status.className = 'system-status error';
-        }
-    });
-
-    document.getElementById('system-logout-btn').addEventListener('click', () => {
-        window.location.href = '/__auth_logout';
-    });
-
-    // Account management
-    async function loadAccounts() {
-        try {
-            const r = await fetch('/api/accounts');
-            const d = await r.json();
-            const list = document.getElementById('accounts-list');
-            if (!list) return;
-            const hint = await fetch('/api/accounts/migration-hint').then(r => r.json()).catch(() => null);
-            if (hint?.has_legacy && (!d.accounts || d.accounts.length === 0)) {
-                const status = document.getElementById('accounts-status');
-                if (status) { status.textContent = 'Tipp: Du hast einen bestehenden Account. Füge ihn mit einem Label hinzu um Multi-Account zu aktivieren.'; status.style.display = 'block'; status.style.color = '#adadb8'; }
-            }
-            if (!d.accounts || d.accounts.length === 0) {
-                list.replaceChildren(makeElement('p', { style: 'font-size:.82rem;color:#adadb8;margin:0' }, 'Noch keine Accounts. Füge unten einen hinzu.'));
-                return;
-            }
-            list.replaceChildren(...d.accounts.map(acc => {
-                const card = document.createElement('div');
-                card.className = 'account-item' + (acc.active ? ' active' : '');
-                const label = document.createElement('span');
-                label.className = 'account-label';
-                label.textContent = acc.label + (acc.active ? ' ✓ (aktiv)' : '') + (acc.has_cookies ? '' : ' ⚠ (kein Login)');
-                card.appendChild(label);
-                if (!acc.active) {
-                    const switchBtn = document.createElement('button');
-                    switchBtn.className = 'account-action-btn';
-                    switchBtn.textContent = 'Switch';
-                    switchBtn.addEventListener('click', () => switchToAccount(acc.label));
-                    const deleteBtn = document.createElement('button');
-                    deleteBtn.className = 'account-action-btn danger';
-                    deleteBtn.textContent = '✕';
-                    deleteBtn.title = 'Account löschen';
-                    deleteBtn.addEventListener('click', () => deleteAccount(acc.label));
-                    card.appendChild(switchBtn);
-                    card.appendChild(deleteBtn);
-                }
-                return card;
-            }));
-        } catch (e) {}
-    }
-
-    async function switchToAccount(label) {
-        const status = document.getElementById('accounts-status');
-        if (status) { status.textContent = `Wechsle zu "${label}"… Miner startet neu (~5s)`; status.style.display = 'block'; status.style.color = '#9147ff'; }
-        try { await fetch('/api/accounts/switch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ label }) }); } catch (e) {}
-    }
-
-    async function deleteAccount(label) {
-        if (!confirm(`Account "${label}" löschen? Cookies und Settings werden gelöscht.`)) return;
-        try {
-            const r = await fetch('/api/accounts/' + encodeURIComponent(label), { method: 'DELETE' });
-            const d = await r.json();
-            if (r.ok) loadAccounts();
-            else { const s = document.getElementById('accounts-status'); if (s) { s.textContent = d.detail || 'Fehler'; s.style.display = 'block'; s.style.color = '#eb4a4a'; } }
-        } catch (e) {}
-    }
-
-    loadAccounts();
-
-    document.getElementById('add-account-btn')?.addEventListener('click', async () => {
-        const label = document.getElementById('new-account-label')?.value?.trim();
-        const status = document.getElementById('accounts-status');
-        if (!label) { if (status) { status.textContent = 'Bitte zuerst ein Label eingeben.'; status.style.display = 'block'; status.style.color = '#eb4a4a'; } return; }
-        try {
-            const r = await fetch('/api/accounts/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ label }) });
-            const d = await r.json();
-            if (r.ok) {
-                if (status) { status.textContent = `Account "${label}" erstellt. Miner startet neu für Login…`; status.style.display = 'block'; status.style.color = '#9147ff'; }
-                document.getElementById('new-account-label').value = '';
-            } else {
-                if (status) { status.textContent = d.detail || 'Fehler'; status.style.display = 'block'; status.style.color = '#eb4a4a'; }
-            }
-        } catch (e) {}
-    });
-
-    // Password management
-    async function loadPwStatus() {
-        try {
-            const r = await fetch('/api/auth/status');
-            const d = await r.json();
-            const badge = document.getElementById('pw-status-badge');
-            const s = state.translations.gui?.settings || {};
-            if (badge) badge.textContent = d.password_set
-                ? (s.password_status_active || '🔒 Login active — Password set')
-                : (s.password_status_inactive || '🔓 No login — publicly accessible');
-        } catch {}
-    }
-    loadPwStatus();
-
-    function showPwResult(msg, ok) {
-        const el = document.getElementById('pw-result');
-        if (!el) return;
-        el.textContent = msg;
-        el.style.display = 'block';
-        el.style.color = ok ? '#4caf50' : '#eb4a4a';
-        setTimeout(() => { el.style.display = 'none'; }, 4000);
-    }
-
-    document.getElementById('pw-save-btn').addEventListener('click', async () => {
-        const cur = document.getElementById('pw-current').value;
-        const nw = document.getElementById('pw-new').value;
-        const nw2 = document.getElementById('pw-new2').value;
-        const s = state.translations.gui?.settings || {};
-        if (nw !== nw2) { showPwResult(s.password_mismatch || "Passwords don't match.", false); return; }
-        try {
-            const r = await fetch('/api/auth/change-password', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ current_password: cur, new_password: nw })
-            });
-            const d = await r.json();
-            if (r.ok) {
-                showPwResult(nw ? (s.password_saved || 'Password saved.') : (s.password_disabled_msg || 'Login disabled.'), true);
-                document.getElementById('pw-current').value = '';
-                document.getElementById('pw-new').value = '';
-                document.getElementById('pw-new2').value = '';
-                loadPwStatus();
-                if (!nw) setTimeout(() => window.location.reload(), 1500);
-            } else {
-                showPwResult(d.detail || 'Fehler', false);
-            }
-        } catch (e) { showPwResult('Fehler: ' + e.message, false); }
-    });
-
-    document.getElementById('pw-disable-btn').addEventListener('click', async () => {
-        if (!confirm('Login wirklich deaktivieren? Jeder mit der URL kann dann die App öffnen.')) return;
-        const cur = document.getElementById('pw-current').value;
-        try {
-            const r = await fetch('/api/auth/disable-password', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ current_password: cur })
-            });
-            const d = await r.json();
-            if (r.ok) {
-                showPwResult('Login deaktiviert.', true);
-                loadPwStatus();
-                setTimeout(() => window.location.reload(), 1500);
-            } else {
-                showPwResult(d.detail || 'Fehler', false);
-            }
-        } catch (e) { showPwResult('Fehler: ' + e.message, false); }
-    });
 
     // Games to watch management
     document.getElementById('select-all-btn').addEventListener('click', selectAllGames);
     document.getElementById('deselect-all-btn').addEventListener('click', deselectAllGames);
-    document.getElementById('select-linked-btn').addEventListener('click', selectLinkedGames);
     document.getElementById('add-game-btn').addEventListener('click', addGameFromSearch);
     document.getElementById('games-filter').addEventListener('input', renderGamesToWatch);
 
     // Inventory filters
     document.getElementById('filter-active').addEventListener('change', onInventoryFilterChange);
-    document.getElementById('filter-linked').addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-not-linked').addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-upcoming').addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-expired').addEventListener('change', onInventoryFilterChange);
-    document.getElementById('filter-sub-drops')?.addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-finished').addEventListener('change', onInventoryFilterChange);
     // Benefit type filters
     document.getElementById('filter-benefit-item').addEventListener('change', onInventoryFilterChange);
@@ -2424,22 +2095,6 @@ document.addEventListener('DOMContentLoaded', () => {
             closeGameDropdown();
         }
     });
-
-    // Skip game button
-    const skipGameBtn = document.getElementById('skip-game-btn');
-    if (skipGameBtn) {
-        skipGameBtn.addEventListener('click', async () => {
-            skipGameBtn.disabled = true;
-            skipGameBtn.textContent = '⏳ Switching...';
-            try {
-                await fetch('/api/skip-game', { method: 'POST' });
-            } catch (e) {}
-            setTimeout(() => {
-                skipGameBtn.disabled = false;
-                skipGameBtn.textContent = '⏭ Skip Game';
-            }, 3000);
-        });
-    }
 
     // Manual mode controls
     const exitManualBtn = document.getElementById('exit-manual-btn');
