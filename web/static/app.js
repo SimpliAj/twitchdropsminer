@@ -697,26 +697,30 @@ function campaignMatchesFilters(campaign, filters) {
         campaign.drops.every(d => d.required_minutes === 0);
     if (!filters.show_sub_drops && isSubDrop) return false;
 
-    // Linked filter: AND filter, independent of status filters
+    // Check if any filter is enabled (original OR logic)
+    const anyFilterEnabled = filters.show_active || filters.show_not_linked ||
+        filters.show_upcoming || filters.show_expired ||
+        filters.show_finished || filters.show_linked || hasGameFilter;
+
+    if (!anyFilterEnabled) {
+        return true;
+    }
+
+    // Linked/Not Linked: AND filters (independent of status)
     if (filters.show_linked && !campaign.linked) return false;
 
-    // Status + not-linked + finished: OR logic — campaign shown if it matches ANY checked filter
-    const hasStatusFilters = filters.show_active || filters.show_upcoming || filters.show_expired ||
-        filters.show_not_linked || filters.show_finished;
+    // Status filters: OR logic — shown if ANY checked filter matches
+    const hasStatusFilters = filters.show_active || filters.show_not_linked ||
+        filters.show_upcoming || filters.show_expired || filters.show_finished;
 
     if (hasStatusFilters) {
         let statusMatch = false;
         if (filters.show_active && campaign.active) statusMatch = true;
+        if (filters.show_not_linked && !campaign.linked) statusMatch = true;
         if (filters.show_upcoming && campaign.upcoming) statusMatch = true;
         if (filters.show_expired && campaign.expired) statusMatch = true;
-        if (filters.show_not_linked && !campaign.linked) statusMatch = true;
         if (filters.show_finished && isFinished) statusMatch = true;
         if (!statusMatch) return false;
-    }
-
-    // If no filters at all → show all remaining
-    if (!hasStatusFilters && !filters.show_linked && !hasGameFilter) {
-        return true;
     }
 
     // Check game name filter (AND logic with status filters, OR logic among selected games)
