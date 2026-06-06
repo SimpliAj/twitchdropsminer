@@ -1203,6 +1203,9 @@ function updateSettingsUI(settings) {
     const webhookPointsEl = document.getElementById('discord-webhook-points');
     if (webhookPointsEl) webhookPointsEl.value = settings.discord_webhook_points || '';
 
+    const claimCpEl = document.getElementById('claim-channel-points');
+    if (claimCpEl) claimCpEl.checked = settings.claim_channel_points !== false;
+
     // Re-render inventory to apply filters
     renderInventory();
 }
@@ -1611,6 +1614,7 @@ async function saveSettings() {
         },
         discord_webhook_drops: document.getElementById('discord-webhook-drops')?.value || '',
         discord_webhook_points: document.getElementById('discord-webhook-points')?.value || '',
+        claim_channel_points: document.getElementById('claim-channel-points')?.checked ?? true,
     };
 
     try {
@@ -2086,6 +2090,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('mining-benefit-unknown').addEventListener('change', saveSettings);
     document.getElementById('discord-webhook-drops')?.addEventListener('blur', saveSettings);
     document.getElementById('discord-webhook-points')?.addEventListener('blur', saveSettings);
+    document.getElementById('claim-channel-points')?.addEventListener('change', saveSettings);
 
     // Inventory game search dropdown
     const gameSearchInput = document.getElementById('inventory-game-search');
