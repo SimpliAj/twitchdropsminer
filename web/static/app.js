@@ -674,6 +674,7 @@ function getInventoryFilters() {
         show_not_linked: document.getElementById('filter-not-linked')?.checked || false,
         show_upcoming: document.getElementById('filter-upcoming')?.checked || false,
         show_expired: document.getElementById('filter-expired')?.checked || false,
+        show_sub_drops: document.getElementById('filter-sub-drops')?.checked || false,
         show_finished: document.getElementById('filter-finished')?.checked || false,
         game_name_search: [...selectedInventoryGames],  // Array of selected game names
         // Benefit type filters (default to true if checkbox doesn't exist)
@@ -690,6 +691,11 @@ function campaignMatchesFilters(campaign, filters) {
     const isFinished = campaign.total_drops > 0 && campaign.claimed_drops === campaign.total_drops;
 
     const hasGameFilter = filters.game_name_search && filters.game_name_search.length > 0;
+
+    // Hide sub drops: campaigns where all drops have 0-minute timers
+    const isSubDrop = campaign.drops && campaign.drops.length > 0 &&
+        campaign.drops.every(d => d.required_minutes === 0);
+    if (!filters.show_sub_drops && isSubDrop) return false;
 
     // Hide finished: if show_finished is false AND campaign is finished → hide it
     if (!filters.show_finished && isFinished) return false;
@@ -765,6 +771,7 @@ function clearInventoryFilters() {
     // Uncheck all filter checkboxes
     document.getElementById('filter-active').checked = false;
     document.getElementById('filter-linked').checked = false;
+    if (document.getElementById('filter-sub-drops')) document.getElementById('filter-sub-drops').checked = false;
     document.getElementById('filter-not-linked').checked = false;
     document.getElementById('filter-upcoming').checked = false;
     document.getElementById('filter-expired').checked = false;
@@ -1177,6 +1184,7 @@ function updateSettingsUI(settings) {
     if (settings.inventory_filters) {
         document.getElementById('filter-active').checked = settings.inventory_filters.show_active || false;
         document.getElementById('filter-linked').checked = settings.inventory_filters.show_linked || false;
+        if (document.getElementById('filter-sub-drops')) document.getElementById('filter-sub-drops').checked = settings.inventory_filters.show_sub_drops || false;
         document.getElementById('filter-not-linked').checked = settings.inventory_filters.show_not_linked || false;
         document.getElementById('filter-upcoming').checked = settings.inventory_filters.show_upcoming || false;
         document.getElementById('filter-expired').checked = settings.inventory_filters.show_expired || false;
@@ -2392,6 +2400,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('filter-not-linked').addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-upcoming').addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-expired').addEventListener('change', onInventoryFilterChange);
+    document.getElementById('filter-sub-drops')?.addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-finished').addEventListener('change', onInventoryFilterChange);
     // Benefit type filters
     document.getElementById('filter-benefit-item').addEventListener('change', onInventoryFilterChange);
