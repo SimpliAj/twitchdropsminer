@@ -16,6 +16,7 @@ class StreamSelector:
         wanted_games = []
         games_to_watch = settings.games_to_watch
         mining_benefits = settings.mining_benefits
+        blacklist = [kw.lower() for kw in getattr(settings, "drop_name_blacklist", []) if kw.strip()]
         next_hour = datetime.now(timezone.utc) + timedelta(hours=1)
 
         for game_name in games_to_watch:
@@ -36,7 +37,11 @@ class StreamSelector:
 
                 wanted_drops = []
                 for drop in campaign.drops:
-                    if drop.is_claimed:
+                    if drop.is_claimed or drop.required_minutes <= 0:
+                        continue
+                    if not drop._base_can_earn():
+                        continue
+                    if blacklist and any(kw in drop.name.lower() for kw in blacklist):
                         continue
 
                     filtered_benefits = drop.get_wanted_unclaimed_benefits(mining_benefits)

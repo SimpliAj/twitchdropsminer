@@ -1172,7 +1172,7 @@ function renderInventory() {
         // Linked/not linked badge
         const linkStatusBadge = campaign.linked
             ? makeElement('span', { class: 'campaign-badge linked', title: 'Account is linked' }, 'LINKED')
-            : makeElement('span', { class: 'campaign-badge not-linked', title: 'Click to link your account' }, 'NOT LINKED', el => {
+            : makeElement('span', { class: 'campaign-badge not-linked', title: 'Account not linked. Click to link on Twitch, then use "Check for Drops" to refresh status.' }, 'NOT LINKED', el => {
                 el.addEventListener('click', () => window.open(campaign.link_url, '_blank'));
             });
 
@@ -1333,6 +1333,8 @@ function updateSettingsUI(settings) {
     if (webhookDropsEl) webhookDropsEl.value = settings.discord_webhook_drops || '';
     const webhookPointsEl = document.getElementById('discord-webhook-points');
     if (webhookPointsEl) webhookPointsEl.value = settings.discord_webhook_points || '';
+    const blacklistEl = document.getElementById('drop-blacklist-input');
+    if (blacklistEl) blacklistEl.value = (settings.drop_name_blacklist || []).join(', ');
 
     const claimCpEl = document.getElementById('claim-channel-points');
     if (claimCpEl) claimCpEl.checked = settings.claim_channel_points !== false;
@@ -1745,6 +1747,8 @@ async function saveSettings() {
         discord_webhook_points: document.getElementById('discord-webhook-points')?.value || '',
         claim_channel_points: document.getElementById('claim-channel-points')?.checked ?? true,
         idle_channels: state.settings.idle_channels || [],
+        drop_name_blacklist: (document.getElementById('drop-blacklist-input')?.value || '')
+            .split(',').map(s => s.trim()).filter(Boolean),
     };
 
     try {
@@ -2238,6 +2242,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('mining-benefit-emote').addEventListener('change', saveSettings);
     document.getElementById('mining-benefit-unknown').addEventListener('change', saveSettings);
     document.getElementById('discord-webhook-drops')?.addEventListener('blur', saveSettings);
+    document.getElementById('drop-blacklist-input')?.addEventListener('change', saveSettings);
     document.getElementById('discord-webhook-points')?.addEventListener('blur', saveSettings);
     document.getElementById('claim-channel-points')?.addEventListener('change', saveSettings);
 
