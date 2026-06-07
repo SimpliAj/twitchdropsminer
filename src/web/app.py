@@ -214,6 +214,7 @@ class SettingsUpdate(BaseModel):
     idle_channels: list[str] | None = None
     discord_webhook_drops: str | None = None
     discord_webhook_points: str | None = None
+    drop_name_blacklist: list[str] | None = None
 
 
 class ProxyVerifyRequest(BaseModel):

@@ -805,37 +805,28 @@ function campaignMatchesFilters(campaign, filters) {
     // Always hide finished campaigns unless explicitly shown (fix #52)
     if (!filters.show_finished && isFinished) return false;
 
-    // Always hide not-linked campaigns unless explicitly shown (fix #51)
-    if (!filters.show_not_linked && !campaign.linked) return false;
+    // Link status: AND filter (applied before status OR group)
+    // Default: hide not-linked unless show_not_linked or show_linked is checked
+    if (!filters.show_not_linked && !filters.show_linked && !campaign.linked) return false;
+    // "Linked" checked → hide not-linked
+    if (filters.show_linked && !filters.show_not_linked && !campaign.linked) return false;
+    // "Not Linked" checked → hide linked
+    if (filters.show_not_linked && !filters.show_linked && campaign.linked) return false;
 
-    // Check if any filter is enabled
+    // Check status filters (OR logic among: active, upcoming, expired, finished)
     const hasGameFilter = filters.game_name_search && filters.game_name_search.length > 0;
-    const anyFilterEnabled = filters.show_active || filters.show_linked || filters.show_not_linked ||
-        filters.show_upcoming || filters.show_expired ||
-        filters.show_finished || hasGameFilter;
+    const hasStatusFilters = filters.show_active || filters.show_upcoming ||
+        filters.show_expired || filters.show_finished || hasGameFilter;
 
-    // If no filters enabled, show all remaining campaigns
-    if (!anyFilterEnabled) {
-        return true;
-    }
+    if (!hasStatusFilters) return true;
 
-    // Check status filters (OR logic - campaign matches if ANY checked filter applies)
     let statusMatch = false;
-
     if (filters.show_active && campaign.active) statusMatch = true;
-    if (filters.show_linked && campaign.linked) statusMatch = true;
-    if (filters.show_not_linked && !campaign.linked) statusMatch = true;
     if (filters.show_upcoming && campaign.upcoming) statusMatch = true;
     if (filters.show_expired && campaign.expired) statusMatch = true;
     if (filters.show_finished && isFinished) statusMatch = true;
 
-    // If status filters are enabled but campaign doesn't match any, filter it out
-    const hasStatusFilters = filters.show_active || filters.show_linked || filters.show_not_linked ||
-        filters.show_upcoming || filters.show_expired ||
-        filters.show_finished;
-    if (hasStatusFilters && !statusMatch) {
-        return false;
-    }
+    if (hasStatusFilters && !hasGameFilter && !statusMatch) return false;
 
     // Check game name filter (AND logic with status filters, OR logic among selected games)
     if (hasGameFilter) {
