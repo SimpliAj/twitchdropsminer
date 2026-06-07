@@ -782,6 +782,7 @@ function getInventoryFilters() {
     // Get filter state from UI checkboxes and selected games array
     return {
         show_active: document.getElementById('filter-active')?.checked || false,
+        show_linked: document.getElementById('filter-linked')?.checked || false,
         show_not_linked: document.getElementById('filter-not-linked')?.checked || false,
         show_upcoming: document.getElementById('filter-upcoming')?.checked || false,
         show_expired: document.getElementById('filter-expired')?.checked || false,
@@ -809,7 +810,7 @@ function campaignMatchesFilters(campaign, filters) {
 
     // Check if any filter is enabled
     const hasGameFilter = filters.game_name_search && filters.game_name_search.length > 0;
-    const anyFilterEnabled = filters.show_active || filters.show_not_linked ||
+    const anyFilterEnabled = filters.show_active || filters.show_linked || filters.show_not_linked ||
         filters.show_upcoming || filters.show_expired ||
         filters.show_finished || hasGameFilter;
 
@@ -822,13 +823,14 @@ function campaignMatchesFilters(campaign, filters) {
     let statusMatch = false;
 
     if (filters.show_active && campaign.active) statusMatch = true;
+    if (filters.show_linked && campaign.linked) statusMatch = true;
     if (filters.show_not_linked && !campaign.linked) statusMatch = true;
     if (filters.show_upcoming && campaign.upcoming) statusMatch = true;
     if (filters.show_expired && campaign.expired) statusMatch = true;
     if (filters.show_finished && isFinished) statusMatch = true;
 
     // If status filters are enabled but campaign doesn't match any, filter it out
-    const hasStatusFilters = filters.show_active || filters.show_not_linked ||
+    const hasStatusFilters = filters.show_active || filters.show_linked || filters.show_not_linked ||
         filters.show_upcoming || filters.show_expired ||
         filters.show_finished;
     if (hasStatusFilters && !statusMatch) {
@@ -883,6 +885,7 @@ function onInventoryFilterChange() {
 function clearInventoryFilters() {
     // Uncheck all filter checkboxes
     document.getElementById('filter-active').checked = false;
+    if (document.getElementById('filter-linked')) document.getElementById('filter-linked').checked = false;
     document.getElementById('filter-not-linked').checked = false;
     document.getElementById('filter-upcoming').checked = false;
     document.getElementById('filter-expired').checked = false;
@@ -2224,6 +2227,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Inventory filters
     document.getElementById('filter-active').addEventListener('change', onInventoryFilterChange);
+    document.getElementById('filter-linked')?.addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-not-linked').addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-upcoming').addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-expired').addEventListener('change', onInventoryFilterChange);
