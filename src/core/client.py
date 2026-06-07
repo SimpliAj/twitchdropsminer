@@ -62,6 +62,7 @@ class Twitch:
         self.inventory: list[DropsCampaign] = []
         self._drops: dict[str, TimedDrop] = {}
         self._campaigns: dict[str, DropsCampaign] = {}
+        self._webhook_sent_drops: set[str] = set()
         self._mnt_triggers: deque[datetime] = deque()
         # Client type and auth
         self._client_type: ClientInfo = ClientType.ANDROID_APP
@@ -276,7 +277,8 @@ class Twitch:
                                 claimed = await drop.claim()
                                 if claimed:
                                     webhook_url = self.settings.discord_webhook_drops
-                                    if webhook_url:
+                                    if webhook_url and drop.id not in self._webhook_sent_drops:
+                                        self._webhook_sent_drops.add(drop.id)
                                         embed: dict = {
                                             "title": "🎁 Drop Claimed!",
                                             "color": 0x9147ff,
