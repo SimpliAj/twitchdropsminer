@@ -53,6 +53,7 @@ default_settings = {
     "idle_channels": [],
     "discord_webhook_drops": "",
     "discord_webhook_points": "",
+    "drop_name_blacklist": [],
 }
 
 
@@ -70,6 +71,7 @@ class Settings:
     idle_channels: list[str]
     discord_webhook_drops: str
     discord_webhook_points: str
+    drop_name_blacklist: list[str]
 
     def __init__(self):
         self.load()

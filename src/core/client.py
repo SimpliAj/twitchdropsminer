@@ -293,6 +293,22 @@ class Twitch:
                                                 webhook_url, {"embeds": [embed]}
                                             )
                                         )
+                                    # Save to drop history
+                                    import datetime as _dt, json as _json
+                                    from src.config import DATA_DIR as _DATA_DIR
+                                    _hist_file = _DATA_DIR / "drops_history.json"
+                                    _entry = {
+                                        "timestamp": _dt.datetime.now(_dt.timezone.utc).isoformat(),
+                                        "game": campaign.game.name,
+                                        "drop": drop.name,
+                                        "reward": drop.rewards_text(),
+                                    }
+                                    try:
+                                        _hist = _json.loads(_hist_file.read_text()) if _hist_file.exists() else []
+                                        _hist.insert(0, _entry)
+                                        _hist_file.write_text(_json.dumps(_hist[:500], indent=2))
+                                    except Exception:
+                                        pass
                 # figure out which games we want based on games_to_watch whitelist
                 self.wanted_games.clear()
                 games_to_watch: list[str] = self.settings.games_to_watch
@@ -408,8 +424,8 @@ class Twitch:
                     # add a list of live channels with drops enabled
                     try:
                         new_channels.update(await self.get_live_streams(game, drops_enabled=True))
-                    except Exception:
-                        pass
+                    except Exception as exc:
+                        logger.warning(f"Failed to fetch channels for {game.name}: {exc} — skipping")
                 # sort them descending by viewers, by priority and by game priority
                 # NOTE: Viewers sort also ensures ONLINE channels are sorted to the top
                 # NOTE: We can drop using the set now, because there's no more channels being added
