@@ -10,7 +10,7 @@
     <link rel="apple-touch-icon" href="/logo.png">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#9147ff">
-    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="/static/styles.css?v=1749343000">
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
 
@@ -30,10 +30,6 @@
             </div>
             <div class="status-bar">
                 <span id="status-text">Initializing...</span>
-                <span id="manual-mode-badge" class="mode-badge hidden"
-                    title="Manual mode active - watching specific game">
-                    🎯 MANUAL: <span id="manual-game-name"></span>
-                </span>
                 <span id="auto-mode-badge" class="mode-badge" title="Automatic mode - following game priority">
                     🤖 AUTO
                 </span>
@@ -47,6 +43,8 @@
         <nav class="tabs">
             <button class="tab-button active" data-tab="main">Main</button>
             <button class="tab-button" data-tab="inventory">Inventory</button>
+            <button class="tab-button" data-tab="channel-points">Channel Points</button>
+            <button class="tab-button" data-tab="history">History</button>
             <button class="tab-button" data-tab="settings">Settings</button>
             <button class="tab-button" data-tab="system" id="tab-btn-system">System</button>
             <button class="tab-button" data-tab="help">Help</button>
@@ -55,6 +53,61 @@
         <!-- Main Tab -->
         <div id="main-tab" class="tab-content active">
             <div class="main-grid">
+                <!-- Stats Widget -->
+                <section class="panel stats-panel">
+                    <h2>Stats</h2>
+                    <div id="stats-content" style="display:flex;gap:0;flex-wrap:nowrap;">
+                        <div class="stat-item" style="flex:1;">
+                            <div class="stat-value" id="stat-drops-today">&#x2014;</div>
+                            <div class="stat-label">Drops Today</div>
+                        </div>
+                        <div class="stat-item" style="flex:1;border-left:1px solid var(--border-color);">
+                            <div class="stat-value" id="stat-drops-total">&#x2014;</div>
+                            <div class="stat-label">Drops Total</div>
+                        </div>
+                        <div class="stat-item" style="flex:1;border-left:1px solid var(--border-color);">
+                            <div class="stat-value" id="stat-points-session">&#x2014;</div>
+                            <div class="stat-label">Points (Session)</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Quick Controls -->
+                <section class="panel quick-controls-panel" id="quick-controls-panel">
+                    <div class="quick-controls-row">
+                        <button id="qc-skip-btn" class="qc-btn" style="display:none" title="Abandon current drop campaign and immediately switch to the next available game with active drops">
+                            <span class="qc-icon">⏭</span>
+                            <span class="qc-labels"><strong>Skip Current Game</strong><small>Abandon drop, pick next game</small></span>
+                        </button>
+                        <button id="qc-check-drops-btn" class="qc-btn" title="Stop idle watching and immediately search for active drop campaigns to mine">
+                            <span class="qc-icon">🎮</span>
+                            <span class="qc-labels"><strong>Start Drop Mining</strong><small>Stop idle, search for drops now</small></span>
+                        </button>
+                        <button id="qc-switch-btn" class="qc-btn" title="Switch to the next channel in your idle list to farm channel points there instead">
+                            <span class="qc-icon">💤</span>
+                            <span class="qc-labels"><strong>Switch Idle Channel</strong><small>Farm points on next channel</small></span>
+                        </button>
+                        <div id="qc-status" class="qc-status"></div>
+                    </div>
+                </section>
+
+                <!-- Current Drop Progress -->
+                <section class="panel progress-panel">
+                    <h2 id="progress-header">Campaign Progress</h2>
+                    <div id="progress-container">
+                        <div id="no-drop-message">No active drop</div>
+                        <div id="drop-info" style="display: none;">
+                            <div class="drop-name" id="drop-name"></div>
+                            <div class="drop-game" id="drop-game"></div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progress-fill"></div>
+                            </div>
+                            <div class="progress-text" id="progress-text"></div>
+                            <div class="progress-time" id="progress-time"></div>
+                        </div>
+                    </div>
+                </section>
+
                 <!-- Login Section -->
                 <section class="panel login-panel">
                     <h2>Login</h2>
@@ -73,41 +126,16 @@
                 </section>
 
                 <!-- Channel Points Display -->
-                <section class="panel" id="channel-points-panel">
+                <section class="panel channel-points-panel-main" id="channel-points-panel">
                     <h2>Channel Points</h2>
                     <div id="channel-points-info" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
                         <span id="channel-points-channel" style="font-weight:500;color:var(--accent-color,#9147ff)">—</span>
                         <span id="channel-points-balance" style="font-size:1.1rem;font-weight:600;">not watching</span>
                         <span id="channel-points-claimed" style="font-size:0.85rem;color:#0f9;opacity:0;transition:opacity 0.4s;"></span>
-                        <button id="idle-switch-btn" class="secondary-btn" style="margin-left:auto;" title="Switch to next idle channel">⏭ Switch</button>
                     </div>
                     <div id="points-tracker-section" style="display:none;margin-top:12px;">
-                        <div style="font-size:0.8rem;color:#adadb8;margin-bottom:6px;">All channels this session:</div>
+                        <div style="font-size:0.8rem;color:#adadb8;margin-bottom:6px;">All tracked channels:</div>
                         <div id="points-tracker-list"></div>
-                    </div>
-                </section>
-
-                <!-- Current Drop Progress -->
-                <section class="panel progress-panel">
-                    <h2 id="progress-header">Campaign Progress</h2>
-                    <div id="progress-container">
-                        <div id="no-drop-message">No active drop</div>
-                        <div id="drop-info" style="display: none;">
-                            <div id="manual-mode-controls" class="manual-mode-controls hidden">
-                                <div class="manual-mode-info">
-                                    🎯 Manual Mode: Mining <strong id="manual-mode-game"></strong>
-                                </div>
-                                <button id="exit-manual-btn" class="exit-manual-btn">Return to Auto Mode</button>
-                            </div>
-                            <div class="drop-name" id="drop-name"></div>
-                            <div class="drop-game" id="drop-game"></div>
-                            <button id="skip-game-btn" class="skip-game-btn" title="Skip current game and switch to next available channel" style="display:none">⏭ Skip Game</button>
-                            <div class="progress-bar">
-                                <div class="progress-fill" id="progress-fill"></div>
-                            </div>
-                            <div class="progress-text" id="progress-text"></div>
-                            <div class="progress-time" id="progress-time"></div>
-                        </div>
                     </div>
                 </section>
 
@@ -147,25 +175,16 @@
                             <span id="filter-linked-label">Linked</span>
                         </label>
                         <label class="filter-checkbox">
-                            <input type="checkbox" id="filter-not-linked" />
+                            <input type="checkbox" id="filter-not-linked" checked />
                             <span>Not Linked</span>
-                        </label>
-                        <label class="filter-checkbox">
-                            <input type="checkbox" id="filter-upcoming" checked />
-                            <span>Upcoming</span>
-                        </label>
-                        <label class="filter-checkbox">
-                            <input type="checkbox" id="filter-expired" />
-                            <span>Expired</span>
-                        </label>
-                        <label class="filter-checkbox">
-                            <input type="checkbox" id="filter-sub-drops" />
-                            <span>Sub Drops</span>
                         </label>
                         <label class="filter-checkbox">
                             <input type="checkbox" id="filter-finished" />
                             <span>Finished</span>
                         </label>
+                        <input type="checkbox" id="filter-upcoming" style="display:none" />
+                        <input type="checkbox" id="filter-expired" style="display:none" />
+                        <input type="checkbox" id="filter-sub-drops" style="display:none" />
                         <div class="filter-separator"
                             style="width: 1px; height: 24px; background: var(--border-color); margin: 0 10px;">
                         </div>
@@ -356,6 +375,40 @@
             </div>
         </div>
 
+        <!-- Channel Points Tab -->
+        <div id="channel-points-tab" class="tab-content">
+            <div>
+                <section class="settings-section">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                        <h2 style="margin:0;border:none;padding:0;">Channel Points</h2>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <span id="cp-tab-summary" style="font-size:0.85rem;color:#adadb8;"></span>
+                            <button id="cp-tab-refresh-btn" class="secondary-btn">↻ Refresh</button>
+                        </div>
+                    </div>
+                    <div id="cp-tab-empty" style="color:#adadb8;font-size:0.9rem;padding:20px 0;">No channel points data yet. Points are recorded while watching channels.</div>
+                    <div id="cp-tab-list" style="display:none;"></div>
+                </section>
+            </div>
+        </div>
+
+        <!-- History Tab -->
+        <div id="history-tab" class="tab-content">
+            <div style="padding:0;">
+                <section class="settings-section" style="margin-bottom:0;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                        <h2 style="margin:0;border:none;padding:0;">Drop History</h2>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <span id="history-summary" style="font-size:0.85rem;color:#adadb8;"></span>
+                            <button id="history-refresh-btn" class="secondary-btn">&#x21BB; Refresh</button>
+                        </div>
+                    </div>
+                    <div id="history-empty" style="color:#adadb8;font-size:0.9rem;padding:20px 0;">No drops claimed yet.</div>
+                    <div id="history-list" style="display:none;"></div>
+                </section>
+            </div>
+        </div>
+
         <!-- Help Tab -->
         <div id="system-tab" class="tab-content">
             <div class="settings-section">
@@ -446,7 +499,7 @@
         </footer>
     </div>
 
-    <script src="/static/app.js?v=20260606"></script>
+    <script src="/static/app.js?v=1749341000"></script>
 </body>
 
 </html>
