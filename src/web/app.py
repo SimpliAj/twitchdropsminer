@@ -81,6 +81,7 @@ _UNPROTECTED_PATHS = {
     "/__setup", "/__setup_post",
     "/favicon.ico", "/logo.png", "/manifest.json",
 }
+_UNPROTECTED_PREFIXES = ("/static/",)
 
 _LOGIN_HTML = """<!DOCTYPE html>
 <html lang="de"><head><meta charset="utf-8"><title>TwitchDropsMiner</title>
@@ -129,8 +130,11 @@ class PasswordAuthMiddleware(BaseHTTPMiddleware):
         if not _is_setup_done() and path not in _UNPROTECTED_PATHS:
             return RedirectResponse("/__setup", status_code=302)
         # Public paths always pass through
-        if path in _UNPROTECTED_PATHS:
-            return await call_next(request)
+        if path in _UNPROTECTED_PATHS or any(path.startswith(p) for p in _UNPROTECTED_PREFIXES):
+            response = await call_next(request)
+            if any(path.startswith(p) for p in _UNPROTECTED_PREFIXES):
+                response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            return response
         pw = _get_password()
         if not pw:
             return await call_next(request)
@@ -403,13 +407,25 @@ async def get_channel_points(channel_login: str):
         if points:
             from src.config import DATA_DIR
             from src.utils import json_load, json_save
-            history = json_load(DATA_DIR / "channel_points.json", {})
+            history = json_load(DATA_DIR / "channel_points.json", {}, merge=False)
             history[channel_login] = points
             json_save(DATA_DIR / "channel_points.json", history)
         return {"channel": channel_login, "balance": points}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+
+@app.get("/api/drops-history")
+async def get_drops_history():
+    """Return all claimed drops history."""
+    hist_file = _DATA_DIR / "drops_history.json"
+    try:
+        if hist_file.exists():
+            return json.loads(hist_file.read_text())
+    except Exception:
+        pass
+    return []
 
 @app.get("/api/idle-watch/status")
 async def idle_watch_status():
@@ -451,6 +467,7 @@ async def idle_watch_switch():
     channel = await twitch_client._fetch_idle_channel_by_login(next_login)
     if channel is None:
         raise HTTPException(status_code=404, detail=f"{next_login} is offline")
+    twitch_client.gui.clear_drop()
     twitch_client.watch(channel, update_status=False)
     twitch_client.gui.status.update(f"💤 Idle watching: {channel.name}")
     return {"switched_to": next_login}

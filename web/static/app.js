@@ -180,6 +180,7 @@ socket.on('channel_points_update', (data) => {
     state.sessionPoints[login].claimed += claimed;
     updateChannelPointsDisplay(login, claimed);
     renderPointsTracker();
+    updateStats();
 });
 
 socket.on('status_update', (data) => {
@@ -365,6 +366,130 @@ function renderPointsTracker() {
             row.appendChild(ptsEl);
             list.appendChild(row);
         });
+    renderChannelPointsTab();
+}
+
+
+// ==================== Drop History ====================
+async function loadDropHistory() {
+    try {
+        const resp = await fetch("/api/drops-history");
+        const data = await resp.json();
+        renderDropHistory(data);
+    } catch (e) { console.error("Failed to load drop history", e); }
+}
+
+function renderDropHistory(drops) {
+    const emptyEl = document.getElementById("history-empty");
+    const listEl = document.getElementById("history-list");
+    const summaryEl = document.getElementById("history-summary");
+    if (!emptyEl || !listEl) return;
+    if (!drops || drops.length === 0) {
+        emptyEl.style.display = "block";
+        listEl.style.display = "none";
+        if (summaryEl) summaryEl.textContent = "";
+        return;
+    }
+    const today = new Date().toDateString();
+    const todayCount = drops.filter(d => new Date(d.timestamp).toDateString() === today).length;
+    emptyEl.style.display = "none";
+    listEl.style.display = "block";
+    if (summaryEl) summaryEl.textContent = drops.length + " total • " + todayCount + " today";
+    listEl.replaceChildren();
+    drops.forEach(drop => {
+        const row = document.createElement("div");
+        row.className = "history-row";
+        const ts = new Date(drop.timestamp);
+        const dateStr = ts.toLocaleDateString("de-AT", { day:"2-digit", month:"2-digit", year:"2-digit" });
+        const timeStr = ts.toLocaleTimeString("de-AT", { hour:"2-digit", minute:"2-digit" });
+        const timeEl = document.createElement("span");
+        timeEl.textContent = dateStr + " " + timeStr;
+        timeEl.className = "history-ts";
+        const gameEl = document.createElement("span");
+        gameEl.textContent = drop.game;
+        gameEl.className = "history-game";
+        const dropEl = document.createElement("span");
+        dropEl.textContent = drop.drop;
+        dropEl.className = "history-drop";
+        const rewardEl = document.createElement("span");
+        rewardEl.textContent = drop.reward;
+        rewardEl.className = "history-reward";
+        row.appendChild(timeEl);
+        row.appendChild(gameEl);
+        row.appendChild(dropEl);
+        row.appendChild(rewardEl);
+        listEl.appendChild(row);
+    });
+}
+
+// ==================== Stats Widget ====================
+async function updateStats() {
+    const sessionPoints = Object.values(state.sessionPoints).reduce((s, d) => s + (d.claimed || 0), 0);
+    const el = document.getElementById("stat-points-session");
+    if (el) el.textContent = sessionPoints > 0 ? "+" + sessionPoints.toLocaleString() : "0";
+    try {
+        const resp = await fetch("/api/drops-history");
+        const drops = await resp.json();
+        const today = new Date().toDateString();
+        const todayCount = drops.filter(d => new Date(d.timestamp).toDateString() === today).length;
+        const todayEl = document.getElementById("stat-drops-today");
+        const totalEl = document.getElementById("stat-drops-total");
+        if (todayEl) todayEl.textContent = todayCount;
+        if (totalEl) totalEl.textContent = drops.length;
+    } catch(e) {}
+}
+function renderChannelPointsTab() {
+    const emptyEl = document.getElementById('cp-tab-empty');
+    const listEl = document.getElementById('cp-tab-list');
+    const summaryEl = document.getElementById('cp-tab-summary');
+    if (!emptyEl || !listEl) return;
+
+    const entries = Object.entries(state.sessionPoints).sort((a, b) => b[1].balance - a[1].balance);
+    if (entries.length === 0) {
+        emptyEl.style.display = 'block';
+        listEl.style.display = 'none';
+        if (summaryEl) summaryEl.textContent = '';
+        return;
+    }
+
+    emptyEl.style.display = 'none';
+    listEl.style.display = 'block';
+
+    const totalBalance = entries.reduce((s, [, d]) => s + (d.balance || 0), 0);
+    const totalClaimed = entries.reduce((s, [, d]) => s + (d.claimed || 0), 0);
+    if (summaryEl) {
+        summaryEl.textContent = `${entries.length} channel${entries.length !== 1 ? 's' : ''} • ${totalBalance.toLocaleString()} pts total${totalClaimed > 0 ? ` • +${totalClaimed.toLocaleString()} this session` : ''}`;
+    }
+
+    listEl.replaceChildren();
+    entries.forEach(([login, data]) => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:6px;margin-bottom:6px;background:var(--bg-secondary,#1a1a2e);border:1px solid var(--border-color);';
+
+        const nameEl = document.createElement('a');
+        nameEl.href = `https://www.twitch.tv/${login}`;
+        nameEl.target = '_blank';
+        nameEl.textContent = login;
+        nameEl.style.cssText = 'color:var(--accent-color,#9147ff);font-weight:500;text-decoration:none;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+        nameEl.addEventListener('mouseover', () => nameEl.style.textDecoration = 'underline');
+        nameEl.addEventListener('mouseout', () => nameEl.style.textDecoration = 'none');
+
+        const balanceEl = document.createElement('span');
+        balanceEl.textContent = `${(data.balance || 0).toLocaleString()} pts`;
+        balanceEl.style.cssText = 'font-size:0.95rem;font-weight:600;color:var(--text-primary);white-space:nowrap;';
+
+        row.appendChild(nameEl);
+
+        if (data.claimed > 0) {
+            const claimedEl = document.createElement('span');
+            claimedEl.textContent = `+${data.claimed.toLocaleString()}`;
+            claimedEl.style.cssText = 'font-size:0.8rem;color:#0f9;white-space:nowrap;';
+            row.appendChild(claimedEl);
+        }
+
+        row.appendChild(balanceEl);
+        listEl.appendChild(row);
+    });
 }
 
 function updateStatus(status) {
@@ -559,6 +684,8 @@ function updateDropProgress(data) {
 
     document.getElementById('no-drop-message').style.display = 'none';
     document.getElementById('drop-info').style.display = 'block';
+    const qcSkip = document.getElementById('qc-skip-btn');
+    if (qcSkip) qcSkip.style.display = '';
 
     document.getElementById('drop-name').textContent = data.drop_name;
 
@@ -624,6 +751,8 @@ function clearDropProgress() {
 
     document.getElementById('no-drop-message').style.display = 'block';
     document.getElementById('drop-info').style.display = 'none';
+    const qcSkip = document.getElementById('qc-skip-btn');
+    if (qcSkip) qcSkip.style.display = 'none';
 }
 
 function addCampaign(campaignData) {
@@ -1215,35 +1344,7 @@ function updateSettingsUI(settings) {
 }
 
 function updateManualModeUI(manualModeInfo) {
-    const manualBadge = document.getElementById('manual-mode-badge');
-    const autoBadge = document.getElementById('auto-mode-badge');
-    const manualGameName = document.getElementById('manual-game-name');
-    const manualControls = document.getElementById('manual-mode-controls');
-    const manualModeGame = document.getElementById('manual-mode-game');
-
-    if (manualModeInfo.active) {
-        // Show manual mode badge, hide auto badge
-        manualBadge.classList.remove('hidden');
-        autoBadge.classList.add('hidden');
-        manualGameName.textContent = manualModeInfo.game_name || '';
-
-        // Show manual mode controls in drop progress section
-        if (manualControls) {
-            manualControls.classList.remove('hidden');
-            if (manualModeGame) {
-                manualModeGame.textContent = manualModeInfo.game_name || '';
-            }
-        }
-    } else {
-        // Hide manual mode badge, show auto badge
-        manualBadge.classList.add('hidden');
-        autoBadge.classList.remove('hidden');
-
-        // Hide manual mode controls
-        if (manualControls) {
-            manualControls.classList.add('hidden');
-        }
-    }
+    // Manual mode UI removed — backend still sends events, ignore them
 }
 
 // ==================== Games to Watch Management ====================
@@ -1787,8 +1888,6 @@ function applyTranslations(t) {
         const noDropMsg = document.getElementById('no-drop-message');
         if (noDropMsg) noDropMsg.textContent = t.gui.progress.no_drop;
 
-        const exitManualBtn = document.getElementById('exit-manual-btn');
-        if (exitManualBtn) exitManualBtn.textContent = t.gui.progress.return_to_auto;
     }
 
     // Update Console section
@@ -2062,6 +2161,7 @@ function switchTab(tabName) {
     // Show selected tab
     document.getElementById(`${tabName}-tab`).classList.add('active');
     document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+    if (tabName === 'history') loadDropHistory();
 }
 
 // ==================== Event Listeners ====================
@@ -2069,6 +2169,8 @@ function switchTab(tabName) {
 document.addEventListener('DOMContentLoaded', () => {
     // Fetch and display version information
     fetchAndDisplayVersion();
+    updateStats();
+    document.getElementById("history-refresh-btn")?.addEventListener("click", loadDropHistory);
 
     // Tab switching
     document.querySelectorAll('.tab-button').forEach(button => {
@@ -2138,6 +2240,46 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('discord-webhook-drops')?.addEventListener('blur', saveSettings);
     document.getElementById('discord-webhook-points')?.addEventListener('blur', saveSettings);
     document.getElementById('claim-channel-points')?.addEventListener('change', saveSettings);
+
+    document.getElementById('cp-tab-refresh-btn')?.addEventListener('click', async () => {
+        const btn = document.getElementById('cp-tab-refresh-btn');
+        if (btn) btn.textContent = '↻ Loading...';
+        const logins = Object.keys(state.sessionPoints);
+        await Promise.all(logins.map(async login => {
+            try {
+                const resp = await fetch(`/api/channel-points/${login}`);
+                const data = await resp.json();
+                if (data.balance !== undefined) {
+                    if (!state.sessionPoints[login]) state.sessionPoints[login] = { balance: 0, claimed: 0 };
+                    state.sessionPoints[login].balance = data.balance;
+                }
+            } catch(e) {}
+        }));
+        renderChannelPointsTab();
+        renderPointsTracker();
+        if (btn) btn.textContent = '↻ Refresh';
+    });
+    document.getElementById("qc-check-drops-btn")?.addEventListener("click", async () => {
+        const btn = document.getElementById("qc-check-drops-btn");
+        if (btn) { btn.disabled = true; btn.style.opacity = "0.6"; }
+        try {
+            await fetch("/api/reload", { method: "POST" });
+        } catch (e) { addConsoleLine("Error: " + e.message); }
+        setTimeout(() => { if (btn) { btn.disabled = false; btn.style.opacity = ""; } }, 3000);
+    });
+
+    document.getElementById("qc-skip-btn")?.addEventListener("click", async () => {
+        try {
+            const r = await fetch("/api/skip-game", { method: "POST" });
+            if (!r.ok) {
+                const d = await r.json().catch(() => ({}));
+                alert(d.detail || "Skip failed");
+            }
+        } catch (e) {
+            alert("Error: " + e.message);
+        }
+    });
+
     document.getElementById('idle-channel-add-btn')?.addEventListener('click', () => {
         const input = document.getElementById('idle-channel-input');
         const val = input.value.trim().toLowerCase();
@@ -2172,11 +2314,43 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Manual mode controls
-    const exitManualBtn = document.getElementById('exit-manual-btn');
-    if (exitManualBtn) {
-        exitManualBtn.addEventListener('click', exitManualMode);
-    }
+    // System tab buttons
+    document.getElementById('system-reload-btn')?.addEventListener('click', async () => {
+        const status = document.getElementById('system-status');
+        try {
+            await fetch('/api/reload', { method: 'POST' });
+            if (status) { status.textContent = 'Campaigns reload triggered.'; status.className = 'system-status success'; }
+        } catch (e) {
+            if (status) { status.textContent = 'Error: ' + e.message; status.className = 'system-status error'; }
+        }
+    });
+
+    document.getElementById('system-restart-btn')?.addEventListener('click', async () => {
+        const status = document.getElementById('system-status');
+        if (!confirm('Restart the miner? PM2 will restart it automatically.')) return;
+        try {
+            await fetch('/api/restart', { method: 'POST' });
+            if (status) { status.textContent = 'Miner restarting via PM2...'; status.className = 'system-status success'; }
+        } catch (e) {
+            if (status) { status.textContent = 'Error: ' + e.message; status.className = 'system-status error'; }
+        }
+    });
+
+    document.getElementById('system-logout-btn')?.addEventListener('click', () => {
+        window.location.href = '/__auth_logout';
+    });
+
+    document.getElementById('qc-switch-btn')?.addEventListener('click', async () => {
+        try {
+            const r = await fetch('/api/idle-watch/switch', { method: 'POST' });
+            if (!r.ok) {
+                const d = await r.json().catch(() => ({}));
+                alert(d.detail || 'Switch failed');
+            }
+        } catch (e) {
+            alert('Error: ' + e.message);
+        }
+    });
 
     // Fetch and populate available languages
     fetchAndPopulateLanguages();
