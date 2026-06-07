@@ -216,7 +216,8 @@ class MessageHandlerService:
             drop.display()
             # Discord webhook for drop claim
             webhook_url = self._twitch.settings.discord_webhook_drops
-            if webhook_url and drop.is_claimed:
+            if webhook_url and drop.is_claimed and drop.id not in self._twitch._webhook_sent_drops:
+                self._twitch._webhook_sent_drops.add(drop.id)
                 embed: dict = {
                     "title": "🎁 Drop Claimed!",
                     "color": 0x9147ff,
@@ -229,6 +230,22 @@ class MessageHandlerService:
                 if drop.benefits:
                     embed["thumbnail"] = {"url": drop.benefits[0].image_url}
                 asyncio.create_task(self._send_discord_webhook(webhook_url, {"embeds": [embed]}))
+
+            # Save to drop history
+            import datetime as _dt, json as _json
+            _hist_file = DATA_DIR / "drops_history.json"
+            _entry = {
+                "timestamp": _dt.datetime.now(_dt.timezone.utc).isoformat(),
+                "game": campaign.game.name,
+                "drop": drop.name,
+                "reward": drop.rewards_text(),
+            }
+            try:
+                _hist = _json.loads(_hist_file.read_text()) if _hist_file.exists() else []
+                _hist.insert(0, _entry)
+                _hist_file.write_text(_json.dumps(_hist[:500], indent=2))
+            except Exception:
+                pass
 
             # About 4-20s after claiming the drop, next drop can be started
             # by re-sending the watch payload. We can test for it by fetching the current drop
@@ -390,7 +407,7 @@ class MessageHandlerService:
             })
             # Persist balance
             if points:
-                history = json_load(_POINTS_FILE, {})
+                history = json_load(_POINTS_FILE, {}, merge=False)
                 history[channel_login] = points
                 json_save(_POINTS_FILE, history)
         except Exception as e:
