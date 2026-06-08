@@ -524,36 +524,46 @@ class TwitchDropsBot(discord.Client):
                             last_cp = pairing.get("last_cp", {})
                             prev_balance = last_cp.get(watching_channel)
 
-                            if prev_balance is not None and cp_balance > prev_balance:
-                                gained = cp_balance - prev_balance
-                                log.info("CP gain for %s on %s: +%d (prev=%d now=%d)", user_id, watching_channel, gained, prev_balance, cp_balance)
-                                if gained >= 25:
-                                    # Check if a chest was claimed in this window
-                                    last_chest = cp_data.get("last_chest", {})
-                                    last_chest_ts = last_chest.get("ts", "")
-                                    chest_bonus = last_chest.get("bonus", 0)
-                                    last_seen_chest_ts = pairing.get("last_cp_meta", {}).get(watching_channel, {}).get("chest_ts", "")
-                                    chest_this_poll = (chest_bonus > 0 and last_chest_ts and last_chest_ts != last_seen_chest_ts)
+                            # last_notified_cp: balance at time of last notification (not last poll)
+                            last_notified = pairing.get("last_notified_cp", {}).get(watching_channel, prev_balance)
 
-                                    if chest_this_poll:
-                                        watch_pts = max(0, gained - chest_bonus)
-                                        if watch_pts > 0:
-                                            desc = (
-                                                f"🎁 **Bonus Chest: +{chest_bonus:,} pts** on **{watching_channel}**\n"
-                                                f"📺 From watching: +{watch_pts:,} pts\n"
-                                                f"Balance: **{cp_balance:,} pts**"
-                                            )
-                                        else:
-                                            desc = (
-                                                f"🎁 **Bonus Chest: +{chest_bonus:,} pts** on **{watching_channel}**\n"
-                                                f"Balance: **{cp_balance:,} pts**"
-                                            )
-                                    else:
+                            if prev_balance is not None and cp_balance > prev_balance:
+                                gained_this_poll = cp_balance - prev_balance
+                                log.info("CP gain for %s on %s: +%d (prev=%d now=%d)", user_id, watching_channel, gained_this_poll, prev_balance, cp_balance)
+
+                                # Check if a chest was claimed since last notification
+                                last_chest = cp_data.get("last_chest", {})
+                                last_chest_ts = last_chest.get("ts", "")
+                                chest_bonus = last_chest.get("bonus", 0)
+                                last_seen_chest_ts = pairing.get("last_cp_meta", {}).get(watching_channel, {}).get("chest_ts", "")
+                                chest_new = (chest_bonus > 0 and last_chest_ts and last_chest_ts != last_seen_chest_ts)
+
+                                if chest_new:
+                                    # Total since last notification = chest + all watch points since then
+                                    total_since_notify = cp_balance - (last_notified or cp_balance - gained_this_poll)
+                                    watch_pts = max(0, total_since_notify - chest_bonus)
+                                    if watch_pts > 0:
                                         desc = (
-                                            f"📺 **+{gained:,} pts** from watching **{watching_channel}**\n"
+                                            f"🎁 **Bonus Chest: +{chest_bonus:,} pts** on **{watching_channel}**\n"
+                                            f"📺 From watching: +{watch_pts:,} pts\n"
                                             f"Balance: **{cp_balance:,} pts**"
                                         )
+                                    else:
+                                        desc = (
+                                            f"🎁 **Bonus Chest: +{chest_bonus:,} pts** on **{watching_channel}**\n"
+                                            f"Balance: **{cp_balance:,} pts**"
+                                        )
+                                    notify = True
+                                elif gained_this_poll >= 25:
+                                    desc = (
+                                        f"📺 **+{gained_this_poll:,} pts** from watching **{watching_channel}**\n"
+                                        f"Balance: **{cp_balance:,} pts**"
+                                    )
+                                    notify = True
+                                else:
+                                    notify = False
 
+                                if notify:
                                     for pts_ch_id in _channel_ids(pairing, "points"):
                                         pts_ch = self.get_channel(pts_ch_id)
                                         if pts_ch is None:
@@ -578,10 +588,11 @@ class TwitchDropsBot(discord.Client):
                                         else:
                                             log.warning("Points channel %s not found for user %s", pts_ch_id, user_id)
 
-                                    # Save seen chest_ts to avoid duplicate chest notifications
-                                    if chest_this_poll:
+                                    # Update last_notified_cp so next chest diff is calculated correctly
+                                    self.users_data[user_id].setdefault("last_notified_cp", {})[watching_channel] = cp_balance
+                                    if chest_new:
                                         self.users_data[user_id].setdefault("last_cp_meta", {}).setdefault(watching_channel, {})["chest_ts"] = last_chest_ts
-                                        save_pairings(self.users_data)
+                                    save_pairings(self.users_data)
 
                             self.users_data[user_id].setdefault("last_cp", {})[watching_channel] = cp_balance
                             save_pairings(self.users_data)
