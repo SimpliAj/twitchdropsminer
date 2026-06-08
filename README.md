@@ -59,16 +59,18 @@ A dedicated Discord bot that pairs with your miner instance and sends rich, live
 |---------|-------------|
 | `/link <url> <code>` | Pair the bot with your miner dashboard |
 | `/unlink` | Remove the pairing |
-| `/setchannel drops` | Set a channel for drop notifications |
-| `/setchannel points` | Set a channel for channel points notifications |
+| `/setchannel drops` | Add a channel for drop notifications (multi-server) |
+| `/setchannel points` | Add a channel for channel points notifications (multi-server) |
 | `/dashboard` | Post a live-updating embed with control buttons |
+| `/devpanel` | *(Dev-restricted)* Global stats + "Post Live Stats" embed |
 
 **Key features:**
-- **Multi-server support** — run `/setchannel` in multiple Discord servers; all configured channels receive notifications
+- **Multi-server support** — run `/setchannel` in multiple Discord servers; all configured channels receive notifications simultaneously
 - **Drop notifications** — one embed per drop, with reward thumbnail image, game, drop name, reward name, and account name in the footer
 - **Channel points notifications** — fires on gains ≥ 25 pts, showing channel, amount, balance, and account name
-- **Live dashboard embed** — auto-updates every 30s; shows status, watching channel, points balance, and drop count; owner-only control buttons (Pause/Resume, Switch Mode, View Campaigns, Last Drops, Refresh)
-- **Web UI channel config** — Settings → Discord Bot shows all configured notification channels with a Clear button; no need to re-run slash commands to see the current setup
+- **Live dashboard embed** — auto-updates every 30s on state change; shows status, watching channel, points balance, and drop count; owner-only control buttons (Pause/Resume, Switch Mode, View Campaigns, Last Drops, Refresh)
+- **Live global stats embed** — `/devpanel → Post Live Stats Here` posts a public embed showing total drops, drops today, channel points, and paired accounts; auto-updates every 30 min and survives bot restarts
+- **Web UI channel config** — Settings → Discord Bot shows all configured notification channels with name, server, and individual Remove buttons per channel
 
 **Invite the bot:**
 [➕ Add TwitchDropsMiner Bot to your server](https://discord.com/oauth2/authorize?client_id=1513555081218359506&permissions=84992&integration_type=0&scope=bot)
@@ -78,6 +80,7 @@ A dedicated Discord bot that pairs with your miner instance and sends rich, live
 2. In the web dashboard, go to **Settings → Discord Bot → Generate code**
 3. In Discord, run: `/link https://your-server:8081 DROPS-XXXXXXXX`
 4. Run `/setchannel drops` and `/setchannel points` in the channels where you want notifications
+5. Run `/dashboard` to post a live-updating stats embed with control buttons
 
 ### 🖥️ Web UI Improvements
 - **State-aware Quick Controls** — equal-size 2×2 grid; buttons highlight based on what the miner is currently doing:
@@ -259,14 +262,6 @@ This project builds on the work of:
 - [@rangermix](https://github.com/rangermix) — upstream fork this project branched from
 
 For translation credits, see the [Original Project Credits](#original-project-credits) section below.
-
----
-
-## 🗺️ Planned Features
-
-- Apple Sign In integration for iOS builds
-- Further inventory and campaign UX improvements
-- Upstream PRs for applicable bug fixes
 
 ---
 
