@@ -242,6 +242,25 @@ async def build_dashboard_embed(session: aiohttp.ClientSession, url: str, token:
     except Exception:
         pass
 
+    # Wanted Drops Queue
+    try:
+        wanted_data = await api_get(session, url, token, "/api/wanted-items")
+        wanted_games = wanted_data.get("wanted_items", []) if isinstance(wanted_data, dict) else []
+        if wanted_games:
+            lines = []
+            for game in wanted_games[:5]:
+                gname = game.get("game_name", "Unknown")
+                campaigns = game.get("campaigns", [])
+                drop_count = sum(len(c.get("drops", [])) for c in campaigns)
+                lines.append(f"• **{gname}** — {drop_count} drop{'s' if drop_count != 1 else ''}")
+            if len(wanted_games) > 5:
+                lines.append(f"…and {len(wanted_games) - 5} more")
+            embed.add_field(name="🎯 Wanted Queue", value="\n".join(lines), inline=False)
+        else:
+            embed.add_field(name="🎯 Wanted Queue", value="No wanted drops configured", inline=False)
+    except Exception:
+        pass
+
     embed.set_footer(text="TwitchDropsMiner Bot • Updates every 30s")
     embed.timestamp = datetime.now(timezone.utc)
     return embed
