@@ -108,10 +108,16 @@ class SettingsManager:
             "idle_channels", settings_data.get("idle_channels")
         )
         self.check_and_update_setting(
+            "idle_use_followed", settings_data.get("idle_use_followed")
+        )
+        self.check_and_update_setting(
             "discord_webhook_drops", settings_data.get("discord_webhook_drops")
         )
         self.check_and_update_setting(
             "discord_webhook_points", settings_data.get("discord_webhook_points")
+        )
+        self.check_and_update_setting(
+            "drop_name_blacklist", settings_data.get("drop_name_blacklist")
         )
 
         self._settings.save()

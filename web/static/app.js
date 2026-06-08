@@ -1399,6 +1399,9 @@ function updateSettingsUI(settings) {
 
     renderIdleChannels(settings.idle_channels || []);
 
+    const idleFollowedEl = document.getElementById('idle-use-followed');
+    if (idleFollowedEl) idleFollowedEl.checked = settings.idle_use_followed === true;
+
     // Re-render inventory to apply filters
     renderInventory();
 }
@@ -1805,6 +1808,7 @@ async function saveSettings() {
         discord_webhook_points: document.getElementById('discord-webhook-points')?.value || '',
         claim_channel_points: document.getElementById('claim-channel-points')?.checked ?? true,
         idle_channels: state.settings.idle_channels || [],
+        idle_use_followed: document.getElementById('idle-use-followed')?.checked ?? false,
         drop_name_blacklist: (document.getElementById('drop-blacklist-input')?.value || '')
             .split(',').map(s => s.trim()).filter(Boolean),
     };

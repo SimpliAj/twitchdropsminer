@@ -51,6 +51,7 @@ default_settings = {
     "proxy": "",
     "claim_channel_points": True,
     "idle_channels": [],
+    "idle_use_followed": False,
     "discord_webhook_drops": "",
     "discord_webhook_points": "",
     "drop_name_blacklist": [],
@@ -69,6 +70,7 @@ class Settings:
     proxy: str
     claim_channel_points: bool
     idle_channels: list[str]
+    idle_use_followed: bool
     discord_webhook_drops: str
     discord_webhook_points: str
     drop_name_blacklist: list[str]
