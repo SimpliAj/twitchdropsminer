@@ -1900,12 +1900,19 @@ function updatePauseState(paused) {
     state.paused = paused;
     const btn = document.getElementById('pause-resume-btn');
     if (!btn) return;
+    const strong = btn.querySelector('strong');
+    const small = btn.querySelector('small');
+    const icon = btn.querySelector('.qc-icon');
     if (paused) {
-        btn.textContent = '▶ Resume';
-        btn.classList.add('paused');
+        if (icon) icon.textContent = '▶';
+        if (strong) strong.textContent = 'Resume';
+        if (small) small.textContent = 'Click to resume';
+        btn.classList.add('qc-btn--active');
     } else {
-        btn.textContent = '⏸ Pause';
-        btn.classList.remove('paused');
+        if (icon) icon.textContent = '⏸';
+        if (strong) strong.textContent = 'Pause';
+        if (small) small.textContent = 'Pause / resume the miner';
+        btn.classList.remove('qc-btn--active');
     }
 }
 

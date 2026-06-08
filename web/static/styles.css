@@ -159,27 +159,6 @@ header h1 {
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-.pause-resume-btn {
-    background: transparent;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    color: var(--text-secondary);
-    cursor: pointer;
-    font-size: 0.8rem;
-    padding: 3px 10px;
-    transition: all 0.15s ease;
-    white-space: nowrap;
-}
-.pause-resume-btn:hover {
-    background: var(--bg-tertiary, #2d2d35);
-    border-color: var(--accent-color);
-    color: var(--text-primary);
-}
-.pause-resume-btn.paused {
-    background: rgba(145, 71, 255, 0.15);
-    border-color: var(--accent-color);
-    color: var(--accent-color);
-}
 
 .full-width {
     width: 100%;
@@ -1207,7 +1186,22 @@ header h1 {
 
 /* Settings */
 .settings-container {
-    max-width: 800px;
+    max-width: 100%;
+}
+
+.settings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+.settings-grid > .settings-section {
+    margin-bottom: 0;
+}
+@media (max-width: 768px) {
+    .settings-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .settings-section {

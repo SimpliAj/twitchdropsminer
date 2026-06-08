@@ -37,7 +37,6 @@
                     <span id="status-text">Initializing...</span>
                 </div>
                 <div class="status-right">
-                    <button id="pause-resume-btn" class="pause-resume-btn" onclick="togglePause()" title="Pause or resume mining">⏸ Pause</button>
                     <span id="connection-indicator" class="connected">● Connected</span>
                 </div>
             </div>
@@ -93,6 +92,10 @@
                         <button id="qc-switch-btn" class="qc-btn" style="display:none" title="Switch to the next channel in your idle list to farm channel points there instead">
                             <span class="qc-icon">⏭</span>
                             <span class="qc-labels"><strong>Switch Channel</strong><small>Next idle channel</small></span>
+                        </button>
+                        <button id="pause-resume-btn" class="qc-btn" onclick="togglePause()" title="Pause or resume mining">
+                            <span class="qc-icon">⏸</span>
+                            <span class="qc-labels"><strong>Pause</strong><small>Pause / resume the miner</small></span>
                         </button>
                         <div id="qc-status" class="qc-status"></div>
                     </div>
@@ -264,6 +267,7 @@
                     <div id="proxy-verify-result" class="verify-result" style="display: none;"></div>
                 </section>
 
+                <div class="settings-grid">
                 <section class="settings-section">
                     <h2>Channel Points</h2>
                     <label>
@@ -357,6 +361,7 @@
                         </label>
                     </div>
                 </section>
+                </div>
 
                 <section class="settings-section">
                     <h2 id="settings-games-header">Games to Watch</h2>
