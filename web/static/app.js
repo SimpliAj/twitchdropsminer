@@ -2268,6 +2268,29 @@ function applyTranslations(t) {
                 'Requires linked game accounts for drops'
             ];
 
+            const webhookItems = [
+                'Go to your Discord server → Channel Settings → Integrations → Webhooks → New Webhook',
+                'Copy the webhook URL',
+                'Paste it into <strong>Settings → Discord Notifications</strong> (separate URLs for drops and points)',
+                'Use <strong>Test Webhook</strong> to verify it works',
+            ];
+            const botSetupItems = [
+                'Go to <strong>Settings → Discord Bot</strong> and click <strong>Generate code</strong>',
+                'Note your dashboard URL (e.g. <code>http://your-server:8081</code>) and the code (e.g. <code>DROPS-A1B2C3D4</code>)',
+                'In Discord, run: <code>/link http://your-server:8081 DROPS-A1B2C3D4</code>',
+                'The bot confirms: ✅ Connected',
+            ];
+            const botCommands = [
+                '<code>/status</code> — current miner status',
+                '<code>/pause</code> / <code>/resume</code> — pause or resume mining',
+                '<code>/campaigns</code> — active drop campaigns',
+                '<code>/drops</code> — last 10 claimed drops',
+                '<code>/accounts</code> — linked Twitch accounts',
+                '<code>/dashboard</code> — post a live-updating embed (updates every 30s)',
+                '<code>/setchannel drops</code> — drop notifications to this channel automatically',
+                '<code>/setchannel logs</code> — log messages to this channel',
+                '<code>/unlink</code> — disconnect the bot',
+            ];
             helpContent.replaceChildren(
                 makeElement('h2', { id: 'help-about-header' }, t.gui.help.about || 'About Twitch Drops Miner'),
                 makeElement('p', {}, t.gui.help.about_text || 'This application automatically mines timed Twitch drops without downloading stream data.'),
@@ -2277,8 +2300,18 @@ function applyTranslations(t) {
                 makeHelpList('ul', featuresItems),
                 makeElement('h3', { id: 'help-notes-header' }, t.gui.help.important_notes || 'Important Notes'),
                 makeHelpList('ul', notesItems),
+                makeElement('h3', { id: 'help-discord-webhook-header' }, 'Discord Webhook'),
+                makeElement('p', {}, 'Get notified in Discord when drops are claimed or channel points are earned.'),
+                makeHelpList('ol', webhookItems),
+                makeElement('h3', { id: 'help-discord-bot-header' }, 'Discord Bot'),
+                makeElement('p', {}, 'Control your miner directly from Discord using slash commands.'),
+                makeElement('h4', {}, 'Setup'),
+                makeHelpList('ol', botSetupItems),
+                makeElement('h4', {}, 'Commands'),
+                makeHelpList('ul', botCommands),
+                makeElement('p', {}, '<strong>Note:</strong> The code expires in 10 minutes. Generate a new one if it expires.'),
                 makeElement('div', { class: 'help-links' }, '', el =>
-                    el.appendChild(makeElement('a', { href: 'https://github.com/rangermix/TwitchDropsMiner', target: '_blank', rel: 'noopener noreferrer' }, t.gui.help.github_repo || 'GitHub Repository'))
+                    el.appendChild(makeElement('a', { href: 'https://github.com/SimpliAj/twitchdropsminer', target: '_blank', rel: 'noopener noreferrer' }, t.gui.help.github_repo || 'GitHub Repository'))
                 ),
             );
         }
