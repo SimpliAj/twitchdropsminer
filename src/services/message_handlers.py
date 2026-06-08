@@ -406,22 +406,24 @@ class MessageHandlerService:
                         })
                     )
                     logger.info(f"Claimed channel points via GQL poll on {channel_login} | claim data: {available_claim}")
+                    # Extract bonus amount and add to claimed_amount for session counter
+                    bonus = (available_claim.get("pointsEarnedForClaim")
+                             or available_claim.get("pointGain")
+                             or available_claim.get("point_gain") or {})
+                    bonus_amount = (bonus.get("totalPoints") or bonus.get("total_points") or 0)
+                    if bonus_amount:
+                        claimed_amount += bonus_amount
                     # Discord webhook for channel points claim
                     webhook_url = self._twitch.settings.discord_webhook_points
                     if webhook_url:
-                        # Try multiple known field names for bonus amount
-                        bonus = (available_claim.get("pointsEarnedForClaim")
-                                 or available_claim.get("pointGain")
-                                 or available_claim.get("point_gain") or {})
-                        bonus_amount = (bonus.get("totalPoints")
-                                        or bonus.get("total_points") or 0)
+                        bonus_amount_wh = bonus_amount
                         _acct_gql = _get_active_account()
                         _gql_embed: dict = {
                             "title": "💰 Bonus Chest Claimed!",
                             "color": 0xffd700,
                             "fields": [
                                 {"name": "Channel", "value": channel_login, "inline": True},
-                                {"name": "Bonus", "value": f"+{bonus_amount} pts" if bonus_amount else "Claimed", "inline": True},
+                                {"name": "Bonus", "value": f"+{bonus_amount_wh} pts" if bonus_amount_wh else "Claimed", "inline": True},
                                 {"name": "Balance", "value": f"{points:,} pts", "inline": True},
                             ],
                         }

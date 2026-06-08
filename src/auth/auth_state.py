@@ -269,9 +269,10 @@ class _AuthState:
             else:
                 raise RuntimeError("Login verification failure (step #1)")
             self.user_id = int(validate_response["user_id"])
+            self.user_login: str = validate_response.get("login", "")
             cookie["persistent"] = str(self.user_id)
-            logger.info(f"Login successful, user ID: {self.user_id}")
-            login_form.update(_.t["login"]["status"]["logged_in"], self.user_id)
+            logger.info(f"Login successful, user ID: {self.user_id}, login: {self.user_login}")
+            login_form.update(_.t["login"]["status"]["logged_in"], self.user_id, self.user_login)
             # update our cookie and save it
             jar.update_cookies(cookie, client_info.CLIENT_URL)
             jar.save(COOKIES_PATH)
