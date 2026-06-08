@@ -1,4 +1,4 @@
-# 🌟 Twitch Drops Miner (TDM)
+# 🌟 Twitch Drops Miner — SimpliAj Edition
 
 > 🎮 **Automate Twitch Drop Farming — Effortlessly, Headlessly, and Bandwidth-Free**
 
@@ -9,26 +9,80 @@
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/Python-3.12+-blue?style=for-the-badge&logo=python" alt="Python"></a>
 </p>
 
-A fork of [rangermix/TwitchDropsMiner](https://github.com/rangermix/TwitchDropsMiner) with multi-account support and an improved web UI.  
-**Twitch Drops Miner** lets you automatically farm Twitch drops without ever opening a stream.  
-No more tab juggling, channel switching, or missing rewards — just set it, forget it, and collect.
+This is an **independently developed and maintained** fork originally based on [rangermix/TwitchDropsMiner](https://github.com/rangermix/TwitchDropsMiner).  
+It has diverged significantly and is now its own standalone project with active development, independent features, and bug fixes that go well beyond the upstream codebase.
+
+Upstream changes that make sense will continue to be merged when applicable, but this project follows its own roadmap.
 
 ---
 
-## 🔀 What's Different in This Fork
+## 🔀 What's Different From the Original
 
-This fork extends [rangermix/TwitchDropsMiner](https://github.com/rangermix/TwitchDropsMiner) with:
+The following features and fixes have been added on top of the upstream codebase:
 
-- 👥 **Multi-Account Support** — Run multiple Twitch accounts from a single instance; each account gets its own isolated `data/accounts/<name>/` directory for cookies and settings
-- ⚙️ **System Tab in Web UI** — Add, switch, and remove accounts directly from the browser without touching config files
-- 🔌 **REST API for Account Management** — Full CRUD via `/api/accounts` endpoints (list, add, switch, remove)
-- 🔒 **Dashboard Password Protection** — Set `WEB_PASSWORD` env var to lock the web UI behind a password (safe to expose publicly)
-- 💰 **Channel Points Auto-Claimer** — Automatically claims bonus channel point chests every 60 seconds via GQL polling. Toggle in Settings.
-- 💤 **Idle Watch** — When no drop campaigns are active, watches configured favorite channels to earn channel points. Supports multiple channels with priority ordering and automatic switching.
-- 📊 **Channel Points Tracker** — Real-time balance display in the web UI with per-channel history, auto-refresh every 5 minutes, and persistent storage across restarts (`data/channel_points.json`).
-- 🔔 **Discord Webhook Notifications** — Get notified in Discord when a drop is claimed or a channel points bonus chest is collected. Configure two separate webhooks in the Settings tab.
-- 📱 **Mobile-Responsive UI** — Dashboard works on phone browsers with proper `@media` breakpoints (768px and 480px)
-- 🔄 **`update.sh` Script** — One-command update that preserves your `data/accounts/` directory and all customizations
+### 👥 Multi-Account Support
+- Each Twitch account lives in its own isolated `data/accounts/<name>/` directory (cookies, settings, drop history, channel points)
+- Switch accounts from the **System tab** in the web UI — no config files needed
+- Full CRUD via REST API: `/api/accounts` (list, add, switch, delete)
+- Drop history and channel points are saved per-account; switching accounts shows the correct data instantly
+
+### 💰 Channel Points Auto-Claimer
+- Automatically claims bonus channel point chests via both WebSocket (PubSub) and GQL polling (60s fallback)
+- Fixes upstream issues where chests were missed due to unreliable PubSub delivery
+- Toggle in Settings tab; real-time balance shown in the Main tab
+- **Points (Session)** stat tracks total bonus points claimed in the current session
+
+### 💤 Idle Watch
+- When no drop campaigns are active, automatically watches configured channels to farm channel points
+- **Auto: use followed channels** — fetches all channels you follow on Twitch that are currently live (via Helix API); no manual config needed
+- Manual channel list with priority ordering
+- **Quick Controls** show a "Start Idle Watch" button when idle channels are available, and a "Switch Channel" button while idle-watching
+- The switch endpoint skips offline channels and cycles through the full list
+
+### 📊 Channel Points Tracker
+- Live per-channel balance with session history
+- Compact "Recent channels" section showing the 3 most recently active channels in the main view
+- Full ranked list in the **Channel Points tab**
+
+### 🔔 Discord Webhook Notifications
+- Drop claimed → embed with game, drop name, reward, item thumbnail image, and **account name**
+- Channel points bonus chest → embed with channel, bonus amount, balance, and **account name**
+- Two separate webhook URLs (drops / channel points) configurable in Settings
+- Test button included to verify webhooks without waiting for a real event
+- Account name in footer makes it easy to distinguish multiple accounts using the same webhook
+
+### 🖥️ Web UI Improvements
+- **State-aware Quick Controls** — buttons highlight based on what the miner is currently doing:
+  - 🟢 Green: Drop Mining Active (currently farming drops)
+  - 🟡 Yellow: Skip Game (while a drop is active)
+  - 🟣 Purple: Start Drop Mining / Switch Channel (while idle-watching)
+- **Twitch username** displayed in login form instead of raw user ID
+- **Drop Name Blacklist** — comma-separated keywords; drops whose name contains any keyword are skipped
+- **Inventory filter fixes** — correct AND/OR logic; both Linked/Not-Linked unchecked shows all campaigns
+- **Dark 7-tab layout**: Main, Inventory, Channel Points, History, Settings, System, Help
+- **Drop History tab** — grouped by date, compact single-line rows with item thumbnail images
+- **Mobile-responsive** — full `@media` breakpoints at 768px and 480px
+- No-cache headers for web assets; auto-updating cache hash on deploy
+
+### 🔒 Dashboard Password Protection
+- Set `WEB_PASSWORD` to lock the web UI behind a password with 30-day session cookie
+- Change or remove the password from the Settings tab at any time
+
+### 🐛 Bug Fixes (also relevant to upstream)
+| Fix | Upstream issue |
+|-----|---------------|
+| Topics overflow crash (`MinerException`) — reserve buffer, catch gracefully | — |
+| Sub-drops (0-minute timers) hidden by default | [#37](https://github.com/rangermix/TwitchDropsMiner/issues/37) |
+| Not-Linked drops hidden by default | [#51](https://github.com/rangermix/TwitchDropsMiner/issues/51) |
+| Spade watch events sent for all channels (not only idle) | — |
+| Channel points webhook missing on WebSocket path | — |
+| `sendSpadeEvents` crash on `None` response | — |
+| `show_sub_drops`, `claim_channel_points`, `idle_channels` not persisted across restarts | — |
+| Discord webhooks not populating from saved settings on page load | — |
+
+### 🔄 Deployment
+- `update.sh` — one-command update that preserves `data/accounts/` and all customizations
+- Docker Compose with `WEB_PASSWORD` env support
 
 ---
 
@@ -171,18 +225,26 @@ The dashboard will show a password prompt on first visit. Auth is stored as a 30
 
 ## 🙏 Acknowledgments
 
-This project is a fork of the brilliant [TwitchDropsMiner](https://github.com/DevilXD/TwitchDropsMiner) by [@DevilXD](https://github.com/DevilXD).  
-Huge thanks to DevilXD and all contributors who built the foundation.
+This project builds on the work of:
+- [@DevilXD](https://github.com/DevilXD) — original creator of [TwitchDropsMiner](https://github.com/DevilXD/TwitchDropsMiner)
+- [@rangermix](https://github.com/rangermix) — upstream fork this project branched from
 
-For detailed translation and contribution credits, see [Acknowledgments](#original-project-credits) below.
+For translation credits, see the [Original Project Credits](#original-project-credits) section below.
+
+---
+
+## 🗺️ Planned Features
+
+- Apple Sign In integration for iOS builds
+- Further inventory and campaign UX improvements
+- Upstream PRs for applicable bug fixes
 
 ---
 
 ## 🧾 Disclaimer
 
-> ⚙️ This fork is heavily maintained and developed using AI-assisted coding (Claude Code).  
-> While stable, the codebase reflects “vibe coding” patterns — always review changes before deployment.  
-> Use responsibly.
+> This project is actively developed. It is stable and runs continuously in production,  
+> but use it at your own risk. Always back up your `data/` directory before updating.
 
 ---
 
