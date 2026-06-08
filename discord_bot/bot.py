@@ -410,7 +410,7 @@ class TwitchDropsBot(discord.Client):
         today_drops = 0
         today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         cp_totals: dict[str, int] = {}
-        paired_count = len(self.users_data)
+        cp_today_total = 0
 
         for uid, pairing in self.users_data.items():
             try:
@@ -422,12 +422,14 @@ class TwitchDropsBot(discord.Client):
                 pass
             for ch, bal in pairing.get("last_cp", {}).items():
                 cp_totals[ch] = max(cp_totals.get(ch, 0), bal)
+            if pairing.get("cp_today_date") == today_str:
+                cp_today_total += pairing.get("cp_today", 0)
 
         total_cp = sum(cp_totals.values())
 
         desc = (
             f"🎁  **{total_drops}** drops total  ·  **{today_drops}** today\n"
-            f"💰  **{total_cp:,}** channel points\n\n"
+            f"💰  **{total_cp:,}** pts total  ·  **{cp_today_total:,}** today\n\n"
             f"[View on GitHub]({GITHUB_URL})"
         )
         embed = discord.Embed(
@@ -436,7 +438,7 @@ class TwitchDropsBot(discord.Client):
             description=desc,
             color=COLOR_TWITCH,
         )
-        embed.set_footer(text="Auto-updates every 30 min · TwitchDropsMiner SAJ Fork")
+        embed.set_footer(text="Auto-updates every 30 min")
         embed.timestamp = datetime.now(timezone.utc)
         return embed
 
@@ -592,6 +594,14 @@ class TwitchDropsBot(discord.Client):
                                     if chest_new:
                                         self.users_data[user_id].setdefault("last_cp_meta", {}).setdefault(watching_channel, {})["chest_ts"] = last_chest_ts
                                     save_pairings(self.users_data)
+
+                            # Track today's earned CP (reset on date change)
+                            today_str_cp = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+                            if pairing.get("cp_today_date") != today_str_cp:
+                                self.users_data[user_id]["cp_today"] = 0
+                                self.users_data[user_id]["cp_today_date"] = today_str_cp
+                            if prev_balance is not None and cp_balance > prev_balance:
+                                self.users_data[user_id]["cp_today"] = pairing.get("cp_today", 0) + (cp_balance - prev_balance)
 
                             self.users_data[user_id].setdefault("last_cp", {})[watching_channel] = cp_balance
                             save_pairings(self.users_data)
