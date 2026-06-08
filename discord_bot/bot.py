@@ -528,6 +528,32 @@ class TwitchDropsBot(discord.Client):
                                 gained = cp_balance - prev_balance
                                 log.info("CP gain for %s on %s: +%d (prev=%d now=%d)", user_id, watching_channel, gained, prev_balance, cp_balance)
                                 if gained >= 25:
+                                    # Check if a chest was claimed in this window
+                                    last_chest = cp_data.get("last_chest", {})
+                                    last_chest_ts = last_chest.get("ts", "")
+                                    chest_bonus = last_chest.get("bonus", 0)
+                                    last_seen_chest_ts = pairing.get("last_cp_meta", {}).get(watching_channel, {}).get("chest_ts", "")
+                                    chest_this_poll = (chest_bonus > 0 and last_chest_ts and last_chest_ts != last_seen_chest_ts)
+
+                                    if chest_this_poll:
+                                        watch_pts = max(0, gained - chest_bonus)
+                                        if watch_pts > 0:
+                                            desc = (
+                                                f"🎁 **Bonus Chest: +{chest_bonus:,} pts** on **{watching_channel}**\n"
+                                                f"📺 From watching: +{watch_pts:,} pts\n"
+                                                f"Balance: **{cp_balance:,} pts**"
+                                            )
+                                        else:
+                                            desc = (
+                                                f"🎁 **Bonus Chest: +{chest_bonus:,} pts** on **{watching_channel}**\n"
+                                                f"Balance: **{cp_balance:,} pts**"
+                                            )
+                                    else:
+                                        desc = (
+                                            f"📺 **+{gained:,} pts** from watching **{watching_channel}**\n"
+                                            f"Balance: **{cp_balance:,} pts**"
+                                        )
+
                                     for pts_ch_id in _channel_ids(pairing, "points"):
                                         pts_ch = self.get_channel(pts_ch_id)
                                         if pts_ch is None:
@@ -539,7 +565,7 @@ class TwitchDropsBot(discord.Client):
                                         if pts_ch:
                                             embed = discord.Embed(
                                                 title="💰 Channel Points",
-                                                description=f"**+{gained:,} pts** on **{watching_channel}**\nBalance: **{cp_balance:,} pts**",
+                                                description=desc,
                                                 color=COLOR_TWITCH,
                                             )
                                             if account_name:
@@ -551,6 +577,11 @@ class TwitchDropsBot(discord.Client):
                                             log.info("CP notification sent to channel %s", pts_ch_id)
                                         else:
                                             log.warning("Points channel %s not found for user %s", pts_ch_id, user_id)
+
+                                    # Save seen chest_ts to avoid duplicate chest notifications
+                                    if chest_this_poll:
+                                        self.users_data[user_id].setdefault("last_cp_meta", {}).setdefault(watching_channel, {})["chest_ts"] = last_chest_ts
+                                        save_pairings(self.users_data)
 
                             self.users_data[user_id].setdefault("last_cp", {})[watching_channel] = cp_balance
                             save_pairings(self.users_data)
