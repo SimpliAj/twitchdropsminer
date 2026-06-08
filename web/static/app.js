@@ -1484,7 +1484,8 @@ function updateBotPairedUI(paired) {
         badge.replaceChildren();
         const span = document.createElement('span');
         span.style.color = paired ? '#57d75b' : '#adadb8';
-        span.textContent = paired ? '✅ Connected' : 'Not connected';
+        const db = state.translations.gui?.settings?.discord_bot;
+        span.textContent = paired ? (db?.connected || '✅ Connected') : (db?.not_connected || 'Not connected');
         badge.appendChild(span);
     }
     if (revokeBtn) revokeBtn.style.display = paired ? 'inline-block' : 'none';
@@ -1494,7 +1495,7 @@ async function botGenerateCode() {
     const box = document.getElementById('bot-pair-code-box');
     const codeText = document.getElementById('bot-pair-code-text');
     const btn = document.getElementById('bot-generate-btn');
-    if (btn) { btn.disabled = true; btn.textContent = 'Generating...'; }
+    if (btn) { btn.disabled = true; btn.textContent = state.translations.gui?.settings?.discord_bot?.generating || 'Generating...'; }
     try {
         const res = await fetch('/api/pair/generate', { method: 'POST' });
         if (!res.ok) throw new Error(await res.text());
@@ -1518,12 +1519,12 @@ async function botGenerateCode() {
     } catch (e) {
         alert('Fehler: ' + e.message);
     } finally {
-        if (btn) { btn.disabled = false; btn.textContent = 'Generate code'; }
+        if (btn) { btn.disabled = false; btn.textContent = state.translations.gui?.settings?.discord_bot?.generate_code || 'Generate code'; }
     }
 }
 
 async function botRevoke() {
-    if (!confirm('Disconnect the Discord bot?')) return;
+    if (!confirm(state.translations.gui?.settings?.discord_bot?.disconnect_confirm || 'Disconnect the Discord bot?')) return;
     try {
         const res = await fetch('/api/pair/revoke', { method: 'DELETE' });
         if (!res.ok) throw new Error(await res.text());
@@ -2209,6 +2210,23 @@ function applyTranslations(t) {
 
         // Re-render games to watch with translated empty messages
         renderGamesToWatch();
+
+        // Discord Bot section
+        if (t.gui?.settings?.discord_bot) {
+            const db = t.gui.settings.discord_bot;
+            const dbHeader = document.getElementById('settings-discord-bot-header');
+            if (dbHeader) dbHeader.textContent = db.header;
+            const dbDesc = document.getElementById('settings-discord-bot-desc');
+            if (dbDesc) dbDesc.textContent = db.description;
+            const dbExpires = document.getElementById('settings-discord-bot-expires');
+            if (dbExpires) dbExpires.textContent = db.expires;
+            const dbGenBtn = document.getElementById('bot-generate-btn');
+            if (dbGenBtn && !dbGenBtn.disabled) dbGenBtn.textContent = db.generate_code;
+            const dbRevokeBtn = document.getElementById('bot-revoke-btn');
+            if (dbRevokeBtn) dbRevokeBtn.textContent = db.disconnect;
+            const dbInviteText = document.getElementById('settings-discord-bot-invite-text');
+            if (dbInviteText) dbInviteText.textContent = db.invite_bot;
+        }
     }
 
     // Update Help tab

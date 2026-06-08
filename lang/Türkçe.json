@@ -164,7 +164,19 @@
             "password_disabled_msg": "Login disabled.",
             "password_mismatch": "Passwords don't match.",
             "password_status_active": "🔒 Login active — Password set",
-            "password_status_inactive": "🔓 No login — publicly accessible"
+            "password_status_inactive": "🔓 No login — publicly accessible",
+            "discord_bot": {
+                "header": "Discord Bot",
+                "description": "TwitchDropsMiner'ı sohbet komutlarıyla kontrol etmek için Discord botu bağlayın.",
+                "not_connected": "Bağlı değil",
+                "connected": "✅ Bağlı",
+                "generate_code": "Kod oluştur",
+                "generating": "Oluşturuluyor...",
+                "disconnect": "Bağlantıyı kes",
+                "disconnect_confirm": "Discord botunu bağlantısını kesmek istiyor musunuz?",
+                "invite_bot": "Botu davet et",
+                "expires": "10 dakika içinde sona erer"
+            }
         },
         "help": {
             "about": "Twitch Drops Miner Hakkında",
