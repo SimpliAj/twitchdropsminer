@@ -43,6 +43,15 @@ def load_pairings() -> dict:
 
 
 def save_pairings(users: dict) -> None:
+    # Preserve fields written externally (e.g. profile_name set by web app)
+    if PAIRINGS_PATH.exists():
+        try:
+            existing = json.loads(PAIRINGS_PATH.read_text()).get("users", {})
+            for uid, entry in users.items():
+                if uid in existing and existing[uid].get("profile_name"):
+                    entry.setdefault("profile_name", existing[uid]["profile_name"])
+        except Exception:
+            pass
     with open(PAIRINGS_PATH, "w") as f:
         json.dump({"users": users}, f, indent=2)
 
@@ -100,8 +109,13 @@ def _channel_entries(pairing: dict, type: str) -> list[dict]:
     return entries
 
 
-def make_footer(embed: discord.Embed) -> None:
-    embed.set_footer(text="TwitchDropsMiner Bot")
+def get_footer_text(pairing: dict | None, suffix: str = "") -> str:
+    name = (pairing or {}).get("profile_name") or "TwitchDropsMiner Bot"
+    return f"{name}{suffix}"
+
+
+def make_footer(embed: discord.Embed, pairing: dict | None = None, suffix: str = "") -> None:
+    embed.set_footer(text=get_footer_text(pairing, suffix))
     embed.timestamp = datetime.now(timezone.utc)
 
 
@@ -138,13 +152,12 @@ async def api_post(session: aiohttp.ClientSession, url: str, token: str, path: s
         return await resp.json()
 
 
-async def build_dashboard_embed(session: aiohttp.ClientSession, url: str, token: str) -> discord.Embed:
+async def build_dashboard_embed(session: aiohttp.ClientSession, url: str, token: str, pairing: dict | None = None) -> discord.Embed:
     try:
         status_data = await api_get(session, url, token, "/api/status")
     except Exception:
         e = discord.Embed(title="TwitchDropsMiner — Dashboard", description="❌ Dashboard unreachable", color=COLOR_ERROR)
-        e.set_footer(text="TwitchDropsMiner Bot • Updates every 30s")
-        e.timestamp = datetime.now(timezone.utc)
+        make_footer(e, pairing, " • Updates every 30s")
         return e
 
     paused = status_data.get("paused", False)
@@ -251,8 +264,7 @@ async def build_dashboard_embed(session: aiohttp.ClientSession, url: str, token:
     except Exception:
         pass
 
-    embed.set_footer(text="TwitchDropsMiner Bot • Auto-updates on change")
-    embed.timestamp = datetime.now(timezone.utc)
+    make_footer(embed, pairing, " • Auto-updates on change")
     return embed
 
 
@@ -279,7 +291,7 @@ class DashboardView(discord.ui.View):
         if not pairing:
             return
         async with aiohttp.ClientSession() as session:
-            new_embed = await build_dashboard_embed(session, pairing["url"], pairing["token"])
+            new_embed = await build_dashboard_embed(session, pairing["url"], pairing["token"], pairing)
         await interaction.message.edit(embed=new_embed, view=DashboardView(self.owner_id, self.bot))
 
     @discord.ui.button(label="⏸️ Pause/Resume", style=discord.ButtonStyle.primary, row=0)
@@ -408,7 +420,8 @@ class TwitchDropsBot(discord.Client):
         GITHUB_URL = "https://github.com/SimpliAj/twitchdropsminer"
         total_drops = 0
         today_drops = 0
-        today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        from zoneinfo import ZoneInfo
+        today_str = datetime.now(ZoneInfo("Europe/Vienna")).strftime("%Y-%m-%d")
         cp_totals: dict[str, int] = {}
         cp_today_total = 0
 
@@ -461,6 +474,12 @@ class TwitchDropsBot(discord.Client):
     async def poll_task(self):
         if not self.users_data:
             return
+        # Reload from disk to pick up external changes (e.g. profile_name set by web app)
+        fresh = load_pairings()
+        for uid, fresh_pairing in fresh.items():
+            if uid in self.users_data:
+                name = fresh_pairing.get("profile_name") or ""
+                self.users_data[uid]["profile_name"] = name
         async with aiohttp.ClientSession() as session:
             for user_id, pairing in list(self.users_data.items()):
                 try:
@@ -468,15 +487,6 @@ class TwitchDropsBot(discord.Client):
                     watching_channel = None
                     cp_balance = None
                     paused = False
-
-                    # Fetch account name once for notifications
-                    account_name = None
-                    try:
-                        status_data_pre = await api_get(session, pairing["url"], pairing["token"], "/api/status")
-                        login_info = status_data_pre.get("login", {})
-                        account_name = login_info.get("user_login") if isinstance(login_info, dict) else str(login_info) if login_info else None
-                    except Exception:
-                        pass
 
                     # Check for new drops
                     history = await api_get(session, pairing["url"], pairing["token"], "/api/drops-history")
@@ -505,7 +515,7 @@ class TwitchDropsBot(discord.Client):
                                         embed.add_field(name="Reward", value=f"**{reward}**", inline=False)
                                         if image_url:
                                             embed.set_thumbnail(url=image_url)
-                                        footer = f"Account: {account_name}" if account_name else "TwitchDropsMiner Bot"
+                                        footer = get_footer_text(pairing)
                                         embed.set_footer(text=footer)
                                         embed.timestamp = datetime.now(timezone.utc)
                                         await ch.send(embed=embed)
@@ -579,11 +589,7 @@ class TwitchDropsBot(discord.Client):
                                                 description=desc,
                                                 color=COLOR_TWITCH,
                                             )
-                                            if account_name:
-                                                embed.set_footer(text=f"Account: {account_name}")
-                                                embed.timestamp = datetime.now(timezone.utc)
-                                            else:
-                                                make_footer(embed)
+                                            make_footer(embed, pairing)
                                             await pts_ch.send(embed=embed)
                                             log.info("CP notification sent to channel %s", pts_ch_id)
                                         else:
@@ -596,7 +602,8 @@ class TwitchDropsBot(discord.Client):
                                     save_pairings(self.users_data)
 
                             # Track today's earned CP (reset on date change)
-                            today_str_cp = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+                            from zoneinfo import ZoneInfo as _ZI
+                            today_str_cp = datetime.now(_ZI("Europe/Vienna")).strftime("%Y-%m-%d")
                             if pairing.get("cp_today_date") != today_str_cp:
                                 self.users_data[user_id]["cp_today"] = 0
                                 self.users_data[user_id]["cp_today_date"] = today_str_cp
@@ -625,7 +632,7 @@ class TwitchDropsBot(discord.Client):
                             if ch:
                                 try:
                                     msg = await ch.fetch_message(int(dashboard["message_id"]))
-                                    new_embed = await build_dashboard_embed(session, pairing["url"], pairing["token"])
+                                    new_embed = await build_dashboard_embed(session, pairing["url"], pairing["token"], pairing)
                                     view = DashboardView(int(user_id), self)
                                     await msg.edit(embed=new_embed, view=view)
                                     self.users_data[user_id]["last_embed_state"] = state_key
@@ -777,7 +784,7 @@ def register_commands(bot: TwitchDropsBot):
             return
         try:
             async with aiohttp.ClientSession() as session:
-                embed = await build_dashboard_embed(session, pairing["url"], pairing["token"])
+                embed = await build_dashboard_embed(session, pairing["url"], pairing["token"], pairing)
 
             view = DashboardView(interaction.user.id, bot)
             msg = await interaction.followup.send(embed=embed, view=view)
