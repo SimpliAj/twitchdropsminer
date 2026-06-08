@@ -379,6 +379,21 @@ header h1 {
     border-color: #c98800;
 }
 
+.qc-btn--active-green {
+    background: #1a7a3a;
+    border-color: #22a050;
+    color: #fff;
+}
+
+.qc-btn--active-green .qc-labels small {
+    color: rgba(255,255,255,0.75);
+}
+
+.qc-btn--active-green:hover {
+    background: #22a050;
+    border-color: #22a050;
+}
+
 .qc-status {
     margin-left: auto;
     font-size: 0.8rem;

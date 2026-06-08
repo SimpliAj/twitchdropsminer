@@ -557,15 +557,25 @@ function updateQCButtons(status) {
     const switchBtn = document.getElementById('qc-switch-btn');
     const skipBtn = document.getElementById('qc-skip-btn');
 
-    // "Start Drop Mining" button — highlighted when idle-watching (action is useful)
+    // "Start Drop Mining" button
     if (checkBtn) {
         const strong = checkBtn.querySelector('strong');
         const small = checkBtn.querySelector('small');
-        checkBtn.classList.toggle('qc-btn--active', isIdleWatching);
-        if (strong) strong.textContent = 'Start Drop Mining';
-        if (small) small.textContent = isIdleWatching
-            ? 'Stop idle, search for drops now'
-            : isMining ? 'Refresh available drops' : 'Search for active drops';
+        checkBtn.classList.remove('qc-btn--active', 'qc-btn--active-green');
+        if (isMining) {
+            // Actively mining a drop → green
+            checkBtn.classList.add('qc-btn--active-green');
+            if (strong) strong.textContent = 'Drop Mining Active';
+            if (small) small.textContent = 'Currently farming drops';
+        } else if (isIdleWatching) {
+            // Idle-watching → purple, action is start mining
+            checkBtn.classList.add('qc-btn--active');
+            if (strong) strong.textContent = 'Start Drop Mining';
+            if (small) small.textContent = 'Stop idle, search for drops now';
+        } else {
+            if (strong) strong.textContent = 'Start Drop Mining';
+            if (small) small.textContent = 'Search for active drops';
+        }
     }
 
     // "Switch Idle Channel" — highlighted when idle-watching
