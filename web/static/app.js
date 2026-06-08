@@ -1506,21 +1506,62 @@ async function loadBotChannelConfig() {
         if (!res.ok) return;
         const data = await res.json();
         const channels = data.channels || {};
-        const dropsArr = channels.drops || [];
-        const pointsArr = channels.points || [];
-        const dropsEl = document.getElementById('bot-drops-channel');
-        const pointsEl = document.getElementById('bot-points-channel');
-        const dropsClear = document.getElementById('bot-drops-clear-btn');
-        const pointsClear = document.getElementById('bot-points-clear-btn');
-        if (dropsEl) dropsEl.textContent = dropsArr.length ? dropsArr.map(id => `#${id}`).join(', ') : '—';
-        if (pointsEl) pointsEl.textContent = pointsArr.length ? pointsArr.map(id => `#${id}`).join(', ') : '—';
-        if (dropsClear) dropsClear.style.display = dropsArr.length ? 'inline-block' : 'none';
-        if (pointsClear) pointsClear.style.display = pointsArr.length ? 'inline-block' : 'none';
+        renderChannelList('bot-drops-list', channels.drops || [], 'drops');
+        renderChannelList('bot-points-list', channels.points || [], 'points');
     } catch (e) {}
 }
 
+function renderChannelList(containerId, entries, type) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.replaceChildren();
+    if (!entries.length) {
+        const empty = document.createElement('div');
+        empty.style.cssText = 'font-size:.8rem;color:#6b6b7b;font-style:italic;';
+        empty.textContent = '—';
+        container.appendChild(empty);
+        return;
+    }
+    for (const entry of entries) {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;background:#18181b;border:1px solid #2d2d35;border-radius:6px;padding:5px 8px;';
+        const label = document.createElement('div');
+        label.style.cssText = 'font-size:.82rem;min-width:0;overflow:hidden;';
+        const name = entry.name ? `#${entry.name}` : `#${entry.id}`;
+        const guild = entry.guild ? ` — ${entry.guild}` : '';
+        const nameSpan = document.createElement('span');
+        nameSpan.style.cssText = 'color:#efeff1;font-weight:500;';
+        nameSpan.textContent = name;
+        const guildSpan = document.createElement('span');
+        guildSpan.style.cssText = 'color:#6b6b7b;font-size:.75rem;';
+        guildSpan.textContent = guild;
+        label.appendChild(nameSpan);
+        label.appendChild(guildSpan);
+        const btn = document.createElement('button');
+        btn.className = 'secondary-btn';
+        btn.style.cssText = 'font-size:.72rem;padding:2px 7px;color:#eb4a4a;border-color:#eb4a4a;flex-shrink:0;';
+        btn.textContent = '✕ Remove';
+        btn.onclick = () => botRemoveChannel(type, entry.id);
+        row.appendChild(label);
+        row.appendChild(btn);
+        container.appendChild(row);
+    }
+}
+
+
+async function botRemoveChannel(type, channelId) {
+    if (!confirm(`Remove this channel from ${type} notifications?`)) return;
+    try {
+        const res = await fetch(`/api/discord-bot/config/channel/${type}?channel_id=${channelId}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error(await res.text());
+        loadBotChannelConfig();
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+}
+
 async function botClearChannel(type) {
-    if (!confirm(`Clear the ${type} notification channel?`)) return;
+    if (!confirm(`Clear all ${type} notification channels?`)) return;
     try {
         const res = await fetch(`/api/discord-bot/config/channel/${type}`, { method: 'DELETE' });
         if (!res.ok) throw new Error(await res.text());
