@@ -1327,7 +1327,7 @@ header h1 {
 
 /* Help */
 .help-content {
-    max-width: 800px;
+    max-width: 100%;
     background: var(--bg-panel);
     border: 1px solid var(--border-color);
     border-radius: 8px;
