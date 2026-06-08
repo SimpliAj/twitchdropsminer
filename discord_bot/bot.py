@@ -166,7 +166,7 @@ async def build_dashboard_embed(session: aiohttp.ClientSession, url: str, token:
         if isinstance(history, list):
             embed.add_field(name="📈 Total Drops", value=f"**{len(history)}**", inline=True)
             if history:
-                last = history[-1]
+                last = history[0]  # newest-first
                 reward = last.get("reward") or last.get("drop") or "?"
                 game = last.get("game", "")
                 ts = last.get("timestamp", "")[:10] if last.get("timestamp") else ""
@@ -175,6 +175,9 @@ async def build_dashboard_embed(session: aiohttp.ClientSession, url: str, token:
                     value=f"**{reward}**\n{game}{' · ' + ts if ts else ''}",
                     inline=True,
                 )
+                item_img = last.get("image_url")
+                if item_img:
+                    embed.set_thumbnail(url=item_img)
     except Exception:
         pass
 
@@ -310,7 +313,7 @@ class DashboardView(discord.ui.View):
             embed = discord.Embed(title="🎁 Recent Drops", color=COLOR_TWITCH)
             if history:
                 lines = []
-                for drop in history[-10:][::-1]:
+                for drop in history[:10]:  # newest-first
                     game = drop.get("game", "?")
                     reward = drop.get("reward") or drop.get("drop") or "?"
                     ts = drop.get("timestamp", "")[:10] if drop.get("timestamp") else ""
@@ -380,7 +383,7 @@ class TwitchDropsBot(discord.Client):
                         drop_count = len(history)
                         last_count = pairing.get("last_drop_count", 0)
                         if drop_count > last_count:
-                            new_drops = history[last_count:drop_count]
+                            new_drops = history[:drop_count - last_count]  # newest-first list
                             self.users_data[user_id]["last_drop_count"] = drop_count
                             save_pairings(self.users_data)
 
