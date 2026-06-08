@@ -319,17 +319,16 @@ header h1 {
 
 /* Quick Controls */
 .quick-controls-row {
-    display: flex;
-    align-items: center;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 10px;
-    flex-wrap: wrap;
 }
 
 .qc-btn {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 8px 14px;
+    padding: 10px 14px;
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: 8px;
@@ -337,6 +336,7 @@ header h1 {
     cursor: pointer;
     transition: background 0.15s, border-color 0.15s;
     text-align: left;
+    min-height: 62px;
 }
 
 .qc-btn:hover {
@@ -421,10 +421,11 @@ header h1 {
 }
 
 .qc-status {
-    margin-left: auto;
+    grid-column: 1 / -1;
     font-size: 0.8rem;
     color: #adadb8;
     font-style: italic;
+    text-align: center;
 }
 
 .stat-item {
@@ -1894,10 +1895,6 @@ header h1 {
 @media (max-width: 768px) {
     .container {
         padding: 10px;
-    }
-
-    .qc-btn {
-        flex: 1 1 calc(50% - 5px);
     }
 
     .qc-status {

@@ -304,6 +304,26 @@
                         <div id="bot-pair-code-text"></div>
                         <small id="settings-discord-bot-expires" style="color:#adadb8;font-size:.78rem;">(Expires in 10 min)</small>
                     </div>
+                    <div id="bot-channel-config" style="display:none;background:#0e0e10;border:1px solid #3d3d4a;border-radius:8px;padding:12px;margin-bottom:12px;">
+                        <div style="font-size:.8rem;font-weight:600;color:#adadb8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Notification Channels</div>
+                        <div style="display:flex;flex-direction:column;gap:6px;">
+                            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                                <div>
+                                    <span style="font-size:.82rem;color:#adadb8;">🎁 Drops: </span>
+                                    <span id="bot-drops-channel" style="font-family:monospace;font-size:.82rem;">—</span>
+                                </div>
+                                <button id="bot-drops-clear-btn" class="secondary-btn" style="display:none;font-size:.75rem;padding:2px 8px;color:#eb4a4a;border-color:#eb4a4a;" onclick="botClearChannel('drops')">Clear</button>
+                            </div>
+                            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                                <div>
+                                    <span style="font-size:.82rem;color:#adadb8;">💰 Points: </span>
+                                    <span id="bot-points-channel" style="font-family:monospace;font-size:.82rem;">—</span>
+                                </div>
+                                <button id="bot-points-clear-btn" class="secondary-btn" style="display:none;font-size:.75rem;padding:2px 8px;color:#eb4a4a;border-color:#eb4a4a;" onclick="botClearChannel('points')">Clear</button>
+                            </div>
+                        </div>
+                        <p style="font-size:.75rem;color:#6b6b7b;margin:8px 0 0;">Use <code>/setchannel</code> in Discord to set channels.</p>
+                    </div>
                     <div style="display:flex;gap:8px;flex-wrap:wrap;">
                         <button id="bot-generate-btn" class="secondary-btn" onclick="botGenerateCode()">Generate code</button>
                         <button id="bot-revoke-btn" class="secondary-btn" style="display:none;color:#eb4a4a;border-color:#eb4a4a;" onclick="botRevoke()">Disconnect</button>
