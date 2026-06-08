@@ -29,14 +29,17 @@
                 </div>
             </div>
             <div class="status-bar">
-                <span id="status-text">Initializing...</span>
-                <span id="auto-mode-badge" class="mode-badge" title="Automatic mode - following game priority">
-                    🤖 AUTO
-                </span>
-                <span id="proxy-indicator" class="proxy-badge" style="display: none;" title="Proxy connection active">
-                    🔒 PROXY
-                </span>
-                <span id="connection-indicator" class="connected">● Connected</span>
+                <div class="status-left">
+                    <span id="auto-mode-badge" class="mode-badge" title="Automatic mode - following game priority">🤖 AUTO</span>
+                    <span id="proxy-indicator" class="proxy-badge" style="display: none;" title="Proxy connection active">🔒 PROXY</span>
+                </div>
+                <div class="status-center">
+                    <span id="status-text">Initializing...</span>
+                </div>
+                <div class="status-right">
+                    <button id="pause-resume-btn" class="pause-resume-btn" onclick="togglePause()" title="Pause or resume mining">⏸ Pause</button>
+                    <span id="connection-indicator" class="connected">● Connected</span>
+                </div>
             </div>
         </header>
 
@@ -309,6 +312,26 @@
                     <p class="help-text">Comma-separated keywords. Drops whose name contains any keyword are ignored. Useful for regional/exclusive drops (e.g. <code>JP, Korea, (KR)</code>).</p>
                     <input type="text" id="drop-blacklist-input" class="settings-input"
                         placeholder="JP, Korea, (KR), exclusive..." style="width:100%;box-sizing:border-box;">
+                </section>
+
+                <section class="settings-section">
+                    <h2>Scheduler</h2>
+                    <p class="help-text">Automatically pause and resume mining based on time of day.</p>
+                    <label style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                        <input type="checkbox" id="scheduler-enabled" onchange="saveSettings()">
+                        Enable time-based scheduler
+                    </label>
+                    <div class="scheduler-times" id="scheduler-times">
+                        <label style="display:flex;align-items:center;gap:8px;">
+                            <span style="min-width:90px;font-size:.9rem;">Active from</span>
+                            <input type="time" id="scheduler-start" class="settings-input" onchange="saveSettings()">
+                        </label>
+                        <label style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+                            <span style="min-width:90px;font-size:.9rem;">Active until</span>
+                            <input type="time" id="scheduler-stop" class="settings-input" onchange="saveSettings()">
+                        </label>
+                        <p class="help-text" style="margin-top:6px;">Mining runs only within this window. Outside it, mining is automatically paused.</p>
+                    </div>
                 </section>
 
                 <section class="settings-section">

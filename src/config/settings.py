@@ -52,6 +52,9 @@ default_settings = {
     "claim_channel_points": True,
     "idle_channels": [],
     "idle_use_followed": False,
+    "scheduler_enabled": False,
+    "scheduler_start": "22:00",
+    "scheduler_stop": "08:00",
     "discord_webhook_drops": "",
     "discord_webhook_points": "",
     "drop_name_blacklist": [],
@@ -71,6 +74,9 @@ class Settings:
     claim_channel_points: bool
     idle_channels: list[str]
     idle_use_followed: bool
+    scheduler_enabled: bool
+    scheduler_start: str
+    scheduler_stop: str
     discord_webhook_drops: str
     discord_webhook_points: str
     drop_name_blacklist: list[str]
