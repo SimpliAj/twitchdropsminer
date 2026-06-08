@@ -50,6 +50,16 @@ def get_user_pairing(users: dict, user_id: int) -> dict | None:
     return users.get(str(user_id))
 
 
+def _channel_ids(pairing: dict, type: str) -> list[int]:
+    """Return list of channel IDs for a notification type (supports single int or list)."""
+    val = pairing.get("channels", {}).get(type)
+    if val is None:
+        return []
+    if isinstance(val, list):
+        return [int(v) for v in val if v]
+    return [int(val)]
+
+
 def make_footer(embed: discord.Embed) -> None:
     embed.set_footer(text="TwitchDropsMiner Bot")
     embed.timestamp = datetime.now(timezone.utc)
@@ -379,6 +389,15 @@ class TwitchDropsBot(discord.Client):
                     cp_balance = None
                     paused = False
 
+                    # Fetch account name once for notifications
+                    account_name = None
+                    try:
+                        status_data_pre = await api_get(session, pairing["url"], pairing["token"], "/api/status")
+                        login_info = status_data_pre.get("login", {})
+                        account_name = login_info.get("user_login") if isinstance(login_info, dict) else str(login_info) if login_info else None
+                    except Exception:
+                        pass
+
                     # Check for new drops
                     history = await api_get(session, pairing["url"], pairing["token"], "/api/drops-history")
                     if isinstance(history, list):
@@ -386,21 +405,35 @@ class TwitchDropsBot(discord.Client):
                         last_count = pairing.get("last_drop_count", 0)
                         if drop_count > last_count:
                             new_drops = history[:drop_count - last_count]  # newest-first list
-                            self.users_data[user_id]["last_drop_count"] = drop_count
-                            save_pairings(self.users_data)
-
-                            drops_channel_id = pairing.get("channels", {}).get("drops")
-                            if drops_channel_id:
-                                ch = self.get_channel(int(drops_channel_id))
+                            for drops_ch_id in _channel_ids(pairing, "drops"):
+                                ch = self.get_channel(drops_ch_id)
+                                if ch is None:
+                                    try:
+                                        ch = await self.fetch_channel(drops_ch_id)
+                                    except Exception:
+                                        ch = None
                                 if ch:
-                                    embed = discord.Embed(title="🎁 New Drop Claimed!", color=COLOR_TWITCH)
                                     for drop in new_drops[-10:]:
                                         game = drop.get("game", "Unknown")
-                                        reward = drop.get("reward") or drop.get("drop") or "Unknown"
-                                        ts = drop.get("timestamp", "")[:10] if drop.get("timestamp") else ""
-                                        embed.add_field(name=game, value=f"**{reward}**\n{ts}", inline=True)
-                                    make_footer(embed)
-                                    await ch.send(embed=embed)
+                                        drop_name = drop.get("drop", "")
+                                        reward = drop.get("reward") or drop_name or "Unknown"
+                                        image_url = drop.get("image_url")
+                                        embed = discord.Embed(title="🎁 Drop Claimed!", color=COLOR_TWITCH)
+                                        embed.add_field(name="Game", value=game, inline=False)
+                                        if drop_name and drop_name != reward:
+                                            embed.add_field(name="Drop", value=drop_name, inline=False)
+                                        embed.add_field(name="Reward", value=f"**{reward}**", inline=False)
+                                        if image_url:
+                                            embed.set_thumbnail(url=image_url)
+                                        footer = f"Account: {account_name}" if account_name else "TwitchDropsMiner Bot"
+                                        embed.set_footer(text=footer)
+                                        embed.timestamp = datetime.now(timezone.utc)
+                                        await ch.send(embed=embed)
+                                    log.info("Drops notification sent to %s (%d new drops)", drops_ch_id, len(new_drops))
+                                else:
+                                    log.warning("Drops channel %s not found for user %s", drops_ch_id, user_id)
+                            self.users_data[user_id]["last_drop_count"] = drop_count
+                            save_pairings(self.users_data)
 
                     # Channel points tracking
                     try:
@@ -414,18 +447,31 @@ class TwitchDropsBot(discord.Client):
 
                             if prev_balance is not None and cp_balance > prev_balance:
                                 gained = cp_balance - prev_balance
+                                log.info("CP gain for %s on %s: +%d (prev=%d now=%d)", user_id, watching_channel, gained, prev_balance, cp_balance)
                                 if gained >= 25:
-                                    points_ch_id = pairing.get("channels", {}).get("points")
-                                    if points_ch_id:
-                                        pts_ch = self.get_channel(int(points_ch_id))
+                                    for pts_ch_id in _channel_ids(pairing, "points"):
+                                        pts_ch = self.get_channel(pts_ch_id)
+                                        if pts_ch is None:
+                                            try:
+                                                pts_ch = await self.fetch_channel(pts_ch_id)
+                                            except Exception as fe:
+                                                log.warning("Could not fetch points channel %s: %s", pts_ch_id, fe)
+                                                pts_ch = None
                                         if pts_ch:
                                             embed = discord.Embed(
                                                 title="💰 Channel Points",
                                                 description=f"**+{gained:,} pts** on **{watching_channel}**\nBalance: **{cp_balance:,} pts**",
                                                 color=COLOR_TWITCH,
                                             )
-                                            make_footer(embed)
+                                            if account_name:
+                                                embed.set_footer(text=f"Account: {account_name}")
+                                                embed.timestamp = datetime.now(timezone.utc)
+                                            else:
+                                                make_footer(embed)
                                             await pts_ch.send(embed=embed)
+                                            log.info("CP notification sent to channel %s", pts_ch_id)
+                                        else:
+                                            log.warning("Points channel %s not found for user %s", pts_ch_id, user_id)
 
                             self.users_data[user_id].setdefault("last_cp", {})[watching_channel] = cp_balance
                             save_pairings(self.users_data)
@@ -535,13 +581,30 @@ def register_commands(bot: TwitchDropsBot):
             await interaction.response.send_message(embed=not_linked_embed(), ephemeral=True)
             return
         channel_id = interaction.channel_id
-        bot.users_data[uid]["channels"][type] = channel_id
+        channels = bot.users_data[uid].setdefault("channels", {})
+        existing = channels.get(type)
+        # Normalize to list
+        if existing is None:
+            channel_list = []
+        elif isinstance(existing, list):
+            channel_list = existing
+        else:
+            channel_list = [existing]
+        if channel_id not in channel_list:
+            channel_list.append(channel_id)
+        channels[type] = channel_list
         save_pairings(bot.users_data)
         label = "Drop notifications" if type == "drops" else "Channel Points notifications"
-        await interaction.response.send_message(
-            embed=success_embed(f"✅ {label} will now be posted in <#{channel_id}>."),
-            ephemeral=True,
-        )
+        if len(channel_list) > 1:
+            await interaction.response.send_message(
+                embed=success_embed(f"✅ {label} will now also be posted in <#{channel_id}>.\n({len(channel_list)} channels total)"),
+                ephemeral=True,
+            )
+        else:
+            await interaction.response.send_message(
+                embed=success_embed(f"✅ {label} will now be posted in <#{channel_id}>."),
+                ephemeral=True,
+            )
 
     @bot.tree.command(name="dashboard", description="Post a live-updating stats embed with control buttons")
     async def cmd_dashboard(interaction: discord.Interaction):
