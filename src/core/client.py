@@ -316,6 +316,16 @@ class Twitch:
                 for campaign in self.inventory:
                     if not campaign.upcoming:
                         for drop in campaign.drops:
+                            # If drop is fully complete but has no claim_id (WebSocket missed),
+                            # generate a synthetic claim_id so can_claim returns True
+                            if (
+                                not drop.is_claimed
+                                and drop.claim_id is None
+                                and hasattr(drop, "progress")
+                                and drop.progress >= 1.0
+                            ):
+                                logger.info(f"Generating synthetic claim_id for completed drop: {drop.id}")
+                                await drop.generate_claim()
                             if drop.can_claim:
                                 claimed = await drop.claim()
                                 if claimed:
