@@ -1274,6 +1274,7 @@ function renderInventory() {
         // Build drops elements
         const dropsEl = makeElement('div', { class: 'campaign-drops' });
         campaign.drops.forEach(drop => {
+            if (!filters.show_sub_drops && (drop.required_subs || 0) > 0) return;
             const dropItem = makeElement('div', { class: `drop-item${drop.is_claimed ? ' claimed' : ''}${drop.can_claim ? ' active' : ''}` });
             const subBadge = (drop.required_subs || 0) > 0
                 ? makeElement('span', { class: 'sub-required-badge', title: `Requires ${drop.required_subs} subscription(s)` }, '★ Sub')
