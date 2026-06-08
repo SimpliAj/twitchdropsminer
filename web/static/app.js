@@ -578,13 +578,14 @@ function updateQCButtons(status) {
         }
     }
 
-    // "Switch Idle Channel" — highlighted when idle-watching
+    // "Switch Channel" — only visible + highlighted when idle-watching
     if (switchBtn) {
+        switchBtn.style.display = isIdleWatching ? '' : 'none';
         switchBtn.classList.toggle('qc-btn--active', isIdleWatching);
         const strong = switchBtn.querySelector('strong');
         const small = switchBtn.querySelector('small');
-        if (strong) strong.textContent = isIdleWatching ? 'Switch Channel' : 'Switch Idle Channel';
-        if (small) small.textContent = isIdleWatching ? 'Next idle channel' : 'Farm points on next channel';
+        if (strong) strong.textContent = 'Switch Channel';
+        if (small) small.textContent = 'Next idle channel';
     }
 
     // "Skip Current Game" — shown + highlighted yellow when actively mining
