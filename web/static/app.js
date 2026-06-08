@@ -982,6 +982,9 @@ function campaignMatchesFilters(campaign, filters) {
         }
     }
 
+    // Hide subscription-required drops unless show_sub_drops is enabled
+    if (!filters.show_sub_drops && campaign.subscription_required) return false;
+
     // Check benefit type filter - campaign must have at least one drop with a matching benefit type
     // Only filter if at least one benefit type is UNCHECKED (otherwise show all)
     const allBenefitsEnabled = filters.show_benefit_item && filters.show_benefit_badge &&
@@ -1824,6 +1827,42 @@ function deselectAllGames() {
     saveSettings();
 }
 
+function selectLinkedGames() {
+    const linked = new Set(
+        Object.values(state.campaigns)
+            .filter(c => c.linked && c.game_name)
+            .map(c => c.game_name)
+    );
+    const current = new Set(state.settings.games_to_watch || []);
+    linked.forEach(g => current.add(g));
+    state.settings.games_to_watch = Array.from(current).sort();
+    renderGamesToWatch();
+    renderChannels();
+    saveSettings();
+}
+
+function selectBadgeEmoteGames() {
+    const badgeEmoteGames = new Set();
+    for (const camp of Object.values(state.campaigns)) {
+        if (!camp.game_name || !camp.drops) continue;
+        if (camp.subscription_required) continue;
+        let hasBadgeOrEmote = false;
+        for (const drop of camp.drops) {
+            for (const benefit of (drop.benefits || [])) {
+                const t = (benefit.type || '').toUpperCase();
+                if (t === 'BADGE' || t === 'EMOTE') { hasBadgeOrEmote = true; }
+            }
+        }
+        if (hasBadgeOrEmote) badgeEmoteGames.add(camp.game_name);
+    }
+    const current = new Set(state.settings.games_to_watch || []);
+    badgeEmoteGames.forEach(g => current.add(g));
+    state.settings.games_to_watch = Array.from(current).sort();
+    renderGamesToWatch();
+    renderChannels();
+    saveSettings();
+}
+
 function addGameFromSearch() {
     const searchInput = document.getElementById('games-filter');
     const gameName = searchInput.value.trim();
@@ -2552,6 +2591,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Games to watch management
     document.getElementById('select-all-btn').addEventListener('click', selectAllGames);
     document.getElementById('deselect-all-btn').addEventListener('click', deselectAllGames);
+    document.getElementById('select-linked-btn')?.addEventListener('click', selectLinkedGames);
+    document.getElementById('select-badge-emote-btn')?.addEventListener('click', selectBadgeEmoteGames);
     document.getElementById('add-game-btn').addEventListener('click', addGameFromSearch);
     document.getElementById('games-filter').addEventListener('input', renderGamesToWatch);
 
@@ -2608,14 +2649,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById("qc-skip-btn")?.addEventListener("click", async () => {
+        const btn = document.getElementById("qc-skip-btn");
+        if (btn) { btn.style.opacity = "0.5"; btn.style.pointerEvents = "none"; }
         try {
             const r = await fetch("/api/skip-game", { method: "POST" });
             if (!r.ok) {
                 const d = await r.json().catch(() => ({}));
-                alert(d.detail || "Skip failed");
+                alert(d.detail || `Skip failed (${r.status})`);
             }
         } catch (e) {
             alert("Error: " + e.message);
+        } finally {
+            setTimeout(() => { if (btn) { btn.style.opacity = ""; btn.style.pointerEvents = ""; } }, 2000);
         }
     });
 

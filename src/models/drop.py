@@ -64,6 +64,7 @@ class BaseDrop:
         ):
             self.is_claimed = True
         self.precondition_drops: list[str] = [d["id"] for d in (data["preconditionDrops"] or [])]
+        self.required_subs: int = data.get("requiredSubs", 0) or 0
 
     def __repr__(self) -> str:
         if self.is_claimed:
