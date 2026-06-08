@@ -578,14 +578,17 @@ function updateQCButtons(status) {
         }
     }
 
-    // "Switch Channel" — only visible + highlighted when idle-watching
+    // "Switch Channel" — only visible when idle-watching
     if (switchBtn) {
         switchBtn.style.display = isIdleWatching ? '' : 'none';
         switchBtn.classList.toggle('qc-btn--active', isIdleWatching);
-        const strong = switchBtn.querySelector('strong');
-        const small = switchBtn.querySelector('small');
-        if (strong) strong.textContent = 'Switch Channel';
-        if (small) small.textContent = 'Next idle channel';
+    }
+
+    // "Start Idle Watch" — visible when NOT idle-watching and idle channels configured
+    const idleBtn = document.getElementById('qc-idle-btn');
+    const hasIdleChannels = (state.settings?.idle_channels?.length > 0) || state.settings?.idle_use_followed;
+    if (idleBtn) {
+        idleBtn.style.display = (!isIdleWatching && hasIdleChannels) ? '' : 'none';
     }
 
     // "Skip Current Game" — shown + highlighted yellow when actively mining
@@ -2466,6 +2469,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!r.ok) {
                 const d = await r.json().catch(() => ({}));
                 alert(d.detail || 'Switch failed');
+            }
+        } catch (e) {
+            alert('Error: ' + e.message);
+        }
+    });
+
+    document.getElementById('qc-idle-btn')?.addEventListener('click', async () => {
+        try {
+            const r = await fetch('/api/idle-watch/switch', { method: 'POST' });
+            if (!r.ok) {
+                const d = await r.json().catch(() => ({}));
+                alert(d.detail || 'No idle channels online');
             }
         } catch (e) {
             alert('Error: ' + e.message);
