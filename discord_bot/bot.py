@@ -115,37 +115,37 @@ async def build_dashboard_embed(session: aiohttp.ClientSession, url: str, token:
     else:
         color, state_line = COLOR_ERROR, "🔴  **Unknown**"
 
-    desc_parts = [state_line]
-    if account:
-        desc_parts.append(f"👤  `{account}`")
-
-    embed = discord.Embed(
-        title="TwitchDropsMiner",
-        description="  ·  ".join(desc_parts),
-        color=color,
-    )
-
-    # Watching channel + channel points
+    # Watching + channel points → second line of description
+    watch_line = None
     try:
         idle_data = await api_get(session, url, token, "/api/idle-watch/status")
         w_login = idle_data.get("watching")
         w_name = idle_data.get("display_name") or w_login
         online = idle_data.get("online", False)
         if w_name:
-            watch_val = f"**{w_name}**  {'🟢 Live' if online else '⚫ Offline'}"
             watching_login = w_login or watching_login
+            watch_line = f"📺 **{w_name}**  {'🟢 Live' if online else '⚫ Offline'}"
             if watching_login:
                 try:
                     cp_data = await api_get(session, url, token, f"/api/channel-points/{watching_login}")
                     balance = cp_data.get("balance")
                     if balance is not None:
-                        watch_val += f"\n💰 **{balance:,}** pts"
+                        watch_line += f"  ·  💰 **{balance:,}** pts"
                 except Exception:
                     pass
-            embed.add_field(name="📺 Watching", value=watch_val, inline=False)
     except Exception:
         if watching_login:
-            embed.add_field(name="📺 Watching", value=f"**{watching_login}**", inline=False)
+            watch_line = f"📺 **{watching_login}**"
+
+    desc_parts = [f"{state_line}  ·  👤 `{account}`" if account else state_line]
+    if watch_line:
+        desc_parts.append(watch_line)
+
+    embed = discord.Embed(
+        title="TwitchDropsMiner",
+        description="\n".join(desc_parts),
+        color=color,
+    )
 
     # Thumbnail: next drop item image (first unclaimed benefit image from active campaign)
     try:
@@ -174,12 +174,12 @@ async def build_dashboard_embed(session: aiohttp.ClientSession, url: str, token:
     try:
         history = await api_get(session, url, token, "/api/drops-history")
         if isinstance(history, list):
-            embed.add_field(name="📈 Total Drops", value=f"**{len(history)}**", inline=True)
+            embed.add_field(name="📈 Drops", value=f"**{len(history)}** total", inline=True)
             if history:
                 last = history[0]  # newest-first
                 reward = last.get("reward") or last.get("drop") or "?"
                 game = last.get("game", "")
-                ts = last.get("timestamp", "")[:10] if last.get("timestamp") else ""
+                ts = last.get("timestamp", "")[5:10] if last.get("timestamp") else ""  # MM-DD only
                 embed.add_field(
                     name="🏆 Last Drop",
                     value=f"**{reward}**\n{game}{' · ' + ts if ts else ''}",
@@ -188,21 +188,16 @@ async def build_dashboard_embed(session: aiohttp.ClientSession, url: str, token:
     except Exception:
         pass
 
-    # Wanted Queue
+    # Wanted Queue — compact single line
     try:
         wanted_data = await api_get(session, url, token, "/api/wanted-items")
         wanted_games = wanted_data.get("wanted_items", []) if isinstance(wanted_data, dict) else []
         if wanted_games:
-            lines = []
-            for game in wanted_games[:5]:
-                gname = game.get("game_name", "Unknown")
-                drop_count = sum(len(c.get("drops", [])) for c in game.get("campaigns", []))
-                lines.append(f"• **{gname}** — {drop_count} drop{'s' if drop_count != 1 else ''}")
-            if len(wanted_games) > 5:
-                lines.append(f"…and {len(wanted_games) - 5} more")
-            embed.add_field(name="🎯 Wanted Queue", value="\n".join(lines), inline=False)
+            names = [g.get("game_name", "?") for g in wanted_games[:6]]
+            suffix = f" +{len(wanted_games) - 6}" if len(wanted_games) > 6 else ""
+            embed.add_field(name="🎯 Wanted", value="  ·  ".join(names) + suffix, inline=False)
         else:
-            embed.add_field(name="🎯 Wanted Queue", value="No wanted drops configured", inline=False)
+            embed.add_field(name="🎯 Wanted", value="Nothing configured", inline=False)
     except Exception:
         pass
 
