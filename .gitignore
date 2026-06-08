@@ -29,3 +29,10 @@ data/
 .coverage
 
 artifacts/
+
+# Discord bot secrets
+discord_bot/.env
+discord_bot/pairings.json
+*.bak
+venv/
+web_backup_*/

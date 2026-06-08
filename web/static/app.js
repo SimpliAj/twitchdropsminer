@@ -1472,6 +1472,67 @@ function updateSettingsUI(settings) {
 
     // Re-render inventory to apply filters
     renderInventory();
+
+    // Update Discord bot pairing status (fetch live since WebSocket data lacks bot_paired)
+    fetch('/api/pair/status').then(r => r.json()).then(d => updateBotPairedUI(d.paired)).catch(() => updateBotPairedUI(settings.bot_paired || false));
+}
+
+function updateBotPairedUI(paired) {
+    const badge = document.getElementById('bot-status-badge');
+    const revokeBtn = document.getElementById('bot-revoke-btn');
+    if (badge) {
+        badge.replaceChildren();
+        const span = document.createElement('span');
+        span.style.color = paired ? '#57d75b' : '#adadb8';
+        span.textContent = paired ? '✅ Connected' : 'Not connected';
+        badge.appendChild(span);
+    }
+    if (revokeBtn) revokeBtn.style.display = paired ? 'inline-block' : 'none';
+}
+
+async function botGenerateCode() {
+    const box = document.getElementById('bot-pair-code-box');
+    const codeText = document.getElementById('bot-pair-code-text');
+    const btn = document.getElementById('bot-generate-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Generating...'; }
+    try {
+        const res = await fetch('/api/pair/generate', { method: 'POST' });
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+        const serverUrl = window.location.origin;
+        if (codeText) {
+            codeText.replaceChildren();
+            const urlLine = document.createElement('div');
+            urlLine.append('URL: ');
+            const urlB = document.createElement('b');
+            urlB.textContent = serverUrl;
+            urlLine.appendChild(urlB);
+            const codeLine = document.createElement('div');
+            codeLine.append('Code: ');
+            const codeB = document.createElement('b');
+            codeB.textContent = data.code;
+            codeLine.appendChild(codeB);
+            codeText.append(urlLine, codeLine);
+        }
+        if (box) box.style.display = 'block';
+    } catch (e) {
+        alert('Fehler: ' + e.message);
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Generate code'; }
+    }
+}
+
+async function botRevoke() {
+    if (!confirm('Disconnect the Discord bot?')) return;
+    try {
+        const res = await fetch('/api/pair/revoke', { method: 'DELETE' });
+        if (!res.ok) throw new Error(await res.text());
+        updateBotPairedUI(false);
+        const box = document.getElementById('bot-pair-code-box');
+        if (box) box.style.display = 'none';
+    } catch (e) {
+        alert('Fehler: ' + e.message);
+    }
 }
 
 function updateManualModeUI(manualModeInfo) {
@@ -2330,6 +2391,7 @@ function switchTab(tabName) {
     document.getElementById(`${tabName}-tab`).classList.add('active');
     document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
     if (tabName === 'history') loadDropHistory();
+    if (tabName === 'settings') fetch('/api/pair/status').then(r => r.json()).then(d => updateBotPairedUI(d.paired)).catch(() => {});
 }
 
 // ==================== Event Listeners ====================

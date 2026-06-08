@@ -19,6 +19,8 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 _DATA_DIR = Path(__file__).parent.parent.parent / "data"
 _WEB_CONFIG_FILE = _DATA_DIR / "web_config.json"
+_BOT_TOKEN_FILE = _DATA_DIR / "discord_bot_token.json"
+_pair_codes: dict[str, dict] = {}  # code -> {token, expires}
 
 def _get_account_data_dir() -> Path:
     """Account-aware data dir — same logic as src.config.paths but importable here."""
@@ -75,6 +77,20 @@ def _get_password() -> str:
     return os.environ.get("WEB_PASSWORD", "")
 
 
+def _get_bot_token() -> str:
+    try:
+        if _BOT_TOKEN_FILE.exists():
+            return json.loads(_BOT_TOKEN_FILE.read_text()).get("token", "")
+    except Exception:
+        pass
+    return ""
+
+
+def _save_bot_token(token: str) -> None:
+    _DATA_DIR.mkdir(exist_ok=True)
+    _BOT_TOKEN_FILE.write_text(json.dumps({"token": token}))
+
+
 def _is_setup_done() -> bool:
     return _load_web_config().get("setup_done", False)
 
@@ -93,6 +109,7 @@ _UNPROTECTED_PATHS = {
     "/__auth_login", "/__auth_login_page",
     "/__setup", "/__setup_post",
     "/favicon.ico", "/logo.png", "/manifest.json",
+    "/api/pair/claim",  # Discord bot pairing — no auth needed to exchange code
 }
 _UNPROTECTED_PREFIXES = ("/static/",)
 
@@ -148,6 +165,12 @@ class PasswordAuthMiddleware(BaseHTTPMiddleware):
             if any(path.startswith(p) for p in _UNPROTECTED_PREFIXES):
                 response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
             return response
+        # Bot token auth — allows Discord bot to use API
+        if path.startswith("/api/"):
+            bot_token_header = request.headers.get("X-Bot-Token", "")
+            saved_bot_token = _get_bot_token()
+            if saved_bot_token and secrets.compare_digest(bot_token_header, saved_bot_token):
+                return await call_next(request)
         pw = _get_password()
         if not pw:
             return await call_next(request)
@@ -236,6 +259,10 @@ class SettingsUpdate(BaseModel):
 
 class ProxyVerifyRequest(BaseModel):
     proxy: str
+
+
+class PairClaimRequest(BaseModel):
+    code: str
 
 
 # ==================== Auth Endpoints ====================
@@ -526,8 +553,9 @@ async def get_settings():
     """Get current settings"""
     if not gui_manager:
         raise HTTPException(status_code=503, detail="GUI not initialized")
-
-    return gui_manager.settings.get_settings()
+    result = gui_manager.settings.get_settings()
+    result["bot_paired"] = bool(_get_bot_token())
+    return result
 
 
 @app.get("/api/languages")
@@ -784,6 +812,51 @@ async def disable_password(data: PasswordDisableRequest):
 @app.get("/api/auth/status")
 async def auth_status():
     return {"password_set": bool(_get_password())}
+
+
+# ==================== Discord Bot Pairing ====================
+
+
+@app.post("/api/pair/generate")
+async def pair_generate():
+    """Generate a one-time pairing code for Discord bot."""
+    import time
+    code = "DROPS-" + secrets.token_hex(4).upper()
+    token = secrets.token_hex(32)
+    _pair_codes[code] = {"token": token, "expires": time.time() + 600}
+    # Clean expired codes
+    now = time.time()
+    expired = [k for k, v in _pair_codes.items() if v["expires"] < now]
+    for k in expired:
+        del _pair_codes[k]
+    return {"code": code, "expires_in": 600}
+
+
+@app.post("/api/pair/claim")
+async def pair_claim(req: PairClaimRequest):
+    """Exchange pairing code for permanent bot token. No auth required."""
+    import time
+    entry = _pair_codes.get(req.code)
+    if not entry or entry["expires"] < time.time():
+        raise HTTPException(status_code=404, detail="Invalid or expired code")
+    token = entry["token"]
+    _save_bot_token(token)
+    del _pair_codes[req.code]
+    return {"token": token}
+
+
+@app.get("/api/pair/status")
+async def pair_status():
+    """Check if a bot token is configured."""
+    return {"paired": bool(_get_bot_token())}
+
+
+@app.delete("/api/pair/revoke")
+async def pair_revoke():
+    """Revoke bot token."""
+    if _BOT_TOKEN_FILE.exists():
+        _BOT_TOKEN_FILE.unlink()
+    return {"success": True}
 
 
 # ==================== Account Management ====================
