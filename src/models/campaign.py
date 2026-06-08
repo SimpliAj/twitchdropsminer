@@ -93,7 +93,8 @@ class DropsCampaign:
 
     @cached_property
     def subscription_required(self) -> bool:
-        return any(drop.required_subs > 0 for drop in self.drops)
+        drops = list(self.drops)
+        return bool(drops) and all(drop.required_subs > 0 for drop in drops)
 
     @property
     def finished(self) -> bool:
