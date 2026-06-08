@@ -196,7 +196,7 @@ async def build_dashboard_embed(session: aiohttp.ClientSession, url: str, token:
     except Exception:
         pass
 
-    embed.set_footer(text="TwitchDropsMiner Bot • Updates every 30s")
+    embed.set_footer(text="TwitchDropsMiner Bot • Auto-updates on change")
     embed.timestamp = datetime.now(timezone.utc)
     return embed
 
@@ -278,14 +278,16 @@ class DashboardView(discord.ui.View):
             campaigns = data.get("campaigns", []) if isinstance(data, dict) else data
             embed = discord.Embed(title="🎮 Active Campaigns", color=COLOR_TWITCH)
             if campaigns:
+                lines = []
                 for camp in campaigns[:10]:
                     name = camp.get("name") or "Unknown"
                     drops = camp.get("drops", [])
                     claimed = sum(1 for d in drops if d.get("is_claimed"))
                     total = len(drops)
                     game = camp.get("game_name", "")
-                    val = f"{game}\n{claimed}/{total} drops" if game else f"{claimed}/{total} drops"
-                    embed.add_field(name=name, value=val, inline=True)
+                    bar = "█" * int(claimed / total * 8) + "░" * (8 - int(claimed / total * 8)) if total else "░" * 8
+                    lines.append(f"**{name}**\n{game + ' · ' if game else ''}`{bar}` {claimed}/{total} drops")
+                embed.description = "\n\n".join(lines)
             else:
                 embed.description = "No active campaigns."
             make_footer(embed)
@@ -307,11 +309,13 @@ class DashboardView(discord.ui.View):
                 history = await api_get(session, pairing["url"], pairing["token"], "/api/drops-history")
             embed = discord.Embed(title="🎁 Recent Drops", color=COLOR_TWITCH)
             if history:
+                lines = []
                 for drop in history[-10:][::-1]:
-                    game = drop.get("game", "Unknown")
-                    reward = drop.get("reward") or drop.get("drop") or "Unknown"
+                    game = drop.get("game", "?")
+                    reward = drop.get("reward") or drop.get("drop") or "?"
                     ts = drop.get("timestamp", "")[:10] if drop.get("timestamp") else ""
-                    embed.add_field(name=game, value=f"**{reward}**\n{ts}", inline=True)
+                    lines.append(f"**{reward}**\n{game}{' · ' + ts if ts else ''}")
+                embed.description = "\n\n".join(lines)
             else:
                 embed.description = "No drops claimed yet."
             make_footer(embed)
