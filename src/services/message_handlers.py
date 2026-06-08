@@ -22,6 +22,14 @@ from src.utils import json_load, json_save, task_wrapper
 _WEB_CONFIG_FILE = DATA_DIR / "web_config.json"
 
 
+def _get_active_account() -> str:
+    try:
+        cfg = _json_mod.loads(_WEB_CONFIG_FILE.read_text()) if _WEB_CONFIG_FILE.exists() else {}
+        return cfg.get("active_account") or ""
+    except Exception:
+        return ""
+
+
 def _get_points_file() -> "Path":
     try:
         cfg = _json_mod.loads(_WEB_CONFIG_FILE.read_text()) if _WEB_CONFIG_FILE.exists() else {}
@@ -233,6 +241,7 @@ class MessageHandlerService:
             webhook_url = self._twitch.settings.discord_webhook_drops
             if webhook_url and drop.is_claimed and drop.id not in self._twitch._webhook_sent_drops:
                 self._twitch._webhook_sent_drops.add(drop.id)
+                _acct = _get_active_account()
                 embed: dict = {
                     "title": "🎁 Drop Claimed!",
                     "color": 0x9147ff,
@@ -242,6 +251,8 @@ class MessageHandlerService:
                         {"name": "Reward", "value": drop.rewards_text(), "inline": False},
                     ],
                 }
+                if _acct:
+                    embed["footer"] = {"text": f"Account: {_acct}"}
                 if drop.benefits:
                     embed["thumbnail"] = {"url": drop.benefits[0].image_url}
                 asyncio.create_task(self._send_discord_webhook(webhook_url, {"embeds": [embed]}))
@@ -349,16 +360,18 @@ class MessageHandlerService:
             # Send Discord webhook for WebSocket-path claim
             webhook_url = self._twitch.settings.discord_webhook_points
             if webhook_url and claimed_amount:
-                asyncio.create_task(self._send_discord_webhook(webhook_url, {
-                    "embeds": [{
-                        "title": "💰 Bonus Chest Claimed!",
-                        "color": 0xffd700,
-                        "fields": [
-                            {"name": "Channel", "value": channel_login, "inline": True},
-                            {"name": "Bonus", "value": f"+{claimed_amount} pts", "inline": True},
-                        ],
-                    }]
-                }))
+                _acct_cp = _get_active_account()
+                _cp_embed: dict = {
+                    "title": "💰 Bonus Chest Claimed!",
+                    "color": 0xffd700,
+                    "fields": [
+                        {"name": "Channel", "value": channel_login, "inline": True},
+                        {"name": "Bonus", "value": f"+{claimed_amount} pts", "inline": True},
+                    ],
+                }
+                if _acct_cp:
+                    _cp_embed["footer"] = {"text": f"Account: {_acct_cp}"}
+                asyncio.create_task(self._send_discord_webhook(webhook_url, {"embeds": [_cp_embed]}))
             # Fetch updated balance and broadcast to UI
             await self._emit_channel_points(channel_login, channel_id, claimed_amount)
         except Exception as e:
@@ -402,17 +415,19 @@ class MessageHandlerService:
                                  or available_claim.get("point_gain") or {})
                         bonus_amount = (bonus.get("totalPoints")
                                         or bonus.get("total_points") or 0)
-                        asyncio.create_task(self._send_discord_webhook(webhook_url, {
-                            "embeds": [{
-                                "title": "💰 Bonus Chest Claimed!",
-                                "color": 0xffd700,
-                                "fields": [
-                                    {"name": "Channel", "value": channel_login, "inline": True},
-                                    {"name": "Bonus", "value": f"+{bonus_amount} pts" if bonus_amount else "Claimed", "inline": True},
-                                    {"name": "Balance", "value": f"{points:,} pts", "inline": True},
-                                ],
-                            }]
-                        }))
+                        _acct_gql = _get_active_account()
+                        _gql_embed: dict = {
+                            "title": "💰 Bonus Chest Claimed!",
+                            "color": 0xffd700,
+                            "fields": [
+                                {"name": "Channel", "value": channel_login, "inline": True},
+                                {"name": "Bonus", "value": f"+{bonus_amount} pts" if bonus_amount else "Claimed", "inline": True},
+                                {"name": "Balance", "value": f"{points:,} pts", "inline": True},
+                            ],
+                        }
+                        if _acct_gql:
+                            _gql_embed["footer"] = {"text": f"Account: {_acct_gql}"}
+                        asyncio.create_task(self._send_discord_webhook(webhook_url, {"embeds": [_gql_embed]}))
                 except Exception as claim_e:
                     logger.debug(f"GQL claim failed for {channel_login}: {claim_e}")
             await self._twitch.gui._broadcaster.emit("channel_points_update", {
