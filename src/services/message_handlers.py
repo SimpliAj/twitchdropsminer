@@ -406,25 +406,39 @@ class MessageHandlerService:
                         })
                     )
                     logger.info(f"Claimed channel points via GQL poll on {channel_login} | claim data: {available_claim}")
-                    # Extract bonus amount and add to claimed_amount for session counter
-                    bonus = (available_claim.get("pointsEarnedForClaim")
-                             or available_claim.get("pointGain")
-                             or available_claim.get("point_gain") or {})
-                    bonus_amount = (bonus.get("totalPoints") or bonus.get("total_points") or 0)
+                    # Re-fetch balance after claim to compute actual bonus delta
+                    bonus_amount = 0
+                    new_points = points
+                    try:
+                        new_resp = await self._twitch.gql_request(
+                            GQL_OPERATIONS["ChannelPointsContext"].with_variables(
+                                {"channelLogin": channel_login}
+                            )
+                        )
+                        new_data = new_resp.get("data") or {}
+                        new_cp = {}
+                        try:
+                            new_cp = new_data["community"]["channel"]["self"]["communityPoints"]
+                        except (KeyError, TypeError):
+                            pass
+                        new_points = new_cp.get("balance", points)
+                        bonus_amount = max(0, new_points - points)
+                        points = new_points
+                    except Exception:
+                        pass
                     if bonus_amount:
                         claimed_amount += bonus_amount
                     # Discord webhook for channel points claim
                     webhook_url = self._twitch.settings.discord_webhook_points
                     if webhook_url:
-                        bonus_amount_wh = bonus_amount
                         _acct_gql = _get_active_account()
                         _gql_embed: dict = {
                             "title": "💰 Bonus Chest Claimed!",
                             "color": 0xffd700,
                             "fields": [
                                 {"name": "Channel", "value": channel_login, "inline": True},
-                                {"name": "Bonus", "value": f"+{bonus_amount_wh} pts" if bonus_amount_wh else "Claimed", "inline": True},
-                                {"name": "Balance", "value": f"{points:,} pts", "inline": True},
+                                {"name": "Bonus", "value": f"+{bonus_amount} pts" if bonus_amount else "Claimed", "inline": True},
+                                {"name": "Balance", "value": f"{new_points:,} pts", "inline": True},
                             ],
                         }
                         if _acct_gql:
