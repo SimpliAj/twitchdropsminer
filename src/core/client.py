@@ -298,12 +298,21 @@ class Twitch:
                                     # Save to drop history
                                     import datetime as _dt, json as _json
                                     from src.config import DATA_DIR as _DATA_DIR
-                                    _hist_file = _DATA_DIR / "drops_history.json"
+                                    _wcfg_file = _DATA_DIR / "web_config.json"
+                                    try:
+                                        _wcfg = _json.loads(_wcfg_file.read_text()) if _wcfg_file.exists() else {}
+                                        _acct = _wcfg.get("active_account")
+                                        _acct_dir = _DATA_DIR / "accounts" / _acct if _acct else _DATA_DIR
+                                        _acct_dir.mkdir(parents=True, exist_ok=True)
+                                    except Exception:
+                                        _acct_dir = _DATA_DIR
+                                    _hist_file = _acct_dir / "drops_history.json"
                                     _entry = {
                                         "timestamp": _dt.datetime.now(_dt.timezone.utc).isoformat(),
                                         "game": campaign.game.name,
                                         "drop": drop.name,
                                         "reward": drop.rewards_text(),
+                                        "image_url": drop.benefits[0].image_url if drop.benefits else None,
                                     }
                                     try:
                                         _hist = _json.loads(_hist_file.read_text()) if _hist_file.exists() else []

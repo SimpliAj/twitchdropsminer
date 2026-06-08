@@ -178,6 +178,7 @@ socket.on('channel_points_update', (data) => {
     }
     state.sessionPoints[login].balance = balance;
     state.sessionPoints[login].claimed += claimed;
+    state.sessionPoints[login].lastSeen = Date.now();
     updateChannelPointsDisplay(login, claimed);
     renderPointsTracker();
     updateStats();
@@ -353,7 +354,9 @@ function renderPointsTracker() {
     section.style.display = 'block';
     list.replaceChildren();
     entries
-        .sort((a, b) => b[1].balance - a[1].balance)
+        .filter(([, data]) => data.lastSeen)
+        .sort((a, b) => b[1].lastSeen - a[1].lastSeen)
+        .slice(0, 3)
         .forEach(([login, data]) => {
             const row = document.createElement('div');
             row.style.cssText = 'display:flex;justify-content:space-between;padding:2px 0;font-size:0.85rem;';
@@ -394,31 +397,74 @@ function renderDropHistory(drops) {
     const todayCount = drops.filter(d => new Date(d.timestamp).toDateString() === today).length;
     emptyEl.style.display = "none";
     listEl.style.display = "block";
-    if (summaryEl) summaryEl.textContent = drops.length + " total • " + todayCount + " today";
+    if (summaryEl) summaryEl.textContent = `${drops.length} total · ${todayCount} today`;
     listEl.replaceChildren();
+
+    listEl.style.cssText = 'max-height:520px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border-color) transparent;';
+
+    // Group by date
+    const groups = new Map();
     drops.forEach(drop => {
-        const row = document.createElement("div");
-        row.className = "history-row";
         const ts = new Date(drop.timestamp);
-        const dateStr = ts.toLocaleDateString("de-AT", { day:"2-digit", month:"2-digit", year:"2-digit" });
-        const timeStr = ts.toLocaleTimeString("de-AT", { hour:"2-digit", minute:"2-digit" });
-        const timeEl = document.createElement("span");
-        timeEl.textContent = dateStr + " " + timeStr;
-        timeEl.className = "history-ts";
-        const gameEl = document.createElement("span");
-        gameEl.textContent = drop.game;
-        gameEl.className = "history-game";
-        const dropEl = document.createElement("span");
-        dropEl.textContent = drop.drop;
-        dropEl.className = "history-drop";
-        const rewardEl = document.createElement("span");
-        rewardEl.textContent = drop.reward;
-        rewardEl.className = "history-reward";
-        row.appendChild(timeEl);
-        row.appendChild(gameEl);
-        row.appendChild(dropEl);
-        row.appendChild(rewardEl);
-        listEl.appendChild(row);
+        const dateKey = ts.toLocaleDateString("de-AT", { day:"2-digit", month:"2-digit", year:"numeric" });
+        if (!groups.has(dateKey)) groups.set(dateKey, []);
+        groups.get(dateKey).push({ ...drop, ts });
+    });
+
+    groups.forEach((dayDrops, dateKey) => {
+        // Date header
+        const dateHeader = document.createElement('div');
+        dateHeader.style.cssText = 'font-size:0.7rem;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-secondary);padding:10px 4px 4px;border-bottom:1px solid var(--border-color);margin-bottom:2px;position:sticky;top:0;background:var(--bg-primary,#1a1a1a);z-index:1;';
+        const isToday = new Date(dayDrops[0].ts).toDateString() === today;
+        dateHeader.textContent = isToday ? `Today — ${dateKey}` : dateKey;
+        listEl.appendChild(dateHeader);
+
+        dayDrops.forEach(drop => {
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:5px 4px;border-radius:4px;transition:background 0.1s;min-width:0;';
+            row.addEventListener('mouseover', () => row.style.background = 'rgba(255,255,255,0.04)');
+            row.addEventListener('mouseout', () => row.style.background = '');
+
+            // Item image (28×28)
+            const imgWrap = document.createElement('div');
+            imgWrap.style.cssText = 'width:28px;height:28px;border-radius:4px;overflow:hidden;flex-shrink:0;background:var(--bg-secondary);display:flex;align-items:center;justify-content:center;font-size:0.85rem;';
+            if (drop.image_url) {
+                const img = document.createElement('img');
+                img.src = drop.image_url;
+                img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+                img.onerror = () => { imgWrap.textContent = '🎁'; };
+                imgWrap.appendChild(img);
+            } else {
+                imgWrap.textContent = '🎁';
+            }
+            row.appendChild(imgWrap);
+
+            // Time
+            const timeEl = document.createElement('span');
+            timeEl.textContent = drop.ts.toLocaleTimeString("de-AT", { hour:"2-digit", minute:"2-digit" });
+            timeEl.style.cssText = 'font-size:0.75rem;color:var(--text-secondary);white-space:nowrap;flex-shrink:0;font-variant-numeric:tabular-nums;width:36px;';
+            row.appendChild(timeEl);
+
+            // Game tag
+            const gameEl = document.createElement('span');
+            gameEl.textContent = drop.game;
+            gameEl.style.cssText = 'font-size:0.72rem;color:var(--accent-color);white-space:nowrap;flex-shrink:0;max-width:120px;overflow:hidden;text-overflow:ellipsis;';
+            row.appendChild(gameEl);
+
+            // Drop name (fills space)
+            const dropNameEl = document.createElement('span');
+            dropNameEl.textContent = drop.drop;
+            dropNameEl.style.cssText = 'flex:1;font-size:0.82rem;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;';
+            row.appendChild(dropNameEl);
+
+            // Reward badge
+            const rewardEl = document.createElement('span');
+            rewardEl.textContent = drop.reward;
+            rewardEl.style.cssText = 'font-size:0.68rem;font-weight:600;color:#3ddc84;background:rgba(61,220,132,0.1);padding:2px 7px;border-radius:20px;white-space:nowrap;flex-shrink:0;max-width:160px;overflow:hidden;text-overflow:ellipsis;';
+            row.appendChild(rewardEl);
+
+            listEl.appendChild(row);
+        });
     });
 }
 
@@ -458,36 +504,42 @@ function renderChannelPointsTab() {
     const totalBalance = entries.reduce((s, [, d]) => s + (d.balance || 0), 0);
     const totalClaimed = entries.reduce((s, [, d]) => s + (d.claimed || 0), 0);
     if (summaryEl) {
-        summaryEl.textContent = `${entries.length} channel${entries.length !== 1 ? 's' : ''} • ${totalBalance.toLocaleString()} pts total${totalClaimed > 0 ? ` • +${totalClaimed.toLocaleString()} this session` : ''}`;
+        summaryEl.textContent = `${entries.length} channels · ${totalBalance.toLocaleString()} pts total${totalClaimed > 0 ? ` · +${totalClaimed.toLocaleString()} session` : ''}`;
     }
 
     listEl.replaceChildren();
-    entries.forEach(([login, data]) => {
+    listEl.style.cssText = 'max-height:480px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border-color) transparent;';
+
+    entries.forEach(([login, data], idx) => {
+        const isTop = idx === 0;
         const row = document.createElement('div');
-        row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:6px;margin-bottom:6px;background:var(--bg-secondary,#1a1a2e);border:1px solid var(--border-color);';
+        row.style.cssText = `display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:5px;cursor:pointer;transition:background 0.1s;${isTop ? 'background:rgba(145,71,255,0.07);' : ''}`;
+        row.addEventListener('mouseover', () => row.style.background = 'rgba(145,71,255,0.1)');
+        row.addEventListener('mouseout', () => row.style.background = isTop ? 'rgba(145,71,255,0.07)' : '');
+        row.addEventListener('click', () => window.open(`https://www.twitch.tv/${login}`, '_blank'));
 
-        const nameEl = document.createElement('a');
-        nameEl.href = `https://www.twitch.tv/${login}`;
-        nameEl.target = '_blank';
+        const rankEl = document.createElement('span');
+        rankEl.textContent = isTop ? '👑' : `${idx + 1}`;
+        rankEl.style.cssText = `font-size:${isTop ? '0.85rem' : '0.72rem'};color:var(--text-secondary);width:22px;text-align:center;flex-shrink:0;`;
+        row.appendChild(rankEl);
+
+        const nameEl = document.createElement('span');
         nameEl.textContent = login;
-        nameEl.style.cssText = 'color:var(--accent-color,#9147ff);font-weight:500;text-decoration:none;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
-        nameEl.addEventListener('mouseover', () => nameEl.style.textDecoration = 'underline');
-        nameEl.addEventListener('mouseout', () => nameEl.style.textDecoration = 'none');
-
-        const balanceEl = document.createElement('span');
-        balanceEl.textContent = `${(data.balance || 0).toLocaleString()} pts`;
-        balanceEl.style.cssText = 'font-size:0.95rem;font-weight:600;color:var(--text-primary);white-space:nowrap;';
-
+        nameEl.style.cssText = `flex:1;font-size:0.88rem;font-weight:${isTop ? '600' : '400'};color:${isTop ? 'var(--accent-color)' : 'var(--text-primary)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;`;
         row.appendChild(nameEl);
 
         if (data.claimed > 0) {
-            const claimedEl = document.createElement('span');
-            claimedEl.textContent = `+${data.claimed.toLocaleString()}`;
-            claimedEl.style.cssText = 'font-size:0.8rem;color:#0f9;white-space:nowrap;';
-            row.appendChild(claimedEl);
+            const badge = document.createElement('span');
+            badge.textContent = `+${data.claimed.toLocaleString()}`;
+            badge.style.cssText = 'font-size:0.72rem;font-weight:600;color:#3ddc84;background:rgba(61,220,132,0.1);padding:1px 6px;border-radius:20px;white-space:nowrap;flex-shrink:0;';
+            row.appendChild(badge);
         }
 
-        row.appendChild(balanceEl);
+        const ptsEl = document.createElement('span');
+        ptsEl.textContent = `${(data.balance || 0).toLocaleString()} pts`;
+        ptsEl.style.cssText = `font-size:0.85rem;font-weight:600;color:${isTop ? 'var(--accent-color)' : 'var(--text-primary)'};white-space:nowrap;flex-shrink:0;`;
+        row.appendChild(ptsEl);
+
         listEl.appendChild(row);
     });
 }
@@ -798,6 +850,18 @@ function getInventoryFilters() {
 }
 
 
+function getCampaignStatus(campaign) {
+    const now = new Date();
+    const startsAt = new Date(campaign.starts_at);
+    const endsAt = new Date(campaign.ends_at);
+    // Use backend valid flag if present, otherwise derive from timestamps
+    const valid = campaign.valid !== undefined ? campaign.valid : (campaign.active || campaign.upcoming);
+    const expired = !valid || endsAt <= now;
+    const upcoming = valid && now < startsAt;
+    const active = valid && !expired && !upcoming;
+    return { active, upcoming, expired };
+}
+
 function campaignMatchesFilters(campaign, filters) {
     // Calculate "finished" status: all drops claimed
     const isFinished = campaign.total_drops > 0 && campaign.claimed_drops === campaign.total_drops;
@@ -805,12 +869,8 @@ function campaignMatchesFilters(campaign, filters) {
     // Always hide finished campaigns unless explicitly shown (fix #52)
     if (!filters.show_finished && isFinished) return false;
 
-    // Link status: AND filter (applied before status OR group)
-    // Default: hide not-linked unless show_not_linked or show_linked is checked
-    if (!filters.show_not_linked && !filters.show_linked && !campaign.linked) return false;
-    // "Linked" checked → hide not-linked
+    // Link status: only filter when explicitly checked
     if (filters.show_linked && !filters.show_not_linked && !campaign.linked) return false;
-    // "Not Linked" checked → hide linked
     if (filters.show_not_linked && !filters.show_linked && campaign.linked) return false;
 
     // Check status filters (OR logic among: active, upcoming, expired, finished)
@@ -820,10 +880,13 @@ function campaignMatchesFilters(campaign, filters) {
 
     if (!hasStatusFilters) return true;
 
+    // Compute status live from timestamps to avoid stale backend cache
+    const { active, upcoming, expired } = getCampaignStatus(campaign);
+
     let statusMatch = false;
-    if (filters.show_active && campaign.active) statusMatch = true;
-    if (filters.show_upcoming && campaign.upcoming) statusMatch = true;
-    if (filters.show_expired && campaign.expired) statusMatch = true;
+    if (filters.show_active && active) statusMatch = true;
+    if (filters.show_upcoming && upcoming) statusMatch = true;
+    if (filters.show_expired && expired) statusMatch = true;
     if (filters.show_finished && isFinished) statusMatch = true;
 
     if (hasStatusFilters && !hasGameFilter && !statusMatch) return false;
@@ -1109,13 +1172,14 @@ function renderInventory() {
 
         let statusClass = '';
         let statusText = '';
-        if (campaign.active) {
+        const liveStatus = getCampaignStatus(campaign);
+        if (liveStatus.active) {
             statusClass = 'active';
             statusText = t.gui?.inventory?.status?.active || 'Active';
-        } else if (campaign.upcoming) {
+        } else if (liveStatus.upcoming) {
             statusClass = 'upcoming';
             statusText = t.gui?.inventory?.status?.upcoming || 'Upcoming';
-        } else if (campaign.expired) {
+        } else if (liveStatus.expired) {
             statusClass = 'expired';
             statusText = t.gui?.inventory?.status?.expired || 'Expired';
         }
@@ -1198,13 +1262,13 @@ function renderInventory() {
         card.replaceChildren(campaignHeader, campaignStatus);
 
         // Campaign timing
-        if (campaign.active && campaign.ends_at) {
+        if (liveStatus.active && campaign.ends_at) {
             const endsLabel = t.gui?.inventory?.ends || 'Ends: {time}';
             card.appendChild(makeElement('div', { class: 'campaign-timing' }, endsLabel.replace('{time}', new Date(campaign.ends_at).toLocaleString())));
-        } else if (campaign.upcoming && campaign.starts_at) {
+        } else if (liveStatus.upcoming && campaign.starts_at) {
             const startsLabel = t.gui?.inventory?.starts || 'Starts: {time}';
             card.appendChild(makeElement('div', { class: 'campaign-timing' }, startsLabel.replace('{time}', new Date(campaign.starts_at).toLocaleString())));
-        } else if (campaign.expired && campaign.ends_at) {
+        } else if (liveStatus.expired && campaign.ends_at) {
             const endsLabel = t.gui?.inventory?.ends || 'Ends: {time}';
             card.appendChild(makeElement('div', { class: 'campaign-timing' }, endsLabel.replace('{time}', new Date(campaign.ends_at).toLocaleString())));
         }
@@ -2091,7 +2155,7 @@ function applyTranslations(t) {
         };
         updateLabel('filter-active', f.active);
         updateLabel('filter-not-linked', f.not_linked);
-        updateLabel('filter-upcoming', f.upcoming);
+        // filter-upcoming is hidden (bare input, no label wrapper) — skip to avoid corrupting filter-active label
         updateLabel('filter-expired', f.expired);
         updateLabel('filter-finished', f.finished);
         updateLabel('filter-benefit-item', f.item);
@@ -2362,6 +2426,107 @@ document.addEventListener('DOMContentLoaded', () => {
     if ('Notification' in window && Notification.permission === 'default') {
         Notification.requestPermission();
     }
+
+    // Account management
+    async function loadAccounts() {
+        const listEl = document.getElementById('accounts-list');
+        const statusEl = document.getElementById('accounts-status');
+        if (!listEl) return;
+        try {
+            const r = await fetch('/api/accounts');
+            const data = await r.json();
+            listEl.replaceChildren();
+            if (data.accounts.length === 0) {
+                const msg = document.createElement('div');
+                msg.textContent = 'No accounts saved yet.';
+                msg.style.cssText = 'font-size:0.82rem;color:var(--text-secondary);padding:4px 0;';
+                listEl.appendChild(msg);
+                return;
+            }
+            data.accounts.forEach(acc => {
+                const row = document.createElement('div');
+                row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border-color);';
+
+                const nameEl = document.createElement('span');
+                nameEl.textContent = acc.label;
+                nameEl.style.cssText = 'flex:1;font-size:0.88rem;font-weight:500;';
+                row.appendChild(nameEl);
+
+                if (acc.active) {
+                    const badge = document.createElement('span');
+                    badge.textContent = 'Active';
+                    badge.style.cssText = 'font-size:0.72rem;font-weight:600;color:var(--accent-color);background:rgba(145,71,255,0.12);padding:2px 8px;border-radius:20px;';
+                    row.appendChild(badge);
+                }
+
+                if (!acc.has_cookies) {
+                    const warn = document.createElement('span');
+                    warn.textContent = 'Not logged in';
+                    warn.style.cssText = 'font-size:0.72rem;color:#f90;';
+                    row.appendChild(warn);
+                }
+
+                if (!acc.active) {
+                    const switchBtn = document.createElement('button');
+                    switchBtn.textContent = 'Switch';
+                    switchBtn.style.cssText = 'font-size:0.78rem;padding:3px 10px;border-radius:4px;border:1px solid var(--border-color);background:transparent;color:var(--text-primary);cursor:pointer;';
+                    switchBtn.addEventListener('click', async () => {
+                        if (!confirm(`Switch to account "${acc.label}"? The miner will restart.`)) return;
+                        try {
+                            await fetch('/api/accounts/switch', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({label: acc.label}) });
+                            if (statusEl) { statusEl.textContent = `Switched to ${acc.label}, restarting...`; statusEl.style.display = 'block'; statusEl.style.color = '#3ddc84'; }
+                        } catch (e) {
+                            if (statusEl) { statusEl.textContent = 'Error: ' + e.message; statusEl.style.display = 'block'; statusEl.style.color = '#f55'; }
+                        }
+                    });
+                    row.appendChild(switchBtn);
+
+                    const delBtn = document.createElement('button');
+                    delBtn.textContent = '✕';
+                    delBtn.style.cssText = 'font-size:0.78rem;padding:3px 8px;border-radius:4px;border:1px solid var(--border-color);background:transparent;color:#f55;cursor:pointer;';
+                    delBtn.addEventListener('click', async () => {
+                        if (!confirm(`Delete account "${acc.label}"?`)) return;
+                        try {
+                            await fetch(`/api/accounts/${encodeURIComponent(acc.label)}`, { method: 'DELETE' });
+                            loadAccounts();
+                        } catch (e) {
+                            if (statusEl) { statusEl.textContent = 'Error: ' + e.message; statusEl.style.display = 'block'; statusEl.style.color = '#f55'; }
+                        }
+                    });
+                    row.appendChild(delBtn);
+                }
+
+                listEl.appendChild(row);
+            });
+        } catch (e) {
+            if (statusEl) { statusEl.textContent = 'Error loading accounts.'; statusEl.style.display = 'block'; }
+        }
+    }
+
+    document.getElementById('add-account-btn')?.addEventListener('click', async () => {
+        const labelInput = document.getElementById('new-account-label');
+        const statusEl = document.getElementById('accounts-status');
+        const label = labelInput?.value.trim();
+        if (!label) { alert('Enter a label first.'); return; }
+        try {
+            const r = await fetch('/api/accounts/add', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({label}) });
+            if (!r.ok) { const d = await r.json().catch(() => ({})); alert(d.detail || 'Error'); return; }
+            if (labelInput) labelInput.value = '';
+            if (statusEl) { statusEl.textContent = `Account "${label}" added, miner restarting for login...`; statusEl.style.display = 'block'; statusEl.style.color = '#3ddc84'; }
+            setTimeout(loadAccounts, 1500);
+        } catch (e) {
+            alert('Error: ' + e.message);
+        }
+    });
+
+    // Load accounts when System tab is opened
+    document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (btn.dataset.tab === 'system') loadAccounts();
+        });
+    });
+    // Also load on init if system tab is active
+    if (document.getElementById('system-tab')?.classList.contains('active')) loadAccounts();
 });
 
 

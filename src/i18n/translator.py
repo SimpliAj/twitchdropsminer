@@ -261,7 +261,15 @@ class Translator:
     def get_languages(self) -> list[str]:
         return list(self._langs.keys())
 
+    # Map of locale codes to language_name keys
+    _LOCALE_MAP: dict[str, str] = {
+        "en": "English", "de": "Deutsch", "es": "Español", "fr": "Français",
+        "pl": "Polski", "tr": "Türkçe", "uk": "Українська", "ar": "العربية",
+        "zh": "简体中文", "id": "Indonesian", "da": "Dansk", "cs": "Čeština",
+    }
+
     def set_language(self, language: str):
+        language = self._LOCALE_MAP.get(language, language)
         if language not in self._langs:
             raise ValueError(f"Unrecognized language {language}")
 

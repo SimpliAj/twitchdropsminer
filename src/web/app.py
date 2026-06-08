@@ -20,6 +20,19 @@ from starlette.middleware.base import BaseHTTPMiddleware
 _DATA_DIR = Path(__file__).parent.parent.parent / "data"
 _WEB_CONFIG_FILE = _DATA_DIR / "web_config.json"
 
+def _get_account_data_dir() -> Path:
+    """Account-aware data dir — same logic as src.config.paths but importable here."""
+    try:
+        cfg = json.loads(_WEB_CONFIG_FILE.read_text()) if _WEB_CONFIG_FILE.exists() else {}
+        account = cfg.get("active_account")
+        if account:
+            d = _DATA_DIR / "accounts" / account
+            d.mkdir(parents=True, exist_ok=True)
+            return d
+    except Exception:
+        pass
+    return _DATA_DIR
+
 _SHARED_CSS = """
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#0e0e10;color:#efeff1;font-family:system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
@@ -68,7 +81,7 @@ def _is_setup_done() -> bool:
 
 def _load_channel_points_history() -> dict:
     try:
-        p = _DATA_DIR / "channel_points.json"
+        p = _get_account_data_dir() / "channel_points.json"
         if p.exists():
             return json.loads(p.read_text())
     except Exception:
@@ -406,11 +419,11 @@ async def get_channel_points(channel_login: str):
             points = 0
         # Persist
         if points:
-            from src.config import DATA_DIR
             from src.utils import json_load, json_save
-            history = json_load(DATA_DIR / "channel_points.json", {}, merge=False)
+            _cp_file = _get_account_data_dir() / "channel_points.json"
+            history = json_load(_cp_file, {}, merge=False)
             history[channel_login] = points
-            json_save(DATA_DIR / "channel_points.json", history)
+            json_save(_cp_file, history)
         return {"channel": channel_login, "balance": points}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -420,7 +433,7 @@ async def get_channel_points(channel_login: str):
 @app.get("/api/drops-history")
 async def get_drops_history():
     """Return all claimed drops history."""
-    hist_file = _DATA_DIR / "drops_history.json"
+    hist_file = _get_account_data_dir() / "drops_history.json"
     try:
         if hist_file.exists():
             return json.loads(hist_file.read_text())
