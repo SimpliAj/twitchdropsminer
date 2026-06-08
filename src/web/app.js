@@ -1845,15 +1845,15 @@ function selectBadgeEmoteGames() {
     const badgeEmoteGames = new Set();
     for (const camp of Object.values(state.campaigns)) {
         if (!camp.game_name || !camp.drops) continue;
-        if (camp.subscription_required) continue;
-        let hasBadgeOrEmote = false;
+        let hasFreeBadgeOrEmote = false;
         for (const drop of camp.drops) {
+            if ((drop.required_subs || 0) > 0) continue;
             for (const benefit of (drop.benefits || [])) {
                 const t = (benefit.type || '').toUpperCase();
-                if (t === 'BADGE' || t === 'EMOTE') { hasBadgeOrEmote = true; }
+                if (t === 'BADGE' || t === 'EMOTE') { hasFreeBadgeOrEmote = true; }
             }
         }
-        if (hasBadgeOrEmote) badgeEmoteGames.add(camp.game_name);
+        if (hasFreeBadgeOrEmote) badgeEmoteGames.add(camp.game_name);
     }
     const current = new Set(state.settings.games_to_watch || []);
     badgeEmoteGames.forEach(g => current.add(g));
