@@ -96,6 +96,30 @@ def _is_setup_done() -> bool:
     return _load_web_config().get("setup_done", False)
 
 
+def _vienna_today() -> str:
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    return datetime.now(ZoneInfo("Europe/Vienna")).strftime("%Y-%m-%d")
+
+
+def _load_daily_points() -> dict:
+    try:
+        p = _get_account_data_dir() / "daily_points.json"
+        if p.exists():
+            d = json.loads(p.read_text())
+            if d.get("date") == _vienna_today():
+                return d
+    except Exception:
+        pass
+    return {"date": _vienna_today(), "total": 0}
+
+
+def _save_daily_points(total: int) -> None:
+    p = _get_account_data_dir() / "daily_points.json"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps({"date": _vienna_today(), "total": total}))
+
+
 def _load_channel_points_history() -> dict:
     try:
         p = _get_account_data_dir() / "channel_points.json"
@@ -900,6 +924,18 @@ def _save_pairing_channels(discord_user_id: str, channels: dict) -> None:
         _PAIRINGS_FILE.write_text(json.dumps(data, indent=2))
 
 
+def _save_pairing_field(discord_user_id: str, field: str, value) -> None:
+    if not _PAIRINGS_FILE.exists():
+        return
+    data = json.loads(_PAIRINGS_FILE.read_text())
+    if discord_user_id in data.get("users", {}):
+        if value is None:
+            data["users"][discord_user_id].pop(field, None)
+        else:
+            data["users"][discord_user_id][field] = value
+        _PAIRINGS_FILE.write_text(json.dumps(data, indent=2))
+
+
 def _normalize_channel_entries(val) -> list[dict]:
     """Normalize a channel field (int, dict, or list of either) to list of {id,name,guild}."""
     if val is None:
@@ -927,11 +963,31 @@ async def discord_bot_config():
     return {
         "paired": True,
         "discord_user_id": pairing["discord_user_id"],
+        "profile_name": pairing.get("profile_name", ""),
         "channels": {
             "drops": _normalize_channel_entries(channels.get("drops")),
             "points": _normalize_channel_entries(channels.get("points")),
         },
     }
+
+
+@app.post("/api/daily-points")
+async def update_daily_points(request: Request):
+    body = await request.json()
+    total = int(body.get("total", 0))
+    _save_daily_points(max(0, total))
+    return {"success": True}
+
+
+@app.post("/api/discord-bot/profile-name")
+async def discord_bot_set_profile_name(request: Request):
+    body = await request.json()
+    name = (body.get("name") or "").strip()[:50]
+    pairing = _get_bot_pairing()
+    if not pairing:
+        raise HTTPException(status_code=404, detail="No bot paired")
+    _save_pairing_field(pairing["discord_user_id"], "profile_name", name or None)
+    return {"success": True, "profile_name": name}
 
 
 @app.delete("/api/discord-bot/config/channel/{channel_type}")
@@ -982,6 +1038,9 @@ async def switch_account(data: AccountSwitchRequest):
         raise HTTPException(status_code=404, detail="Account not found")
     cfg["active_account"] = data.label
     _save_web_config(cfg)
+    pairing = _get_bot_pairing()
+    if pairing:
+        _save_pairing_field(pairing["discord_user_id"], "profile_name", data.label)
     async def _restart():
         await asyncio.sleep(1)
         import subprocess
@@ -1007,6 +1066,9 @@ async def add_account(data: AccountAddRequest):
     cfg = _load_web_config()
     cfg["active_account"] = label
     _save_web_config(cfg)
+    pairing = _get_bot_pairing()
+    if pairing:
+        _save_pairing_field(pairing["discord_user_id"], "profile_name", label)
     async def _restart():
         await asyncio.sleep(1)
         import subprocess
@@ -1027,6 +1089,32 @@ async def remove_account(label: str):
         raise HTTPException(status_code=404, detail="Account not found")
     shutil.rmtree(account_dir)
     return {"success": True}
+
+
+@app.patch("/api/accounts/{label}")
+async def rename_account(label: str, request: Request):
+    """Rename an account label (renames the folder, updates active_account and bot profile_name)"""
+    import shutil
+    body = await request.json()
+    new_label = (body.get("new_label") or "").strip()
+    if not new_label or any(c in new_label for c in "/\\."):
+        raise HTTPException(status_code=400, detail="Invalid account label")
+    account_dir = _DATA_DIR / "accounts" / label
+    if not account_dir.exists():
+        raise HTTPException(status_code=404, detail="Account not found")
+    new_dir = _DATA_DIR / "accounts" / new_label
+    if new_dir.exists():
+        raise HTTPException(status_code=409, detail="Account label already exists")
+    shutil.move(str(account_dir), str(new_dir))
+    cfg = _load_web_config()
+    was_active = cfg.get("active_account") == label
+    if was_active:
+        cfg["active_account"] = new_label
+        _save_web_config(cfg)
+        pairing = _get_bot_pairing()
+        if pairing:
+            _save_pairing_field(pairing["discord_user_id"], "profile_name", new_label)
+    return {"success": True, "new_label": new_label}
 
 
 @app.get("/api/accounts/migration-hint")
@@ -1069,6 +1157,7 @@ async def connect(sid, environ):
                     else None
                 ),
                 "channel_points_history": _load_channel_points_history(),
+                "daily_points": _load_daily_points(),
             },
             room=sid,
         )
