@@ -20,6 +20,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 _DATA_DIR = Path(__file__).parent.parent.parent / "data"
 _WEB_CONFIG_FILE = _DATA_DIR / "web_config.json"
 _BOT_TOKEN_FILE = _DATA_DIR / "discord_bot_token.json"
+_PAIRINGS_FILE = Path(__file__).parent.parent.parent.parent / "discord_bot" / "pairings.json"
 _pair_codes: dict[str, dict] = {}  # code -> {token, expires}
 
 def _get_account_data_dir() -> Path:
@@ -863,6 +864,68 @@ async def pair_revoke():
     """Revoke bot token."""
     if _BOT_TOKEN_FILE.exists():
         _BOT_TOKEN_FILE.unlink()
+    return {"success": True}
+
+
+def _get_bot_pairing() -> dict | None:
+    """Find the pairings.json entry whose token matches the stored bot token."""
+    token = _get_bot_token()
+    if not token or not _PAIRINGS_FILE.exists():
+        return None
+    try:
+        data = json.loads(_PAIRINGS_FILE.read_text())
+        for uid, entry in data.get("users", {}).items():
+            if entry.get("token") == token:
+                return {"discord_user_id": uid, **entry}
+    except Exception:
+        pass
+    return None
+
+
+def _save_pairing_channels(discord_user_id: str, channels: dict) -> None:
+    if not _PAIRINGS_FILE.exists():
+        return
+    data = json.loads(_PAIRINGS_FILE.read_text())
+    if discord_user_id in data.get("users", {}):
+        data["users"][discord_user_id]["channels"] = channels
+        _PAIRINGS_FILE.write_text(json.dumps(data, indent=2))
+
+
+@app.get("/api/discord-bot/config")
+async def discord_bot_config():
+    """Return channel configuration for the paired Discord bot user."""
+    pairing = _get_bot_pairing()
+    if not pairing:
+        return {"paired": False, "channels": {}}
+    channels = pairing.get("channels", {})
+    def _fmt(val):
+        if val is None:
+            return []
+        if isinstance(val, list):
+            return [str(v) for v in val if v]
+        return [str(val)]
+
+    return {
+        "paired": True,
+        "discord_user_id": pairing["discord_user_id"],
+        "channels": {
+            "drops": _fmt(channels.get("drops")),
+            "points": _fmt(channels.get("points")),
+        },
+    }
+
+
+@app.delete("/api/discord-bot/config/channel/{channel_type}")
+async def discord_bot_clear_channel(channel_type: str):
+    """Clear all notification channels of a type (drops or points)."""
+    if channel_type not in ("drops", "points"):
+        raise HTTPException(status_code=400, detail="Invalid channel type")
+    pairing = _get_bot_pairing()
+    if not pairing:
+        raise HTTPException(status_code=404, detail="No bot paired")
+    channels = dict(pairing.get("channels", {}))
+    channels[channel_type] = []
+    _save_pairing_channels(pairing["discord_user_id"], channels)
     return {"success": True}
 
 

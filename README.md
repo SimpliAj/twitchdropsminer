@@ -51,8 +51,36 @@ The following features and fixes have been added on top of the upstream codebase
 - Test button included to verify webhooks without waiting for a real event
 - Account name in footer makes it easy to distinguish multiple accounts using the same webhook
 
+### 🤖 Discord Bot Integration
+A dedicated Discord bot that pairs with your miner instance and sends rich, live-updating notifications — no webhook URLs needed.
+
+**Slash Commands**
+| Command | Description |
+|---------|-------------|
+| `/link <url> <code>` | Pair the bot with your miner dashboard |
+| `/unlink` | Remove the pairing |
+| `/setchannel drops` | Set a channel for drop notifications |
+| `/setchannel points` | Set a channel for channel points notifications |
+| `/dashboard` | Post a live-updating embed with control buttons |
+
+**Key features:**
+- **Multi-server support** — run `/setchannel` in multiple Discord servers; all configured channels receive notifications
+- **Drop notifications** — one embed per drop, with reward thumbnail image, game, drop name, reward name, and account name in the footer
+- **Channel points notifications** — fires on gains ≥ 25 pts, showing channel, amount, balance, and account name
+- **Live dashboard embed** — auto-updates every 30s; shows status, watching channel, points balance, and drop count; owner-only control buttons (Pause/Resume, Switch Mode, View Campaigns, Last Drops, Refresh)
+- **Web UI channel config** — Settings → Discord Bot shows all configured notification channels with a Clear button; no need to re-run slash commands to see the current setup
+
+**Invite the bot:**
+[➕ Add TwitchDropsMiner Bot to your server](https://discord.com/oauth2/authorize?client_id=1513555081218359506&permissions=84992&integration_type=0&scope=bot)
+
+**Setup:**
+1. Invite the bot to your server using the link above
+2. In the web dashboard, go to **Settings → Discord Bot → Generate code**
+3. In Discord, run: `/link https://your-server:8081 DROPS-XXXXXXXX`
+4. Run `/setchannel drops` and `/setchannel points` in the channels where you want notifications
+
 ### 🖥️ Web UI Improvements
-- **State-aware Quick Controls** — buttons highlight based on what the miner is currently doing:
+- **State-aware Quick Controls** — equal-size 2×2 grid; buttons highlight based on what the miner is currently doing:
   - 🟢 Green: Drop Mining Active (currently farming drops)
   - 🟡 Yellow: Skip Game (while a drop is active)
   - 🟣 Purple: Start Drop Mining / Switch Channel (while idle-watching)
@@ -98,6 +126,7 @@ The following features and fixes have been added on top of the upstream codebase
 - 💰 **Channel Points Auto-Claimer** — Bonus chests claimed within 60s automatically
 - 💤 **Idle Watch** — Earns channel points on favorite channels when no drops are active
 - 📊 **Channel Points Tracker** — Live balance display with persistent history
+- 🤖 **Discord Bot** — Live dashboard embed + drop/points notifications across multiple Discord servers
 
 ---
 

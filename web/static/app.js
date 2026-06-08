@@ -1489,6 +1489,45 @@ function updateBotPairedUI(paired) {
         badge.appendChild(span);
     }
     if (revokeBtn) revokeBtn.style.display = paired ? 'inline-block' : 'none';
+    const configBox = document.getElementById('bot-channel-config');
+    if (configBox) {
+        if (paired) {
+            configBox.style.display = 'block';
+            loadBotChannelConfig();
+        } else {
+            configBox.style.display = 'none';
+        }
+    }
+}
+
+async function loadBotChannelConfig() {
+    try {
+        const res = await fetch('/api/discord-bot/config');
+        if (!res.ok) return;
+        const data = await res.json();
+        const channels = data.channels || {};
+        const dropsArr = channels.drops || [];
+        const pointsArr = channels.points || [];
+        const dropsEl = document.getElementById('bot-drops-channel');
+        const pointsEl = document.getElementById('bot-points-channel');
+        const dropsClear = document.getElementById('bot-drops-clear-btn');
+        const pointsClear = document.getElementById('bot-points-clear-btn');
+        if (dropsEl) dropsEl.textContent = dropsArr.length ? dropsArr.map(id => `#${id}`).join(', ') : '—';
+        if (pointsEl) pointsEl.textContent = pointsArr.length ? pointsArr.map(id => `#${id}`).join(', ') : '—';
+        if (dropsClear) dropsClear.style.display = dropsArr.length ? 'inline-block' : 'none';
+        if (pointsClear) pointsClear.style.display = pointsArr.length ? 'inline-block' : 'none';
+    } catch (e) {}
+}
+
+async function botClearChannel(type) {
+    if (!confirm(`Clear the ${type} notification channel?`)) return;
+    try {
+        const res = await fetch(`/api/discord-bot/config/channel/${type}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error(await res.text());
+        loadBotChannelConfig();
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
 }
 
 async function botGenerateCode() {
