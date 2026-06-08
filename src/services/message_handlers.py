@@ -57,6 +57,28 @@ def _save_last_chest(channel_login: str, bonus: int) -> None:
         pass
 
 
+def _get_last_webhook_notified(channel_login: str) -> int:
+    p = _get_points_file().parent / "last_webhook_notify.json"
+    try:
+        data = _json_mod.loads(p.read_text()) if p.exists() else {}
+        return int(data.get(channel_login, 0))
+    except Exception:
+        return 0
+
+
+def _set_last_webhook_notified(channel_login: str, balance: int) -> None:
+    p = _get_points_file().parent / "last_webhook_notify.json"
+    try:
+        data = _json_mod.loads(p.read_text()) if p.exists() else {}
+    except Exception:
+        data = {}
+    data[channel_login] = balance
+    try:
+        p.write_text(_json_mod.dumps(data, indent=2))
+    except Exception:
+        pass
+
+
 if TYPE_CHECKING:
     from src.config import JsonType
     from src.core.client import Twitch
@@ -377,16 +399,30 @@ class MessageHandlerService:
             webhook_url = self._twitch.settings.discord_webhook_points
             if webhook_url and claimed_amount:
                 _acct_cp = _get_active_account()
-                _cp_embed: dict = {
-                    "title": "💰 Bonus Chest Claimed!",
-                    "color": 0xffd700,
-                    "fields": [
-                        {"name": "Channel", "value": channel_login, "inline": True},
-                        {"name": "Bonus", "value": f"+{claimed_amount} pts", "inline": True},
-                    ],
-                }
+                # Fetch current balance to compute watch points since last notification
+                _bal_after = 0
+                try:
+                    _br = await self._twitch.gql_request(
+                        GQL_OPERATIONS["ChannelPointsContext"].with_variables({"channelLogin": channel_login})
+                    )
+                    _bal_after = (_br.get("data") or {}).get("community", {}).get("channel", {}).get("self", {}).get("communityPoints", {}).get("balance", 0)
+                except Exception:
+                    pass
+                _last_notified = _get_last_webhook_notified(channel_login)
+                _watch_pts = max(0, _bal_after - (_last_notified or _bal_after) - claimed_amount) if _last_notified else 0
+                _fields = [
+                    {"name": "Channel", "value": channel_login, "inline": True},
+                    {"name": "🎁 Bonus Chest", "value": f"+{claimed_amount} pts", "inline": True},
+                ]
+                if _watch_pts > 0:
+                    _fields.append({"name": "📺 From watching", "value": f"+{_watch_pts} pts", "inline": True})
+                if _bal_after:
+                    _fields.append({"name": "Balance", "value": f"{_bal_after:,} pts", "inline": True})
+                _cp_embed: dict = {"title": "💰 Channel Points", "color": 0x9147FF, "fields": _fields}
                 if _acct_cp:
                     _cp_embed["footer"] = {"text": f"Account: {_acct_cp}"}
+                if _bal_after:
+                    _set_last_webhook_notified(channel_login, _bal_after)
                 asyncio.create_task(self._send_discord_webhook(webhook_url, {"embeds": [_cp_embed]}))
             # Fetch updated balance and broadcast to UI
             await self._emit_channel_points(channel_login, channel_id, claimed_amount)
@@ -449,17 +485,19 @@ class MessageHandlerService:
                     webhook_url = self._twitch.settings.discord_webhook_points
                     if webhook_url:
                         _acct_gql = _get_active_account()
-                        _gql_embed: dict = {
-                            "title": "💰 Bonus Chest Claimed!",
-                            "color": 0xffd700,
-                            "fields": [
-                                {"name": "Channel", "value": channel_login, "inline": True},
-                                {"name": "Bonus", "value": f"+{bonus_amount} pts" if bonus_amount else "Claimed", "inline": True},
-                                {"name": "Balance", "value": f"{new_points:,} pts", "inline": True},
-                            ],
-                        }
+                        _last_notified_gql = _get_last_webhook_notified(channel_login)
+                        _watch_gql = max(0, new_points - (_last_notified_gql or new_points) - bonus_amount) if _last_notified_gql else 0
+                        _gql_fields = [
+                            {"name": "Channel", "value": channel_login, "inline": True},
+                            {"name": "🎁 Bonus Chest", "value": f"+{bonus_amount} pts" if bonus_amount else "Claimed", "inline": True},
+                        ]
+                        if _watch_gql > 0:
+                            _gql_fields.append({"name": "📺 From watching", "value": f"+{_watch_gql} pts", "inline": True})
+                        _gql_fields.append({"name": "Balance", "value": f"{new_points:,} pts", "inline": True})
+                        _gql_embed: dict = {"title": "💰 Channel Points", "color": 0x9147FF, "fields": _gql_fields}
                         if _acct_gql:
                             _gql_embed["footer"] = {"text": f"Account: {_acct_gql}"}
+                        _set_last_webhook_notified(channel_login, new_points)
                         asyncio.create_task(self._send_discord_webhook(webhook_url, {"embeds": [_gql_embed]}))
                 except Exception as claim_e:
                     logger.debug(f"GQL claim failed for {channel_login}: {claim_e}")
