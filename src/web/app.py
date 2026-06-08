@@ -226,6 +226,9 @@ class SettingsUpdate(BaseModel):
     claim_channel_points: bool | None = None
     idle_channels: list[str] | None = None
     idle_use_followed: bool | None = None
+    scheduler_enabled: bool | None = None
+    scheduler_start: str | None = None
+    scheduler_stop: str | None = None
     discord_webhook_drops: str | None = None
     discord_webhook_points: str | None = None
     drop_name_blacklist: list[str] | None = None
@@ -344,7 +347,26 @@ async def get_status():
         "status": gui_manager.status.get(),
         "login": gui_manager.login.get_status(),
         "manual_mode": twitch_client.get_manual_mode_info(),
+        "paused": twitch_client.is_paused() if twitch_client else False,
     }
+
+
+@app.post("/api/pause")
+async def pause_miner():
+    """Pause the miner."""
+    if not twitch_client:
+        raise HTTPException(status_code=503, detail="Not ready")
+    twitch_client.pause(source="user")
+    return {"success": True, "paused": True}
+
+
+@app.post("/api/resume")
+async def resume_miner():
+    """Resume the miner."""
+    if not twitch_client:
+        raise HTTPException(status_code=503, detail="Not ready")
+    twitch_client.resume(user_override=True)
+    return {"success": True, "paused": False}
 
 
 @app.get("/api/channels")

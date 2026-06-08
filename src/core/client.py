@@ -31,6 +31,7 @@ from src.services.channel_service import ChannelService
 from src.services.inventory_service import InventoryService
 from src.services.maintenance import MaintenanceService
 from src.services.message_handlers import MessageHandlerService
+from src.services.scheduler_service import SchedulerService
 from src.services.stream_selector import StreamSelector
 from src.services.watch_service import WatchService
 from src.utils import (
@@ -93,6 +94,12 @@ class Twitch:
         self._inventory_service: InventoryService = InventoryService(self)
         self._watch_service: WatchService = WatchService(self)
         self._stream_selector: StreamSelector = StreamSelector()
+        # Pause/resume state (PR #65)
+        self._is_paused: bool = False
+        self._pause_source: str | None = None
+        self._user_override: bool = False
+        self._scheduler_task: asyncio.Task[None] | None = None
+        self._scheduler_service: SchedulerService = SchedulerService(self)
 
     def _ensure_api_clients(self) -> None:
         """Ensure API clients are initialized (called after GUI is set)."""
@@ -130,6 +137,9 @@ class Twitch:
         if self._mnt_task is not None:
             self._mnt_task.cancel()
             self._mnt_task = None
+        if self._scheduler_task is not None:
+            self._scheduler_task.cancel()
+            self._scheduler_task = None
         # stop websocket and close HTTP session
         await self.websocket.stop(clear_topics=True)
         if self._http_client is not None:
@@ -165,6 +175,29 @@ class Twitch:
         usually by the console or application window being closed.
         """
         self.change_state(State.EXIT)
+
+    def pause(self, source: str = "user") -> None:
+        """Pause the miner."""
+        if source == "user":
+            self._user_override = True
+        self._is_paused = True
+        self._pause_source = source
+        self.change_state(State.PAUSED)
+        asyncio.create_task(self.gui.broadcast_pause_state(True))
+
+    def resume(self, *, user_override: bool = False) -> None:
+        """Resume the miner."""
+        if user_override:
+            self._user_override = True
+            self._pause_source = None
+        self._is_paused = False
+        self._pause_source = None
+        self.change_state(State.INVENTORY_FETCH)
+        asyncio.create_task(self.gui.broadcast_pause_state(False))
+
+    def is_paused(self) -> bool:
+        """Return whether the miner is currently paused."""
+        return self._is_paused
 
     def print(self, message: str) -> None:
         """Print a message in the GUI."""
@@ -207,6 +240,10 @@ class Twitch:
         if self._watching_task is not None:
             self._watching_task.cancel()
         self._watching_task = asyncio.create_task(self._watch_service.watch_loop())
+        # Start scheduler service
+        if self._scheduler_task is not None:
+            self._scheduler_task.cancel()
+        self._scheduler_task = asyncio.create_task(self._scheduler_service.run_scheduler())
         # Add default topics
         self.websocket.add_topics(
             [
@@ -225,7 +262,13 @@ class Twitch:
         channels: Final[OrderedDict[int, Channel]] = self.channels
         self.change_state(State.INVENTORY_FETCH)
         while True:
-            if self._state is State.IDLE:
+            if self._state is State.PAUSED:
+                self.gui.status.update("⏸ Mining paused")
+                self.stop_watching()
+                self._state_change.clear()
+                await self._state_change.wait()
+                continue
+            elif self._state is State.IDLE:
                 self.gui.status.update(_.t["gui"]["status"]["idle"])
                 self.stop_watching()
                 # Remove any previously added idle channel topics to prevent accumulation

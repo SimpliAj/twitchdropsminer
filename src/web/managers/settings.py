@@ -111,6 +111,15 @@ class SettingsManager:
             "idle_use_followed", settings_data.get("idle_use_followed")
         )
         self.check_and_update_setting(
+            "scheduler_enabled", settings_data.get("scheduler_enabled")
+        )
+        self.check_and_update_setting(
+            "scheduler_start", settings_data.get("scheduler_start")
+        )
+        self.check_and_update_setting(
+            "scheduler_stop", settings_data.get("scheduler_stop")
+        )
+        self.check_and_update_setting(
             "discord_webhook_drops", settings_data.get("discord_webhook_drops")
         )
         self.check_and_update_setting(

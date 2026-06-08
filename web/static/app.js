@@ -4,6 +4,7 @@
 // Global state
 const state = {
     connected: false,
+    paused: false,
     channels: {},
     campaigns: {},
     settings: {},
@@ -144,6 +145,7 @@ socket.on('initial_state', (data) => {
     if (data.settings) updateSettingsUI(data.settings);
     if (data.login) updateLoginStatus(data.login);
     if (data.manual_mode) updateManualModeUI(data.manual_mode);
+    if (data.paused !== undefined) updatePauseState(data.paused);
     // Restore current drop progress if it exists
     if (data.current_drop) {
         updateDropProgress(data.current_drop);
@@ -319,6 +321,10 @@ socket.on('language_changed', (data) => {
 
 socket.on('wanted_items_update', (data) => {
     renderWantedItems(data);
+});
+
+socket.on('pause_state', function(data) {
+    updatePauseState(data.paused);
 });
 
 // ==================== UI Update Functions ====================
@@ -1457,6 +1463,13 @@ function updateSettingsUI(settings) {
     const idleFollowedEl = document.getElementById('idle-use-followed');
     if (idleFollowedEl) idleFollowedEl.checked = settings.idle_use_followed === true;
 
+    const schedulerEnabled = document.getElementById('scheduler-enabled');
+    if (schedulerEnabled) schedulerEnabled.checked = settings.scheduler_enabled || false;
+    const schedulerStart = document.getElementById('scheduler-start');
+    if (schedulerStart) schedulerStart.value = settings.scheduler_start || '22:00';
+    const schedulerStop = document.getElementById('scheduler-stop');
+    if (schedulerStop) schedulerStop.value = settings.scheduler_stop || '08:00';
+
     // Re-render inventory to apply filters
     renderInventory();
 }
@@ -1866,6 +1879,9 @@ async function saveSettings() {
         idle_use_followed: document.getElementById('idle-use-followed')?.checked ?? false,
         drop_name_blacklist: (document.getElementById('drop-blacklist-input')?.value || '')
             .split(',').map(s => s.trim()).filter(Boolean),
+        scheduler_enabled: document.getElementById('scheduler-enabled')?.checked || false,
+        scheduler_start: document.getElementById('scheduler-start')?.value || '22:00',
+        scheduler_stop: document.getElementById('scheduler-stop')?.value || '08:00',
     };
 
     try {
@@ -1877,6 +1893,30 @@ async function saveSettings() {
         console.log('Settings saved automatically');
     } catch (error) {
         console.error('Failed to save settings:', error);
+    }
+}
+
+function updatePauseState(paused) {
+    state.paused = paused;
+    const btn = document.getElementById('pause-resume-btn');
+    if (!btn) return;
+    if (paused) {
+        btn.textContent = '▶ Resume';
+        btn.classList.add('paused');
+    } else {
+        btn.textContent = '⏸ Pause';
+        btn.classList.remove('paused');
+    }
+}
+
+async function togglePause() {
+    const endpoint = state.paused ? '/api/resume' : '/api/pause';
+    try {
+        const resp = await fetch(endpoint, { method: 'POST' });
+        const data = await resp.json();
+        updatePauseState(data.paused);
+    } catch (e) {
+        console.error('Failed to toggle pause:', e);
     }
 }
 
