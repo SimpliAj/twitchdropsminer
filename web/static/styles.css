@@ -1245,13 +1245,28 @@ header h1 {
 
 .settings-section select,
 .settings-section input[type="number"],
-.settings-section input[type="text"] {
+.settings-section input[type="text"],
+.settings-section input[type="password"] {
     padding: 8px;
     border: 1px solid var(--border-color);
     border-radius: 4px;
     background: var(--bg-secondary);
     color: var(--text-primary);
     margin-left: 10px;
+}
+.form-row .form-input {
+    padding: 7px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: .9rem;
+    margin-left: 0;
+    outline: none;
+    transition: border-color 0.15s;
+}
+.form-row .form-input:focus {
+    border-color: var(--accent-color, #9147ff);
 }
 
 .list-manager {

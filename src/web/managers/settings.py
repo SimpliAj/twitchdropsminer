@@ -33,11 +33,13 @@ class SettingsManager:
         settings: Settings,
         console: ConsoleOutputManager,
         on_change: Callable[[], None] | None = None,
+        on_scheduler_change: Callable[[], None] | None = None,
     ):
         self._broadcaster = broadcaster
         self._settings = settings
         self._console = console
         self._on_change = on_change
+        self._on_scheduler_change = on_scheduler_change
         self._available_games: list[str] = []
 
     def get_settings(self) -> dict[str, Any]:
@@ -110,15 +112,13 @@ class SettingsManager:
         self.check_and_update_setting(
             "idle_use_followed", settings_data.get("idle_use_followed")
         )
-        self.check_and_update_setting(
-            "scheduler_enabled", settings_data.get("scheduler_enabled")
-        )
-        self.check_and_update_setting(
-            "scheduler_start", settings_data.get("scheduler_start")
-        )
-        self.check_and_update_setting(
-            "scheduler_stop", settings_data.get("scheduler_stop")
-        )
+        scheduler_changed = any([
+            self.check_and_update_setting("scheduler_enabled", settings_data.get("scheduler_enabled")),
+            self.check_and_update_setting("scheduler_start", settings_data.get("scheduler_start")),
+            self.check_and_update_setting("scheduler_stop", settings_data.get("scheduler_stop")),
+        ])
+        if scheduler_changed and self._on_scheduler_change:
+            self._on_scheduler_change()
         self.check_and_update_setting(
             "discord_webhook_drops", settings_data.get("discord_webhook_drops")
         )
