@@ -112,13 +112,12 @@ class SettingsManager:
         self.check_and_update_setting(
             "idle_use_followed", settings_data.get("idle_use_followed")
         )
-        scheduler_changed = any([
-            self.check_and_update_setting("scheduler_enabled", settings_data.get("scheduler_enabled")),
-            self.check_and_update_setting("scheduler_start", settings_data.get("scheduler_start")),
-            self.check_and_update_setting("scheduler_stop", settings_data.get("scheduler_stop")),
-        ])
-        if scheduler_changed and self._on_scheduler_change:
-            self._on_scheduler_change()
+        self.check_and_update_setting("scheduler_enabled", settings_data.get("scheduler_enabled"))
+        self.check_and_update_setting("scheduler_start", settings_data.get("scheduler_start"))
+        self.check_and_update_setting("scheduler_stop", settings_data.get("scheduler_stop"))
+        if any(k in settings_data for k in ("scheduler_enabled", "scheduler_start", "scheduler_stop")):
+            if self._on_scheduler_change:
+                self._on_scheduler_change()
         self.check_and_update_setting(
             "discord_webhook_drops", settings_data.get("discord_webhook_drops")
         )
