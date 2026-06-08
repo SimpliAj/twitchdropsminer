@@ -165,7 +165,19 @@
             "password_disabled_msg": "Login disabled.",
             "password_mismatch": "Passwords don't match.",
             "password_status_active": "🔒 Login active — Password set",
-            "password_status_inactive": "🔓 No login — publicly accessible"
+            "password_status_inactive": "🔓 No login — publicly accessible",
+            "discord_bot": {
+                "header": "Discord Bot",
+                "description": "Połącz bota Discord, aby sterować TwitchDropsMiner przez komendy czatu.",
+                "not_connected": "Niepołączony",
+                "connected": "✅ Połączony",
+                "generate_code": "Generuj kod",
+                "generating": "Generowanie...",
+                "disconnect": "Rozłącz",
+                "disconnect_confirm": "Rozłączyć bota Discord?",
+                "invite_bot": "Zaproś bota",
+                "expires": "Wygasa za 10 min"
+            }
         },
         "help": {
             "about": "O Twitch Drops Miner",

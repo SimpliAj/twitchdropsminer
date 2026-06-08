@@ -105,108 +105,127 @@ async def build_dashboard_embed(session: aiohttp.ClientSession, url: str, token:
     account = login_info.get("user_login") if isinstance(login_info, dict) else str(login_info)
 
     # Parse watching channel from status string (e.g. "💤 Idle watching: ohnePixel")
-    watching_channel = None
+    watching_login = None
     if "watching:" in status_str.lower():
-        watching_channel = status_str.split(":")[-1].strip()
+        watching_login = status_str.split(":")[-1].strip()
 
     if paused:
-        color = COLOR_PAUSED
-        state_icon = "⏸️"
-        state_label = "Paused"
+        color, state_line = COLOR_PAUSED, "⏸️  **Paused**"
     elif "idle" in status_str.lower():
-        color = 0x5865F2
-        state_icon = "💤"
-        state_label = "Idle Watching"
+        color, state_line = 0x5865F2, "💤  **Idle Watching**"
     elif status_str:
-        color = COLOR_SUCCESS
-        state_icon = "🟢"
-        state_label = "Mining Drops"
+        color, state_line = COLOR_SUCCESS, "🟢  **Mining Drops**"
     else:
-        color = COLOR_ERROR
-        state_icon = "🔴"
-        state_label = "Unknown"
+        color, state_line = COLOR_ERROR, "🔴  **Unknown**"
 
-    lines = [f"**{state_icon} {state_label}**"]
-    if watching_channel:
-        lines.append(f"📺 Watching: **{watching_channel}**")
+    desc_parts = [state_line]
     if account:
-        lines.append(f"👤 Account: `{account}`")
+        desc_parts.append(f"👤  `{account}`")
 
     embed = discord.Embed(
-        title="TwitchDropsMiner — Live Dashboard",
-        description="\n".join(lines),
+        title="TwitchDropsMiner",
+        description="  ·  ".join(desc_parts),
         color=color,
     )
 
-    # Active campaign + next drop
+    # Watching channel + channel points (full width row)
+    watching_display = None
+    channel_points = None
+    try:
+        idle_data = await api_get(session, url, token, "/api/idle-watch/status")
+        w_login = idle_data.get("watching")
+        w_name = idle_data.get("display_name") or w_login
+        online = idle_data.get("online", False)
+        if w_name:
+            watching_display = f"**{w_name}**  {'🟢 Live' if online else '⚫ Offline'}"
+            watching_login = w_login or watching_login
+    except Exception:
+        if watching_login:
+            watching_display = f"**{watching_login}**"
+
+    if watching_login:
+        try:
+            cp_data = await api_get(session, url, token, f"/api/channel-points/{watching_login}")
+            balance = cp_data.get("balance")
+            if balance is not None:
+                channel_points = f"**{balance:,}** pts"
+        except Exception:
+            pass
+
+    if watching_display or channel_points:
+        watch_val = watching_display or "—"
+        if channel_points:
+            watch_val += f"\n💰 {channel_points}"
+        embed.add_field(name="📺 Watching", value=watch_val, inline=False)
+
+    # Active campaign (full width)
+    thumb_url = None
+    featured = None
     try:
         camp_data = await api_get(session, url, token, "/api/campaigns")
         campaigns = camp_data.get("campaigns", []) if isinstance(camp_data, dict) else camp_data
-        active = [c for c in campaigns if c.get("active") or (not c.get("expired") and not c.get("upcoming"))]
-        if not active:
-            active = [c for c in campaigns if not c.get("expired")]
-
-        featured = None
-        thumb_url = None
+        active = [c for c in campaigns if not c.get("expired")]
         for c in active:
             drops = c.get("drops", [])
-            has_progress = any(not d.get("is_claimed") for d in drops)
-            if has_progress:
+            if any(not d.get("is_claimed") for d in drops):
                 featured = c
-                thumb_url = c.get("game_box_art_url")
                 break
         if not featured and active:
             featured = active[0]
-            thumb_url = featured.get("game_box_art_url")
-
-        if thumb_url:
-            embed.set_thumbnail(url=thumb_url)
-
-        if featured:
-            game = featured.get("game_name") or featured.get("name", "Unknown")
-            claimed = featured.get("claimed_drops", 0)
-            total = featured.get("total_drops", 0)
-            embed.add_field(
-                name="🎮 Campaign",
-                value=f"**{featured['name']}**\n{game}\n`{claimed}/{total}` drops",
-                inline=True,
-            )
-
-            # Find next unclaimed drop
-            drops = featured.get("drops", [])
-            claimable = [d for d in drops if d.get("can_claim")]
-            in_progress = [d for d in drops if not d.get("is_claimed") and not d.get("can_claim") and d.get("current_minutes", 0) > 0]
-            upcoming = [d for d in drops if not d.get("is_claimed") and not d.get("can_claim") and d.get("current_minutes", 0) == 0]
-
-            if claimable:
-                nd = claimable[0]
-                benefit = nd.get("benefits", [{}])[0].get("name", nd.get("name", "Drop"))
-                drop_val = f"**{benefit}**\n✅ Ready to claim!"
-            elif in_progress:
-                nd = in_progress[0]
-                benefit = nd.get("benefits", [{}])[0].get("name", nd.get("name", "Drop"))
-                watched = nd.get("current_minutes", 0)
-                required = nd.get("required_minutes", 0)
-                pct = min(int(watched / required * 100), 100) if required else 0
-                filled = int(pct / 10)
-                bar = "█" * filled + "░" * (10 - filled)
-                remaining = max(required - watched, 0)
-                drop_val = f"**{benefit}**\n`{bar}` {pct}%\n⏱️ ~{remaining}m left"
-            elif upcoming:
-                nd = upcoming[0]
-                benefit = nd.get("benefits", [{}])[0].get("name", nd.get("name", "Drop"))
-                drop_val = f"**{benefit}**\nWaiting to start…"
-            else:
-                drop_val = "All drops claimed ✅"
-
-            embed.add_field(name="🎁 Next Drop", value=drop_val, inline=True)
-        else:
-            embed.add_field(name="🎮 Campaigns", value="No active campaigns", inline=True)
-
     except Exception as ex:
         log.debug("Dashboard campaigns error: %s", ex)
 
-    # Last drop + total
+    if featured:
+        thumb_url = featured.get("game_box_art_url")
+        if thumb_url:
+            embed.set_thumbnail(url=thumb_url)
+
+        game = featured.get("game_name", "")
+        claimed = featured.get("claimed_drops", 0)
+        total = featured.get("total_drops", 0)
+        pct_camp = int(claimed / total * 100) if total else 0
+        filled_c = int(pct_camp / 10)
+        bar_c = "█" * filled_c + "░" * (10 - filled_c)
+
+        embed.add_field(
+            name="🎮 Campaign",
+            value=f"**{featured['name']}**\n{game}\n`{bar_c}` {claimed}/{total} drops",
+            inline=True,
+        )
+
+        # Next drop (inline right)
+        drops = featured.get("drops", [])
+        claimable = [d for d in drops if d.get("can_claim")]
+        in_progress = [d for d in drops if not d.get("is_claimed") and not d.get("can_claim") and d.get("current_minutes", 0) > 0]
+        upcoming = [d for d in drops if not d.get("is_claimed") and not d.get("can_claim") and d.get("current_minutes", 0) == 0]
+
+        if claimable:
+            nd = claimable[0]
+            benefit = nd.get("benefits", [{}])[0].get("name", nd.get("name", "Drop"))
+            drop_val = f"**{benefit}**\n✅ Ready to claim!"
+        elif in_progress:
+            nd = in_progress[0]
+            benefit = nd.get("benefits", [{}])[0].get("name", nd.get("name", "Drop"))
+            watched = nd.get("current_minutes", 0)
+            required = nd.get("required_minutes", 0)
+            pct = min(int(watched / required * 100), 100) if required else 0
+            filled = int(pct / 10)
+            bar = "█" * filled + "░" * (10 - filled)
+            remaining = max(required - watched, 0)
+            drop_val = f"**{benefit}**\n`{bar}` {pct}%\n⏱️ ~{remaining}m left"
+        elif upcoming:
+            nd = upcoming[0]
+            benefit = nd.get("benefits", [{}])[0].get("name", nd.get("name", "Drop"))
+            required = nd.get("required_minutes", 0)
+            drop_val = f"**{benefit}**\n⏳ {required}m to watch"
+        else:
+            drop_val = "All drops claimed ✅"
+
+        embed.add_field(name="⏳ Next Drop", value=drop_val, inline=True)
+    else:
+        embed.add_field(name="🎮 Campaigns", value="No active campaigns", inline=False)
+
+    # Last drop + total claimed (bottom row)
     try:
         history = await api_get(session, url, token, "/api/drops-history")
         if isinstance(history, list) and history:
@@ -216,10 +235,10 @@ async def build_dashboard_embed(session: aiohttp.ClientSession, url: str, token:
             ts = last.get("timestamp", "")[:10] if last.get("timestamp") else ""
             embed.add_field(
                 name="🏆 Last Drop",
-                value=f"**{reward}**\n{game}{' · ' + ts if ts else ''}",
+                value=f"**{reward}**\n{game + (' · ' + ts if ts else '')}",
                 inline=True,
             )
-            embed.add_field(name="📈 Total Claimed", value=f"**{len(history)}** drops", inline=True)
+            embed.add_field(name="📈 Total", value=f"**{len(history)}** drops", inline=True)
     except Exception:
         pass
 
