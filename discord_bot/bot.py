@@ -1,6 +1,5 @@
 import os
 import json
-import asyncio
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
@@ -90,7 +89,6 @@ async def api_post(session: aiohttp.ClientSession, url: str, token: str, path: s
 
 
 async def build_dashboard_embed(session: aiohttp.ClientSession, url: str, token: str) -> discord.Embed:
-    """Build a rich live-stats embed from multiple API calls."""
     try:
         status_data = await api_get(session, url, token, "/api/status")
     except Exception:
@@ -104,7 +102,6 @@ async def build_dashboard_embed(session: aiohttp.ClientSession, url: str, token:
     login_info = status_data.get("login", {})
     account = login_info.get("user_login") if isinstance(login_info, dict) else str(login_info)
 
-    # Parse watching channel from status string (e.g. "💤 Idle watching: ohnePixel")
     watching_login = None
     if "watching:" in status_str.lower():
         watching_login = status_str.split(":")[-1].strip()
@@ -128,43 +125,34 @@ async def build_dashboard_embed(session: aiohttp.ClientSession, url: str, token:
         color=color,
     )
 
-    # Watching channel + channel points (full width row)
-    watching_display = None
-    channel_points = None
+    # Watching channel + channel points
     try:
         idle_data = await api_get(session, url, token, "/api/idle-watch/status")
         w_login = idle_data.get("watching")
         w_name = idle_data.get("display_name") or w_login
         online = idle_data.get("online", False)
         if w_name:
-            watching_display = f"**{w_name}**  {'🟢 Live' if online else '⚫ Offline'}"
+            watch_val = f"**{w_name}**  {'🟢 Live' if online else '⚫ Offline'}"
             watching_login = w_login or watching_login
+            if watching_login:
+                try:
+                    cp_data = await api_get(session, url, token, f"/api/channel-points/{watching_login}")
+                    balance = cp_data.get("balance")
+                    if balance is not None:
+                        watch_val += f"\n💰 **{balance:,}** pts"
+                except Exception:
+                    pass
+            embed.add_field(name="📺 Watching", value=watch_val, inline=False)
     except Exception:
         if watching_login:
-            watching_display = f"**{watching_login}**"
+            embed.add_field(name="📺 Watching", value=f"**{watching_login}**", inline=False)
 
-    if watching_login:
-        try:
-            cp_data = await api_get(session, url, token, f"/api/channel-points/{watching_login}")
-            balance = cp_data.get("balance")
-            if balance is not None:
-                channel_points = f"**{balance:,}** pts"
-        except Exception:
-            pass
-
-    if watching_display or channel_points:
-        watch_val = watching_display or "—"
-        if channel_points:
-            watch_val += f"\n💰 {channel_points}"
-        embed.add_field(name="📺 Watching", value=watch_val, inline=False)
-
-    # Thumbnail from active campaign game art (no fields added)
+    # Thumbnail from active campaign
     try:
         camp_data = await api_get(session, url, token, "/api/campaigns")
         campaigns = camp_data.get("campaigns", []) if isinstance(camp_data, dict) else camp_data
-        active = [c for c in campaigns if not c.get("expired")]
-        for c in active:
-            if any(not d.get("is_claimed") for d in c.get("drops", [])):
+        for c in campaigns:
+            if not c.get("expired") and any(not d.get("is_claimed") for d in c.get("drops", [])):
                 thumb = c.get("game_box_art_url")
                 if thumb:
                     embed.set_thumbnail(url=thumb)
@@ -172,7 +160,7 @@ async def build_dashboard_embed(session: aiohttp.ClientSession, url: str, token:
     except Exception:
         pass
 
-    # Total drops claimed
+    # Total drops
     try:
         history = await api_get(session, url, token, "/api/drops-history")
         if isinstance(history, list):
@@ -180,7 +168,7 @@ async def build_dashboard_embed(session: aiohttp.ClientSession, url: str, token:
     except Exception:
         pass
 
-    # Wanted Drops Queue
+    # Wanted Queue
     try:
         wanted_data = await api_get(session, url, token, "/api/wanted-items")
         wanted_games = wanted_data.get("wanted_items", []) if isinstance(wanted_data, dict) else []
@@ -188,8 +176,7 @@ async def build_dashboard_embed(session: aiohttp.ClientSession, url: str, token:
             lines = []
             for game in wanted_games[:5]:
                 gname = game.get("game_name", "Unknown")
-                campaigns = game.get("campaigns", [])
-                drop_count = sum(len(c.get("drops", [])) for c in campaigns)
+                drop_count = sum(len(c.get("drops", [])) for c in game.get("campaigns", []))
                 lines.append(f"• **{gname}** — {drop_count} drop{'s' if drop_count != 1 else ''}")
             if len(wanted_games) > 5:
                 lines.append(f"…and {len(wanted_games) - 5} more")
@@ -202,6 +189,141 @@ async def build_dashboard_embed(session: aiohttp.ClientSession, url: str, token:
     embed.set_footer(text="TwitchDropsMiner Bot • Updates every 30s")
     embed.timestamp = datetime.now(timezone.utc)
     return embed
+
+
+class DashboardView(discord.ui.View):
+    def __init__(self, owner_id: int, bot: "TwitchDropsBot"):
+        super().__init__(timeout=None)
+        self.owner_id = owner_id
+        self.bot = bot
+
+    def _pairing(self) -> dict | None:
+        return self.bot.users_data.get(str(self.owner_id))
+
+    async def _owner_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id != self.owner_id:
+            await interaction.response.send_message(
+                "❌ Only the person who linked this dashboard can use these buttons.",
+                ephemeral=True,
+            )
+            return False
+        return True
+
+    async def _update_embed(self, interaction: discord.Interaction):
+        pairing = self._pairing()
+        if not pairing:
+            return
+        async with aiohttp.ClientSession() as session:
+            new_embed = await build_dashboard_embed(session, pairing["url"], pairing["token"])
+        await interaction.message.edit(embed=new_embed, view=DashboardView(self.owner_id, self.bot))
+
+    @discord.ui.button(label="⏸️ Pause/Resume", style=discord.ButtonStyle.primary, row=0)
+    async def toggle_pause(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if not await self._owner_check(interaction):
+            return
+        pairing = self._pairing()
+        if not pairing:
+            await interaction.response.send_message("❌ No dashboard linked.", ephemeral=True)
+            return
+        await interaction.response.defer_update()
+        try:
+            async with aiohttp.ClientSession() as session:
+                status = await api_get(session, pairing["url"], pairing["token"], "/api/status")
+                paused = status.get("paused", False)
+                await api_post(session, pairing["url"], pairing["token"], "/api/resume" if paused else "/api/pause")
+                new_embed = await build_dashboard_embed(session, pairing["url"], pairing["token"])
+            await interaction.message.edit(embed=new_embed, view=DashboardView(self.owner_id, self.bot))
+        except Exception as e:
+            log.debug("Pause toggle error: %s", e)
+
+    @discord.ui.button(label="🎮 Switch Mode", style=discord.ButtonStyle.secondary, row=0)
+    async def switch_mode(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if not await self._owner_check(interaction):
+            return
+        pairing = self._pairing()
+        if not pairing:
+            await interaction.response.send_message("❌ No dashboard linked.", ephemeral=True)
+            return
+        await interaction.response.defer_update()
+        try:
+            async with aiohttp.ClientSession() as session:
+                await api_post(session, pairing["url"], pairing["token"], "/api/idle-watch/switch", {})
+                new_embed = await build_dashboard_embed(session, pairing["url"], pairing["token"])
+            await interaction.message.edit(embed=new_embed, view=DashboardView(self.owner_id, self.bot))
+        except Exception as e:
+            log.debug("Switch mode error: %s", e)
+
+    @discord.ui.button(label="📋 Campaigns", style=discord.ButtonStyle.secondary, row=0)
+    async def show_campaigns(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if not await self._owner_check(interaction):
+            return
+        pairing = self._pairing()
+        if not pairing:
+            await interaction.response.send_message("❌ No dashboard linked.", ephemeral=True)
+            return
+        await interaction.response.defer(ephemeral=True)
+        try:
+            async with aiohttp.ClientSession() as session:
+                data = await api_get(session, pairing["url"], pairing["token"], "/api/campaigns")
+            campaigns = data.get("campaigns", []) if isinstance(data, dict) else data
+            embed = discord.Embed(title="🎮 Active Campaigns", color=COLOR_TWITCH)
+            if campaigns:
+                for camp in campaigns[:10]:
+                    name = camp.get("name") or "Unknown"
+                    drops = camp.get("drops", [])
+                    claimed = sum(1 for d in drops if d.get("is_claimed"))
+                    total = len(drops)
+                    game = camp.get("game_name", "")
+                    val = f"{game}\n{claimed}/{total} drops" if game else f"{claimed}/{total} drops"
+                    embed.add_field(name=name, value=val, inline=True)
+            else:
+                embed.description = "No active campaigns."
+            make_footer(embed)
+            await interaction.followup.send(embed=embed, ephemeral=True)
+        except Exception as e:
+            await interaction.followup.send(embed=error_embed(f"❌ Error: {e}"), ephemeral=True)
+
+    @discord.ui.button(label="🏆 Last Drops", style=discord.ButtonStyle.secondary, row=1)
+    async def show_drops(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if not await self._owner_check(interaction):
+            return
+        pairing = self._pairing()
+        if not pairing:
+            await interaction.response.send_message("❌ No dashboard linked.", ephemeral=True)
+            return
+        await interaction.response.defer(ephemeral=True)
+        try:
+            async with aiohttp.ClientSession() as session:
+                history = await api_get(session, pairing["url"], pairing["token"], "/api/drops-history")
+            embed = discord.Embed(title="🎁 Recent Drops", color=COLOR_TWITCH)
+            if history:
+                for drop in history[-10:][::-1]:
+                    game = drop.get("game", "Unknown")
+                    reward = drop.get("reward") or drop.get("drop") or "Unknown"
+                    ts = drop.get("timestamp", "")[:10] if drop.get("timestamp") else ""
+                    embed.add_field(name=game, value=f"**{reward}**\n{ts}", inline=True)
+            else:
+                embed.description = "No drops claimed yet."
+            make_footer(embed)
+            await interaction.followup.send(embed=embed, ephemeral=True)
+        except Exception as e:
+            await interaction.followup.send(embed=error_embed(f"❌ Error: {e}"), ephemeral=True)
+
+    @discord.ui.button(label="🔄 Refresh", style=discord.ButtonStyle.secondary, row=1)
+    async def do_refresh(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if not await self._owner_check(interaction):
+            return
+        pairing = self._pairing()
+        if not pairing:
+            await interaction.response.send_message("❌ No dashboard linked.", ephemeral=True)
+            return
+        await interaction.response.defer_update()
+        try:
+            async with aiohttp.ClientSession() as session:
+                new_embed = await build_dashboard_embed(session, pairing["url"], pairing["token"])
+            await interaction.message.edit(embed=new_embed, view=DashboardView(self.owner_id, self.bot))
+        except Exception as e:
+            log.debug("Refresh error: %s", e)
 
 
 class TwitchDropsBot(discord.Client):
@@ -256,7 +378,7 @@ class TwitchDropsBot(discord.Client):
                                     make_footer(embed)
                                     await channel.send(embed=embed)
 
-                    # Update live dashboard embed if configured
+                    # Update live dashboard embed
                     dashboard = pairing.get("dashboard_embed")
                     if dashboard:
                         ch = self.get_channel(int(dashboard["channel_id"]))
@@ -264,9 +386,9 @@ class TwitchDropsBot(discord.Client):
                             try:
                                 msg = await ch.fetch_message(int(dashboard["message_id"]))
                                 new_embed = await build_dashboard_embed(session, pairing["url"], pairing["token"])
-                                await msg.edit(embed=new_embed)
+                                view = DashboardView(int(user_id), self)
+                                await msg.edit(embed=new_embed, view=view)
                             except discord.NotFound:
-                                # Message was deleted, clear it
                                 self.users_data[user_id].pop("dashboard_embed", None)
                                 save_pairings(self.users_data)
                             except Exception as e:
@@ -290,7 +412,7 @@ def not_linked_embed() -> discord.Embed:
 def register_commands(bot: TwitchDropsBot):
 
     @bot.tree.command(name="link", description="Link your TwitchDropsMiner dashboard")
-    @app_commands.describe(url="Dashboard URL (e.g. http://your-vps:8081)", code="Pairing code (e.g. DROPS-A1B2C3D4)")
+    @app_commands.describe(url="Dashboard URL (e.g. http://your-vps:8081)", code="Pairing code from Settings → Discord Bot")
     async def cmd_link(interaction: discord.Interaction, url: str, code: str):
         await interaction.response.defer(ephemeral=True)
         try:
@@ -317,7 +439,7 @@ def register_commands(bot: TwitchDropsBot):
             }
             save_pairings(bot.users_data)
             log.info("User %s linked to %s", uid, url)
-            await interaction.followup.send(embed=success_embed(f"✅ Connected to `{url}`"), ephemeral=True)
+            await interaction.followup.send(embed=success_embed(f"✅ Connected to `{url}`\n\nUse `/dashboard` to post a live stats embed with control buttons."), ephemeral=True)
         except aiohttp.ClientError:
             await interaction.followup.send(embed=error_embed("❌ Dashboard unreachable. Is the URL correct?"), ephemeral=True)
         except Exception as e:
@@ -333,161 +455,6 @@ def register_commands(bot: TwitchDropsBot):
         del bot.users_data[uid]
         save_pairings(bot.users_data)
         await interaction.response.send_message(embed=success_embed("Dashboard unlinked."), ephemeral=True)
-
-    @bot.tree.command(name="status", description="Show current miner status")
-    async def cmd_status(interaction: discord.Interaction):
-        await interaction.response.defer()
-        pairing = get_user_pairing(bot.users_data, interaction.user.id)
-        if not pairing:
-            await interaction.followup.send(embed=not_linked_embed(), ephemeral=True)
-            return
-        try:
-            async with aiohttp.ClientSession() as session:
-                data = await api_get(session, pairing["url"], pairing["token"], "/api/status")
-
-            paused = data.get("paused", False)
-            status = data.get("status", "unknown")
-            login_info = data.get("login", {})
-            account = login_info.get("user_login") if isinstance(login_info, dict) else str(login_info)
-            manual = data.get("manual_mode", {})
-            manual_active = manual.get("active") if isinstance(manual, dict) else bool(manual)
-
-            if paused:
-                color, status_str = COLOR_PAUSED, "⏸️ Paused"
-            elif status and "idle" in status.lower():
-                color, status_str = 0x5865F2, status
-            elif status:
-                color, status_str = COLOR_SUCCESS, status
-            else:
-                color, status_str = COLOR_ERROR, "🔴 Unknown"
-
-            embed = discord.Embed(title="TwitchDropsMiner Status", color=color)
-            embed.add_field(name="Status", value=status_str, inline=False)
-            embed.add_field(name="Account", value=f"`{account}`", inline=True)
-            embed.add_field(name="Paused", value="Yes" if paused else "No", inline=True)
-            embed.add_field(name="Manual Mode", value="Yes" if manual_active else "No", inline=True)
-            make_footer(embed)
-            await interaction.followup.send(embed=embed)
-        except aiohttp.ClientError:
-            await interaction.followup.send(embed=error_embed("❌ Dashboard unreachable. Still connected?"))
-
-    @bot.tree.command(name="pause", description="Pause the miner")
-    async def cmd_pause(interaction: discord.Interaction):
-        await interaction.response.defer()
-        pairing = get_user_pairing(bot.users_data, interaction.user.id)
-        if not pairing:
-            await interaction.followup.send(embed=not_linked_embed(), ephemeral=True)
-            return
-        try:
-            async with aiohttp.ClientSession() as session:
-                await api_post(session, pairing["url"], pairing["token"], "/api/pause")
-            embed = discord.Embed(description="⏸️ Miner paused", color=COLOR_PAUSED)
-            make_footer(embed)
-            await interaction.followup.send(embed=embed)
-        except aiohttp.ClientError:
-            await interaction.followup.send(embed=error_embed("❌ Dashboard unreachable. Still connected?"))
-
-    @bot.tree.command(name="resume", description="Resume the miner")
-    async def cmd_resume(interaction: discord.Interaction):
-        await interaction.response.defer()
-        pairing = get_user_pairing(bot.users_data, interaction.user.id)
-        if not pairing:
-            await interaction.followup.send(embed=not_linked_embed(), ephemeral=True)
-            return
-        try:
-            async with aiohttp.ClientSession() as session:
-                await api_post(session, pairing["url"], pairing["token"], "/api/resume")
-            embed = discord.Embed(description="▶️ Miner resumed", color=COLOR_SUCCESS)
-            make_footer(embed)
-            await interaction.followup.send(embed=embed)
-        except aiohttp.ClientError:
-            await interaction.followup.send(embed=error_embed("❌ Dashboard unreachable. Still connected?"))
-
-    @bot.tree.command(name="campaigns", description="List active drop campaigns")
-    async def cmd_campaigns(interaction: discord.Interaction):
-        await interaction.response.defer()
-        pairing = get_user_pairing(bot.users_data, interaction.user.id)
-        if not pairing:
-            await interaction.followup.send(embed=not_linked_embed(), ephemeral=True)
-            return
-        try:
-            async with aiohttp.ClientSession() as session:
-                data = await api_get(session, pairing["url"], pairing["token"], "/api/campaigns")
-
-            campaigns = data.get("campaigns", []) if isinstance(data, dict) else data
-            if not campaigns:
-                embed = discord.Embed(description="No active campaigns.", color=COLOR_TWITCH)
-                make_footer(embed)
-                await interaction.followup.send(embed=embed)
-                return
-
-            embed = discord.Embed(title="🎮 Active Campaigns", color=COLOR_TWITCH)
-            for camp in campaigns[:10]:
-                name = camp.get("name") or camp.get("game") or "Unknown"
-                drops = camp.get("drops", [])
-                claimed = sum(1 for d in drops if d.get("is_claimed")) if drops else camp.get("claimed", 0)
-                total = len(drops) if drops else camp.get("total", "?")
-                game = camp.get("game", "")
-                value = f"{game}\n{claimed}/{total} drops" if game and game != name else f"{claimed}/{total} drops"
-                embed.add_field(name=name, value=value, inline=True)
-            make_footer(embed)
-            await interaction.followup.send(embed=embed)
-        except aiohttp.ClientError:
-            await interaction.followup.send(embed=error_embed("❌ Dashboard unreachable. Still connected?"))
-
-    @bot.tree.command(name="drops", description="Show recent claimed drops")
-    async def cmd_drops(interaction: discord.Interaction):
-        await interaction.response.defer()
-        pairing = get_user_pairing(bot.users_data, interaction.user.id)
-        if not pairing:
-            await interaction.followup.send(embed=not_linked_embed(), ephemeral=True)
-            return
-        try:
-            async with aiohttp.ClientSession() as session:
-                history = await api_get(session, pairing["url"], pairing["token"], "/api/drops-history")
-
-            if not history:
-                embed = discord.Embed(description="No drops claimed yet.", color=COLOR_TWITCH)
-                make_footer(embed)
-                await interaction.followup.send(embed=embed)
-                return
-
-            embed = discord.Embed(title="🎁 Recent Drops", color=COLOR_TWITCH)
-            for drop in history[-10:][::-1]:
-                game = drop.get("game", "Unknown")
-                reward = drop.get("reward") or drop.get("drop") or "Unknown"
-                ts = drop.get("timestamp", "")[:10] if drop.get("timestamp") else ""
-                embed.add_field(name=game, value=f"**{reward}**\n{ts}", inline=True)
-            make_footer(embed)
-            await interaction.followup.send(embed=embed)
-        except aiohttp.ClientError:
-            await interaction.followup.send(embed=error_embed("❌ Dashboard unreachable. Still connected?"))
-
-    @bot.tree.command(name="accounts", description="List linked Twitch accounts")
-    async def cmd_accounts(interaction: discord.Interaction):
-        await interaction.response.defer()
-        pairing = get_user_pairing(bot.users_data, interaction.user.id)
-        if not pairing:
-            await interaction.followup.send(embed=not_linked_embed(), ephemeral=True)
-            return
-        try:
-            async with aiohttp.ClientSession() as session:
-                accounts = await api_get(session, pairing["url"], pairing["token"], "/api/accounts")
-
-            embed = discord.Embed(title="👤 Accounts", color=COLOR_TWITCH)
-            items = accounts if isinstance(accounts, list) else accounts.get("accounts", [])
-            labels = []
-            for acc in items:
-                if isinstance(acc, str):
-                    labels.append(acc)
-                elif isinstance(acc, dict):
-                    label = acc.get("username") or acc.get("name") or acc.get("login") or str(acc)
-                    labels.append(label)
-            embed.description = "\n".join(f"• {l}" for l in labels) if labels else "No accounts found."
-            make_footer(embed)
-            await interaction.followup.send(embed=embed)
-        except aiohttp.ClientError:
-            await interaction.followup.send(embed=error_embed("❌ Dashboard unreachable. Still connected?"))
 
     @bot.tree.command(name="setchannel", description="Set notification channel for drops or logs")
     @app_commands.describe(type="Channel type: drops or logs")
@@ -510,7 +477,7 @@ def register_commands(bot: TwitchDropsBot):
             ephemeral=True,
         )
 
-    @bot.tree.command(name="dashboard", description="Post a live-updating stats embed in this channel")
+    @bot.tree.command(name="dashboard", description="Post a live-updating stats embed with control buttons")
     async def cmd_dashboard(interaction: discord.Interaction):
         await interaction.response.defer()
         uid = str(interaction.user.id)
@@ -522,9 +489,9 @@ def register_commands(bot: TwitchDropsBot):
             async with aiohttp.ClientSession() as session:
                 embed = await build_dashboard_embed(session, pairing["url"], pairing["token"])
 
-            msg = await interaction.followup.send(embed=embed)
+            view = DashboardView(interaction.user.id, bot)
+            msg = await interaction.followup.send(embed=embed, view=view)
 
-            # Store message + channel so the poll loop can update it
             bot.users_data[uid]["dashboard_embed"] = {
                 "channel_id": str(interaction.channel_id),
                 "message_id": str(msg.id),
@@ -538,4 +505,4 @@ def register_commands(bot: TwitchDropsBot):
 
 
 if __name__ == "__main__":
-    client.run(BOT_TOKEN, log_handler=None)
+    client.run(BOT_TOKEN)
