@@ -2309,7 +2309,7 @@ function applyTranslations(t) {
                 makeHelpList('ol', botSetupItems),
                 makeElement('h4', {}, 'Commands'),
                 makeHelpList('ul', botCommands),
-                makeElement('p', {}, '<strong>Note:</strong> The code expires in 10 minutes. Generate a new one if it expires.'),
+                makeElement('p', {}, null, el => appendTrustedHelpContent(el, '<strong>Note:</strong> The code expires in 10 minutes. Generate a new one if it expires.')),
                 makeElement('div', { class: 'help-links' }, '', el =>
                     el.appendChild(makeElement('a', { href: 'https://github.com/SimpliAj/twitchdropsminer', target: '_blank', rel: 'noopener noreferrer' }, t.gui.help.github_repo || 'GitHub Repository'))
                 ),
@@ -2868,23 +2868,29 @@ function makeHelpList(tag, items) {
 
 function appendTrustedHelpContent(parent, text) {
     const source = String(text);
-    const linkPattern = /<a\b[^>]*\bhref=(["'])(https:\/\/www\.twitch\.tv\/drops\/campaigns)\1[^>]*>(.*?)<\/a>/gi;
+    const tagPattern = /<(code|strong|a)\b([^>]*)>(.*?)<\/\1>/gi;
     let lastIndex = 0;
     let match;
     let matched = false;
 
-    while ((match = linkPattern.exec(source)) !== null) {
+    while ((match = tagPattern.exec(source)) !== null) {
         matched = true;
         if (match.index > lastIndex) {
             parent.appendChild(document.createTextNode(source.slice(lastIndex, match.index)));
         }
-        const href = match[2];
-        if (TRUSTED_HELP_LINKS.has(href)) {
-            parent.appendChild(makeElement('a', { href, target: '_blank', rel: 'noopener noreferrer' }, match[3]));
+        const tagName = match[1].toLowerCase();
+        const inner = match[3];
+        if (tagName === 'a') {
+            const hrefMatch = match[2].match(/href=(["'])(https?:\/\/[^"']+)\1/i);
+            if (hrefMatch && TRUSTED_HELP_LINKS.has(hrefMatch[2])) {
+                parent.appendChild(makeElement('a', { href: hrefMatch[2], target: '_blank', rel: 'noopener noreferrer' }, inner));
+            } else {
+                parent.appendChild(document.createTextNode(inner));
+            }
         } else {
-            parent.appendChild(document.createTextNode(match[0]));
+            parent.appendChild(makeElement(tagName, {}, inner));
         }
-        lastIndex = linkPattern.lastIndex;
+        lastIndex = tagPattern.lastIndex;
     }
 
     if (!matched) {
