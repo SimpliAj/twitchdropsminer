@@ -79,6 +79,7 @@ class InventoryManager:
             "starts_at": campaign.starts_at.isoformat(),
             "ends_at": campaign.ends_at.isoformat(),
             "linked": campaign.linked,
+            "subscription_required": campaign.subscription_required,
             "valid": campaign._valid,
             "active": campaign.active,
             "upcoming": campaign.upcoming,
