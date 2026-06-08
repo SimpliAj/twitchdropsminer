@@ -164,7 +164,19 @@
             "password_disabled_msg": "Login disabled.",
             "password_mismatch": "Passwords don't match.",
             "password_status_active": "🔒 Login active — Password set",
-            "password_status_inactive": "🔓 No login — publicly accessible"
+            "password_status_inactive": "🔓 No login — publicly accessible",
+            "discord_bot": {
+                "header": "Discord Bot",
+                "description": "Asociați un bot Discord pentru a controla TwitchDropsMiner prin comenzi.",
+                "not_connected": "Neconectat",
+                "connected": "✅ Conectat",
+                "generate_code": "Generează cod",
+                "generating": "Generare...",
+                "disconnect": "Deconectare",
+                "disconnect_confirm": "Deconectați botul Discord?",
+                "invite_bot": "Invitați botul",
+                "expires": "Expiră în 10 min"
+            }
         },
         "help": {
             "about": "Despre Twitch Drops Miner",
