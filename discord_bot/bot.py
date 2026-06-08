@@ -51,13 +51,39 @@ def get_user_pairing(users: dict, user_id: int) -> dict | None:
 
 
 def _channel_ids(pairing: dict, type: str) -> list[int]:
-    """Return list of channel IDs for a notification type (supports single int or list)."""
+    """Return list of channel IDs (handles int, dict with 'id', or list of either)."""
     val = pairing.get("channels", {}).get(type)
     if val is None:
         return []
-    if isinstance(val, list):
-        return [int(v) for v in val if v]
-    return [int(val)]
+    if not isinstance(val, list):
+        val = [val]
+    ids = []
+    for v in val:
+        if v is None:
+            continue
+        if isinstance(v, dict):
+            ids.append(int(v["id"]))
+        else:
+            ids.append(int(v))
+    return ids
+
+
+def _channel_entries(pairing: dict, type: str) -> list[dict]:
+    """Return list of {id, name, guild} dicts for a channel type."""
+    val = pairing.get("channels", {}).get(type)
+    if val is None:
+        return []
+    if not isinstance(val, list):
+        val = [val]
+    entries = []
+    for v in val:
+        if v is None:
+            continue
+        if isinstance(v, dict):
+            entries.append({"id": str(v["id"]), "name": v.get("name", ""), "guild": v.get("guild", "")})
+        else:
+            entries.append({"id": str(v), "name": "", "guild": ""})
+    return entries
 
 
 def make_footer(embed: discord.Embed) -> None:
@@ -361,6 +387,45 @@ class TwitchDropsBot(discord.Client):
         super().__init__(intents=intents)
         self.tree = app_commands.CommandTree(self)
         self.users_data: dict = {}
+        self._live_stats_messages: dict[int, int] = {}  # channel_id -> message_id
+        self._live_stats_last_update: float = 0.0
+
+    async def _build_global_stats(self, session: aiohttp.ClientSession) -> discord.Embed:
+        GITHUB_URL = "https://github.com/SimpliAj/twitchdropsminer"
+        total_drops = 0
+        today_drops = 0
+        today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        cp_totals: dict[str, int] = {}
+        paired_count = len(self.users_data)
+
+        for uid, pairing in self.users_data.items():
+            try:
+                history = await api_get(session, pairing["url"], pairing["token"], "/api/drops-history")
+                if isinstance(history, list):
+                    total_drops += len(history)
+                    today_drops += sum(1 for d in history if d.get("timestamp", "").startswith(today_str))
+            except Exception:
+                pass
+            for ch, bal in pairing.get("last_cp", {}).items():
+                cp_totals[ch] = max(cp_totals.get(ch, 0), bal)
+
+        total_cp = sum(cp_totals.values())
+
+        desc = (
+            f"🎁  **{total_drops}** drops total  ·  **{today_drops}** today\n"
+            f"💰  **{total_cp:,}** channel points\n"
+            f"👥  **{paired_count}** paired account{'s' if paired_count != 1 else ''}\n\n"
+            f"[View on GitHub]({GITHUB_URL})"
+        )
+        embed = discord.Embed(
+            title="📊 TwitchDropsMiner — Live Stats",
+            url=GITHUB_URL,
+            description=desc,
+            color=COLOR_TWITCH,
+        )
+        embed.set_footer(text="Auto-updates every 30 min · TwitchDropsMiner SAJ Fork")
+        embed.timestamp = datetime.now(timezone.utc)
+        return embed
 
     async def setup_hook(self):
         self.users_data = load_pairings()
@@ -509,6 +574,29 @@ class TwitchDropsBot(discord.Client):
                 except Exception as e:
                     log.debug("Poll error for user %s: %s", user_id, e)
 
+            # Update live public stats embeds every 30 minutes
+            import time as _time
+            now = _time.monotonic()
+            if self._live_stats_messages and (now - self._live_stats_last_update) >= 1800:
+                async with aiohttp.ClientSession() as s2:
+                    stats_embed = await self._build_global_stats(s2)
+                for ch_id, msg_id in list(self._live_stats_messages.items()):
+                    ch = self.get_channel(ch_id)
+                    if ch is None:
+                        try:
+                            ch = await self.fetch_channel(ch_id)
+                        except Exception:
+                            ch = None
+                    if ch:
+                        try:
+                            msg = await ch.fetch_message(msg_id)
+                            await msg.edit(embed=stats_embed)
+                        except discord.NotFound:
+                            self._live_stats_messages.pop(ch_id, None)
+                        except Exception:
+                            pass
+                self._live_stats_last_update = now
+
     @poll_task.before_loop
     async def before_poll(self):
         await self.wait_until_ready()
@@ -581,17 +669,24 @@ def register_commands(bot: TwitchDropsBot):
             await interaction.response.send_message(embed=not_linked_embed(), ephemeral=True)
             return
         channel_id = interaction.channel_id
+        channel_name = interaction.channel.name if interaction.channel else str(channel_id)
+        guild_name = interaction.guild.name if interaction.guild else ""
+        new_entry = {"id": channel_id, "name": channel_name, "guild": guild_name}
+
         channels = bot.users_data[uid].setdefault("channels", {})
         existing = channels.get(type)
-        # Normalize to list
+        # Normalize to list of dicts
         if existing is None:
             channel_list = []
         elif isinstance(existing, list):
             channel_list = existing
         else:
             channel_list = [existing]
-        if channel_id not in channel_list:
-            channel_list.append(channel_id)
+
+        # Check if this channel is already in the list (by ID)
+        existing_ids = [int(e["id"]) if isinstance(e, dict) else int(e) for e in channel_list if e]
+        if channel_id not in existing_ids:
+            channel_list.append(new_entry)
         channels[type] = channel_list
         save_pairings(bot.users_data)
         label = "Drop notifications" if type == "drops" else "Channel Points notifications"
@@ -631,6 +726,46 @@ def register_commands(bot: TwitchDropsBot):
         except Exception as e:
             log.error("Dashboard command error: %s", e)
             await interaction.followup.send(embed=error_embed(f"❌ Error: {e}"))
+
+
+    DEV_USER_ID = 774679828594163802
+
+    class DevPanelView(discord.ui.View):
+        def __init__(self):
+            super().__init__(timeout=None)
+
+        @discord.ui.button(label="Post Live Stats Here", style=discord.ButtonStyle.primary, emoji="📊")
+        async def post_stats(self, interaction: discord.Interaction, button: discord.ui.Button):
+            if interaction.user.id != DEV_USER_ID:
+                await interaction.response.send_message("❌ Dev only.", ephemeral=True)
+                return
+            await interaction.response.defer(ephemeral=True)
+            async with aiohttp.ClientSession() as session:
+                embed = await bot._build_global_stats(session)
+            msg = await interaction.channel.send(embed=embed)
+            bot._live_stats_messages[interaction.channel_id] = msg.id
+            await interaction.followup.send("✅ Live stats posted — auto-updates every 30 min.", ephemeral=True)
+
+        @discord.ui.button(label="Refresh", style=discord.ButtonStyle.secondary, emoji="🔄")
+        async def refresh_stats(self, interaction: discord.Interaction, button: discord.ui.Button):
+            if interaction.user.id != DEV_USER_ID:
+                await interaction.response.send_message("❌ Dev only.", ephemeral=True)
+                return
+            await interaction.response.defer()
+            async with aiohttp.ClientSession() as session:
+                embed = await bot._build_global_stats(session)
+            await interaction.message.edit(embed=embed, view=self)
+
+    @bot.tree.command(name="devpanel", description="Developer panel — restricted")
+    async def cmd_devpanel(interaction: discord.Interaction):
+        if interaction.user.id != DEV_USER_ID:
+            await interaction.response.send_message(embed=error_embed("❌ Access denied."), ephemeral=True)
+            return
+        await interaction.response.defer(ephemeral=True)
+        async with aiohttp.ClientSession() as session:
+            embed = await bot._build_global_stats(session)
+        view = DevPanelView()
+        await interaction.followup.send(embed=embed, view=view, ephemeral=True)
 
 
 if __name__ == "__main__":
