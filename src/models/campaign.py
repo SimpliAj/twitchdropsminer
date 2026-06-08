@@ -91,6 +91,10 @@ class DropsCampaign:
             benefit.type.is_badge_or_emote() for drop in self.drops for benefit in drop.benefits
         )
 
+    @cached_property
+    def subscription_required(self) -> bool:
+        return any(drop.required_subs > 0 for drop in self.drops)
+
     @property
     def finished(self) -> bool:
         return all(d.is_claimed or d.required_minutes <= 0 for d in self.drops)

@@ -197,7 +197,10 @@
                             <span>Finished</span>
                         </label>
                         <input type="checkbox" id="filter-upcoming" style="display:none" />
-                        <input type="checkbox" id="filter-sub-drops" style="display:none" />
+                        <label class="filter-checkbox" title="Show drops that require a Twitch subscription">
+                            <input type="checkbox" id="filter-sub-drops" />
+                            <span>Sub Drops</span>
+                        </label>
                         <div class="filter-separator"
                             style="width: 1px; height: 24px; background: var(--border-color); margin: 0 10px;">
                         </div>
@@ -414,6 +417,7 @@
                             <button id="select-all-btn" class="small-btn">Select All</button>
                             <button id="deselect-all-btn" class="small-btn">Deselect All</button>
                             <button id="select-linked-btn" class="small-btn">Select Linked</button>
+                            <button id="select-badge-emote-btn" class="small-btn">Select Badge/Emote</button>
                             <button id="add-game-btn" class="small-btn">Add Game</button>
                         </div>
                     </div>
