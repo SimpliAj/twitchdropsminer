@@ -158,87 +158,25 @@ async def build_dashboard_embed(session: aiohttp.ClientSession, url: str, token:
             watch_val += f"\n💰 {channel_points}"
         embed.add_field(name="📺 Watching", value=watch_val, inline=False)
 
-    # Active campaign (full width)
-    thumb_url = None
-    featured = None
+    # Thumbnail from active campaign game art (no fields added)
     try:
         camp_data = await api_get(session, url, token, "/api/campaigns")
         campaigns = camp_data.get("campaigns", []) if isinstance(camp_data, dict) else camp_data
         active = [c for c in campaigns if not c.get("expired")]
         for c in active:
-            drops = c.get("drops", [])
-            if any(not d.get("is_claimed") for d in drops):
-                featured = c
+            if any(not d.get("is_claimed") for d in c.get("drops", [])):
+                thumb = c.get("game_box_art_url")
+                if thumb:
+                    embed.set_thumbnail(url=thumb)
                 break
-        if not featured and active:
-            featured = active[0]
-    except Exception as ex:
-        log.debug("Dashboard campaigns error: %s", ex)
+    except Exception:
+        pass
 
-    if featured:
-        thumb_url = featured.get("game_box_art_url")
-        if thumb_url:
-            embed.set_thumbnail(url=thumb_url)
-
-        game = featured.get("game_name", "")
-        claimed = featured.get("claimed_drops", 0)
-        total = featured.get("total_drops", 0)
-        pct_camp = int(claimed / total * 100) if total else 0
-        filled_c = int(pct_camp / 10)
-        bar_c = "█" * filled_c + "░" * (10 - filled_c)
-
-        embed.add_field(
-            name="🎮 Campaign",
-            value=f"**{featured['name']}**\n{game}\n`{bar_c}` {claimed}/{total} drops",
-            inline=True,
-        )
-
-        # Next drop (inline right)
-        drops = featured.get("drops", [])
-        claimable = [d for d in drops if d.get("can_claim")]
-        in_progress = [d for d in drops if not d.get("is_claimed") and not d.get("can_claim") and d.get("current_minutes", 0) > 0]
-        upcoming = [d for d in drops if not d.get("is_claimed") and not d.get("can_claim") and d.get("current_minutes", 0) == 0]
-
-        if claimable:
-            nd = claimable[0]
-            benefit = nd.get("benefits", [{}])[0].get("name", nd.get("name", "Drop"))
-            drop_val = f"**{benefit}**\n✅ Ready to claim!"
-        elif in_progress:
-            nd = in_progress[0]
-            benefit = nd.get("benefits", [{}])[0].get("name", nd.get("name", "Drop"))
-            watched = nd.get("current_minutes", 0)
-            required = nd.get("required_minutes", 0)
-            pct = min(int(watched / required * 100), 100) if required else 0
-            filled = int(pct / 10)
-            bar = "█" * filled + "░" * (10 - filled)
-            remaining = max(required - watched, 0)
-            drop_val = f"**{benefit}**\n`{bar}` {pct}%\n⏱️ ~{remaining}m left"
-        elif upcoming:
-            nd = upcoming[0]
-            benefit = nd.get("benefits", [{}])[0].get("name", nd.get("name", "Drop"))
-            required = nd.get("required_minutes", 0)
-            drop_val = f"**{benefit}**\n⏳ {required}m to watch"
-        else:
-            drop_val = "All drops claimed ✅"
-
-        embed.add_field(name="⏳ Next Drop", value=drop_val, inline=True)
-    else:
-        embed.add_field(name="🎮 Campaigns", value="No active campaigns", inline=False)
-
-    # Last drop + total claimed (bottom row)
+    # Total drops claimed
     try:
         history = await api_get(session, url, token, "/api/drops-history")
-        if isinstance(history, list) and history:
-            last = history[-1]
-            reward = last.get("reward") or last.get("drop") or "?"
-            game = last.get("game", "")
-            ts = last.get("timestamp", "")[:10] if last.get("timestamp") else ""
-            embed.add_field(
-                name="🏆 Last Drop",
-                value=f"**{reward}**\n{game + (' · ' + ts if ts else '')}",
-                inline=True,
-            )
-            embed.add_field(name="📈 Total", value=f"**{len(history)}** drops", inline=True)
+        if isinstance(history, list):
+            embed.add_field(name="📈 Total Drops", value=f"**{len(history)}**", inline=True)
     except Exception:
         pass
 
