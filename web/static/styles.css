@@ -349,6 +349,36 @@ header h1 {
     color: rgba(255,255,255,0.8);
 }
 
+.qc-btn--active {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+    color: #fff;
+}
+
+.qc-btn--active .qc-labels small {
+    color: rgba(255,255,255,0.75);
+}
+
+.qc-btn--active:hover {
+    background: #7d3ce0;
+    border-color: #7d3ce0;
+}
+
+.qc-btn--active-warn {
+    background: #e09900;
+    border-color: #e09900;
+    color: #fff;
+}
+
+.qc-btn--active-warn .qc-labels small {
+    color: rgba(255,255,255,0.75);
+}
+
+.qc-btn--active-warn:hover {
+    background: #c98800;
+    border-color: #c98800;
+}
+
 .qc-status {
     margin-left: auto;
     font-size: 0.8rem;

@@ -546,9 +546,48 @@ function renderChannelPointsTab() {
 
 function updateStatus(status) {
     document.getElementById('status-text').textContent = status;
+    updateQCButtons(status);
+}
 
-    // Loading overlay disabled - UI remains responsive during backend operations
-    // Backend now uses batch updates to prevent flickering
+function updateQCButtons(status) {
+    const isIdleWatching = /idle watching/i.test(status) || status.includes('💤');
+    const isMining = state.currentDrop !== null;
+
+    const checkBtn = document.getElementById('qc-check-drops-btn');
+    const switchBtn = document.getElementById('qc-switch-btn');
+    const skipBtn = document.getElementById('qc-skip-btn');
+
+    // "Start Drop Mining" button — highlighted when idle-watching (action is useful)
+    if (checkBtn) {
+        const strong = checkBtn.querySelector('strong');
+        const small = checkBtn.querySelector('small');
+        checkBtn.classList.toggle('qc-btn--active', isIdleWatching);
+        if (strong) strong.textContent = 'Start Drop Mining';
+        if (small) small.textContent = isIdleWatching
+            ? 'Stop idle, search for drops now'
+            : isMining ? 'Refresh available drops' : 'Search for active drops';
+    }
+
+    // "Switch Idle Channel" — highlighted when idle-watching
+    if (switchBtn) {
+        switchBtn.classList.toggle('qc-btn--active', isIdleWatching);
+        const strong = switchBtn.querySelector('strong');
+        const small = switchBtn.querySelector('small');
+        if (strong) strong.textContent = isIdleWatching ? 'Switch Channel' : 'Switch Idle Channel';
+        if (small) small.textContent = isIdleWatching ? 'Next idle channel' : 'Farm points on next channel';
+    }
+
+    // "Skip Current Game" — shown + highlighted yellow when actively mining
+    if (skipBtn && skipBtn.style.display !== 'none') {
+        skipBtn.classList.add('qc-btn--active-warn');
+        skipBtn.classList.remove('qc-btn--active');
+        const strong = skipBtn.querySelector('strong');
+        const small = skipBtn.querySelector('small');
+        if (strong) strong.textContent = 'Skip Game';
+        if (small) small.textContent = 'End this drop, find next game';
+    } else if (skipBtn) {
+        skipBtn.classList.remove('qc-btn--active-warn', 'qc-btn--active');
+    }
 }
 
 function addConsoleLine(message) {
@@ -738,6 +777,7 @@ function updateDropProgress(data) {
     document.getElementById('drop-info').style.display = 'block';
     const qcSkip = document.getElementById('qc-skip-btn');
     if (qcSkip) qcSkip.style.display = '';
+    updateQCButtons(document.getElementById('status-text')?.textContent || '');
 
     document.getElementById('drop-name').textContent = data.drop_name;
 
@@ -805,6 +845,7 @@ function clearDropProgress() {
     document.getElementById('drop-info').style.display = 'none';
     const qcSkip = document.getElementById('qc-skip-btn');
     if (qcSkip) qcSkip.style.display = 'none';
+    updateQCButtons(document.getElementById('status-text')?.textContent || '');
 }
 
 function addCampaign(campaignData) {
