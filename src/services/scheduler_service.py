@@ -15,6 +15,7 @@ logger = logging.getLogger("TwitchDrops")
 class SchedulerService:
     def __init__(self, twitch: Twitch) -> None:
         self._twitch = twitch
+        self._trigger = asyncio.Event()
 
     def _parse_time(self, time_str: str) -> time:
         parts = time_str.strip().split(":")
@@ -28,6 +29,10 @@ class SchedulerService:
             return not (start <= now < stop)
         else:
             return not (now >= start or now < stop)
+
+    def trigger_check(self) -> None:
+        """Trigger an immediate scheduler check (call when scheduler settings change)."""
+        self._trigger.set()
 
     async def run_scheduler(self) -> None:
         logger.info("Scheduler service started")
@@ -45,4 +50,8 @@ class SchedulerService:
                 elif not should_pause and self._twitch.is_paused() and self._twitch._pause_source == "scheduler":
                     logger.info("Scheduler: resuming mining (entering active window)")
                     self._twitch.resume()
-            await asyncio.sleep(60)
+            self._trigger.clear()
+            try:
+                await asyncio.wait_for(asyncio.shield(self._trigger.wait()), timeout=60)
+            except asyncio.TimeoutError:
+                pass
