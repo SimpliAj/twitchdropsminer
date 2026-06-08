@@ -1350,8 +1350,8 @@ function updateLoginStatus(data) {
     const statusEl = document.getElementById('login-status');
     const t = state.translations;
     if (data.user_id) {
-        const userIdLabel = t.gui?.login?.user_id_label || 'User ID:';
-        statusEl.textContent = `${data.status} (${userIdLabel} ${data.user_id})`;
+        const name = data.user_login || String(data.user_id);
+        statusEl.textContent = `${data.status} (@${name})`;
         statusEl.removeAttribute('translation-key');
         statusEl.style.color = 'var(--success-color)';
         document.getElementById('login-form').style.display = 'none';
