@@ -160,11 +160,21 @@ async def build_dashboard_embed(session: aiohttp.ClientSession, url: str, token:
     except Exception:
         pass
 
-    # Total drops
+    # Total drops + last drop
     try:
         history = await api_get(session, url, token, "/api/drops-history")
         if isinstance(history, list):
             embed.add_field(name="📈 Total Drops", value=f"**{len(history)}**", inline=True)
+            if history:
+                last = history[-1]
+                reward = last.get("reward") or last.get("drop") or "?"
+                game = last.get("game", "")
+                ts = last.get("timestamp", "")[:10] if last.get("timestamp") else ""
+                embed.add_field(
+                    name="🏆 Last Drop",
+                    value=f"**{reward}**\n{game}{' · ' + ts if ts else ''}",
+                    inline=True,
+                )
     except Exception:
         pass
 
@@ -355,44 +365,91 @@ class TwitchDropsBot(discord.Client):
         async with aiohttp.ClientSession() as session:
             for user_id, pairing in list(self.users_data.items()):
                 try:
+                    drop_count = pairing.get("last_drop_count", 0)
+                    watching_channel = None
+                    cp_balance = None
+                    paused = False
+
                     # Check for new drops
                     history = await api_get(session, pairing["url"], pairing["token"], "/api/drops-history")
                     if isinstance(history, list):
-                        current_count = len(history)
+                        drop_count = len(history)
                         last_count = pairing.get("last_drop_count", 0)
-                        if current_count > last_count:
-                            new_drops = history[last_count:current_count]
-                            self.users_data[user_id]["last_drop_count"] = current_count
+                        if drop_count > last_count:
+                            new_drops = history[last_count:drop_count]
+                            self.users_data[user_id]["last_drop_count"] = drop_count
                             save_pairings(self.users_data)
 
                             drops_channel_id = pairing.get("channels", {}).get("drops")
                             if drops_channel_id:
-                                channel = self.get_channel(int(drops_channel_id))
-                                if channel:
-                                    embed = discord.Embed(title="🎁 New Drops Claimed!", color=COLOR_TWITCH)
+                                ch = self.get_channel(int(drops_channel_id))
+                                if ch:
+                                    embed = discord.Embed(title="🎁 New Drop Claimed!", color=COLOR_TWITCH)
                                     for drop in new_drops[-10:]:
                                         game = drop.get("game", "Unknown")
                                         reward = drop.get("reward") or drop.get("drop") or "Unknown"
                                         ts = drop.get("timestamp", "")[:10] if drop.get("timestamp") else ""
                                         embed.add_field(name=game, value=f"**{reward}**\n{ts}", inline=True)
                                     make_footer(embed)
-                                    await channel.send(embed=embed)
+                                    await ch.send(embed=embed)
 
-                    # Update live dashboard embed
+                    # Channel points tracking
+                    try:
+                        idle = await api_get(session, pairing["url"], pairing["token"], "/api/idle-watch/status")
+                        watching_channel = idle.get("watching")
+                        if watching_channel:
+                            cp_data = await api_get(session, pairing["url"], pairing["token"], f"/api/channel-points/{watching_channel}")
+                            cp_balance = cp_data.get("balance", 0)
+                            last_cp = pairing.get("last_cp", {})
+                            prev_balance = last_cp.get(watching_channel)
+
+                            if prev_balance is not None and cp_balance > prev_balance:
+                                gained = cp_balance - prev_balance
+                                if gained >= 25:
+                                    points_ch_id = pairing.get("channels", {}).get("points")
+                                    if points_ch_id:
+                                        pts_ch = self.get_channel(int(points_ch_id))
+                                        if pts_ch:
+                                            embed = discord.Embed(
+                                                title="💰 Channel Points",
+                                                description=f"**+{gained:,} pts** on **{watching_channel}**\nBalance: **{cp_balance:,} pts**",
+                                                color=COLOR_TWITCH,
+                                            )
+                                            make_footer(embed)
+                                            await pts_ch.send(embed=embed)
+
+                            self.users_data[user_id].setdefault("last_cp", {})[watching_channel] = cp_balance
+                            save_pairings(self.users_data)
+                    except Exception as e:
+                        log.debug("CP tracking error for %s: %s", user_id, e)
+
+                    # Get paused state for state key
+                    try:
+                        status_data = await api_get(session, pairing["url"], pairing["token"], "/api/status")
+                        paused = status_data.get("paused", False)
+                    except Exception:
+                        pass
+
+                    # Update live dashboard embed only when state changed
                     dashboard = pairing.get("dashboard_embed")
                     if dashboard:
-                        ch = self.get_channel(int(dashboard["channel_id"]))
-                        if ch:
-                            try:
-                                msg = await ch.fetch_message(int(dashboard["message_id"]))
-                                new_embed = await build_dashboard_embed(session, pairing["url"], pairing["token"])
-                                view = DashboardView(int(user_id), self)
-                                await msg.edit(embed=new_embed, view=view)
-                            except discord.NotFound:
-                                self.users_data[user_id].pop("dashboard_embed", None)
-                                save_pairings(self.users_data)
-                            except Exception as e:
-                                log.debug("Dashboard embed update error: %s", e)
+                        state_key = f"{paused}|{watching_channel}|{cp_balance}|{drop_count}"
+                        last_state = pairing.get("last_embed_state", "")
+                        if state_key != last_state:
+                            ch = self.get_channel(int(dashboard["channel_id"]))
+                            if ch:
+                                try:
+                                    msg = await ch.fetch_message(int(dashboard["message_id"]))
+                                    new_embed = await build_dashboard_embed(session, pairing["url"], pairing["token"])
+                                    view = DashboardView(int(user_id), self)
+                                    await msg.edit(embed=new_embed, view=view)
+                                    self.users_data[user_id]["last_embed_state"] = state_key
+                                    save_pairings(self.users_data)
+                                except discord.NotFound:
+                                    self.users_data[user_id].pop("dashboard_embed", None)
+                                    save_pairings(self.users_data)
+                                except Exception as e:
+                                    log.debug("Dashboard embed update error: %s", e)
 
                 except Exception as e:
                     log.debug("Poll error for user %s: %s", user_id, e)
@@ -456,11 +513,11 @@ def register_commands(bot: TwitchDropsBot):
         save_pairings(bot.users_data)
         await interaction.response.send_message(embed=success_embed("Dashboard unlinked."), ephemeral=True)
 
-    @bot.tree.command(name="setchannel", description="Set notification channel for drops or logs")
-    @app_commands.describe(type="Channel type: drops or logs")
+    @bot.tree.command(name="setchannel", description="Set notification channel for drops or channel points")
+    @app_commands.describe(type="What to post here: drops or points")
     @app_commands.choices(type=[
         app_commands.Choice(name="drops", value="drops"),
-        app_commands.Choice(name="logs", value="logs"),
+        app_commands.Choice(name="points", value="points"),
     ])
     async def cmd_setchannel(interaction: discord.Interaction, type: str):
         uid = str(interaction.user.id)
@@ -471,7 +528,7 @@ def register_commands(bot: TwitchDropsBot):
         channel_id = interaction.channel_id
         bot.users_data[uid]["channels"][type] = channel_id
         save_pairings(bot.users_data)
-        label = "Drop notifications" if type == "drops" else "Log messages"
+        label = "Drop notifications" if type == "drops" else "Channel Points notifications"
         await interaction.response.send_message(
             embed=success_embed(f"✅ {label} will now be posted in <#{channel_id}>."),
             ephemeral=True,
