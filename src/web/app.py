@@ -685,6 +685,13 @@ async def get_version():
     }
 
 
+@app.get("/api/wanted-items")
+async def get_wanted_items_http():
+    if not gui_manager:
+        raise HTTPException(status_code=503, detail="Not initialized")
+    return {"wanted_items": gui_manager.get_wanted_game_tree()}
+
+
 @app.post("/api/login")
 async def submit_login(login_data: LoginRequest):
     """Submit login credentials"""
