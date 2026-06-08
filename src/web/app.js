@@ -1275,12 +1275,16 @@ function renderInventory() {
         const dropsEl = makeElement('div', { class: 'campaign-drops' });
         campaign.drops.forEach(drop => {
             const dropItem = makeElement('div', { class: `drop-item${drop.is_claimed ? ' claimed' : ''}${drop.can_claim ? ' active' : ''}` });
+            const subBadge = (drop.required_subs || 0) > 0
+                ? makeElement('span', { class: 'sub-required-badge', title: `Requires ${drop.required_subs} subscription(s)` }, '★ Sub')
+                : null;
             dropItem.appendChild(
                 makeElement('div', { class: 'drop-item-header' }, '', el =>
                     el.appendChild(makeElement('div', { class: 'drop-item-info' }, '', el2 =>
-                        el2.appendChild(makeElement('div', {}, '', el3 =>
-                            el3.appendChild(makeElement('strong', {}, drop.name))
-                        ))
+                        el2.appendChild(makeElement('div', {}, '', el3 => {
+                            el3.appendChild(makeElement('strong', {}, drop.name));
+                            if (subBadge) el3.appendChild(subBadge);
+                        }))
                     ))
                 )
             );
