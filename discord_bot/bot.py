@@ -26,6 +26,7 @@ if not BOT_TOKEN:
     raise RuntimeError("DISCORD_BOT_TOKEN env var not set")
 
 PAIRINGS_PATH = Path(__file__).parent / "pairings.json"
+LIVE_STATS_PATH = Path(__file__).parent / "live_stats.json"
 
 COLOR_TWITCH = 0x9147FF
 COLOR_SUCCESS = 0x00B04F
@@ -44,6 +45,19 @@ def load_pairings() -> dict:
 def save_pairings(users: dict) -> None:
     with open(PAIRINGS_PATH, "w") as f:
         json.dump({"users": users}, f, indent=2)
+
+
+def load_live_stats() -> dict[int, int]:
+    if LIVE_STATS_PATH.exists():
+        with open(LIVE_STATS_PATH) as f:
+            data = json.load(f)
+        return {int(k): int(v) for k, v in data.items()}
+    return {}
+
+
+def save_live_stats(refs: dict[int, int]) -> None:
+    with open(LIVE_STATS_PATH, "w") as f:
+        json.dump({str(k): v for k, v in refs.items()}, f, indent=2)
 
 
 def get_user_pairing(users: dict, user_id: int) -> dict | None:
@@ -387,7 +401,7 @@ class TwitchDropsBot(discord.Client):
         super().__init__(intents=intents)
         self.tree = app_commands.CommandTree(self)
         self.users_data: dict = {}
-        self._live_stats_messages: dict[int, int] = {}  # channel_id -> message_id
+        self._live_stats_messages: dict[int, int] = load_live_stats()
         self._live_stats_last_update: float = 0.0
 
     async def _build_global_stats(self, session: aiohttp.ClientSession) -> discord.Embed:
@@ -593,6 +607,7 @@ class TwitchDropsBot(discord.Client):
                             await msg.edit(embed=stats_embed)
                         except discord.NotFound:
                             self._live_stats_messages.pop(ch_id, None)
+                            save_live_stats(self._live_stats_messages)
                         except Exception:
                             pass
                 self._live_stats_last_update = now
@@ -744,6 +759,7 @@ def register_commands(bot: TwitchDropsBot):
                 embed = await bot._build_global_stats(session)
             msg = await interaction.channel.send(embed=embed)
             bot._live_stats_messages[interaction.channel_id] = msg.id
+            save_live_stats(bot._live_stats_messages)
             await interaction.followup.send("✅ Live stats posted — auto-updates every 30 min.", ephemeral=True)
 
         @discord.ui.button(label="Refresh", style=discord.ButtonStyle.secondary, emoji="🔄")
