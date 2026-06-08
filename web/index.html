@@ -393,32 +393,34 @@
                     </div>
                 </section>
 
+                <div class="settings-grid">
                 <section class="settings-section">
                     <h2 id="settings-actions-header">Actions</h2>
-                    <div class="settings-actions">
-                        <button id="reload-btn" class="action-button">Reload</button>
-                    </div>
+                    <button id="reload-btn" class="action-button" style="width:100%">↻ Reload Campaigns</button>
                 </section>
 
                 <section class="settings-section">
                     <h2 id="settings-password-header">Login & Password</h2>
-                    <div id="pw-status-badge" style="margin-bottom:12px;font-size:.85rem;color:#adadb8"></div>
-
-                    <label id="pw-current-label" style="display:block;margin-bottom:6px;font-size:.9rem;font-weight:500">Current Password</label>
-                    <input type="password" id="pw-current" placeholder="Leave empty if no password set" style="margin-bottom:10px">
-
-                    <label id="pw-new-label" style="display:block;margin-bottom:6px;font-size:.9rem;font-weight:500">New Password</label>
-                    <input type="password" id="pw-new" placeholder="New password (empty = disable login)" style="margin-bottom:10px">
-
-                    <label id="pw-confirm-label" style="display:block;margin-bottom:6px;font-size:.9rem;font-weight:500">Confirm New Password</label>
-                    <input type="password" id="pw-new2" placeholder="Confirm" style="margin-bottom:12px">
-
-                    <div style="display:flex;gap:8px;flex-wrap:wrap">
-                        <button id="pw-save-btn" class="action-button">Save Password</button>
-                        <button id="pw-disable-btn" class="action-button" style="background:transparent;border:1px solid #3d3d4a;color:#adadb8">Disable Login</button>
+                    <div id="pw-status-badge" style="margin-bottom:10px;font-size:.82rem;color:#adadb8"></div>
+                    <div class="form-row">
+                        <label id="pw-current-label" class="form-label">Current</label>
+                        <input type="password" id="pw-current" class="form-input" placeholder="Leave empty if none">
                     </div>
-                    <div id="pw-result" style="margin-top:10px;font-size:.85rem;display:none"></div>
+                    <div class="form-row">
+                        <label id="pw-new-label" class="form-label">New</label>
+                        <input type="password" id="pw-new" class="form-input" placeholder="New password (empty = disable)">
+                    </div>
+                    <div class="form-row">
+                        <label id="pw-confirm-label" class="form-label">Confirm</label>
+                        <input type="password" id="pw-new2" class="form-input" placeholder="Repeat new password">
+                    </div>
+                    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+                        <button id="pw-save-btn" class="action-button" style="flex:1">Save</button>
+                        <button id="pw-disable-btn" class="action-button" style="flex:1;background:transparent;border:1px solid #3d3d4a;color:#adadb8">Disable Login</button>
+                    </div>
+                    <div id="pw-result" style="margin-top:8px;font-size:.82rem;display:none"></div>
                 </section>
+                </div>
             </div>
         </div>
 

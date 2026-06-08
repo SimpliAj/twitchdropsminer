@@ -1204,6 +1204,24 @@ header h1 {
     }
 }
 
+.form-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+.form-label {
+    min-width: 72px;
+    font-size: .88rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+.form-input {
+    flex: 1;
+    min-width: 0;
+}
+
 .settings-section {
     background: var(--bg-panel);
     border: 1px solid var(--border-color);
