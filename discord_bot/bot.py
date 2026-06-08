@@ -427,8 +427,7 @@ class TwitchDropsBot(discord.Client):
 
         desc = (
             f"🎁  **{total_drops}** drops total  ·  **{today_drops}** today\n"
-            f"💰  **{total_cp:,}** channel points\n"
-            f"👥  **{paired_count}** paired account{'s' if paired_count != 1 else ''}\n\n"
+            f"💰  **{total_cp:,}** channel points\n\n"
             f"[View on GitHub]({GITHUB_URL})"
         )
         embed = discord.Embed(
