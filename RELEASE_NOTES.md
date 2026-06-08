@@ -1,3 +1,31 @@
+# Release Notes - v1.2.5
+
+## 🤖 Discord Bot Integration
+
+This release adds a full Discord bot that pairs with your miner and delivers rich notifications across multiple Discord servers.
+
+### ✨ New Features
+
+**Discord Bot**
+- Slash commands: `/link`, `/unlink`, `/setchannel drops`, `/setchannel points`, `/dashboard`
+- Drop notifications — one embed per drop with reward thumbnail image, game, drop name, reward name, account name in footer
+- Channel Points notifications — fires on gains ≥ 25 pts with channel, amount, balance, account name
+- Multi-server support — run `/setchannel` in multiple Discord servers; all receive notifications simultaneously
+- Live dashboard embed — auto-updates every 30s; owner-only control buttons (Pause/Resume, Switch Mode, Campaigns, Last Drops, Refresh)
+- Web UI channel config — Settings → Discord Bot shows all configured channels with Clear buttons
+
+**Invite the bot:** https://discord.com/oauth2/authorize?client_id=1513555081218359506&permissions=84992&integration_type=0&scope=bot
+
+### 🐛 Bug Fixes
+- `get_channel()` → `fetch_channel()` fallback: notifications were silently dropped when Discord channel not in cache
+- `last_drop_count` now only updated after successful send (was updated before, causing drops to be missed)
+- `/setchannel` appends to channel list instead of overwriting — multi-server support
+
+### 🖥️ Web UI
+- Quick Controls: CSS Grid 2×2 layout — all four buttons identical size regardless of text length
+
+---
+
 # Release Notes - v1.2.4
 
 This update ensures compatibility with the latest Twitch systems and modernizes our environment requirements for a smoother experience. We’ve updated essential game directory hashes and bumped our Python requirements to keep the miner running at peak performance.
