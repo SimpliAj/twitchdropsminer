@@ -465,27 +465,38 @@ async def idle_watch_status():
 
 @app.post("/api/idle-watch/switch")
 async def idle_watch_switch():
-    """Switch to the next configured idle channel."""
+    """Switch to the next idle channel (manual list or followed)."""
     if not gui_manager or not twitch_client:
         raise HTTPException(status_code=503, detail="Not ready")
-    idle_channels = twitch_client.settings.idle_channels
-    if not idle_channels:
+
+    # Build candidate list: manual channels first, then followed live channels
+    candidates: list[str] = list(twitch_client.settings.idle_channels)
+    if twitch_client.settings.idle_use_followed:
+        followed = await twitch_client._fetch_followed_live_logins()
+        seen = set(candidates)
+        for login in followed:
+            if login not in seen:
+                candidates.append(login)
+                seen.add(login)
+
+    if not candidates:
         raise HTTPException(status_code=400, detail="No idle channels configured")
+
     current = twitch_client.watching_channel.get_with_default(None)
     current_login = current._login if current else None
-    # Find next channel after current
-    try:
-        idx = idle_channels.index(current_login) if current_login in idle_channels else -1
-    except ValueError:
-        idx = -1
-    next_login = idle_channels[(idx + 1) % len(idle_channels)]
-    channel = await twitch_client._fetch_idle_channel_by_login(next_login)
-    if channel is None:
-        raise HTTPException(status_code=404, detail=f"{next_login} is offline")
-    twitch_client.gui.clear_drop()
-    twitch_client.watch(channel, update_status=False)
-    twitch_client.gui.status.update(f"💤 Idle watching: {channel.name}")
-    return {"switched_to": next_login}
+    idx = candidates.index(current_login) if current_login in candidates else -1
+
+    # Try channels starting after the current one, wrapping around
+    for offset in range(1, len(candidates) + 1):
+        next_login = candidates[(idx + offset) % len(candidates)]
+        channel = await twitch_client._fetch_idle_channel_by_login(next_login)
+        if channel is not None:
+            twitch_client.gui.clear_drop()
+            twitch_client.watch(channel, update_status=False)
+            twitch_client.gui.status.update(f"💤 Idle watching: {channel.name}")
+            return {"switched_to": next_login}
+
+    raise HTTPException(status_code=404, detail="No other idle channels are online")
 
 
 @app.get("/api/settings")
