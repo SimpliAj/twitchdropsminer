@@ -147,16 +147,26 @@ async def build_dashboard_embed(session: aiohttp.ClientSession, url: str, token:
         if watching_login:
             embed.add_field(name="📺 Watching", value=f"**{watching_login}**", inline=False)
 
-    # Thumbnail from active campaign
+    # Thumbnail: next drop item image (first unclaimed benefit image from active campaign)
     try:
         camp_data = await api_get(session, url, token, "/api/campaigns")
         campaigns = camp_data.get("campaigns", []) if isinstance(camp_data, dict) else camp_data
+        next_thumb = None
         for c in campaigns:
-            if not c.get("expired") and any(not d.get("is_claimed") for d in c.get("drops", [])):
-                thumb = c.get("game_box_art_url")
-                if thumb:
-                    embed.set_thumbnail(url=thumb)
+            if c.get("expired"):
+                continue
+            drops = c.get("drops", [])
+            # prefer in-progress drop, then upcoming
+            for d in drops:
+                if not d.get("is_claimed"):
+                    benefits = d.get("benefits", [])
+                    if benefits and benefits[0].get("image_url"):
+                        next_thumb = benefits[0]["image_url"]
+                        break
+            if next_thumb:
                 break
+        if next_thumb:
+            embed.set_thumbnail(url=next_thumb)
     except Exception:
         pass
 
@@ -175,9 +185,6 @@ async def build_dashboard_embed(session: aiohttp.ClientSession, url: str, token:
                     value=f"**{reward}**\n{game}{' · ' + ts if ts else ''}",
                     inline=True,
                 )
-                item_img = last.get("image_url")
-                if item_img:
-                    embed.set_thumbnail(url=item_img)
     except Exception:
         pass
 
