@@ -279,6 +279,13 @@ class Twitch:
                                     webhook_url = self.settings.discord_webhook_drops
                                     if webhook_url and drop.id not in self._webhook_sent_drops:
                                         self._webhook_sent_drops.add(drop.id)
+                                        import json as _json_wh
+                                        from src.config import DATA_DIR as _DATA_DIR_WH
+                                        _wcfg_wh = _DATA_DIR_WH / "web_config.json"
+                                        try:
+                                            _acct_wh = _json_wh.loads(_wcfg_wh.read_text()).get("active_account", "") if _wcfg_wh.exists() else ""
+                                        except Exception:
+                                            _acct_wh = ""
                                         embed: dict = {
                                             "title": "🎁 Drop Claimed!",
                                             "color": 0x9147ff,
@@ -288,6 +295,8 @@ class Twitch:
                                                 {"name": "Reward", "value": drop.rewards_text(), "inline": False},
                                             ],
                                         }
+                                        if _acct_wh:
+                                            embed["footer"] = {"text": f"Account: {_acct_wh}"}
                                         if drop.benefits:
                                             embed["thumbnail"] = {"url": drop.benefits[0].image_url}
                                         asyncio.create_task(
