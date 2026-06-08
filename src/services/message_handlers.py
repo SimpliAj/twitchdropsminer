@@ -13,11 +13,26 @@ from typing import TYPE_CHECKING
 
 import aiohttp
 
+import json as _json_mod
+
 from src.config import CALL, DATA_DIR, GQL_OPERATIONS, State
 from src.i18n import _
 from src.utils import json_load, json_save, task_wrapper
 
-_POINTS_FILE = DATA_DIR / "channel_points.json"
+_WEB_CONFIG_FILE = DATA_DIR / "web_config.json"
+
+
+def _get_points_file() -> "Path":
+    try:
+        cfg = _json_mod.loads(_WEB_CONFIG_FILE.read_text()) if _WEB_CONFIG_FILE.exists() else {}
+        account = cfg.get("active_account")
+        if account:
+            d = DATA_DIR / "accounts" / account
+            d.mkdir(parents=True, exist_ok=True)
+            return d / "channel_points.json"
+    except Exception:
+        pass
+    return DATA_DIR / "channel_points.json"
 
 
 if TYPE_CHECKING:
@@ -233,12 +248,13 @@ class MessageHandlerService:
 
             # Save to drop history
             import datetime as _dt, json as _json
-            _hist_file = DATA_DIR / "drops_history.json"
+            _hist_file = _get_points_file().parent / "drops_history.json"
             _entry = {
                 "timestamp": _dt.datetime.now(_dt.timezone.utc).isoformat(),
                 "game": campaign.game.name,
                 "drop": drop.name,
                 "reward": drop.rewards_text(),
+                "image_url": drop.benefits[0].image_url if drop.benefits else None,
             }
             try:
                 _hist = _json.loads(_hist_file.read_text()) if _hist_file.exists() else []
@@ -407,9 +423,10 @@ class MessageHandlerService:
             })
             # Persist balance
             if points:
-                history = json_load(_POINTS_FILE, {}, merge=False)
+                _pfile = _get_points_file()
+                history = json_load(_pfile, {}, merge=False)
                 history[channel_login] = points
-                json_save(_POINTS_FILE, history)
+                json_save(_pfile, history)
         except Exception as e:
             logger.warning(f"Could not fetch channel points balance for {channel_login}: {e}")
 
