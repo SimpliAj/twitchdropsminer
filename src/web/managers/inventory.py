@@ -66,6 +66,7 @@ class InventoryManager:
                     "benefits": benefits_data,
                     "starts_at": drop.starts_at.isoformat(),
                     "ends_at": drop.ends_at.isoformat(),
+                    "required_subs": drop.required_subs,
                 }
             )
 
