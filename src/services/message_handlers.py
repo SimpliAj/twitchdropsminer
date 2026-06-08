@@ -43,6 +43,20 @@ def _get_points_file() -> "Path":
     return DATA_DIR / "channel_points.json"
 
 
+def _save_last_chest(channel_login: str, bonus: int) -> None:
+    from datetime import datetime, timezone
+    p = _get_points_file().parent / "last_chest.json"
+    try:
+        data = _json_mod.loads(p.read_text()) if p.exists() else {}
+    except Exception:
+        data = {}
+    data[channel_login] = {"bonus": bonus, "ts": datetime.now(timezone.utc).isoformat()}
+    try:
+        p.write_text(_json_mod.dumps(data, indent=2))
+    except Exception:
+        pass
+
+
 if TYPE_CHECKING:
     from src.config import JsonType
     from src.core.client import Twitch
@@ -357,6 +371,8 @@ class MessageHandlerService:
                 })
             )
             logger.info(f"Claimed channel points on {channel_login} (+{claimed_amount})")
+            if claimed_amount:
+                _save_last_chest(channel_login, claimed_amount)
             # Send Discord webhook for WebSocket-path claim
             webhook_url = self._twitch.settings.discord_webhook_points
             if webhook_url and claimed_amount:
@@ -428,6 +444,7 @@ class MessageHandlerService:
                         pass
                     if bonus_amount:
                         claimed_amount += bonus_amount
+                        _save_last_chest(channel_login, bonus_amount)
                     # Discord webhook for channel points claim
                     webhook_url = self._twitch.settings.discord_webhook_points
                     if webhook_url:

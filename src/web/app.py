@@ -475,7 +475,16 @@ async def get_channel_points(channel_login: str):
             history = json_load(_cp_file, {}, merge=False)
             history[channel_login] = points
             json_save(_cp_file, history)
-        return {"channel": channel_login, "balance": points}
+        # Include last chest bonus info for Discord bot split notification
+        last_chest = {}
+        try:
+            _chest_file = _get_account_data_dir() / "last_chest.json"
+            if _chest_file.exists():
+                _chest_data = json_load(_chest_file, {}, merge=False)
+                last_chest = _chest_data.get(channel_login, {})
+        except Exception:
+            pass
+        return {"channel": channel_login, "balance": points, "last_chest": last_chest}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
