@@ -1132,6 +1132,20 @@ header h1 {
     margin-bottom: 8px;
 }
 
+.sub-required-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    color: #fff;
+    background: rgba(156, 39, 176, 0.85);
+    border: 1px solid rgba(156, 39, 176, 0.5);
+    border-radius: 3px;
+    padding: 1px 5px;
+    margin-left: 6px;
+    vertical-align: middle;
+    letter-spacing: 0.03em;
+}
+
 .drop-item-info {
     flex: 1;
     min-width: 0;
