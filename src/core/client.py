@@ -232,8 +232,8 @@ class Twitch:
                 if self._idle_topic_ids:
                     self.websocket.remove_topics(self._idle_topic_ids)
                     self._idle_topic_ids = []
-                # Try idle watch if channels are configured
-                if self.settings.idle_channels:
+                # Try idle watch if channels are configured or followed auto-mode is on
+                if self.settings.idle_channels or self.settings.idle_use_followed:
                     logger.info(f"Idle watch: trying channels {self.settings.idle_channels}")
                     # Also refresh if already watching an idle channel (broadcast_id may have changed)
                     current = self.watching_channel.get_with_default(None)
@@ -586,6 +586,37 @@ class Twitch:
                 break
             await self._state_change.wait()
 
+    async def _fetch_followed_live_logins(self) -> list[str]:
+        """Fetch logins of live channels the current user follows via Helix REST API."""
+        try:
+            auth = await self.get_auth()
+            user_id = auth.user_id
+            client_id = self._client_type.CLIENT_ID
+            access_token = auth.access_token
+            headers = {
+                "Authorization": f"Bearer {access_token}",
+                "Client-Id": client_id,
+            }
+            logins: list[str] = []
+            cursor: str | None = None
+            for _ in range(5):  # max 5 pages = 500 channels
+                url = f"https://api.twitch.tv/helix/streams/followed?user_id={user_id}&first=100"
+                if cursor:
+                    url += f"&after={cursor}"
+                async with self._http_client.request("GET", url, headers=headers) as resp:
+                    if resp.status != 200:
+                        break
+                    data = await resp.json()
+                logins.extend(s["user_login"] for s in data.get("data", []))
+                cursor = data.get("pagination", {}).get("cursor")
+                if not cursor:
+                    break
+            logger.info(f"Idle (followed): {len(logins)} live followed channels")
+            return logins
+        except Exception as exc:
+            logger.warning(f"Could not fetch followed live channels: {exc}")
+            return []
+
     async def _fetch_idle_channel_by_login(self, login: str) -> Channel | None:
         """Fetch a specific channel by login and return it if online."""
         from src.models.channel import Stream
@@ -604,8 +635,16 @@ class Twitch:
             return None
 
     async def _fetch_idle_channel(self) -> Channel | None:
-        """Return the first online idle channel from settings, or None."""
-        for login in self.settings.idle_channels:
+        """Return the first online idle channel (manual list + optionally followed)."""
+        logins: list[str] = list(self.settings.idle_channels)
+        if self.settings.idle_use_followed:
+            followed = await self._fetch_followed_live_logins()
+            seen = set(logins)
+            for login in followed:
+                if login not in seen:
+                    logins.append(login)
+                    seen.add(login)
+        for login in logins:
             channel = await self._fetch_idle_channel_by_login(login)
             if channel is not None:
                 return channel

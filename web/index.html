@@ -288,8 +288,13 @@
                 <section class="settings-section">
                     <h2>Idle Watch</h2>
                     <p class="help-text">Channels to watch when no drops are available. Add in priority order.</p>
+                    <label class="toggle-label" style="margin-bottom:10px;">
+                        <input type="checkbox" id="idle-use-followed" onchange="saveSettings()">
+                        <span>Auto: use followed channels</span>
+                        <span class="help-text" style="display:block;margin-top:2px;font-size:0.8em;">Automatically watches live channels you follow on Twitch when idle.</span>
+                    </label>
                     <div style="display:flex;gap:8px;margin-bottom:8px;">
-                        <input type="text" id="idle-channel-input" placeholder="Channel name..." style="flex:1;">
+                        <input type="text" id="idle-channel-input" placeholder="Manual channel name..." style="flex:1;">
                         <button id="idle-channel-add-btn" class="secondary-btn">Add</button>
                     </div>
                     <div id="idle-channels-list" class="sortable-list"></div>
