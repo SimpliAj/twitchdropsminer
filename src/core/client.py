@@ -100,6 +100,8 @@ class Twitch:
         self._user_override: bool = False
         self._scheduler_task: asyncio.Task[None] | None = None
         self._scheduler_service: SchedulerService = SchedulerService(self)
+        # Skip game tracking (set grows until all games tried, then resets)
+        self._skipped_games: set[Game] = set()
 
     def _ensure_api_clients(self) -> None:
         """Ensure API clients are initialized (called after GUI is set)."""
@@ -168,6 +170,13 @@ class Twitch:
     def get_change_state_callable(self, state: State) -> abc.Callable[[], None]:
         """Return a callable that changes state when invoked (deferred call for GUI usage)."""
         return partial(self.change_state, state)
+
+    def skip_current_game(self) -> None:
+        """Skip the current game; accumulates skipped games until all tried, then resets."""
+        watching_channel = self.watching_channel.get_with_default(None)
+        if watching_channel is not None and watching_channel.game is not None:
+            self._skipped_games.add(watching_channel.game)
+        self.change_state(State.CHANNEL_SWITCH)
 
     def close(self) -> None:
         """
@@ -612,12 +621,31 @@ class Twitch:
                             self.exit_manual_mode("No channels available for manual game")
                 # Auto-select best channel based on priority
                 else:
-                    for channel in sorted(
-                        channels.values(), key=self._channel_service.get_priority
-                    ):
-                        if self.can_watch(channel) and self.should_switch(channel):
-                            new_watching = channel
-                            break
+                    skipped = self._skipped_games
+                    if skipped:
+                        # Skip mode: find channel from a game not yet skipped
+                        for channel in sorted(
+                            channels.values(), key=self._channel_service.get_priority
+                        ):
+                            if self.can_watch(channel) and channel.game not in skipped:
+                                new_watching = channel
+                                break
+                        # All games skipped → reset and pick best available
+                        if new_watching is None:
+                            self._skipped_games.clear()
+                            for channel in sorted(
+                                channels.values(), key=self._channel_service.get_priority
+                            ):
+                                if self.can_watch(channel):
+                                    new_watching = channel
+                                    break
+                    else:
+                        for channel in sorted(
+                            channels.values(), key=self._channel_service.get_priority
+                        ):
+                            if self.can_watch(channel) and self.should_switch(channel):
+                                new_watching = channel
+                                break
 
                 if new_watching is not None:
                     # Switch to new channel
@@ -749,6 +777,7 @@ class Twitch:
 
         self._manual_target_channel = channel
         self._manual_target_game = channel.game
+        self._skipped_games.clear()
         logger.info(f"Entered manual mode for game: {channel.game.name}, channel: {channel.name}")
 
         # Broadcast manual mode change to GUI
