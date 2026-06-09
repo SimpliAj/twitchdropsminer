@@ -784,12 +784,11 @@ async def trigger_restart():
 
 @app.post("/api/skip-game")
 async def skip_game():
-    """Skip current game and trigger channel switch to next available"""
+    """Skip current game and switch to a different game"""
     if not twitch_client:
         raise HTTPException(status_code=503, detail="Twitch client not initialized")
 
-    from src.config import State
-    twitch_client.change_state(State.CHANNEL_SWITCH)
+    twitch_client.skip_current_game()
     return {"success": True}
 
 
