@@ -378,7 +378,7 @@ function updateChannelPointsDisplay(login, claimedAmount) {
     const pts = state.sessionPoints[login];
     channelEl.textContent = login;
     const cpDisabled = pts && pts.cpEnabled === false;
-    balanceEl.textContent = cpDisabled ? 'No Channel Points' : (pts ? `${pts.balance.toLocaleString()} pts` : '0 pts');
+    balanceEl.textContent = cpDisabled ? 'No Points' : (pts ? `${pts.balance.toLocaleString()} pts` : '0 pts');
     balanceEl.style.color = cpDisabled ? '#adadb8' : '';
 
     if (claimedAmount && claimedEl) {
@@ -416,7 +416,7 @@ function renderPointsTracker() {
             nameEl.appendChild(nameTxt);
             if (data.cpEnabled === false) {
                 const badge = document.createElement('span');
-                badge.textContent = 'No CP';
+                badge.textContent = 'No Points';
                 badge.style.cssText = 'font-size:0.7rem;background:#3d3d4a;color:#adadb8;padding:1px 5px;border-radius:4px;';
                 nameEl.appendChild(badge);
             }
