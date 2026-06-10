@@ -185,7 +185,16 @@ socket.on('initial_state', (data) => {
     }
 
     if (data.watching_channel) {
-        updateChannelPointsDisplay(data.watching_channel.login, null);
+        const login = data.watching_channel.login;
+        updateChannelPointsDisplay(login, null);
+        // Proactively check cp_enabled for current channel
+        fetch(`/api/channel-points/${login}`).then(r => r.json()).then(d => {
+            if (!state.sessionPoints[login]) state.sessionPoints[login] = { balance: 0, claimed: 0 };
+            state.sessionPoints[login].cpEnabled = d.cp_enabled !== false;
+            if (d.balance) state.sessionPoints[login].balance = d.balance;
+            updateChannelPointsDisplay(login, null);
+            renderPointsTracker();
+        }).catch(() => {});
     }
 });
 
@@ -243,7 +252,16 @@ socket.on('channels_batch_update', (data) => {
 
 socket.on('channel_watching', (data) => {
     setWatchingChannel(data.id);
-    if (data.login) updateChannelPointsDisplay(data.login, null);
+    if (data.login) {
+        updateChannelPointsDisplay(data.login, null);
+        fetch(`/api/channel-points/${data.login}`).then(r => r.json()).then(d => {
+            if (!state.sessionPoints[data.login]) state.sessionPoints[data.login] = { balance: 0, claimed: 0 };
+            state.sessionPoints[data.login].cpEnabled = d.cp_enabled !== false;
+            if (d.balance) state.sessionPoints[data.login].balance = d.balance;
+            updateChannelPointsDisplay(data.login, null);
+            renderPointsTracker();
+        }).catch(() => {});
+    }
 });
 
 socket.on('channel_watching_clear', () => {
