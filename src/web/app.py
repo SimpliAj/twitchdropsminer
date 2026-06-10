@@ -488,10 +488,13 @@ async def get_channel_points(channel_login: str):
             GQL_OPERATIONS["ChannelPointsContext"].with_variables({"channelLogin": channel_login})
         )
         data = resp.get("data") or {}
+        cp_obj = None
         try:
-            points: int = data["community"]["channel"]["self"]["communityPoints"]["balance"]
+            cp_obj = data["community"]["channel"]["self"]["communityPoints"]
         except (KeyError, TypeError):
-            points = 0
+            pass
+        cp_enabled = cp_obj is not None
+        points: int = int(cp_obj.get("balance", 0)) if cp_enabled else 0
         # Persist
         if points:
             from src.utils import json_load, json_save
@@ -508,7 +511,7 @@ async def get_channel_points(channel_login: str):
                 last_chest = _chest_data.get(channel_login, {})
         except Exception:
             pass
-        return {"channel": channel_login, "balance": points, "last_chest": last_chest}
+        return {"channel": channel_login, "balance": points, "cp_enabled": cp_enabled, "last_chest": last_chest}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
