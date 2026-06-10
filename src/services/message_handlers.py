@@ -79,6 +79,21 @@ def _set_last_webhook_notified(channel_login: str, balance: int) -> None:
         pass
 
 
+def _update_daily_points_server(delta: int, data_dir: "Path") -> None:
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    today = datetime.now(ZoneInfo("Europe/Vienna")).strftime("%Y-%m-%d")
+    p = data_dir / "daily_points.json"
+    try:
+        d = _json_mod.loads(p.read_text()) if p.exists() else {}
+        if d.get("date") != today:
+            d = {"date": today, "total": 0}
+        d["total"] = d.get("total", 0) + delta
+        p.write_text(_json_mod.dumps(d))
+    except Exception:
+        pass
+
+
 if TYPE_CHECKING:
     from src.config import JsonType
     from src.core.client import Twitch
@@ -507,10 +522,13 @@ class MessageHandlerService:
                 "balance": points,
                 "claimed_amount": claimed_amount,
             })
-            # Persist balance
+            # Persist balance + update server-side daily points counter
             if points:
                 _pfile = _get_points_file()
                 history = json_load(_pfile, {}, merge=False)
+                old_balance = history.get(channel_login, 0)
+                if old_balance > 0 and points > old_balance:
+                    _update_daily_points_server(points - old_balance, _pfile.parent)
                 history[channel_login] = points
                 json_save(_pfile, history)
         except Exception as e:
