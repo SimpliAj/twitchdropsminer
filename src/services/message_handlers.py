@@ -454,11 +454,13 @@ class MessageHandlerService:
                 )
             )
             data = resp.get("data") or {}
-            cp = {}
+            cp = None
             try:
                 cp = data["community"]["channel"]["self"]["communityPoints"]
             except (KeyError, TypeError):
                 pass
+            cp_enabled = cp is not None
+            cp = cp or {}
             points: int = cp.get("balance", 0)
             # Claim available chest via GQL polling (fallback if PubSub misses it)
             available_claim = cp.get("availableClaim")
@@ -521,6 +523,7 @@ class MessageHandlerService:
                 "channel_login": channel_login,
                 "balance": points,
                 "claimed_amount": claimed_amount,
+                "cp_enabled": cp_enabled,
             })
             # Persist balance + update server-side daily points counter
             if points:

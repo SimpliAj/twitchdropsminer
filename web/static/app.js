@@ -202,6 +202,7 @@ socket.on('channel_points_update', (data) => {
     state.sessionPoints[login].balance = balance;
     state.sessionPoints[login].claimed += claimed;
     state.sessionPoints[login].lastSeen = Date.now();
+    if (data.cp_enabled !== undefined) state.sessionPoints[login].cpEnabled = data.cp_enabled;
     updateChannelPointsDisplay(login, claimed);
     renderPointsTracker();
     updateStats();
@@ -358,7 +359,9 @@ function updateChannelPointsDisplay(login, claimedAmount) {
 
     const pts = state.sessionPoints[login];
     channelEl.textContent = login;
-    balanceEl.textContent = pts ? `${pts.balance.toLocaleString()} pts` : '0 pts';
+    const cpDisabled = pts && pts.cpEnabled === false;
+    balanceEl.textContent = cpDisabled ? 'No Channel Points' : (pts ? `${pts.balance.toLocaleString()} pts` : '0 pts');
+    balanceEl.style.color = cpDisabled ? '#adadb8' : '';
 
     if (claimedAmount && claimedEl) {
         claimedEl.textContent = `+${claimedAmount.toLocaleString()} pts`;
@@ -388,10 +391,19 @@ function renderPointsTracker() {
             const row = document.createElement('div');
             row.style.cssText = 'display:flex;justify-content:space-between;padding:2px 0;font-size:0.85rem;';
             const nameEl = document.createElement('span');
-            nameEl.textContent = login;
-            nameEl.style.color = 'var(--accent-color,#9147ff)';
+            nameEl.style.display = 'flex';nameEl.style.alignItems = 'center';nameEl.style.gap = '5px';
+            const nameTxt = document.createElement('span');
+            nameTxt.textContent = login;
+            nameTxt.style.color = 'var(--accent-color,#9147ff)';
+            nameEl.appendChild(nameTxt);
+            if (data.cpEnabled === false) {
+                const badge = document.createElement('span');
+                badge.textContent = 'No CP';
+                badge.style.cssText = 'font-size:0.7rem;background:#3d3d4a;color:#adadb8;padding:1px 5px;border-radius:4px;';
+                nameEl.appendChild(badge);
+            }
             const ptsEl = document.createElement('span');
-            ptsEl.textContent = `${data.balance.toLocaleString()} pts`;
+            ptsEl.textContent = data.cpEnabled === false ? '—' : `${data.balance.toLocaleString()} pts`;
             row.appendChild(nameEl);
             row.appendChild(ptsEl);
             list.appendChild(row);
