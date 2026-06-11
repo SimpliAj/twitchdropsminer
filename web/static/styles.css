@@ -144,6 +144,7 @@ header h1 {
     min-width: 80px;
     color: var(--text-secondary);
     line-height: 1.5;
+    text-align: center;
 }
 
 #connection-indicator {
@@ -1935,16 +1936,37 @@ header h1 {
 
     .header-brand {
         padding: 12px 14px 0;
-    }
-
-    header h1 {
-        font-size: 1rem;
+        flex-wrap: nowrap;
         gap: 8px;
     }
 
+    header h1 {
+        font-size: 0.95rem;
+        gap: 8px;
+        white-space: nowrap;
+        flex-shrink: 1;
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    header h1 span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
     .header-logo {
-        width: 30px;
-        height: 30px;
+        width: 28px;
+        height: 28px;
+        flex-shrink: 0;
+    }
+
+    .header-brand-right {
+        flex-shrink: 0;
+        gap: 6px;
+    }
+
+    .language-selector select {
+        max-width: 70px;
     }
 
     .header-meta {
@@ -1959,20 +1981,26 @@ header h1 {
 
     /* Tabs */
     .tabs {
-        gap: 3px;
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 4px;
         margin-bottom: 12px;
-        flex-wrap: wrap;
     }
 
     .tab-button {
-        padding: 9px 4px;
+        grid-column: span 3;
+        padding: 10px 4px;
         font-size: 12px;
-        border-radius: 6px;
-        flex: 1 1 calc(25% - 4px);
-        min-width: 0;
+        border-radius: 8px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+
+    .tab-button:nth-child(5),
+    .tab-button:nth-child(6),
+    .tab-button:nth-child(7) {
+        grid-column: span 4;
     }
 
     /* Inventory filters */
