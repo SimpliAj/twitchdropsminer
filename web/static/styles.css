@@ -45,55 +45,74 @@ body {
 header {
     background: var(--bg-panel);
     border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 20px;
+    border-left: 3px solid var(--accent-color);
+    border-radius: 10px;
+    padding: 0;
     margin-bottom: 20px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(145, 70, 255, 0.07);
 }
 
-.header-top {
+.header-brand {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
+    justify-content: space-between;
+    padding: 14px 20px 0;
 }
 
 header h1 {
-    margin: 0;
-    color: var(--accent-color);
-}
-
-.header-controls {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 10px;
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--accent-color);
+    letter-spacing: -0.2px;
+}
+
+.header-logo {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.header-brand-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.header-meta {
+    display: flex;
+    align-items: center;
+    padding: 10px 20px 14px;
+    gap: 12px;
 }
 
 .language-selector {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    color: var(--text-primary);
-}
-
-.language-selector span {
-    font-weight: 500;
 }
 
 .language-selector select {
-    padding: 6px 10px;
+    padding: 4px 6px;
     border: 1px solid var(--border-color);
-    border-radius: 4px;
+    border-radius: 6px;
     background: var(--bg-secondary);
-    color: var(--text-primary);
-    font-size: 14px;
+    color: var(--text-secondary);
+    font-size: 12px;
     cursor: pointer;
     transition: border-color 0.2s;
+    appearance: none;
+    -webkit-appearance: none;
 }
 
 .language-selector select:hover {
     border-color: var(--accent-color);
+    color: var(--text-primary);
 }
 
 .language-selector select:focus {
@@ -104,38 +123,32 @@ header h1 {
 
 .status-bar {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 16px;
-    background: var(--bg-secondary);
-    border-bottom: 1px solid var(--border-color);
-    font-size: 0.85rem;
+    align-items: flex-start;
+    padding: 8px 20px 10px;
+    background: rgba(0, 0, 0, 0.06);
+    border-top: 1px solid var(--border-color);
+    font-size: 0.82rem;
     gap: 8px;
     flex-wrap: wrap;
 }
+
 .status-left {
     display: flex;
     align-items: center;
-    gap: 8px;
-    flex-shrink: 0;
-}
-.status-center {
-    flex: 1;
-    text-align: center;
-    min-width: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.status-right {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    gap: 6px;
     flex-shrink: 0;
 }
 
+.status-center {
+    flex: 1;
+    min-width: 80px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
 #connection-indicator {
-    font-weight: bold;
+    font-size: 0.78rem;
+    font-weight: 600;
 }
 
 #connection-indicator.connected {
@@ -1916,35 +1929,32 @@ header h1 {
     }
 
     header {
-        padding: 12px;
         margin-bottom: 12px;
-        border-radius: 6px;
+        border-radius: 8px;
+    }
+
+    .header-brand {
+        padding: 12px 14px 0;
     }
 
     header h1 {
-        font-size: 1.1rem;
-    }
-
-    .header-top {
-        flex-direction: column;
-        align-items: flex-start;
+        font-size: 1rem;
         gap: 8px;
-        margin-bottom: 6px;
     }
 
-    .header-controls {
-        gap: 8px;
-        font-size: 13px;
+    .header-logo {
+        width: 30px;
+        height: 30px;
     }
 
-    .language-selector span {
-        display: none;
+    .header-meta {
+        padding: 8px 14px 12px;
     }
 
     .status-bar {
-        font-size: 12px;
-        flex-wrap: wrap;
-        gap: 4px;
+        padding: 7px 14px 9px;
+        font-size: 0.78rem;
+        gap: 6px;
     }
 
     /* Tabs */
@@ -2157,7 +2167,11 @@ header h1 {
     }
 
     header h1 {
-        font-size: 1rem;
+        font-size: 0.95rem;
+    }
+
+    .header-brand-right {
+        gap: 6px;
     }
 
     .tab-button {
@@ -2260,18 +2274,35 @@ header h1 {
     font-size: 0.9rem;
 }
 
+#account-tabs {
+    display: flex;
+    gap: 3px;
+    background: var(--bg-secondary);
+    padding: 3px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
 .acc-tab-btn {
-    background: #2d2d35;
-    color: #adadb8;
-    border: 1px solid #3d3d4a;
+    background: transparent;
+    color: var(--text-secondary);
+    border: none;
     border-radius: 6px;
-    padding: 4px 12px;
+    padding: 5px 16px;
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
 }
+
+.acc-tab-btn:hover {
+    color: var(--text-primary);
+    background: rgba(145, 70, 255, 0.12);
+}
+
 .acc-tab-btn.active-acc {
-    background: #6441a5;
+    background: var(--accent-color);
     color: #fff;
-    border-color: #6441a5;
+    box-shadow: 0 2px 8px rgba(145, 70, 255, 0.35);
 }
