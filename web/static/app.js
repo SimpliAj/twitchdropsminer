@@ -1,6 +1,11 @@
 // Twitch Drops Miner Web Client
 // Socket.IO and API communication
 
+const _accParam = new URLSearchParams(location.search).get('acc');
+const ACC_NUM = _accParam === '2' ? 2 : 1;
+const API_BASE = ACC_NUM === 2 ? '/acc2' : '';
+const SOCKET_PATH = ACC_NUM === 2 ? '/acc2/socket.io' : '/socket.io';
+
 function _todayStr() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 let _dailyPtsTotal = 0;
 let _dailyPtsDate = _todayStr();
@@ -11,7 +16,7 @@ function getDailyPoints() {
 function addDailyPoints(n) {
     if (_dailyPtsDate !== _todayStr()) { _dailyPtsTotal = 0; _dailyPtsDate = _todayStr(); }
     _dailyPtsTotal += n;
-    fetch('/api/daily-points', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ total: _dailyPtsTotal }) }).catch(() => {});
+    fetch(API_BASE + '/api/daily-points', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ total: _dailyPtsTotal }) }).catch(() => {});
 }
 
 // Global state
@@ -31,7 +36,7 @@ const state = {
 
 async function fetchAndDisplayVersion() {
     try {
-        const response = await fetch('/api/version');
+        const response = await fetch(API_BASE + '/api/version');
         if (!response.ok) throw new Error('Failed to fetch version');
 
         const data = await response.json();
@@ -93,7 +98,7 @@ async function fetchAndDisplayVersion() {
 }
 
 // Initialize Socket.IO connection
-const socket = io({
+const socket = io({ path: SOCKET_PATH,
     transports: ['websocket', 'polling'],
     reconnection: true,
     reconnectionDelay: 1000,
@@ -188,7 +193,7 @@ socket.on('initial_state', (data) => {
         const login = data.watching_channel.login;
         updateChannelPointsDisplay(login, null);
         // Proactively check cp_enabled for current channel
-        fetch(`/api/channel-points/${login}`).then(r => r.json()).then(d => {
+        fetch(API_BASE + `/api/channel-points/${login}`).then(r => r.json()).then(d => {
             if (!state.sessionPoints[login]) state.sessionPoints[login] = { balance: 0, claimed: 0 };
             state.sessionPoints[login].cpEnabled = d.cp_enabled !== false;
             if (d.balance) state.sessionPoints[login].balance = d.balance;
@@ -254,7 +259,7 @@ socket.on('channel_watching', (data) => {
     setWatchingChannel(data.id);
     if (data.login) {
         updateChannelPointsDisplay(data.login, null);
-        fetch(`/api/channel-points/${data.login}`).then(r => r.json()).then(d => {
+        fetch(API_BASE + `/api/channel-points/${data.login}`).then(r => r.json()).then(d => {
             if (!state.sessionPoints[data.login]) state.sessionPoints[data.login] = { balance: 0, claimed: 0 };
             state.sessionPoints[data.login].cpEnabled = d.cp_enabled !== false;
             if (d.balance) state.sessionPoints[data.login].balance = d.balance;
@@ -433,7 +438,7 @@ function renderPointsTracker() {
 // ==================== Drop History ====================
 async function loadDropHistory() {
     try {
-        const resp = await fetch("/api/drops-history");
+        const resp = await fetch(API_BASE + "/api/drops-history");
         const data = await resp.json();
         renderDropHistory(data);
     } catch (e) { console.error("Failed to load drop history", e); }
@@ -530,7 +535,7 @@ async function updateStats() {
     const el = document.getElementById("stat-points-session");
     if (el) el.textContent = getDailyPoints().toLocaleString();
     try {
-        const resp = await fetch("/api/drops-history");
+        const resp = await fetch(API_BASE + "/api/drops-history");
         const drops = await resp.json();
         const today = new Date().toDateString();
         const todayCount = drops.filter(d => new Date(d.timestamp).toDateString() === today).length;
@@ -1532,7 +1537,7 @@ function updateSettingsUI(settings) {
     renderInventory();
 
     // Update Discord bot pairing status (fetch live since WebSocket data lacks bot_paired)
-    fetch('/api/pair/status').then(r => r.json()).then(d => updateBotPairedUI(d.paired)).catch(() => updateBotPairedUI(settings.bot_paired || false));
+    fetch(API_BASE + '/api/pair/status').then(r => r.json()).then(d => updateBotPairedUI(d.paired)).catch(() => updateBotPairedUI(settings.bot_paired || false));
 }
 
 function updateBotPairedUI(paired) {
@@ -1560,7 +1565,7 @@ function updateBotPairedUI(paired) {
 
 async function loadBotChannelConfig() {
     try {
-        const res = await fetch('/api/discord-bot/config');
+        const res = await fetch(API_BASE + '/api/discord-bot/config');
         if (!res.ok) return;
         const data = await res.json();
         const channels = data.channels || {};
@@ -1581,7 +1586,7 @@ async function loadBotChannelConfig() {
 async function botClearChannel(type) {
     if (!confirm(`Clear the ${type} notification channel?`)) return;
     try {
-        const res = await fetch(`/api/discord-bot/config/channel/${type}`, { method: 'DELETE' });
+        const res = await fetch(API_BASE + `/api/discord-bot/config/channel/${type}`, { method: 'DELETE' });
         if (!res.ok) throw new Error(await res.text());
         loadBotChannelConfig();
     } catch (e) {
@@ -1595,7 +1600,7 @@ async function botGenerateCode() {
     const btn = document.getElementById('bot-generate-btn');
     if (btn) { btn.disabled = true; btn.textContent = state.translations.gui?.settings?.discord_bot?.generating || 'Generating...'; }
     try {
-        const res = await fetch('/api/pair/generate', { method: 'POST' });
+        const res = await fetch(API_BASE + '/api/pair/generate', { method: 'POST' });
         if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
         const serverUrl = window.location.origin;
@@ -1624,7 +1629,7 @@ async function botGenerateCode() {
 async function botRevoke() {
     if (!confirm(state.translations.gui?.settings?.discord_bot?.disconnect_confirm || 'Disconnect the Discord bot?')) return;
     try {
-        const res = await fetch('/api/pair/revoke', { method: 'DELETE' });
+        const res = await fetch(API_BASE + '/api/pair/revoke', { method: 'DELETE' });
         if (!res.ok) throw new Error(await res.text());
         updateBotPairedUI(false);
         const box = document.getElementById('bot-pair-code-box');
@@ -1946,7 +1951,7 @@ function flashTitle() {
 
 async function selectChannel(channelId) {
     try {
-        const response = await fetch('/api/channels/select', {
+        const response = await fetch(API_BASE + '/api/channels/select', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ channel_id: channelId })
@@ -1965,7 +1970,7 @@ async function selectChannel(channelId) {
 
 async function exitManualMode() {
     try {
-        const response = await fetch('/api/mode/exit-manual', {
+        const response = await fetch(API_BASE + '/api/mode/exit-manual', {
             method: 'POST'
         });
 
@@ -1985,7 +1990,7 @@ async function submitLogin() {
     const token = document.getElementById('2fa-token').value;
 
     try {
-        await fetch('/api/login', {
+        await fetch(API_BASE + '/api/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password, token })
@@ -1998,7 +2003,7 @@ async function submitLogin() {
 async function confirmOAuth() {
     // Signal that OAuth code has been entered
     try {
-        await fetch('/api/oauth/confirm', {
+        await fetch(API_BASE + '/api/oauth/confirm', {
             method: 'POST'
         });
         // Hide the OAuth form and show waiting message
@@ -2032,7 +2037,7 @@ async function verifyProxy() {
     }
 
     try {
-        const response = await fetch('/api/settings/verify-proxy', {
+        const response = await fetch(API_BASE + '/api/settings/verify-proxy', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ proxy: proxyUrl })
@@ -2081,7 +2086,7 @@ async function saveSettings() {
     };
 
     try {
-        await fetch('/api/settings', {
+        await fetch(API_BASE + '/api/settings', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(settings)
@@ -2128,7 +2133,7 @@ async function testWebhook(type) {
     const url = document.getElementById(id)?.value.trim();
     if (!url) { alert('No webhook URL set.'); return; }
     try {
-        const resp = await fetch('/api/settings/test-webhook', {
+        const resp = await fetch(API_BASE + '/api/settings/test-webhook', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ url })
@@ -2142,7 +2147,7 @@ async function testWebhook(type) {
 
 async function fetchAndPopulateLanguages() {
     try {
-        const response = await fetch('/api/languages');
+        const response = await fetch(API_BASE + '/api/languages');
         const data = await response.json();
 
         const languageSelect = document.getElementById('language');
@@ -2178,7 +2183,7 @@ async function fetchAndPopulateLanguages() {
 
 async function fetchAndApplyTranslations() {
     try {
-        const response = await fetch('/api/translations');
+        const response = await fetch(API_BASE + '/api/translations');
         const data = await response.json();
 
         state.translations = data;
@@ -2549,7 +2554,7 @@ function applyTranslations(t) {
 
 async function reloadCampaigns() {
     try {
-        await fetch('/api/reload', { method: 'POST' });
+        await fetch(API_BASE + '/api/reload', { method: 'POST' });
         // Status will update via Socket.IO when backend starts operation
     } catch (error) {
         console.error('Failed to reload:', error);
@@ -2572,15 +2577,38 @@ function switchTab(tabName) {
     document.getElementById(`${tabName}-tab`).classList.add('active');
     document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
     if (tabName === 'history') loadDropHistory();
-    if (tabName === 'settings') fetch('/api/pair/status').then(r => r.json()).then(d => updateBotPairedUI(d.paired)).catch(() => {});
+    if (tabName === 'settings') fetch(API_BASE + '/api/pair/status').then(r => r.json()).then(d => updateBotPairedUI(d.paired)).catch(() => {});
 }
 
 // ==================== Event Listeners ====================
+
+function switchAccount(num) {
+    if (num === ACC_NUM) return;
+    const url = new URL(location.href);
+    if (num === 2) url.searchParams.set('acc', '2');
+    else url.searchParams.delete('acc');
+    location.href = url.toString();
+}
+
+function initAccountTabs() {
+    const btn1 = document.getElementById('acc-btn-1');
+    const btn2 = document.getElementById('acc-btn-2');
+    if (!btn1 || !btn2) return;
+    if (ACC_NUM === 2) {
+        btn1.classList.remove('active-acc');
+        btn2.classList.add('active-acc');
+    }
+    fetch(API_BASE + '/api/instance').then(r => r.json()).then(d => {
+        const btn = ACC_NUM === 2 ? btn2 : btn1;
+        if (d.label) btn.textContent = d.label;
+    }).catch(() => {});
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     // Fetch and display version information
     fetchAndDisplayVersion();
     updateStats();
+    initAccountTabs();
     document.getElementById("history-refresh-btn")?.addEventListener("click", loadDropHistory);
 
     // Tab switching
@@ -2662,7 +2690,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const logins = Object.keys(state.sessionPoints);
         await Promise.all(logins.map(async login => {
             try {
-                const resp = await fetch(`/api/channel-points/${login}`);
+                const resp = await fetch(API_BASE + `/api/channel-points/${login}`);
                 const data = await resp.json();
                 if (data.balance !== undefined) {
                     if (!state.sessionPoints[login]) state.sessionPoints[login] = { balance: 0, claimed: 0 };
@@ -2678,7 +2706,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const btn = document.getElementById("qc-check-drops-btn");
         if (btn) { btn.disabled = true; btn.style.opacity = "0.6"; }
         try {
-            await fetch("/api/reload", { method: "POST" });
+            await fetch(API_BASE + "/api/reload", { method: "POST" });
         } catch (e) { addConsoleLine("Error: " + e.message); }
         setTimeout(() => { if (btn) { btn.disabled = false; btn.style.opacity = ""; } }, 3000);
     });
@@ -2687,7 +2715,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const btn = document.getElementById("qc-skip-btn");
         if (btn) { btn.style.opacity = "0.5"; btn.style.pointerEvents = "none"; }
         try {
-            const r = await fetch("/api/skip-game", { method: "POST" });
+            const r = await fetch(API_BASE + "/api/skip-game", { method: "POST" });
             if (!r.ok) {
                 const d = await r.json().catch(() => ({}));
                 alert(d.detail || `Skip failed (${r.status})`);
@@ -2737,7 +2765,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('system-reload-btn')?.addEventListener('click', async () => {
         const status = document.getElementById('system-status');
         try {
-            await fetch('/api/reload', { method: 'POST' });
+            await fetch(API_BASE + '/api/reload', { method: 'POST' });
             if (status) { status.textContent = 'Campaigns reload triggered.'; status.className = 'system-status success'; }
         } catch (e) {
             if (status) { status.textContent = 'Error: ' + e.message; status.className = 'system-status error'; }
@@ -2748,7 +2776,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const status = document.getElementById('system-status');
         if (!confirm('Restart the miner? PM2 will restart it automatically.')) return;
         try {
-            await fetch('/api/restart', { method: 'POST' });
+            await fetch(API_BASE + '/api/restart', { method: 'POST' });
             if (status) { status.textContent = 'Miner restarting via PM2...'; status.className = 'system-status success'; }
         } catch (e) {
             if (status) { status.textContent = 'Error: ' + e.message; status.className = 'system-status error'; }
@@ -2761,7 +2789,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('qc-switch-btn')?.addEventListener('click', async () => {
         try {
-            const r = await fetch('/api/idle-watch/switch', { method: 'POST' });
+            const r = await fetch(API_BASE + '/api/idle-watch/switch', { method: 'POST' });
             if (!r.ok) {
                 const d = await r.json().catch(() => ({}));
                 alert(d.detail || 'Switch failed');
@@ -2773,7 +2801,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('qc-idle-btn')?.addEventListener('click', async () => {
         try {
-            const r = await fetch('/api/idle-watch/switch', { method: 'POST' });
+            const r = await fetch(API_BASE + '/api/idle-watch/switch', { method: 'POST' });
             if (!r.ok) {
                 const d = await r.json().catch(() => ({}));
                 alert(d.detail || 'No idle channels online');
@@ -2800,7 +2828,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const statusEl = document.getElementById('accounts-status');
         if (!listEl) return;
         try {
-            const r = await fetch('/api/accounts');
+            const r = await fetch(API_BASE + '/api/accounts');
             const data = await r.json();
             listEl.replaceChildren();
             if (data.accounts.length === 0) {
@@ -2841,7 +2869,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const newLabel = input.value.trim();
                         if (!newLabel || newLabel === acc.label) { loadAccounts(); return; }
                         try {
-                            const r = await fetch(`/api/accounts/${encodeURIComponent(acc.label)}`, {
+                            const r = await fetch(API_BASE + `/api/accounts/${encodeURIComponent(acc.label)}`, {
                                 method: 'PATCH',
                                 headers: {'Content-Type':'application/json'},
                                 body: JSON.stringify({new_label: newLabel}),
@@ -2879,7 +2907,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     switchBtn.addEventListener('click', async () => {
                         if (!confirm(`Switch to account "${acc.label}"? The miner will restart.`)) return;
                         try {
-                            await fetch('/api/accounts/switch', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({label: acc.label}) });
+                            await fetch(API_BASE + '/api/accounts/switch', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({label: acc.label}) });
                             if (statusEl) { statusEl.textContent = `Switched to ${acc.label}, restarting...`; statusEl.style.display = 'block'; statusEl.style.color = '#3ddc84'; }
                         } catch (e) {
                             if (statusEl) { statusEl.textContent = 'Error: ' + e.message; statusEl.style.display = 'block'; statusEl.style.color = '#f55'; }
@@ -2893,7 +2921,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     delBtn.addEventListener('click', async () => {
                         if (!confirm(`Delete account "${acc.label}"?`)) return;
                         try {
-                            await fetch(`/api/accounts/${encodeURIComponent(acc.label)}`, { method: 'DELETE' });
+                            await fetch(API_BASE + `/api/accounts/${encodeURIComponent(acc.label)}`, { method: 'DELETE' });
                             loadAccounts();
                         } catch (e) {
                             if (statusEl) { statusEl.textContent = 'Error: ' + e.message; statusEl.style.display = 'block'; statusEl.style.color = '#f55'; }
@@ -2915,7 +2943,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const label = labelInput?.value.trim();
         if (!label) { alert('Enter a label first.'); return; }
         try {
-            const r = await fetch('/api/accounts/add', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({label}) });
+            const r = await fetch(API_BASE + '/api/accounts/add', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({label}) });
             if (!r.ok) { const d = await r.json().catch(() => ({})); alert(d.detail || 'Error'); return; }
             if (labelInput) labelInput.value = '';
             if (statusEl) { statusEl.textContent = `Account "${label}" added, miner restarting for login...`; statusEl.style.display = 'block'; statusEl.style.color = '#3ddc84'; }

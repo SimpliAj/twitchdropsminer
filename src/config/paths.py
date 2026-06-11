@@ -36,8 +36,10 @@ def _merge_vars(base_vars: dict[str, Any], vars: dict[str, Any]) -> None:
 
 
 # Base Paths - environment-specific resolution
+import os as _os
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-DATA_DIR = PROJECT_ROOT / "data"
+_data_dir_env = _os.environ.get("TDM_DATA_DIR")
+DATA_DIR = Path(_data_dir_env) if _data_dir_env else PROJECT_ROOT / "data"
 
 # Ensure data directory exists
 if not DATA_DIR.exists():
