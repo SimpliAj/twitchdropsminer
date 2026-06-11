@@ -17,7 +17,8 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from starlette.middleware.base import BaseHTTPMiddleware
 
-_DATA_DIR = Path(__file__).parent.parent.parent / "data"
+import os as _os
+_DATA_DIR = Path(_os.environ.get("TDM_DATA_DIR", str(Path(__file__).parent.parent.parent / "data")))
 _WEB_CONFIG_FILE = _DATA_DIR / "web_config.json"
 _BOT_TOKEN_FILE = _DATA_DIR / "discord_bot_token.json"
 _PAIRINGS_FILE = Path(__file__).parent.parent.parent / "discord_bot" / "pairings.json"
@@ -135,6 +136,7 @@ _UNPROTECTED_PATHS = {
     "/__setup", "/__setup_post",
     "/favicon.ico", "/logo.png", "/manifest.json",
     "/api/pair/claim",  # Discord bot pairing — no auth needed to exchange code
+    "/api/instance",   # Instance info for switcher — public
 }
 _UNPROTECTED_PREFIXES = ("/static/",)
 
@@ -683,6 +685,14 @@ async def test_webhook(request: Request):
         return {"success": False, "message": str(e)}
 
 
+@app.get("/api/instance")
+async def get_instance():
+    import os as _eos
+    port = int(_eos.environ.get("TDM_PORT", 8080))
+    label = _eos.environ.get("TDM_LABEL", f"Instance {port}")
+    return {"port": port, "label": label}
+
+
 @app.get("/api/version")
 async def get_version():
     """Get current application version and check for updates"""
@@ -910,8 +920,15 @@ def _get_bot_pairing() -> dict | None:
     try:
         data = json.loads(_PAIRINGS_FILE.read_text())
         for uid, entry in data.get("users", {}).items():
-            if entry.get("token") == token:
-                return {"discord_user_id": uid, **entry}
+            # New nested format: {uid: {name: pairing}}
+            if isinstance(entry, dict) and "url" not in entry:
+                for name, pairing in entry.items():
+                    if isinstance(pairing, dict) and pairing.get("token") == token:
+                        return {"discord_user_id": uid, "_pairing_name": name, **pairing}
+            else:
+                # Old flat format
+                if entry.get("token") == token:
+                    return {"discord_user_id": uid, "_pairing_name": "default", **entry}
     except Exception:
         pass
     return None
@@ -921,21 +938,45 @@ def _save_pairing_channels(discord_user_id: str, channels: dict) -> None:
     if not _PAIRINGS_FILE.exists():
         return
     data = json.loads(_PAIRINGS_FILE.read_text())
-    if discord_user_id in data.get("users", {}):
+    users = data.get("users", {})
+    if discord_user_id not in users:
+        return
+    entry = users[discord_user_id]
+    if "url" not in entry:
+        # New nested format — find which named pairing belongs to this instance
+        token = _get_bot_token()
+        for name, pairing in entry.items():
+            if isinstance(pairing, dict) and pairing.get("token") == token:
+                data["users"][discord_user_id][name]["channels"] = channels
+                break
+    else:
         data["users"][discord_user_id]["channels"] = channels
-        _PAIRINGS_FILE.write_text(json.dumps(data, indent=2))
+    _PAIRINGS_FILE.write_text(json.dumps(data, indent=2))
 
 
 def _save_pairing_field(discord_user_id: str, field: str, value) -> None:
     if not _PAIRINGS_FILE.exists():
         return
     data = json.loads(_PAIRINGS_FILE.read_text())
-    if discord_user_id in data.get("users", {}):
+    users = data.get("users", {})
+    if discord_user_id not in users:
+        return
+    entry = users[discord_user_id]
+    if "url" not in entry:
+        token = _get_bot_token()
+        for name, pairing in entry.items():
+            if isinstance(pairing, dict) and pairing.get("token") == token:
+                if value is None:
+                    data["users"][discord_user_id][name].pop(field, None)
+                else:
+                    data["users"][discord_user_id][name][field] = value
+                break
+    else:
         if value is None:
             data["users"][discord_user_id].pop(field, None)
         else:
             data["users"][discord_user_id][field] = value
-        _PAIRINGS_FILE.write_text(json.dumps(data, indent=2))
+    _PAIRINGS_FILE.write_text(json.dumps(data, indent=2))
 
 
 def _normalize_channel_entries(val) -> list[dict]:

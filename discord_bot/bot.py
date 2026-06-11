@@ -34,11 +34,20 @@ COLOR_ERROR = 0xEB4A4A
 COLOR_PAUSED = 0xFF9900
 
 
+def _migrate_users_data(data: dict) -> dict:
+    """Migrate old format {uid: pairing} to new format {uid: {name: pairing}}."""
+    for uid, val in list(data.items()):
+        if isinstance(val, dict) and "url" in val:
+            data[uid] = {"default": val}
+    return data
+
+
 def load_pairings() -> dict:
     if PAIRINGS_PATH.exists():
         with open(PAIRINGS_PATH) as f:
             data = json.load(f)
-        return data.get("users", {})
+        users = data.get("users", {})
+        return _migrate_users_data(users)
     return {}
 
 
@@ -47,9 +56,14 @@ def save_pairings(users: dict) -> None:
     if PAIRINGS_PATH.exists():
         try:
             existing = json.loads(PAIRINGS_PATH.read_text()).get("users", {})
-            for uid, entry in users.items():
-                if uid in existing and existing[uid].get("profile_name"):
-                    entry.setdefault("profile_name", existing[uid]["profile_name"])
+            # existing may be old or new format — migrate first
+            existing = _migrate_users_data(existing)
+            for uid, pairings_dict in users.items():
+                if uid in existing:
+                    for name, pairing in pairings_dict.items():
+                        existing_pairing = existing[uid].get(name, {})
+                        if existing_pairing.get("profile_name"):
+                            pairing.setdefault("profile_name", existing_pairing["profile_name"])
         except Exception:
             pass
     with open(PAIRINGS_PATH, "w") as f:
@@ -69,8 +83,8 @@ def save_live_stats(refs: dict[int, int]) -> None:
         json.dump({str(k): v for k, v in refs.items()}, f, indent=2)
 
 
-def get_user_pairing(users: dict, user_id: int) -> dict | None:
-    return users.get(str(user_id))
+def get_user_pairing(users: dict, user_id: int, name: str = "default") -> dict | None:
+    return users.get(str(user_id), {}).get(name)
 
 
 def _channel_ids(pairing: dict, type: str) -> list[int]:
@@ -264,18 +278,30 @@ async def build_dashboard_embed(session: aiohttp.ClientSession, url: str, token:
     except Exception:
         pass
 
+    # Notification channels
+    if pairing:
+        notif_lines = []
+        for type_key, emoji in [("drops", "🎁"), ("points", "💰")]:
+            entries = _channel_entries(pairing, type_key)
+            if entries:
+                ch_strs = [f"<#{e['id']}>" + (f" *({e['guild']})*" if e.get("guild") else "") for e in entries]
+                notif_lines.append(f"{emoji} {type_key.capitalize()}: {', '.join(ch_strs)}")
+        if notif_lines:
+            embed.add_field(name="📢 Notifications", value="\n".join(notif_lines), inline=False)
+
     make_footer(embed, pairing, " • Auto-updates on change")
     return embed
 
 
 class DashboardView(discord.ui.View):
-    def __init__(self, owner_id: int, bot: "TwitchDropsBot"):
+    def __init__(self, owner_id: int, bot: "TwitchDropsBot", pairing_name: str = "default"):
         super().__init__(timeout=None)
         self.owner_id = owner_id
         self.bot = bot
+        self.pairing_name = pairing_name
 
     def _pairing(self) -> dict | None:
-        return self.bot.users_data.get(str(self.owner_id))
+        return self.bot.users_data.get(str(self.owner_id), {}).get(self.pairing_name)
 
     async def _owner_check(self, interaction: discord.Interaction) -> bool:
         if interaction.user.id != self.owner_id:
@@ -292,7 +318,7 @@ class DashboardView(discord.ui.View):
             return
         async with aiohttp.ClientSession() as session:
             new_embed = await build_dashboard_embed(session, pairing["url"], pairing["token"], pairing)
-        await interaction.message.edit(embed=new_embed, view=DashboardView(self.owner_id, self.bot))
+        await interaction.message.edit(embed=new_embed, view=DashboardView(self.owner_id, self.bot, self.pairing_name))
 
     @discord.ui.button(label="⏸️ Pause/Resume", style=discord.ButtonStyle.primary, row=0)
     async def toggle_pause(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -309,7 +335,7 @@ class DashboardView(discord.ui.View):
                 paused = status.get("paused", False)
                 await api_post(session, pairing["url"], pairing["token"], "/api/resume" if paused else "/api/pause")
                 new_embed = await build_dashboard_embed(session, pairing["url"], pairing["token"])
-            await interaction.message.edit(embed=new_embed, view=DashboardView(self.owner_id, self.bot))
+            await interaction.message.edit(embed=new_embed, view=DashboardView(self.owner_id, self.bot, self.pairing_name))
         except Exception as e:
             log.debug("Pause toggle error: %s", e)
 
@@ -326,7 +352,7 @@ class DashboardView(discord.ui.View):
             async with aiohttp.ClientSession() as session:
                 await api_post(session, pairing["url"], pairing["token"], "/api/idle-watch/switch", {})
                 new_embed = await build_dashboard_embed(session, pairing["url"], pairing["token"])
-            await interaction.message.edit(embed=new_embed, view=DashboardView(self.owner_id, self.bot))
+            await interaction.message.edit(embed=new_embed, view=DashboardView(self.owner_id, self.bot, self.pairing_name))
         except Exception as e:
             log.debug("Switch mode error: %s", e)
 
@@ -402,7 +428,7 @@ class DashboardView(discord.ui.View):
         try:
             async with aiohttp.ClientSession() as session:
                 new_embed = await build_dashboard_embed(session, pairing["url"], pairing["token"])
-            await interaction.message.edit(embed=new_embed, view=DashboardView(self.owner_id, self.bot))
+            await interaction.message.edit(embed=new_embed, view=DashboardView(self.owner_id, self.bot, self.pairing_name))
         except Exception as e:
             log.debug("Refresh error: %s", e)
 
@@ -425,18 +451,19 @@ class TwitchDropsBot(discord.Client):
         cp_totals: dict[str, int] = {}
         cp_today_total = 0
 
-        for uid, pairing in self.users_data.items():
-            try:
-                history = await api_get(session, pairing["url"], pairing["token"], "/api/drops-history")
-                if isinstance(history, list):
-                    total_drops += len(history)
-                    today_drops += sum(1 for d in history if d.get("timestamp", "").startswith(today_str))
-            except Exception:
-                pass
-            for ch, bal in pairing.get("last_cp", {}).items():
-                cp_totals[ch] = max(cp_totals.get(ch, 0), bal)
-            if pairing.get("cp_today_date") == today_str:
-                cp_today_total += pairing.get("cp_today", 0)
+        for uid, pairings_dict in self.users_data.items():
+            for name, pairing in pairings_dict.items():
+                try:
+                    history = await api_get(session, pairing["url"], pairing["token"], "/api/drops-history")
+                    if isinstance(history, list):
+                        total_drops += len(history)
+                        today_drops += sum(1 for d in history if d.get("timestamp", "").startswith(today_str))
+                except Exception:
+                    pass
+                for ch, bal in pairing.get("last_cp", {}).items():
+                    cp_totals[ch] = max(cp_totals.get(ch, 0), bal)
+                if pairing.get("cp_today_date") == today_str:
+                    cp_today_total += pairing.get("cp_today", 0)
 
         total_cp = sum(cp_totals.values())
 
@@ -476,175 +503,184 @@ class TwitchDropsBot(discord.Client):
             return
         # Reload from disk to pick up external changes (e.g. profile_name set by web app)
         fresh = load_pairings()
-        for uid, fresh_pairing in fresh.items():
+        for uid, fresh_pairings in fresh.items():
             if uid in self.users_data:
-                name = fresh_pairing.get("profile_name") or ""
-                self.users_data[uid]["profile_name"] = name
+                for name, fresh_pairing in fresh_pairings.items():
+                    if name in self.users_data[uid]:
+                        profile_name = fresh_pairing.get("profile_name") or ""
+                        self.users_data[uid][name]["profile_name"] = profile_name
+
         async with aiohttp.ClientSession() as session:
-            for user_id, pairing in list(self.users_data.items()):
-                try:
-                    drop_count = pairing.get("last_drop_count", 0)
-                    watching_channel = None
-                    cp_balance = None
-                    paused = False
-
-                    # Check for new drops
-                    history = await api_get(session, pairing["url"], pairing["token"], "/api/drops-history")
-                    if isinstance(history, list):
-                        drop_count = len(history)
-                        last_count = pairing.get("last_drop_count", 0)
-                        if drop_count > last_count:
-                            new_drops = history[:drop_count - last_count]  # newest-first list
-                            for drops_ch_id in _channel_ids(pairing, "drops"):
-                                ch = self.get_channel(drops_ch_id)
-                                if ch is None:
-                                    try:
-                                        ch = await self.fetch_channel(drops_ch_id)
-                                    except Exception:
-                                        ch = None
-                                if ch:
-                                    for drop in new_drops[-10:]:
-                                        game = drop.get("game", "Unknown")
-                                        drop_name = drop.get("drop", "")
-                                        reward = drop.get("reward") or drop_name or "Unknown"
-                                        image_url = drop.get("image_url")
-                                        embed = discord.Embed(title="🎁 Drop Claimed!", color=COLOR_TWITCH)
-                                        embed.add_field(name="Game", value=game, inline=False)
-                                        if drop_name and drop_name != reward:
-                                            embed.add_field(name="Drop", value=drop_name, inline=False)
-                                        embed.add_field(name="Reward", value=f"**{reward}**", inline=False)
-                                        if image_url:
-                                            embed.set_thumbnail(url=image_url)
-                                        footer = get_footer_text(pairing)
-                                        embed.set_footer(text=footer)
-                                        embed.timestamp = datetime.now(timezone.utc)
-                                        await ch.send(embed=embed)
-                                    log.info("Drops notification sent to %s (%d new drops)", drops_ch_id, len(new_drops))
-                                else:
-                                    log.warning("Drops channel %s not found for user %s", drops_ch_id, user_id)
-                            self.users_data[user_id]["last_drop_count"] = drop_count
-                            save_pairings(self.users_data)
-
-                    # Channel points tracking
+            for user_id, pairings_dict in list(self.users_data.items()):
+                for pairing_name, pairing in list(pairings_dict.items()):
                     try:
-                        idle = await api_get(session, pairing["url"], pairing["token"], "/api/idle-watch/status")
-                        watching_channel = idle.get("watching")
-                        if watching_channel:
-                            cp_data = await api_get(session, pairing["url"], pairing["token"], f"/api/channel-points/{watching_channel}")
-                            cp_balance = cp_data.get("balance", 0)
-                            last_cp = pairing.get("last_cp", {})
-                            prev_balance = last_cp.get(watching_channel)
+                        drop_count = pairing.get("last_drop_count", 0)
+                        watching_channel = None
+                        cp_balance = None
+                        paused = False
 
-                            # last_notified_cp: balance at time of last notification (not last poll)
-                            last_notified = pairing.get("last_notified_cp", {}).get(watching_channel, prev_balance)
-
-                            if prev_balance is not None and cp_balance > prev_balance:
-                                gained_this_poll = cp_balance - prev_balance
-                                log.info("CP gain for %s on %s: +%d (prev=%d now=%d)", user_id, watching_channel, gained_this_poll, prev_balance, cp_balance)
-
-                                # Check if a chest was claimed since last notification
-                                last_chest = cp_data.get("last_chest", {})
-                                last_chest_ts = last_chest.get("ts", "")
-                                chest_bonus = last_chest.get("bonus", 0)
-                                last_seen_chest_ts = pairing.get("last_cp_meta", {}).get(watching_channel, {}).get("chest_ts", "")
-                                chest_new = (chest_bonus > 0 and last_chest_ts and last_chest_ts != last_seen_chest_ts)
-
-                                if chest_new:
-                                    # Total since last notification = chest + all watch points since then
-                                    total_since_notify = cp_balance - (last_notified or cp_balance - gained_this_poll)
-                                    watch_pts = max(0, total_since_notify - chest_bonus)
-                                    if watch_pts > 0:
-                                        desc = (
-                                            f"🎁 **Bonus Chest: +{chest_bonus:,} pts** on **{watching_channel}**\n"
-                                            f"📺 From watching: +{watch_pts:,} pts\n"
-                                            f"Balance: **{cp_balance:,} pts**"
-                                        )
+                        # Check for new drops
+                        history = await api_get(session, pairing["url"], pairing["token"], "/api/drops-history")
+                        if isinstance(history, list):
+                            drop_count = len(history)
+                            last_count = pairing.get("last_drop_count", 0)
+                            if drop_count > last_count:
+                                new_drops = history[:drop_count - last_count]  # newest-first list
+                                for drops_ch_id in _channel_ids(pairing, "drops"):
+                                    ch = self.get_channel(drops_ch_id)
+                                    if ch is None:
+                                        try:
+                                            ch = await self.fetch_channel(drops_ch_id)
+                                        except Exception:
+                                            ch = None
+                                    if ch:
+                                        for drop in new_drops[-10:]:
+                                            game = drop.get("game", "Unknown")
+                                            drop_name = drop.get("drop", "")
+                                            reward = drop.get("reward") or drop_name or "Unknown"
+                                            image_url = drop.get("image_url")
+                                            embed = discord.Embed(title="🎁 Drop Claimed!", color=COLOR_TWITCH)
+                                            embed.add_field(name="Game", value=game, inline=False)
+                                            if drop_name and drop_name != reward:
+                                                embed.add_field(name="Drop", value=drop_name, inline=False)
+                                            embed.add_field(name="Reward", value=f"**{reward}**", inline=False)
+                                            if image_url:
+                                                embed.set_thumbnail(url=image_url)
+                                            footer = get_footer_text(pairing)
+                                            embed.set_footer(text=footer)
+                                            embed.timestamp = datetime.now(timezone.utc)
+                                            await ch.send(embed=embed)
+                                        log.info("Drops notification sent to %s (%d new drops)", drops_ch_id, len(new_drops))
                                     else:
+                                        log.warning("Drops channel %s not found for user %s/%s", drops_ch_id, user_id, pairing_name)
+                                self.users_data[user_id][pairing_name]["last_drop_count"] = drop_count
+                                save_pairings(self.users_data)
+
+                        # Channel points tracking
+                        try:
+                            idle = await api_get(session, pairing["url"], pairing["token"], "/api/idle-watch/status")
+                            watching_channel = idle.get("watching")
+                            if watching_channel:
+                                cp_data = await api_get(session, pairing["url"], pairing["token"], f"/api/channel-points/{watching_channel}")
+                                cp_balance = cp_data.get("balance", 0)
+                                last_cp = pairing.get("last_cp", {})
+                                prev_balance = last_cp.get(watching_channel)
+
+                                # last_notified_cp: balance at time of last notification (not last poll)
+                                last_notified = pairing.get("last_notified_cp", {}).get(watching_channel, prev_balance)
+
+                                if prev_balance is not None and cp_balance > prev_balance:
+                                    gained_this_poll = cp_balance - prev_balance
+                                    log.info("CP gain for %s/%s on %s: +%d (prev=%d now=%d)", user_id, pairing_name, watching_channel, gained_this_poll, prev_balance, cp_balance)
+
+                                    # Check if a chest was claimed since last notification
+                                    last_chest = cp_data.get("last_chest", {})
+                                    last_chest_ts = last_chest.get("ts", "")
+                                    chest_bonus = last_chest.get("bonus", 0)
+                                    last_seen_chest_ts = pairing.get("last_cp_meta", {}).get(watching_channel, {}).get("chest_ts", "")
+                                    chest_new = (chest_bonus > 0 and last_chest_ts and last_chest_ts != last_seen_chest_ts)
+
+                                    if chest_new:
+                                        # Total since last notification = chest + all watch points since then
+                                        total_since_notify = cp_balance - (last_notified or cp_balance - gained_this_poll)
+                                        watch_pts = max(0, total_since_notify - chest_bonus)
+                                        if watch_pts > 0:
+                                            desc = (
+                                                f"🎁 **Bonus Chest: +{chest_bonus:,} pts** on **{watching_channel}**\n"
+                                                f"📺 From watching: +{watch_pts:,} pts\n"
+                                                f"Balance: **{cp_balance:,} pts**"
+                                            )
+                                        else:
+                                            desc = (
+                                                f"🎁 **Bonus Chest: +{chest_bonus:,} pts** on **{watching_channel}**\n"
+                                                f"Balance: **{cp_balance:,} pts**"
+                                            )
+                                        notify = True
+                                    elif gained_this_poll >= 25:
                                         desc = (
-                                            f"🎁 **Bonus Chest: +{chest_bonus:,} pts** on **{watching_channel}**\n"
+                                            f"📺 **+{gained_this_poll:,} pts** from watching **{watching_channel}**\n"
                                             f"Balance: **{cp_balance:,} pts**"
                                         )
-                                    notify = True
-                                elif gained_this_poll >= 25:
-                                    desc = (
-                                        f"📺 **+{gained_this_poll:,} pts** from watching **{watching_channel}**\n"
-                                        f"Balance: **{cp_balance:,} pts**"
-                                    )
-                                    notify = True
-                                else:
-                                    notify = False
+                                        notify = True
+                                    else:
+                                        notify = False
 
-                                if notify:
-                                    for pts_ch_id in _channel_ids(pairing, "points"):
-                                        pts_ch = self.get_channel(pts_ch_id)
-                                        if pts_ch is None:
-                                            try:
-                                                pts_ch = await self.fetch_channel(pts_ch_id)
-                                            except Exception as fe:
-                                                log.warning("Could not fetch points channel %s: %s", pts_ch_id, fe)
-                                                pts_ch = None
-                                        if pts_ch:
-                                            embed = discord.Embed(
-                                                title="💰 Channel Points",
-                                                description=desc,
-                                                color=COLOR_TWITCH,
-                                            )
-                                            make_footer(embed, pairing)
-                                            await pts_ch.send(embed=embed)
-                                            log.info("CP notification sent to channel %s", pts_ch_id)
-                                        else:
-                                            log.warning("Points channel %s not found for user %s", pts_ch_id, user_id)
+                                    if notify:
+                                        for pts_ch_id in _channel_ids(pairing, "points"):
+                                            pts_ch = self.get_channel(pts_ch_id)
+                                            if pts_ch is None:
+                                                try:
+                                                    pts_ch = await self.fetch_channel(pts_ch_id)
+                                                except Exception as fe:
+                                                    log.warning("Could not fetch points channel %s: %s", pts_ch_id, fe)
+                                                    pts_ch = None
+                                            if pts_ch:
+                                                embed = discord.Embed(
+                                                    title="💰 Channel Points",
+                                                    description=desc,
+                                                    color=COLOR_TWITCH,
+                                                )
+                                                make_footer(embed, pairing)
+                                                await pts_ch.send(embed=embed)
+                                                log.info("CP notification sent to channel %s", pts_ch_id)
+                                            else:
+                                                log.warning("Points channel %s not found for user %s/%s", pts_ch_id, user_id, pairing_name)
 
-                                    # Update last_notified_cp so next chest diff is calculated correctly
-                                    self.users_data[user_id].setdefault("last_notified_cp", {})[watching_channel] = cp_balance
-                                    if chest_new:
-                                        self.users_data[user_id].setdefault("last_cp_meta", {}).setdefault(watching_channel, {})["chest_ts"] = last_chest_ts
-                                    save_pairings(self.users_data)
+                                        # Update last_notified_cp so next chest diff is calculated correctly
+                                        self.users_data[user_id][pairing_name].setdefault("last_notified_cp", {})[watching_channel] = cp_balance
+                                        if chest_new:
+                                            self.users_data[user_id][pairing_name].setdefault("last_cp_meta", {}).setdefault(watching_channel, {})["chest_ts"] = last_chest_ts
+                                        save_pairings(self.users_data)
 
-                            # Track today's earned CP (reset on date change)
-                            from zoneinfo import ZoneInfo as _ZI
-                            today_str_cp = datetime.now(_ZI("Europe/Vienna")).strftime("%Y-%m-%d")
-                            if pairing.get("cp_today_date") != today_str_cp:
-                                self.users_data[user_id]["cp_today"] = 0
-                                self.users_data[user_id]["cp_today_date"] = today_str_cp
-                            if prev_balance is not None and cp_balance > prev_balance:
-                                self.users_data[user_id]["cp_today"] = pairing.get("cp_today", 0) + (cp_balance - prev_balance)
+                                # Track today's earned CP (reset on date change)
+                                from zoneinfo import ZoneInfo as _ZI
+                                today_str_cp = datetime.now(_ZI("Europe/Vienna")).strftime("%Y-%m-%d")
+                                if pairing.get("cp_today_date") != today_str_cp:
+                                    self.users_data[user_id][pairing_name]["cp_today"] = 0
+                                    self.users_data[user_id][pairing_name]["cp_today_date"] = today_str_cp
+                                if prev_balance is not None and cp_balance > prev_balance:
+                                    new_cp_today = pairing.get("cp_today", 0) + (cp_balance - prev_balance)
+                                    self.users_data[user_id][pairing_name]["cp_today"] = new_cp_today
+                                    try:
+                                        await api_post(session, pairing["url"], pairing["token"], "/api/daily-points", {"total": new_cp_today})
+                                    except Exception:
+                                        pass
 
-                            self.users_data[user_id].setdefault("last_cp", {})[watching_channel] = cp_balance
-                            save_pairings(self.users_data)
+                                self.users_data[user_id][pairing_name].setdefault("last_cp", {})[watching_channel] = cp_balance
+                                save_pairings(self.users_data)
+                        except Exception as e:
+                            log.debug("CP tracking error for %s/%s: %s", user_id, pairing_name, e)
+
+                        # Get paused state for state key
+                        try:
+                            status_data = await api_get(session, pairing["url"], pairing["token"], "/api/status")
+                            paused = status_data.get("paused", False)
+                        except Exception:
+                            pass
+
+                        # Update live dashboard embed only when state changed
+                        dashboard = pairing.get("dashboard_embed")
+                        if dashboard:
+                            state_key = f"{paused}|{watching_channel}|{cp_balance}|{drop_count}"
+                            last_state = pairing.get("last_embed_state", "")
+                            if state_key != last_state:
+                                ch = self.get_channel(int(dashboard["channel_id"]))
+                                if ch:
+                                    try:
+                                        msg = await ch.fetch_message(int(dashboard["message_id"]))
+                                        new_embed = await build_dashboard_embed(session, pairing["url"], pairing["token"], pairing)
+                                        view = DashboardView(int(user_id), self, pairing_name)
+                                        await msg.edit(embed=new_embed, view=view)
+                                        self.users_data[user_id][pairing_name]["last_embed_state"] = state_key
+                                        save_pairings(self.users_data)
+                                    except discord.NotFound:
+                                        self.users_data[user_id][pairing_name].pop("dashboard_embed", None)
+                                        save_pairings(self.users_data)
+                                    except Exception as e:
+                                        log.debug("Dashboard embed update error: %s", e)
+
                     except Exception as e:
-                        log.debug("CP tracking error for %s: %s", user_id, e)
-
-                    # Get paused state for state key
-                    try:
-                        status_data = await api_get(session, pairing["url"], pairing["token"], "/api/status")
-                        paused = status_data.get("paused", False)
-                    except Exception:
-                        pass
-
-                    # Update live dashboard embed only when state changed
-                    dashboard = pairing.get("dashboard_embed")
-                    if dashboard:
-                        state_key = f"{paused}|{watching_channel}|{cp_balance}|{drop_count}"
-                        last_state = pairing.get("last_embed_state", "")
-                        if state_key != last_state:
-                            ch = self.get_channel(int(dashboard["channel_id"]))
-                            if ch:
-                                try:
-                                    msg = await ch.fetch_message(int(dashboard["message_id"]))
-                                    new_embed = await build_dashboard_embed(session, pairing["url"], pairing["token"], pairing)
-                                    view = DashboardView(int(user_id), self)
-                                    await msg.edit(embed=new_embed, view=view)
-                                    self.users_data[user_id]["last_embed_state"] = state_key
-                                    save_pairings(self.users_data)
-                                except discord.NotFound:
-                                    self.users_data[user_id].pop("dashboard_embed", None)
-                                    save_pairings(self.users_data)
-                                except Exception as e:
-                                    log.debug("Dashboard embed update error: %s", e)
-
-                except Exception as e:
-                    log.debug("Poll error for user %s: %s", user_id, e)
+                        log.debug("Poll error for user %s/%s: %s", user_id, pairing_name, e)
 
             # Update live public stats embeds every 30 minutes
             import time as _time
@@ -684,9 +720,23 @@ def not_linked_embed() -> discord.Embed:
 
 def register_commands(bot: TwitchDropsBot):
 
+    async def name_autocomplete(interaction: discord.Interaction, current: str):
+        uid = str(interaction.user.id)
+        names = list(bot.users_data.get(uid, {}).keys())
+        if not names:
+            names = ["default"]
+        return [
+            app_commands.Choice(name=n, value=n)
+            for n in names if current.lower() in n.lower()
+        ][:25]
+
     @bot.tree.command(name="link", description="Link your TwitchDropsMiner dashboard")
-    @app_commands.describe(url="Dashboard URL (e.g. http://your-vps:8081)", code="Pairing code from Settings → Discord Bot")
-    async def cmd_link(interaction: discord.Interaction, url: str, code: str):
+    @app_commands.describe(
+        url="Dashboard URL (e.g. http://your-vps:8081)",
+        code="Pairing code from Settings → Discord Bot",
+        name="Instance name (default: 'default')",
+    )
+    async def cmd_link(interaction: discord.Interaction, url: str, code: str, name: str = "default"):
         await interaction.response.defer(ephemeral=True)
         try:
             async with aiohttp.ClientSession() as session:
@@ -704,15 +754,18 @@ def register_commands(bot: TwitchDropsBot):
                 return
 
             uid = str(interaction.user.id)
-            bot.users_data[uid] = {
+            if uid not in bot.users_data:
+                bot.users_data[uid] = {}
+            bot.users_data[uid][name] = {
                 "url": url.rstrip("/"),
                 "token": token,
                 "last_drop_count": 0,
                 "channels": {"drops": None, "logs": None},
             }
             save_pairings(bot.users_data)
-            log.info("User %s linked to %s", uid, url)
-            await interaction.followup.send(embed=success_embed(f"✅ Connected to `{url}`\n\nUse `/dashboard` to post a live stats embed with control buttons."), ephemeral=True)
+            log.info("User %s linked instance '%s' to %s", uid, name, url)
+            label = f"instance `{name}` " if name != "default" else ""
+            await interaction.followup.send(embed=success_embed(f"✅ Connected {label}to `{url}`\n\nUse `/dashboard` to post a live stats embed with control buttons."), ephemeral=True)
         except aiohttp.ClientError:
             await interaction.followup.send(embed=error_embed("❌ Dashboard unreachable. Is the URL correct?"), ephemeral=True)
         except Exception as e:
@@ -720,24 +773,33 @@ def register_commands(bot: TwitchDropsBot):
             await interaction.followup.send(embed=error_embed(f"❌ Error connecting: {e}"), ephemeral=True)
 
     @bot.tree.command(name="unlink", description="Unlink your dashboard")
-    async def cmd_unlink(interaction: discord.Interaction):
+    @app_commands.describe(name="Instance name to unlink (default: 'default')")
+    @app_commands.autocomplete(name=name_autocomplete)
+    async def cmd_unlink(interaction: discord.Interaction, name: str = "default"):
         uid = str(interaction.user.id)
-        if uid not in bot.users_data:
-            await interaction.response.send_message(embed=error_embed("❌ No dashboard linked."), ephemeral=True)
+        if uid not in bot.users_data or name not in bot.users_data[uid]:
+            await interaction.response.send_message(embed=error_embed(f"❌ No instance `{name}` linked."), ephemeral=True)
             return
-        del bot.users_data[uid]
+        del bot.users_data[uid][name]
+        if not bot.users_data[uid]:
+            del bot.users_data[uid]
         save_pairings(bot.users_data)
-        await interaction.response.send_message(embed=success_embed("Dashboard unlinked."), ephemeral=True)
+        label = f"instance `{name}`" if name != "default" else "dashboard"
+        await interaction.response.send_message(embed=success_embed(f"{label.capitalize()} unlinked."), ephemeral=True)
 
     @bot.tree.command(name="setchannel", description="Set notification channel for drops or channel points")
-    @app_commands.describe(type="What to post here: drops or points")
+    @app_commands.describe(
+        type="What to post here: drops or points",
+        name="Instance name (default: 'default')",
+    )
     @app_commands.choices(type=[
         app_commands.Choice(name="drops", value="drops"),
         app_commands.Choice(name="points", value="points"),
     ])
-    async def cmd_setchannel(interaction: discord.Interaction, type: str):
+    @app_commands.autocomplete(name=name_autocomplete)
+    async def cmd_setchannel(interaction: discord.Interaction, type: str, name: str = "default"):
         uid = str(interaction.user.id)
-        pairing = get_user_pairing(bot.users_data, interaction.user.id)
+        pairing = get_user_pairing(bot.users_data, interaction.user.id, name)
         if not pairing:
             await interaction.response.send_message(embed=not_linked_embed(), ephemeral=True)
             return
@@ -746,7 +808,7 @@ def register_commands(bot: TwitchDropsBot):
         guild_name = interaction.guild.name if interaction.guild else ""
         new_entry = {"id": channel_id, "name": channel_name, "guild": guild_name}
 
-        channels = bot.users_data[uid].setdefault("channels", {})
+        channels = bot.users_data[uid][name].setdefault("channels", {})
         existing = channels.get(type)
         # Normalize to list of dicts
         if existing is None:
@@ -775,10 +837,12 @@ def register_commands(bot: TwitchDropsBot):
             )
 
     @bot.tree.command(name="dashboard", description="Post a live-updating stats embed with control buttons")
-    async def cmd_dashboard(interaction: discord.Interaction):
+    @app_commands.describe(name="Instance name (default: 'default')")
+    @app_commands.autocomplete(name=name_autocomplete)
+    async def cmd_dashboard(interaction: discord.Interaction, name: str = "default"):
         await interaction.response.defer()
         uid = str(interaction.user.id)
-        pairing = get_user_pairing(bot.users_data, interaction.user.id)
+        pairing = get_user_pairing(bot.users_data, interaction.user.id, name)
         if not pairing:
             await interaction.followup.send(embed=not_linked_embed(), ephemeral=True)
             return
@@ -786,10 +850,10 @@ def register_commands(bot: TwitchDropsBot):
             async with aiohttp.ClientSession() as session:
                 embed = await build_dashboard_embed(session, pairing["url"], pairing["token"], pairing)
 
-            view = DashboardView(interaction.user.id, bot)
+            view = DashboardView(interaction.user.id, bot, name)
             msg = await interaction.followup.send(embed=embed, view=view)
 
-            bot.users_data[uid]["dashboard_embed"] = {
+            bot.users_data[uid][name]["dashboard_embed"] = {
                 "channel_id": str(interaction.channel_id),
                 "message_id": str(msg.id),
             }

@@ -10,7 +10,7 @@
     <link rel="apple-touch-icon" href="/logo.png">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#9147ff">
-    <link rel="stylesheet" href="/static/styles.css?v=1749430000">
+    <link rel="stylesheet" href="/static/styles.css?v=1749560000">
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
 
@@ -20,6 +20,10 @@
             <div class="header-top">
                 <h1><img src="/logo.png" style="width:44px;height:44px;vertical-align:middle;margin-right:10px;border-radius:8px"> Twitch Drops Miner</h1>
                 <div class="header-controls">
+                    <div id="account-tabs" style="display:flex;gap:4px;align-items:center;">
+                        <button id="acc-btn-1" onclick="switchAccount(1)" class="acc-tab-btn active-acc">Account 1</button>
+                        <button id="acc-btn-2" onclick="switchAccount(2)" class="acc-tab-btn">Account 2</button>
+                    </div>
                     <label for="language" class="language-selector">
                         <span>Language:</span>
                         <select id="language">
@@ -618,7 +622,7 @@
         </footer>
     </div>
 
-    <script src="/static/app.js?v=1749558000"></script>
+    <script src="/static/app.js?v=1749564000"></script>
 </body>
 
 </html>
