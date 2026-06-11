@@ -448,9 +448,9 @@ class TwitchDropsBot(discord.Client):
         today_drops = 0
         from zoneinfo import ZoneInfo
         today_str = datetime.now(ZoneInfo("Europe/Vienna")).strftime("%Y-%m-%d")
-        cp_totals: dict[str, int] = {}
         cp_today_total = 0
 
+        total_cp = 0
         for uid, pairings_dict in self.users_data.items():
             for name, pairing in pairings_dict.items():
                 try:
@@ -460,12 +460,9 @@ class TwitchDropsBot(discord.Client):
                         today_drops += sum(1 for d in history if d.get("timestamp", "").startswith(today_str))
                 except Exception:
                     pass
-                for ch, bal in pairing.get("last_cp", {}).items():
-                    cp_totals[ch] = max(cp_totals.get(ch, 0), bal)
+                total_cp += pairing.get("cp_total_earned", 0)
                 if pairing.get("cp_today_date") == today_str:
                     cp_today_total += pairing.get("cp_today", 0)
-
-        total_cp = sum(cp_totals.values())
 
         desc = (
             f"🎁  **{total_drops}** drops total  ·  **{today_drops}** today\n"
@@ -639,8 +636,11 @@ class TwitchDropsBot(discord.Client):
                                     self.users_data[user_id][pairing_name]["cp_today"] = 0
                                     self.users_data[user_id][pairing_name]["cp_today_date"] = today_str_cp
                                 if prev_balance is not None and cp_balance > prev_balance:
-                                    new_cp_today = pairing.get("cp_today", 0) + (cp_balance - prev_balance)
+                                    delta = cp_balance - prev_balance
+                                    new_cp_today = pairing.get("cp_today", 0) + delta
                                     self.users_data[user_id][pairing_name]["cp_today"] = new_cp_today
+                                    new_cp_total = pairing.get("cp_total_earned", 0) + delta
+                                    self.users_data[user_id][pairing_name]["cp_total_earned"] = new_cp_total
                                     try:
                                         await api_post(session, pairing["url"], pairing["token"], "/api/daily-points", {"total": new_cp_today})
                                     except Exception:
