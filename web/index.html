@@ -10,26 +10,31 @@
     <link rel="apple-touch-icon" href="/logo.png">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#9147ff">
-    <link rel="stylesheet" href="/static/styles.css?v=1749560000">
+    <link rel="stylesheet" href="/static/styles.css?v=1749670000">
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
 
 <body>
     <div class="container">
         <header>
-            <div class="header-top">
-                <h1><img src="/logo.png" style="width:44px;height:44px;vertical-align:middle;margin-right:10px;border-radius:8px"> Twitch Drops Miner</h1>
-                <div class="header-controls">
-                    <div id="account-tabs" style="display:flex;gap:4px;align-items:center;">
-                        <button id="acc-btn-1" onclick="switchAccount(1)" class="acc-tab-btn active-acc">Account 1</button>
-                        <button id="acc-btn-2" onclick="switchAccount(2)" class="acc-tab-btn">Account 2</button>
-                    </div>
+            <div class="header-brand">
+                <h1>
+                    <img src="/logo.png" class="header-logo">
+                    <span>Twitch Drops Miner</span>
+                </h1>
+                <div class="header-brand-right">
+                    <span id="connection-indicator" class="connected">● Connected</span>
                     <label for="language" class="language-selector">
-                        <span>Language:</span>
                         <select id="language">
-                            <option value="en">English</option>
+                            <option value="en">🌐 EN</option>
                         </select>
                     </label>
+                </div>
+            </div>
+            <div class="header-meta">
+                <div id="account-tabs">
+                    <button id="acc-btn-1" onclick="switchAccount(1)" class="acc-tab-btn active-acc">Account 1</button>
+                    <button id="acc-btn-2" onclick="switchAccount(2)" class="acc-tab-btn">Account 2</button>
                 </div>
             </div>
             <div class="status-bar">
@@ -39,9 +44,6 @@
                 </div>
                 <div class="status-center">
                     <span id="status-text">Initializing...</span>
-                </div>
-                <div class="status-right">
-                    <span id="connection-indicator" class="connected">● Connected</span>
                 </div>
             </div>
         </header>
