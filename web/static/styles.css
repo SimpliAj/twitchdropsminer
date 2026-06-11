@@ -2259,3 +2259,19 @@ header h1 {
     padding: 4px 8px;
     font-size: 0.9rem;
 }
+
+.acc-tab-btn {
+    background: #2d2d35;
+    color: #adadb8;
+    border: 1px solid #3d3d4a;
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.acc-tab-btn.active-acc {
+    background: #6441a5;
+    color: #fff;
+    border-color: #6441a5;
+}
