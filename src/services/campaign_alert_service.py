@@ -73,7 +73,7 @@ class CampaignAlertService:
                     "color": 0xFF4500,
                     "fields": [
                         {"name": "Game", "value": campaign.game.name, "inline": True},
-                        {"name": "Unclaimed Drops", "value": str(campaign.unclaimed_drops), "inline": True},
+                        {"name": "Unclaimed Drops", "value": str(campaign.remaining_drops), "inline": True},
                     ],
                     "url": campaign.campaign_url,
                 }
@@ -89,7 +89,7 @@ class CampaignAlertService:
                 "name": c.name,
                 "game": c.game.name,
                 "hours_left": int((c.ends_at - datetime.now(timezone.utc)).total_seconds() / 3600),
-                "unclaimed_drops": c.unclaimed_drops,
+                "remaining_drops": c.remaining_drops,
             }
             for c in to_alert
         ])
