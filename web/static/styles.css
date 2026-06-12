@@ -2982,3 +2982,25 @@ header h1 {
     gap: 8px;
     flex-wrap: wrap;
 }
+
+/* Analytics 2-col desktop layout */
+.analytics-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    padding: 16px;
+    align-items: start;
+    min-width: 0;
+}
+.analytics-left,
+.analytics-right {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+@media (max-width: 768px) {
+    .analytics-layout {
+        grid-template-columns: 1fr;
+    }
+}
