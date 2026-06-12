@@ -44,10 +44,18 @@ class StreamSelector:
                     if blacklist and any(kw in drop.name.lower() for kw in blacklist):
                         continue
 
-                    filtered_benefits = drop.get_wanted_unclaimed_benefits(mining_benefits)
+                    filtered_benefits = [
+                        {"name": b.name, "image_url": b.image_url}
+                        for b in drop.benefits
+                        if b.is_wanted(mining_benefits) and not drop.is_claimed
+                    ]
 
                     if len(filtered_benefits) > 0:
-                        wanted_drops.append({"name": drop.name, "benefits": filtered_benefits})
+                        wanted_drops.append({
+                            "name": drop.name,
+                            "benefits": filtered_benefits,
+                            "image_url": filtered_benefits[0]["image_url"] if filtered_benefits else None,
+                        })
 
                 if len(wanted_drops) > 0:
                     wanted_campaigns.append(
