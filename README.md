@@ -360,10 +360,22 @@ The dashboard will show a password prompt on first visit. Auth is stored as a 30
 
 ---
 
-## 🖼️ Screenshot
+## 🖼️ Screenshots
 
-![screenshot](./screenshot.png)
-> A clean, modern web UI lets you control everything from your browser.
+### Main Dashboard
+![Main Tab](./docs/screenshots/main-tab.jpg)
+
+### Inventory
+![Inventory Tab](./docs/screenshots/inventory-tab.jpg)
+
+### Analytics
+![Analytics Tab](./docs/screenshots/analytics-tab.jpg)
+
+### Help
+![Help Tab](./docs/screenshots/help-tab.jpg)
+
+### Mobile
+![Mobile Drop History](./docs/screenshots/mobile-drop-history.jpg)
 
 ---
 
