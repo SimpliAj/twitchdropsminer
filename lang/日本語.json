@@ -1,253 +1,258 @@
 {
-    "language_name": "日本語",
-    "english_name": "Japanese",
+  "language_name": "日本語",
+  "english_name": "Japanese",
+  "status": {
+    "terminated": "\nアプリケーションが終了しました。\nウィンドウを閉じてアプリケーションを終了します。",
+    "watching": "{channel} を視聴中",
+    "goes_online": "{channel} がオンラインになりました。切り替え中...",
+    "goes_offline": "{channel} がオフラインになりました。切り替え中...",
+    "claimed_drop": "ドロップを取得しました：{drop}",
+    "no_channel": "視聴可能なチャンネルがありません。オンラインになるチャンネルを待機中...",
+    "no_campaign": "マイニングするドロップがないアクティブなキャンペーンはありません。アクティブなキャンペーンを待機中..."
+  },
+  "login": {
+    "unexpected_content": "予期しないコンテンツタイプが返されました。リダイレクトされたためかもしれません。インターネットアクセスのためにログインが必要ですか？",
+    "error_code": "ログインエラーコード：{error_code}",
+    "incorrect_login_pass": "ユーザー名またはパスワードが間違っています。",
+    "incorrect_email_code": "メールコードが間違っています。",
+    "incorrect_twofa_code": "2段階認証コードが間違っています。",
+    "email_code_required": "メールコードが必要です。メールを確認してください。",
+    "twofa_code_required": "2段階認証トークンが必要です。",
     "status": {
-        "terminated": "\nアプリケーションが終了しました。\nウィンドウを閉じてアプリケーションを終了します。",
-        "watching": "{channel} を視聴中",
-        "goes_online": "{channel} がオンラインになりました。切り替え中...",
-        "goes_offline": "{channel} がオフラインになりました。切り替え中...",
-        "claimed_drop": "ドロップを取得しました：{drop}",
-        "no_channel": "視聴可能なチャンネルがありません。オンラインになるチャンネルを待機中...",
-        "no_campaign": "マイニングするドロップがないアクティブなキャンペーンはありません。アクティブなキャンペーンを待機中..."
+      "logged_in": "ログイン済み",
+      "logged_out": "ログアウト済み",
+      "logging_in": "ログイン中...",
+      "required": "ログインが必要です",
+      "waiting_auth": "認証を待っています..."
+    },
+    "oauth_prompt": "このコードを次の場所に入力してください:",
+    "oauth_activate": "Twitchをアクティベート",
+    "oauth_confirm": "コードを入力しました"
+  },
+  "error": {
+    "captcha": "ログイン試行がCAPTCHAによって拒否されました。\n12時間以上後に再試行してください。",
+    "site_down": "Twitchがダウンしています。{seconds}秒後に再試行します...",
+    "no_connection": "Twitchに接続できません。{seconds}秒後に再試行します..."
+  },
+  "gui": {
+    "output": "出力",
+    "status": {
+      "name": "ステータス",
+      "idle": "アイドル",
+      "exiting": "終了しています...",
+      "terminated": "終了",
+      "cleanup": "チャンネルをクリーンアップ中...",
+      "gathering": "チャンネルを収集中...",
+      "switching": "チャンネルを切り替え中...",
+      "fetching_inventory": "インベントリを取得中...",
+      "fetching_campaigns": "キャンペーンを取得中...",
+      "adding_campaigns": "キャンペーンをインベントリに追加中... {counter}"
+    },
+    "tabs": {
+      "main": "メイン",
+      "inventory": "インベントリ",
+      "settings": "設定",
+      "help": "ヘルプ",
+      "system": "System",
+      "stats": "Stats"
     },
     "login": {
-        "unexpected_content": "予期しないコンテンツタイプが返されました。リダイレクトされたためかもしれません。インターネットアクセスのためにログインが必要ですか？",
-        "error_code": "ログインエラーコード：{error_code}",
-        "incorrect_login_pass": "ユーザー名またはパスワードが間違っています。",
-        "incorrect_email_code": "メールコードが間違っています。",
-        "incorrect_twofa_code": "2段階認証コードが間違っています。",
-        "email_code_required": "メールコードが必要です。メールを確認してください。",
-        "twofa_code_required": "2段階認証トークンが必要です。",
-        "status": {
-            "logged_in": "ログイン済み",
-            "logged_out": "ログアウト済み",
-            "logging_in": "ログイン中...",
-            "required": "ログインが必要です",
-            "waiting_auth": "認証を待っています..."
-        },
-        "oauth_prompt": "このコードを次の場所に入力してください:",
-        "oauth_activate": "Twitchをアクティベート",
-        "oauth_confirm": "コードを入力しました"
+      "name": "ログインフォーム",
+      "labels": "ステータス：\nユーザーID：",
+      "request": "続行するにはログインしてください。",
+      "username": "ユーザー名",
+      "password": "パスワード",
+      "twofa_code": "2段階認証コード（オプション）",
+      "button": "ログイン",
+      "oauth_prompt": "Enter this code at:",
+      "oauth_activate": "Twitch Activate",
+      "oauth_confirm": "I've entered the code"
     },
-    "error": {
-        "captcha": "ログイン試行がCAPTCHAによって拒否されました。\n12時間以上後に再試行してください。",
-        "site_down": "Twitchがダウンしています。{seconds}秒後に再試行します...",
-        "no_connection": "Twitchに接続できません。{seconds}秒後に再試行します..."
+    "websocket": {
+      "name": "Websocketステータス",
+      "websocket": "Websocket #{id}：",
+      "initializing": "初期化中...",
+      "connected": "接続済み",
+      "disconnected": "切断されました",
+      "connecting": "接続中...",
+      "disconnecting": "切断中...",
+      "reconnecting": "再接続中..."
     },
-    "gui": {
-        "output": "出力",
-        "status": {
-            "name": "ステータス",
-            "idle": "アイドル",
-            "exiting": "終了しています...",
-            "terminated": "終了",
-            "cleanup": "チャンネルをクリーンアップ中...",
-            "gathering": "チャンネルを収集中...",
-            "switching": "チャンネルを切り替え中...",
-            "fetching_inventory": "インベントリを取得中...",
-            "fetching_campaigns": "キャンペーンを取得中...",
-            "adding_campaigns": "キャンペーンをインベントリに追加中... {counter}"
-        },
-        "tabs": {
-            "main": "メイン",
-            "inventory": "インベントリ",
-            "settings": "設定",
-            "help": "ヘルプ",
-            "system": "System"
-        },
-        "login": {
-            "name": "ログインフォーム",
-            "labels": "ステータス：\nユーザーID：",
-            "request": "続行するにはログインしてください。",
-            "username": "ユーザー名",
-            "password": "パスワード",
-            "twofa_code": "2段階認証コード（オプション）",
-            "button": "ログイン",
-            "oauth_prompt": "Enter this code at:",
-            "oauth_activate": "Twitch Activate",
-            "oauth_confirm": "I've entered the code"
-        },
-        "websocket": {
-            "name": "Websocketステータス",
-            "websocket": "Websocket #{id}：",
-            "initializing": "初期化中...",
-            "connected": "接続済み",
-            "disconnected": "切断されました",
-            "connecting": "接続中...",
-            "disconnecting": "切断中...",
-            "reconnecting": "再接続中..."
-        },
-        "progress": {
-            "name": "キャンペーン進行状況",
-            "drop": "ドロップ：",
-            "game": "ゲーム：",
-            "campaign": "キャンペーン：",
-            "remaining": "残り時間：{time}",
-            "drop_progress": "進行状況：",
-            "campaign_progress": "進行状況：",
-            "no_drop": "アクティブなドロップなし",
-            "return_to_auto": "自動モードに戻る",
-            "manual_mode_info": "手動モード: マイニング中"
-        },
-        "channels": {
-            "name": "チャンネル",
-            "online": "オンライン ✔",
-            "pending": "オフライン中 ⏳",
-            "offline": "オフライン ❌",
-            "no_channels": "まだチャンネルが追跡されていません...",
-            "no_channels_for_games": "選択したゲームのチャンネルが見つかりません...",
-            "channel_count": "チャンネル",
-            "channel_count_plural": "チャンネル",
-            "viewers": "視聴者"
-        },
-        "inventory": {
-            "status": {
-                "active": "アクティブ ✔",
-                "upcoming": "予定 ⏳",
-                "expired": "期限切れ ❌",
-                "claimed": "受け取り済み ✔"
-            },
-            "starts": "開始：{time}",
-            "ends": "終了：{time}",
-            "no_campaigns": "まだキャンペーンが読み込まれていません...",
-            "claimed_drops": "受け取り済み",
-            "filters": {
-                "active": "アクティブ",
-                "not_linked": "未連携",
-                "upcoming": "近日開催",
-                "expired": "期限切れ",
-                "finished": "完了",
-                "item": "アイテム",
-                "badge": "バッジ",
-                "emote": "エモート",
-                "other": "その他",
-                "clear": "フィルター解除",
-                "search_placeholder": "ゲームを検索..."
-            },
-            "filter_linked": "Linked"
-        },
-        "settings": {
-            "general": {
-                "name": "一般",
-                "dark_mode": "ダークモード"
-            },
-            "reload": "再読み込み",
-            "games_to_watch": "視聴するゲーム",
-            "games_help": "視聴するゲームを選択してください。順序が重要です - ドラッグして優先順位を並べ替えます（上 = 最高優先度）。",
-            "search_games": "ゲームを検索...",
-            "add_game": "Add Game",
-            "add_game_hint": " Click \"Add Game\" to add it manually.",
-            "select_all": "すべて選択",
-            "deselect_all": "すべて選択解除",
-            "selected_games": "選択されたゲーム（ドラッグして並べ替え）",
-            "available_games": "利用可能なゲーム",
-            "no_games_selected": "ゲームが選択されていません。下のゲームにチェックを入れて追加してください。",
-            "no_games_match": "検索に一致するゲームはありません。",
-            "all_games_selected": "すべてのゲームが選択されているか、利用可能なゲームがありません。",
-            "actions": "アクション",
-            "connection_quality": "接続品質：",
-            "minimum_refresh": "最小更新間隔（分）：",
-            "reload_campaigns": "キャンペーンを再読み込み",
-            "mining_benefits": "マイニング特典",
-            "mining_benefits_help": "マイニングしたいドロップの種類を選択してください。",
-            "select_linked": "Select Linked",
-            "password_header": "Login & Password",
-            "password_current_label": "Current Password",
-            "password_current_placeholder": "Leave empty if no password set",
-            "password_new_label": "New Password",
-            "password_new_placeholder": "New password (empty = disable login)",
-            "password_confirm_label": "Confirm New Password",
-            "password_confirm_placeholder": "Confirm",
-            "password_save": "Save Password",
-            "password_disable": "Disable Login",
-            "password_saved": "Password saved.",
-            "password_disabled_msg": "Login disabled.",
-            "password_mismatch": "Passwords don't match.",
-            "password_status_active": "🔒 Login active — Password set",
-            "password_status_inactive": "🔓 No login — publicly accessible",
-            "discord_bot": {
-                "header": "Discord Bot",
-                "description": "Pair a Discord bot to control TwitchDropsMiner via chat commands.",
-                "not_connected": "Not connected",
-                "connected": "✅ Connected",
-                "generate_code": "Generate code",
-                "generating": "Generating...",
-                "disconnect": "Disconnect",
-                "disconnect_confirm": "Disconnect the Discord bot?",
-                "invite_bot": "Invite bot",
-                "expires": "Expires in 10 min"
-            }
-        },
-        "help": {
-            "about": "Twitch Drops Minerについて",
-            "about_text": "このアプリケーションは、ストリームデータをダウンロードせずに、時間指定のTwitchドロップを自動的にマイニングします。",
-            "how_to_use": "使い方",
-            "features": "機能",
-            "important_notes": "重要な注意事項",
-            "github_repo": "GitHubリポジトリ",
-            "how_to_use_items": [
-                "Twitchアカウントを使用してログイン（OAuthデバイスコードフロー）",
-                "<a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>でアカウントをリンク",
-                "マイナーは自動的にキャンペーンを発見してマイニングを開始します",
-                "設定で優先ゲームを設定して、希望するものに集中します",
-                "メインタブとインベントリタブで進行状況を監視します"
-            ],
-            "features_items": [
-                "ストリームレスドロップマイニング - 帯域幅を節約",
-                "ゲームの優先順位リストと除外リスト",
-                "最大199チャンネルを同時に追跡",
-                "自動チャンネル切り替え",
-                "リアルタイム進行状況追跡"
-            ],
-            "important_notes_items": [
-                "マイニング中は同じアカウントでストリームを視聴しないでください",
-                "cookies.jarファイルを安全に保管してください",
-                "ドロップにはリンクされたゲームアカウントが必要です"
-            ]
-        },
-        "header": {
-            "title": "Twitch Drops Miner",
-            "language": "言語:",
-            "initializing": "初期化中...",
-            "auto_mode": "AUTO",
-            "manual_mode": "手動",
-            "connected": "接続済み",
-            "disconnected": "切断"
-        },
-        "footer": {
-            "version": "バージョン:",
-            "loading": "読み込み中...",
-            "update_available": "更新利用可能:"
-        },
-        "badges": {
-            "manual": {
-                "title": "手動モード - 特定のゲームを視聴中"
-            },
-            "auto": {
-                "title": "自動モード - ゲーム優先度に従う"
-            },
-            "proxy": {
-                "title": "プロキシ接続中"
-            }
-        },
-        "wanted": {
-            "name": "欲しいDropsキュー",
-            "none": "キューに欲しいDropsはありません..."
-        },
-        "system": {
-            "header": "System",
-            "miner_header": "Miner",
-            "miner_desc": "Reload campaigns and restart the mining loop.",
-            "reload_btn": "Reload Campaigns",
-            "restart_header": "Restart",
-            "restart_desc": "Stop the miner process. PM2 will restart it automatically.",
-            "restart_btn": "Restart Miner",
-            "session_header": "Session",
-            "session_desc": "Log out of the web interface.",
-            "logout_btn": "Logout",
-            "reload_ok": "Campaigns reload triggered.",
-            "restart_confirm": "Restart the miner? PM2 will restart it automatically.",
-            "restart_ok": "Miner stopping — will restart via PM2 in a few seconds."
-        }
+    "progress": {
+      "name": "キャンペーン進行状況",
+      "drop": "ドロップ：",
+      "game": "ゲーム：",
+      "campaign": "キャンペーン：",
+      "remaining": "残り時間：{time}",
+      "drop_progress": "進行状況：",
+      "campaign_progress": "進行状況：",
+      "no_drop": "アクティブなドロップなし",
+      "return_to_auto": "自動モードに戻る",
+      "manual_mode_info": "手動モード: マイニング中"
+    },
+    "channels": {
+      "name": "チャンネル",
+      "online": "オンライン ✔",
+      "pending": "オフライン中 ⏳",
+      "offline": "オフライン ❌",
+      "no_channels": "まだチャンネルが追跡されていません...",
+      "no_channels_for_games": "選択したゲームのチャンネルが見つかりません...",
+      "channel_count": "チャンネル",
+      "channel_count_plural": "チャンネル",
+      "viewers": "視聴者"
+    },
+    "inventory": {
+      "status": {
+        "active": "アクティブ ✔",
+        "upcoming": "予定 ⏳",
+        "expired": "期限切れ ❌",
+        "claimed": "受け取り済み ✔"
+      },
+      "starts": "開始：{time}",
+      "ends": "終了：{time}",
+      "no_campaigns": "まだキャンペーンが読み込まれていません...",
+      "claimed_drops": "受け取り済み",
+      "filters": {
+        "active": "アクティブ",
+        "not_linked": "未連携",
+        "upcoming": "近日開催",
+        "expired": "期限切れ",
+        "finished": "完了",
+        "item": "アイテム",
+        "badge": "バッジ",
+        "emote": "エモート",
+        "other": "その他",
+        "clear": "フィルター解除",
+        "search_placeholder": "ゲームを検索..."
+      },
+      "filter_linked": "Linked"
+    },
+    "settings": {
+      "general": {
+        "name": "一般",
+        "dark_mode": "ダークモード"
+      },
+      "reload": "再読み込み",
+      "games_to_watch": "視聴するゲーム",
+      "games_help": "視聴するゲームを選択してください。順序が重要です - ドラッグして優先順位を並べ替えます（上 = 最高優先度）。",
+      "search_games": "ゲームを検索...",
+      "add_game": "Add Game",
+      "add_game_hint": " Click \"Add Game\" to add it manually.",
+      "select_all": "すべて選択",
+      "deselect_all": "すべて選択解除",
+      "selected_games": "選択されたゲーム（ドラッグして並べ替え）",
+      "available_games": "利用可能なゲーム",
+      "no_games_selected": "ゲームが選択されていません。下のゲームにチェックを入れて追加してください。",
+      "no_games_match": "検索に一致するゲームはありません。",
+      "all_games_selected": "すべてのゲームが選択されているか、利用可能なゲームがありません。",
+      "actions": "アクション",
+      "connection_quality": "接続品質：",
+      "minimum_refresh": "最小更新間隔（分）：",
+      "reload_campaigns": "キャンペーンを再読み込み",
+      "mining_benefits": "マイニング特典",
+      "mining_benefits_help": "マイニングしたいドロップの種類を選択してください。",
+      "select_linked": "Select Linked",
+      "password_header": "Login & Password",
+      "password_current_label": "Current Password",
+      "password_current_placeholder": "Leave empty if no password set",
+      "password_new_label": "New Password",
+      "password_new_placeholder": "New password (empty = disable login)",
+      "password_confirm_label": "Confirm New Password",
+      "password_confirm_placeholder": "Confirm",
+      "password_save": "Save Password",
+      "password_disable": "Disable Login",
+      "password_saved": "Password saved.",
+      "password_disabled_msg": "Login disabled.",
+      "password_mismatch": "Passwords don't match.",
+      "password_status_active": "🔒 Login active — Password set",
+      "password_status_inactive": "🔓 No login — publicly accessible",
+      "discord_bot": {
+        "header": "Discord Bot",
+        "description": "Pair a Discord bot to control TwitchDropsMiner via chat commands.",
+        "not_connected": "Not connected",
+        "connected": "✅ Connected",
+        "generate_code": "Generate code",
+        "generating": "Generating...",
+        "disconnect": "Disconnect",
+        "disconnect_confirm": "Disconnect the Discord bot?",
+        "invite_bot": "Invite bot",
+        "expires": "Expires in 10 min"
+      },
+      "notifications_header": "Notifications",
+      "push_enabled": "Browser Push Notifications",
+      "push_sound": "Notification Sound",
+      "campaign_end_alerts_enabled": "Campaign End Alerts (24h warning)"
+    },
+    "help": {
+      "about": "Twitch Drops Minerについて",
+      "about_text": "このアプリケーションは、ストリームデータをダウンロードせずに、時間指定のTwitchドロップを自動的にマイニングします。",
+      "how_to_use": "使い方",
+      "features": "機能",
+      "important_notes": "重要な注意事項",
+      "github_repo": "GitHubリポジトリ",
+      "how_to_use_items": [
+        "Twitchアカウントを使用してログイン（OAuthデバイスコードフロー）",
+        "<a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>でアカウントをリンク",
+        "マイナーは自動的にキャンペーンを発見してマイニングを開始します",
+        "設定で優先ゲームを設定して、希望するものに集中します",
+        "メインタブとインベントリタブで進行状況を監視します"
+      ],
+      "features_items": [
+        "ストリームレスドロップマイニング - 帯域幅を節約",
+        "ゲームの優先順位リストと除外リスト",
+        "最大199チャンネルを同時に追跡",
+        "自動チャンネル切り替え",
+        "リアルタイム進行状況追跡"
+      ],
+      "important_notes_items": [
+        "マイニング中は同じアカウントでストリームを視聴しないでください",
+        "cookies.jarファイルを安全に保管してください",
+        "ドロップにはリンクされたゲームアカウントが必要です"
+      ]
+    },
+    "header": {
+      "title": "Twitch Drops Miner",
+      "language": "言語:",
+      "initializing": "初期化中...",
+      "auto_mode": "AUTO",
+      "manual_mode": "手動",
+      "connected": "接続済み",
+      "disconnected": "切断"
+    },
+    "footer": {
+      "version": "バージョン:",
+      "loading": "読み込み中...",
+      "update_available": "更新利用可能:"
+    },
+    "badges": {
+      "manual": {
+        "title": "手動モード - 特定のゲームを視聴中"
+      },
+      "auto": {
+        "title": "自動モード - ゲーム優先度に従う"
+      },
+      "proxy": {
+        "title": "プロキシ接続中"
+      }
+    },
+    "wanted": {
+      "name": "欲しいDropsキュー",
+      "none": "キューに欲しいDropsはありません..."
+    },
+    "system": {
+      "header": "System",
+      "miner_header": "Miner",
+      "miner_desc": "Reload campaigns and restart the mining loop.",
+      "reload_btn": "Reload Campaigns",
+      "restart_header": "Restart",
+      "restart_desc": "Stop the miner process. PM2 will restart it automatically.",
+      "restart_btn": "Restart Miner",
+      "session_header": "Session",
+      "session_desc": "Log out of the web interface.",
+      "logout_btn": "Logout",
+      "reload_ok": "Campaigns reload triggered.",
+      "restart_confirm": "Restart the miner? PM2 will restart it automatically.",
+      "restart_ok": "Miner stopping — will restart via PM2 in a few seconds."
     }
+  }
 }

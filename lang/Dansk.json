@@ -1,250 +1,255 @@
 {
-    "language_name": "Dansk",
-    "english_name": "Danish",
+  "language_name": "Dansk",
+  "english_name": "Danish",
+  "status": {
+    "terminated": "\nProgram Afsluttet.\nLuk vinduet for at afslutte programmet.",
+    "watching": "Ser på: {channel}",
+    "goes_online": "{channel} går ONLINE, skifter...",
+    "goes_offline": "{channel} går OFFLINE, skifter...",
+    "claimed_drop": "Hentet belønning: {drop}",
+    "no_channel": "Ingen tilgængelige kanaler at se. Venter på en ONLINE kanal...",
+    "no_campaign": "Der er ingen aktive kampagner at hente. Venter på en aktiv kampagne..."
+  },
+  "login": {
+    "unexpected_content": "Uventet indholdstype returneres, normalt på grund af at blive omdirigeret. Skal du logge ind for internetadgang?",
+    "error_code": "Login fejlkode: {error_code}",
+    "incorrect_login_pass": "Forkert brugernavn eller kodeord.",
+    "incorrect_email_code": "Forkert email kode.",
+    "incorrect_twofa_code": "Forkert 2FA-kode.",
+    "email_code_required": "Email kode påkrævet. Tjek din email.",
+    "twofa_code_required": "2FA token påkrævet.",
     "status": {
-        "terminated": "\nProgram Afsluttet.\nLuk vinduet for at afslutte programmet.",
-        "watching": "Ser på: {channel}",
-        "goes_online": "{channel} går ONLINE, skifter...",
-        "goes_offline": "{channel} går OFFLINE, skifter...",
-        "claimed_drop": "Hentet belønning: {drop}",
-        "no_channel": "Ingen tilgængelige kanaler at se. Venter på en ONLINE kanal...",
-        "no_campaign": "Der er ingen aktive kampagner at hente. Venter på en aktiv kampagne..."
+      "logged_in": "Logget ind",
+      "logged_out": "Logget ud",
+      "logging_in": "Logger ind...",
+      "required": "Login påkrævet",
+      "waiting_auth": "Venter på godkendelse..."
+    }
+  },
+  "error": {
+    "captcha": "Dit loginforsøg blev afvist af CAPTCHA.\nPrøv venligst igen om 12+ timer",
+    "site_down": "Twitch er nede, prøver igen om {seconds} sekunder...",
+    "no_connection": "Kan ikke oprette forbindelse til Twitch, prøver igen om {seconds} sekunder..."
+  },
+  "gui": {
+    "output": "Resultat",
+    "status": {
+      "name": "Status",
+      "idle": "Ledig",
+      "exiting": "Afslutter...",
+      "terminated": "Afsluttet",
+      "cleanup": "Oprydning af kanaler...",
+      "gathering": "Indsamling af kanaler...",
+      "switching": "Skifter kanal...",
+      "fetching_inventory": "Henter beholdning...",
+      "fetching_campaigns": "Henter kampagner...",
+      "adding_campaigns": "Tilføjer kampagner til beholdning... {counter}"
+    },
+    "tabs": {
+      "main": "Hoved",
+      "inventory": "Beholdning",
+      "settings": "Indstillinger",
+      "help": "Hjælp",
+      "system": "System",
+      "stats": "Stats"
     },
     "login": {
-        "unexpected_content": "Uventet indholdstype returneres, normalt på grund af at blive omdirigeret. Skal du logge ind for internetadgang?",
-        "error_code": "Login fejlkode: {error_code}",
-        "incorrect_login_pass": "Forkert brugernavn eller kodeord.",
-        "incorrect_email_code": "Forkert email kode.",
-        "incorrect_twofa_code": "Forkert 2FA-kode.",
-        "email_code_required": "Email kode påkrævet. Tjek din email.",
-        "twofa_code_required": "2FA token påkrævet.",
-        "status": {
-            "logged_in": "Logget ind",
-            "logged_out": "Logget ud",
-            "logging_in": "Logger ind...",
-            "required": "Login påkrævet",
-            "waiting_auth": "Venter på godkendelse..."
-        }
+      "name": "Login formular",
+      "labels": "Status:\nBruger ID:",
+      "request": "Log venligst ind for at fortsætte.",
+      "username": "Brugernavn",
+      "password": "Kodeord",
+      "twofa_code": "2FA code (valgfrit)",
+      "button": "Log ind",
+      "oauth_prompt": "Indtast denne kode på:",
+      "oauth_activate": "Twitch Aktiver",
+      "oauth_confirm": "Jeg har indtastet koden"
     },
-    "error": {
-        "captcha": "Dit loginforsøg blev afvist af CAPTCHA.\nPrøv venligst igen om 12+ timer",
-        "site_down": "Twitch er nede, prøver igen om {seconds} sekunder...",
-        "no_connection": "Kan ikke oprette forbindelse til Twitch, prøver igen om {seconds} sekunder..."
+    "websocket": {
+      "name": "Websocket-status",
+      "websocket": "Websocket #{id}:",
+      "initializing": "Initialiserer...",
+      "connected": "Forbundet",
+      "disconnected": "Afbrudt",
+      "connecting": "Tilslutning...",
+      "disconnecting": "Afbryder forbindelsen...",
+      "reconnecting": "Genopretter forbindelse..."
     },
-    "gui": {
-        "output": "Resultat",
-        "status": {
-            "name": "Status",
-            "idle": "Ledig",
-            "exiting": "Afslutter...",
-            "terminated": "Afsluttet",
-            "cleanup": "Oprydning af kanaler...",
-            "gathering": "Indsamling af kanaler...",
-            "switching": "Skifter kanal...",
-            "fetching_inventory": "Henter beholdning...",
-            "fetching_campaigns": "Henter kampagner...",
-            "adding_campaigns": "Tilføjer kampagner til beholdning... {counter}"
-        },
-        "tabs": {
-            "main": "Hoved",
-            "inventory": "Beholdning",
-            "settings": "Indstillinger",
-            "help": "Hjælp",
-            "system": "System"
-        },
-        "login": {
-            "name": "Login formular",
-            "labels": "Status:\nBruger ID:",
-            "request": "Log venligst ind for at fortsætte.",
-            "username": "Brugernavn",
-            "password": "Kodeord",
-            "twofa_code": "2FA code (valgfrit)",
-            "button": "Log ind",
-            "oauth_prompt": "Indtast denne kode på:",
-            "oauth_activate": "Twitch Aktiver",
-            "oauth_confirm": "Jeg har indtastet koden"
-        },
-        "websocket": {
-            "name": "Websocket-status",
-            "websocket": "Websocket #{id}:",
-            "initializing": "Initialiserer...",
-            "connected": "Forbundet",
-            "disconnected": "Afbrudt",
-            "connecting": "Tilslutning...",
-            "disconnecting": "Afbryder forbindelsen...",
-            "reconnecting": "Genopretter forbindelse..."
-        },
-        "progress": {
-            "name": "Kampagnefremskridt",
-            "drop": "Belønning:",
-            "game": "Spil:",
-            "campaign": "Kampagne:",
-            "remaining": "{time} tilbage",
-            "drop_progress": "Fremskridt:",
-            "campaign_progress": "Fremskridt:",
-            "no_drop": "Ingen aktiv belønning",
-            "return_to_auto": "Vend tilbage til automatisk tilstand",
-            "manual_mode_info": "Manuel tilstand: Samler"
-        },
-        "channels": {
-            "name": "Kanaler",
-            "online": "ONLINE  ✔",
-            "pending": "OFFLINE ⏳",
-            "offline": "OFFLINE ❌",
-            "no_channels": "Ingen kanaler sporet endnu...",
-            "no_channels_for_games": "Ingen kanaler fundet for valgte spil...",
-            "channel_count": "kanal",
-            "channel_count_plural": "kanaler",
-            "viewers": "seere"
-        },
-        "inventory": {
-            "status": {
-                "active": "Aktiv ✔",
-                "upcoming": "Kommende ⏳",
-                "expired": "Udløbet ❌",
-                "claimed": "Hentet ✔"
-            },
-            "starts": "Starter: {time}",
-            "ends": "Slutter: {time}",
-            "no_campaigns": "Ingen kampagner indlæst endnu...",
-            "claimed_drops": "hentet",
-            "filters": {
-                "active": "Aktiv",
-                "not_linked": "Ikke forbundet",
-                "upcoming": "Kommende",
-                "expired": "Udløbet",
-                "finished": "Afsluttet",
-                "item": "Genstand",
-                "badge": "Badge",
-                "emote": "Emote",
-                "other": "Andet",
-                "clear": "Ryd filtre",
-                "search_placeholder": "Søg efter spil..."
-            },
-            "filter_linked": "Linked"
-        },
-        "settings": {
-            "general": {
-                "name": "Generelt",
-                "dark_mode": "Mørk tilstand: "
-            },
-            "reload": "Genindlæs",
-            "games_to_watch": "Spil at se",
-            "games_help": "Vælg spil at se. Rækkefølgen er vigtig - træk for at ændre prioritet (top = højeste prioritet).",
-            "search_games": "Søg spil...",
-            "add_game": "Add Game",
-            "add_game_hint": " Click \"Add Game\" to add it manually.",
-            "select_all": "Vælg alle",
-            "deselect_all": "Fravælg alle",
-            "selected_games": "Valgte spil (træk for at ændre rækkefølge)",
-            "available_games": "Tilgængelige spil",
-            "no_games_selected": "Ingen spil valgt. Marker spil nedenfor for at tilføje dem.",
-            "no_games_match": "Ingen spil matcher din søgning.",
-            "all_games_selected": "Alle spil er valgt eller ingen tilgængelige spil.",
-            "actions": "Handlinger",
-            "connection_quality": "Forbindelseskvalitet:",
-            "minimum_refresh": "Minimum opdateringsinterval (minutter):",
-            "reload_campaigns": "Genindlæs kampagner",
-            "mining_benefits": "Mining Fordele",
-            "mining_benefits_help": "Vælg hvilke typer drops du vil mine.",
-            "select_linked": "Select Linked",
-            "password_header": "Login & Password",
-            "password_current_label": "Current Password",
-            "password_current_placeholder": "Leave empty if no password set",
-            "password_new_label": "New Password",
-            "password_new_placeholder": "New password (empty = disable login)",
-            "password_confirm_label": "Confirm New Password",
-            "password_confirm_placeholder": "Confirm",
-            "password_save": "Save Password",
-            "password_disable": "Disable Login",
-            "password_saved": "Password saved.",
-            "password_disabled_msg": "Login disabled.",
-            "password_mismatch": "Passwords don't match.",
-            "password_status_active": "🔒 Login active — Password set",
-            "password_status_inactive": "🔓 No login — publicly accessible",
-            "discord_bot": {
-                "header": "Discord Bot",
-                "description": "Pair a Discord bot to control TwitchDropsMiner via chat commands.",
-                "not_connected": "Not connected",
-                "connected": "✅ Connected",
-                "generate_code": "Generate code",
-                "generating": "Generating...",
-                "disconnect": "Disconnect",
-                "disconnect_confirm": "Disconnect the Discord bot?",
-                "invite_bot": "Invite bot",
-                "expires": "Expires in 10 min"
-            }
-        },
-        "help": {
-            "about": "Om Twitch Drops Miner",
-            "about_text": "Dette program samler automatisk tidsbestemte Twitch-belønninger uden at downloade stream-data.",
-            "how_to_use": "Sådan bruges det",
-            "features": "Funktioner",
-            "important_notes": "Vigtige bemærkninger",
-            "github_repo": "GitHub-lager",
-            "how_to_use_items": [
-                "Log ind med din Twitch-konto (OAuth enhedskodeflow)",
-                "Tilknyt dine konti på <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
-                "Programmet vil automatisk finde kampagner og begynde at samle",
-                "Konfigurer prioritetsspil i Indstillinger for at fokusere på det, du ønsker",
-                "Overvåg fremskridt i Main- og Beholdningsfanerne"
-            ],
-            "features_items": [
-                "Stream-fri belønningsindsamling - sparer båndbredde",
-                "Spilprioritet og eksklusionslister",
-                "Sporer op til 199 kanaler samtidig",
-                "Automatisk kanalskift",
-                "Realtids fremskridtssporing"
-            ],
-            "important_notes_items": [
-                "Se ikke streams på samme konto, mens du samler",
-                "Hold din cookies.jar-fil sikker",
-                "Kræver tilknyttede spilkonti for belønninger"
-            ]
-        },
-        "header": {
-            "title": "Twitch Drops Miner",
-            "language": "Sprog:",
-            "initializing": "Initialiserer...",
-            "auto_mode": "AUTO",
-            "manual_mode": "MANUEL",
-            "connected": "Tilsluttet",
-            "disconnected": "Afbrudt"
-        },
-        "footer": {
-            "version": "Version:",
-            "loading": "Indlæser...",
-            "update_available": "Opdatering tilgængelig:"
-        },
-        "badges": {
-            "manual": {
-                "title": "Manuel tilstand aktiv - ser specifikt spil"
-            },
-            "auto": {
-                "title": "Automatisk tilstand - følger spilprioritet"
-            },
-            "proxy": {
-                "title": "Proxy-forbindelse aktiv"
-            }
-        },
-        "wanted": {
-            "name": "Ønskede Drops Kø",
-            "none": "Ingen ønskede drops i køen..."
-        },
-        "system": {
-            "header": "System",
-            "miner_header": "Miner",
-            "miner_desc": "Reload campaigns and restart the mining loop.",
-            "reload_btn": "Reload Campaigns",
-            "restart_header": "Restart",
-            "restart_desc": "Stop the miner process. PM2 will restart it automatically.",
-            "restart_btn": "Restart Miner",
-            "session_header": "Session",
-            "session_desc": "Log out of the web interface.",
-            "logout_btn": "Logout",
-            "reload_ok": "Campaigns reload triggered.",
-            "restart_confirm": "Restart the miner? PM2 will restart it automatically.",
-            "restart_ok": "Miner stopping — will restart via PM2 in a few seconds."
-        }
+    "progress": {
+      "name": "Kampagnefremskridt",
+      "drop": "Belønning:",
+      "game": "Spil:",
+      "campaign": "Kampagne:",
+      "remaining": "{time} tilbage",
+      "drop_progress": "Fremskridt:",
+      "campaign_progress": "Fremskridt:",
+      "no_drop": "Ingen aktiv belønning",
+      "return_to_auto": "Vend tilbage til automatisk tilstand",
+      "manual_mode_info": "Manuel tilstand: Samler"
+    },
+    "channels": {
+      "name": "Kanaler",
+      "online": "ONLINE  ✔",
+      "pending": "OFFLINE ⏳",
+      "offline": "OFFLINE ❌",
+      "no_channels": "Ingen kanaler sporet endnu...",
+      "no_channels_for_games": "Ingen kanaler fundet for valgte spil...",
+      "channel_count": "kanal",
+      "channel_count_plural": "kanaler",
+      "viewers": "seere"
+    },
+    "inventory": {
+      "status": {
+        "active": "Aktiv ✔",
+        "upcoming": "Kommende ⏳",
+        "expired": "Udløbet ❌",
+        "claimed": "Hentet ✔"
+      },
+      "starts": "Starter: {time}",
+      "ends": "Slutter: {time}",
+      "no_campaigns": "Ingen kampagner indlæst endnu...",
+      "claimed_drops": "hentet",
+      "filters": {
+        "active": "Aktiv",
+        "not_linked": "Ikke forbundet",
+        "upcoming": "Kommende",
+        "expired": "Udløbet",
+        "finished": "Afsluttet",
+        "item": "Genstand",
+        "badge": "Badge",
+        "emote": "Emote",
+        "other": "Andet",
+        "clear": "Ryd filtre",
+        "search_placeholder": "Søg efter spil..."
+      },
+      "filter_linked": "Linked"
+    },
+    "settings": {
+      "general": {
+        "name": "Generelt",
+        "dark_mode": "Mørk tilstand: "
+      },
+      "reload": "Genindlæs",
+      "games_to_watch": "Spil at se",
+      "games_help": "Vælg spil at se. Rækkefølgen er vigtig - træk for at ændre prioritet (top = højeste prioritet).",
+      "search_games": "Søg spil...",
+      "add_game": "Add Game",
+      "add_game_hint": " Click \"Add Game\" to add it manually.",
+      "select_all": "Vælg alle",
+      "deselect_all": "Fravælg alle",
+      "selected_games": "Valgte spil (træk for at ændre rækkefølge)",
+      "available_games": "Tilgængelige spil",
+      "no_games_selected": "Ingen spil valgt. Marker spil nedenfor for at tilføje dem.",
+      "no_games_match": "Ingen spil matcher din søgning.",
+      "all_games_selected": "Alle spil er valgt eller ingen tilgængelige spil.",
+      "actions": "Handlinger",
+      "connection_quality": "Forbindelseskvalitet:",
+      "minimum_refresh": "Minimum opdateringsinterval (minutter):",
+      "reload_campaigns": "Genindlæs kampagner",
+      "mining_benefits": "Mining Fordele",
+      "mining_benefits_help": "Vælg hvilke typer drops du vil mine.",
+      "select_linked": "Select Linked",
+      "password_header": "Login & Password",
+      "password_current_label": "Current Password",
+      "password_current_placeholder": "Leave empty if no password set",
+      "password_new_label": "New Password",
+      "password_new_placeholder": "New password (empty = disable login)",
+      "password_confirm_label": "Confirm New Password",
+      "password_confirm_placeholder": "Confirm",
+      "password_save": "Save Password",
+      "password_disable": "Disable Login",
+      "password_saved": "Password saved.",
+      "password_disabled_msg": "Login disabled.",
+      "password_mismatch": "Passwords don't match.",
+      "password_status_active": "🔒 Login active — Password set",
+      "password_status_inactive": "🔓 No login — publicly accessible",
+      "discord_bot": {
+        "header": "Discord Bot",
+        "description": "Pair a Discord bot to control TwitchDropsMiner via chat commands.",
+        "not_connected": "Not connected",
+        "connected": "✅ Connected",
+        "generate_code": "Generate code",
+        "generating": "Generating...",
+        "disconnect": "Disconnect",
+        "disconnect_confirm": "Disconnect the Discord bot?",
+        "invite_bot": "Invite bot",
+        "expires": "Expires in 10 min"
+      },
+      "notifications_header": "Notifications",
+      "push_enabled": "Browser Push Notifications",
+      "push_sound": "Notification Sound",
+      "campaign_end_alerts_enabled": "Campaign End Alerts (24h warning)"
+    },
+    "help": {
+      "about": "Om Twitch Drops Miner",
+      "about_text": "Dette program samler automatisk tidsbestemte Twitch-belønninger uden at downloade stream-data.",
+      "how_to_use": "Sådan bruges det",
+      "features": "Funktioner",
+      "important_notes": "Vigtige bemærkninger",
+      "github_repo": "GitHub-lager",
+      "how_to_use_items": [
+        "Log ind med din Twitch-konto (OAuth enhedskodeflow)",
+        "Tilknyt dine konti på <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
+        "Programmet vil automatisk finde kampagner og begynde at samle",
+        "Konfigurer prioritetsspil i Indstillinger for at fokusere på det, du ønsker",
+        "Overvåg fremskridt i Main- og Beholdningsfanerne"
+      ],
+      "features_items": [
+        "Stream-fri belønningsindsamling - sparer båndbredde",
+        "Spilprioritet og eksklusionslister",
+        "Sporer op til 199 kanaler samtidig",
+        "Automatisk kanalskift",
+        "Realtids fremskridtssporing"
+      ],
+      "important_notes_items": [
+        "Se ikke streams på samme konto, mens du samler",
+        "Hold din cookies.jar-fil sikker",
+        "Kræver tilknyttede spilkonti for belønninger"
+      ]
+    },
+    "header": {
+      "title": "Twitch Drops Miner",
+      "language": "Sprog:",
+      "initializing": "Initialiserer...",
+      "auto_mode": "AUTO",
+      "manual_mode": "MANUEL",
+      "connected": "Tilsluttet",
+      "disconnected": "Afbrudt"
+    },
+    "footer": {
+      "version": "Version:",
+      "loading": "Indlæser...",
+      "update_available": "Opdatering tilgængelig:"
+    },
+    "badges": {
+      "manual": {
+        "title": "Manuel tilstand aktiv - ser specifikt spil"
+      },
+      "auto": {
+        "title": "Automatisk tilstand - følger spilprioritet"
+      },
+      "proxy": {
+        "title": "Proxy-forbindelse aktiv"
+      }
+    },
+    "wanted": {
+      "name": "Ønskede Drops Kø",
+      "none": "Ingen ønskede drops i køen..."
+    },
+    "system": {
+      "header": "System",
+      "miner_header": "Miner",
+      "miner_desc": "Reload campaigns and restart the mining loop.",
+      "reload_btn": "Reload Campaigns",
+      "restart_header": "Restart",
+      "restart_desc": "Stop the miner process. PM2 will restart it automatically.",
+      "restart_btn": "Restart Miner",
+      "session_header": "Session",
+      "session_desc": "Log out of the web interface.",
+      "logout_btn": "Logout",
+      "reload_ok": "Campaigns reload triggered.",
+      "restart_confirm": "Restart the miner? PM2 will restart it automatically.",
+      "restart_ok": "Miner stopping — will restart via PM2 in a few seconds."
     }
+  }
 }

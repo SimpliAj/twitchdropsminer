@@ -61,6 +61,8 @@ class GUITabs(TypedDict):
     inventory: str
     settings: str
     help: str
+    system: str
+    stats: str
 
 
 class GUILoginForm(TypedDict):
@@ -189,6 +191,26 @@ class GUISettings(TypedDict):
     actions: str
     connection_quality: str
     minimum_refresh: str
+    select_linked: str
+    password_header: str
+    password_current_label: str
+    password_current_placeholder: str
+    password_new_label: str
+    password_new_placeholder: str
+    password_confirm_label: str
+    password_confirm_placeholder: str
+    password_save: str
+    password_disable: str
+    password_saved: str
+    password_disabled_msg: str
+    password_mismatch: str
+    password_status_active: str
+    password_status_inactive: str
+    discord_bot: dict
+    notifications_header: str
+    push_enabled: str
+    push_sound: str
+    campaign_end_alerts_enabled: str
 
 
 class GUIHelp(TypedDict):
