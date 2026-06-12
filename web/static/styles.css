@@ -2624,3 +2624,79 @@ header h1 {
     color: #fff;
     box-shadow: 0 2px 8px rgba(145, 70, 255, 0.35);
 }
+
+/* Stats Tab */
+.stat-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px 24px;
+    min-width: 120px;
+    text-align: center;
+}
+.stat-value {
+    font-size: 2em;
+    font-weight: 700;
+    color: var(--accent-color);
+}
+.stat-label {
+    font-size: 0.85em;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+.stats-section h3 {
+    color: var(--text-primary);
+    margin-bottom: 12px;
+    font-size: 1em;
+    font-weight: 600;
+}
+.stats-game-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.stats-game-bar-label {
+    width: 160px;
+    font-size: 0.85em;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.stats-game-bar-track {
+    flex: 1;
+    height: 18px;
+    background: var(--border-color);
+    border-radius: 4px;
+    overflow: hidden;
+}
+.stats-game-bar-fill {
+    height: 100%;
+    background: var(--accent-color);
+    border-radius: 4px;
+    transition: width 0.4s;
+}
+.stats-game-bar-count {
+    width: 32px;
+    text-align: right;
+    font-size: 0.85em;
+    color: var(--text-secondary);
+}
+.stats-recent-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+.stats-recent-img {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 4px;
+    background: var(--border-color);
+}
+.stats-recent-info { flex: 1; }
+.stats-recent-reward { font-weight: 600; font-size: 0.9em; color: var(--text-primary); }
+.stats-recent-meta { font-size: 0.8em; color: var(--text-secondary); }

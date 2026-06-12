@@ -436,6 +436,101 @@ function renderPointsTracker() {
 
 
 // ==================== Drop History ====================
+async function loadStats() {
+    try {
+        const resp = await fetch(API_BASE + '/api/stats');
+        const data = await resp.json();
+
+        // Summary
+        document.getElementById('stats-total').textContent = data.total_claims;
+        document.getElementById('stats-games').textContent = data.by_game.length;
+        const lastClaim = data.recent[0]?.timestamp;
+        document.getElementById('stats-last').textContent = lastClaim
+            ? new Date(lastClaim).toLocaleDateString()
+            : '—';
+
+        // By game bars
+        const maxCount = data.by_game[0]?.count || 1;
+        const gameContainer = document.getElementById('stats-by-game');
+        gameContainer.textContent = '';
+        for (const { game, count } of data.by_game) {
+            const pct = Math.round((count / maxCount) * 100);
+            const row = document.createElement('div');
+            row.className = 'stats-game-bar';
+            const label = document.createElement('span');
+            label.className = 'stats-game-bar-label';
+            label.title = game;
+            label.textContent = game;
+            const track = document.createElement('div');
+            track.className = 'stats-game-bar-track';
+            const fill = document.createElement('div');
+            fill.className = 'stats-game-bar-fill';
+            fill.style.width = pct + '%';
+            track.appendChild(fill);
+            const countEl = document.createElement('span');
+            countEl.className = 'stats-game-bar-count';
+            countEl.textContent = count;
+            row.appendChild(label);
+            row.appendChild(track);
+            row.appendChild(countEl);
+            gameContainer.appendChild(row);
+        }
+
+        // By day canvas chart
+        const canvas = document.getElementById('stats-by-day-canvas');
+        if (canvas && data.by_day.length > 0) {
+            const W = canvas.offsetWidth || 600;
+            canvas.width = W;
+            canvas.height = 120;
+            const ctx = canvas.getContext('2d');
+            const maxDay = Math.max(...data.by_day.map(d => d.count), 1);
+            const barW = Math.max(4, Math.floor(W / data.by_day.length) - 2);
+            ctx.clearRect(0, 0, W, 120);
+            data.by_day.forEach(({ date, count }, i) => {
+                const h = Math.round((count / maxDay) * 100);
+                const x = i * (barW + 2);
+                ctx.fillStyle = getComputedStyle(document.documentElement)
+                    .getPropertyValue('--accent-color').trim() || '#9147ff';
+                ctx.fillRect(x, 120 - h, barW, h);
+            });
+        }
+
+        // Recent claims
+        const recentEl = document.getElementById('stats-recent');
+        recentEl.textContent = '';
+        for (const drop of data.recent) {
+            const date = drop.timestamp ? new Date(drop.timestamp).toLocaleString() : '';
+            const item = document.createElement('div');
+            item.className = 'stats-recent-item';
+            if (drop.image_url) {
+                const img = document.createElement('img');
+                img.className = 'stats-recent-img';
+                img.src = drop.image_url;
+                img.alt = '';
+                item.appendChild(img);
+            } else {
+                const placeholder = document.createElement('div');
+                placeholder.className = 'stats-recent-img';
+                item.appendChild(placeholder);
+            }
+            const info = document.createElement('div');
+            info.className = 'stats-recent-info';
+            const reward = document.createElement('div');
+            reward.className = 'stats-recent-reward';
+            reward.textContent = drop.reward || drop.drop;
+            const meta = document.createElement('div');
+            meta.className = 'stats-recent-meta';
+            meta.textContent = drop.game + ' · ' + date;
+            info.appendChild(reward);
+            info.appendChild(meta);
+            item.appendChild(info);
+            recentEl.appendChild(item);
+        }
+    } catch (e) {
+        console.error('Failed to load stats:', e);
+    }
+}
+
 async function loadDropHistory() {
     try {
         const resp = await fetch(API_BASE + "/api/drops-history");
@@ -2200,13 +2295,15 @@ function applyTranslations(t) {
         'main': document.querySelector('[data-tab="main"]'),
         'inventory': document.querySelector('[data-tab="inventory"]'),
         'settings': document.querySelector('[data-tab="settings"]'),
-        'help': document.querySelector('[data-tab="help"]')
+        'help': document.querySelector('[data-tab="help"]'),
+        'stats': document.querySelector('[data-tab="stats"]'),
     };
 
     if (tabButtons.main && t.gui?.tabs) tabButtons.main.textContent = t.gui.tabs.main;
     if (tabButtons.inventory && t.gui?.tabs) tabButtons.inventory.textContent = t.gui.tabs.inventory;
     if (tabButtons.settings && t.gui?.tabs) tabButtons.settings.textContent = t.gui.tabs.settings;
     if (tabButtons.help && t.gui?.tabs) tabButtons.help.textContent = t.gui.tabs.help;
+    if (tabButtons.stats && t.gui?.tabs) tabButtons.stats.textContent = t.gui.tabs.stats;
 
     // Update Main tab - Login section
     const mainTab = document.getElementById('main-tab');
@@ -2577,6 +2674,7 @@ function switchTab(tabName) {
     document.getElementById(`${tabName}-tab`).classList.add('active');
     document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
     if (tabName === 'history') loadDropHistory();
+    if (tabName === 'stats') loadStats();
     if (tabName === 'settings') fetch(API_BASE + '/api/pair/status').then(r => r.json()).then(d => updateBotPairedUI(d.paired)).catch(() => {});
 }
 
