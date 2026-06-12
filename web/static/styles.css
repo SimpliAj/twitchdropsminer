@@ -33,6 +33,7 @@ body {
     background-color: var(--bg-primary);
     color: var(--text-primary);
     line-height: 1.6;
+    overflow-x: hidden;
 }
 
 .container {
@@ -2925,4 +2926,16 @@ header h1 {
 .wq-modal-benefit-name {
     font-size: 0.88rem;
     color: var(--text-primary);
+}
+
+/* Mobile overflow fixes */
+@media (max-width: 768px) {
+    .stat-item { min-width: 0; flex: 1 1 0; }
+    .stat-value { font-size: 1.3rem; }
+    .quick-controls-row { gap: 6px; }
+    .qc-btn { padding: 8px 10px; gap: 6px; min-height: 52px; }
+    .qc-labels small { font-size: 0.65rem; }
+    .qc-labels strong { font-size: 0.8rem; }
+    .qc-icon { font-size: 1.1rem; }
+    .container { overflow-x: hidden; }
 }
