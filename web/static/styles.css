@@ -1354,57 +1354,347 @@ header h1 {
     opacity: 0.9;
 }
 
-/* Help */
-.help-content {
-    max-width: 100%;
+/* Help Wiki */
+.help-wiki {
+    width: 100%;
+}
+
+.help-layout {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+}
+
+/* Sidebar TOC */
+.help-toc {
+    width: 200px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 16px;
     background: var(--bg-panel);
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    padding: 30px;
+    padding: 16px;
 }
 
-.help-content h2 {
-    color: var(--accent-color);
-    margin-bottom: 15px;
-}
-
-.help-content h3 {
-    margin-top: 20px;
+.help-toc-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-secondary);
     margin-bottom: 10px;
 }
 
-.help-content ul,
-.help-content ol {
-    margin-left: 20px;
-    margin-bottom: 15px;
+.help-toc-link {
+    display: block;
+    padding: 5px 8px;
+    margin-bottom: 2px;
+    border-radius: 5px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.85rem;
+    transition: background 0.15s, color 0.15s;
 }
 
-.help-content li {
-    margin-bottom: 8px;
-}
-
-.help-content a {
+.help-toc-link:hover {
+    background: var(--bg-secondary);
     color: var(--accent-color);
     text-decoration: none;
 }
 
-.help-content a:hover {
+/* Main body */
+.help-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+/* Section */
+.help-section {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 28px 32px;
+    margin-bottom: 16px;
+}
+
+.help-section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.help-section-icon {
+    font-size: 1.4rem;
+    line-height: 1;
+}
+
+.help-section h2 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--accent-color);
+    margin: 0;
+}
+
+.help-section h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 20px 0 10px;
+}
+
+.help-section p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.65;
+    margin-bottom: 12px;
+}
+
+.help-intro {
+    font-size: 0.95rem !important;
+    color: var(--text-primary) !important;
+}
+
+.help-section a {
+    color: var(--accent-color);
+    text-decoration: none;
+}
+
+.help-section a:hover {
     text-decoration: underline;
 }
 
+/* Steps */
+.help-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.help-step {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+}
+
+.help-step-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--accent-color);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.help-step-body {
+    flex: 1;
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+.help-step-body strong {
+    display: block;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    margin-bottom: 3px;
+}
+
+.help-step-body p {
+    margin: 4px 0 0;
+    font-size: 0.88rem !important;
+}
+
+/* Cards grid */
+.help-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin: 14px 0;
+}
+
+.help-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 14px 16px;
+}
+
+.help-card-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+}
+
+.help-card p {
+    font-size: 0.83rem !important;
+    margin: 0 !important;
+    color: var(--text-secondary);
+}
+
+/* Table */
+.help-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.87rem;
+    margin: 12px 0 16px;
+}
+
+.help-table thead tr {
+    background: var(--bg-secondary);
+}
+
+.help-table th {
+    text-align: left;
+    padding: 8px 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.help-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary);
+    vertical-align: top;
+}
+
+.help-table tr:last-child td {
+    border-bottom: none;
+}
+
+.help-table code {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: monospace;
+    font-size: 0.85em;
+    color: var(--accent-color);
+}
+
+/* Inline list */
+.help-list {
+    margin: 8px 0 8px 20px;
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+}
+
+.help-list li {
+    margin-bottom: 5px;
+    line-height: 1.5;
+}
+
+/* Code block */
+.help-code {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-left: 3px solid var(--accent-color);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-family: monospace;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    margin: 10px 0;
+    word-break: break-all;
+}
+
+/* Note / callout */
+.help-note {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-left: 3px solid var(--accent-color);
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin: 14px 0 0;
+    font-size: 0.87rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+.help-note.help-note-warn {
+    border-left-color: var(--warning-color);
+}
+
+.help-note strong {
+    color: var(--text-primary);
+}
+
+.help-note-icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+/* Footer links */
 .help-links {
-    margin-top: 30px;
-    padding-top: 20px;
+    margin-top: 20px;
+    padding-top: 16px;
     border-top: 1px solid var(--border-color);
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
 }
 
 .help-links a {
     display: inline-block;
-    padding: 10px 20px;
+    padding: 8px 16px;
     background: var(--accent-color);
-    color: white;
-    border-radius: 4px;
-    margin-right: 10px;
+    color: white !important;
+    border-radius: 6px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    text-decoration: none !important;
+    transition: opacity 0.15s;
+}
+
+.help-links a:hover {
+    opacity: 0.85;
+    text-decoration: none !important;
+}
+
+/* Responsive: collapse TOC on small screens */
+@media (max-width: 720px) {
+    .help-layout {
+        flex-direction: column;
+    }
+    .help-toc {
+        width: 100%;
+        position: static;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+    .help-toc-title {
+        width: 100%;
+        margin-bottom: 4px;
+    }
+    .help-section {
+        padding: 20px 18px;
+    }
+    .help-cards {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* Games to Watch Styles */
