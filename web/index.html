@@ -263,45 +263,45 @@
                         <input type="number" id="minimum-refresh-interval" min="1" max="1440" value="30">
                     </label>
                     <label>
-                        Proxy URL:
+                        <span id="settings-proxy-label">Proxy URL:</span>
                         <input type="text" id="proxy-url" placeholder="http://user:pass@host:port">
                         <button id="set-proxy-btn" class="secondary-btn" title="Set and verify proxy">Set
                             Proxy</button>
                         <button id="verify-proxy-btn" class="secondary-btn"
                             title="Test proxy connection">Verify</button>
                     </label>
-                    <small class="help-text-inline" style="margin-top: 5px;">Leave empty to disable. Supports
+                    <small class="help-text-inline" id="settings-proxy-help" style="margin-top: 5px;">Leave empty to disable. Supports
                         HTTP/HTTPS/SOCKS.</small>
                     <div id="proxy-verify-result" class="verify-result" style="display: none;"></div>
                 </section>
 
                 <div class="settings-grid">
                 <section class="settings-section">
-                    <h2>Channel Points</h2>
+                    <h2 id="settings-cp-header">Channel Points</h2>
                     <label>
-                        <input type="checkbox" id="claim-channel-points"> Auto-claim bonus channel points
+                        <input type="checkbox" id="claim-channel-points"> <span id="settings-cp-autoclaim-label">Auto-claim bonus channel points</span>
                     </label>
-                    <small class="help-text-inline">Automatically claims the bonus chest when it appears on watched channels.</small>
+                    <small class="help-text-inline" id="settings-cp-autoclaim-help">Automatically claims the bonus chest when it appears on watched channels.</small>
                 </section>
 
                 <section class="settings-section">
-                    <h2>Discord Notifications</h2>
+                    <h2 id="settings-discord-notif-header">Discord Notifications</h2>
                     <label>
-                        Drop Claimed Webhook:
+                        <span id="settings-drops-webhook-label">Drop Claimed Webhook:</span>
                         <div style="display:flex;gap:8px;">
                             <input type="text" id="discord-webhook-drops" placeholder="https://discord.com/api/webhooks/..." style="flex:1;">
-                            <button class="secondary-btn" onclick="testWebhook('drops')" style="white-space:nowrap;">Test</button>
+                            <button id="test-drops-webhook-btn" class="secondary-btn" onclick="testWebhook('drops')" style="white-space:nowrap;">Test</button>
                         </div>
                     </label>
-                    <small class="help-text-inline" style="margin-bottom:10px;display:block;">Fires when a Twitch drop is successfully claimed.</small>
+                    <small class="help-text-inline" id="settings-drops-webhook-help" style="margin-bottom:10px;display:block;">Fires when a Twitch drop is successfully claimed.</small>
                     <label>
-                        Channel Points Webhook:
+                        <span id="settings-points-webhook-label">Channel Points Webhook:</span>
                         <div style="display:flex;gap:8px;">
                             <input type="text" id="discord-webhook-points" placeholder="https://discord.com/api/webhooks/..." style="flex:1;">
-                            <button class="secondary-btn" onclick="testWebhook('points')" style="white-space:nowrap;">Test</button>
+                            <button id="test-points-webhook-btn" class="secondary-btn" onclick="testWebhook('points')" style="white-space:nowrap;">Test</button>
                         </div>
                     </label>
-                    <small class="help-text-inline">Fires when a bonus channel point chest is claimed.</small>
+                    <small class="help-text-inline" id="settings-points-webhook-help">Fires when a bonus channel point chest is claimed.</small>
                 </section>
 
                 <section class="settings-section">
@@ -313,7 +313,7 @@
                         <small id="settings-discord-bot-expires" style="color:#adadb8;font-size:.78rem;">(Expires in 10 min)</small>
                     </div>
                     <div id="bot-channel-config" style="display:none;background:#0e0e10;border:1px solid #3d3d4a;border-radius:8px;padding:12px;margin-bottom:12px;">
-                        <div style="font-size:.8rem;font-weight:600;color:#adadb8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Notification Channels</div>
+                        <div id="settings-bot-notif-channels-label" style="font-size:.8rem;font-weight:600;color:#adadb8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Notification Channels</div>
                         <div style="display:flex;flex-direction:column;gap:6px;">
                             <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
                                 <div>
@@ -330,7 +330,7 @@
                                 <button id="bot-points-clear-btn" class="secondary-btn" style="display:none;font-size:.75rem;padding:2px 8px;color:#eb4a4a;border-color:#eb4a4a;" onclick="botClearChannel('points')">Clear</button>
                             </div>
                         </div>
-                        <p style="font-size:.75rem;color:#6b6b7b;margin:8px 0 0;">Use <code>/setchannel</code> in Discord to set channels.</p>
+                        <p id="settings-bot-setchannel-hint" style="font-size:.75rem;color:#6b6b7b;margin:8px 0 0;">Use <code>/setchannel</code> in Discord to set channels.</p>
                     </div>
                     <div style="display:flex;gap:8px;flex-wrap:wrap;">
                         <button id="bot-generate-btn" class="secondary-btn" onclick="botGenerateCode()">Generate code</button>
@@ -343,12 +343,12 @@
                 </section>
 
                 <section class="settings-section">
-                    <h2>Idle Watch</h2>
-                    <p class="help-text">Channels to watch when no drops are available. Add in priority order.</p>
+                    <h2 id="settings-idle-header">Idle Watch</h2>
+                    <p class="help-text" id="settings-idle-help">Channels to watch when no drops are available. Add in priority order.</p>
                     <label class="toggle-label" style="margin-bottom:10px;">
                         <input type="checkbox" id="idle-use-followed" onchange="saveSettings()">
-                        <span>Auto: use followed channels</span>
-                        <span class="help-text" style="display:block;margin-top:2px;font-size:0.8em;">Automatically watches live channels you follow on Twitch when idle.</span>
+                        <span id="settings-idle-auto-label">Auto: use followed channels</span>
+                        <span id="settings-idle-auto-help" class="help-text" style="display:block;margin-top:2px;font-size:0.8em;">Automatically watches live channels you follow on Twitch when idle.</span>
                     </label>
                     <div style="display:flex;gap:8px;margin-bottom:8px;">
                         <input type="text" id="idle-channel-input" placeholder="Manual channel name..." style="flex:1;">
@@ -358,29 +358,29 @@
                 </section>
 
                 <section class="settings-section">
-                    <h2>Drop Name Blacklist</h2>
-                    <p class="help-text">Comma-separated keywords. Drops whose name contains any keyword are ignored. Useful for regional/exclusive drops (e.g. <code>JP, Korea, (KR)</code>).</p>
+                    <h2 id="settings-blacklist-header">Drop Name Blacklist</h2>
+                    <p class="help-text" id="settings-blacklist-help">Comma-separated keywords. Drops whose name contains any keyword are ignored. Useful for regional/exclusive drops (e.g. <code>JP, Korea, (KR)</code>).</p>
                     <input type="text" id="drop-blacklist-input" class="settings-input"
                         placeholder="JP, Korea, (KR), exclusive..." style="width:100%;box-sizing:border-box;">
                 </section>
 
                 <section class="settings-section">
-                    <h2>Scheduler</h2>
-                    <p class="help-text">Automatically pause and resume mining based on time of day.</p>
+                    <h2 id="settings-scheduler-header">Scheduler</h2>
+                    <p class="help-text" id="settings-scheduler-help">Automatically pause and resume mining based on time of day.</p>
                     <label style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
                         <input type="checkbox" id="scheduler-enabled" onchange="saveSettings()">
-                        Enable time-based scheduler
+                        <span id="settings-scheduler-enable-label">Enable time-based scheduler</span>
                     </label>
                     <div class="scheduler-times" id="scheduler-times">
                         <label style="display:flex;align-items:center;gap:8px;">
-                            <span style="min-width:90px;font-size:.9rem;">Active from</span>
+                            <span id="settings-scheduler-from" style="min-width:90px;font-size:.9rem;">Active from</span>
                             <input type="time" id="scheduler-start" class="settings-input" onchange="saveSettings()">
                         </label>
                         <label style="display:flex;align-items:center;gap:8px;margin-top:6px;">
-                            <span style="min-width:90px;font-size:.9rem;">Active until</span>
+                            <span id="settings-scheduler-until" style="min-width:90px;font-size:.9rem;">Active until</span>
                             <input type="time" id="scheduler-stop" class="settings-input" onchange="saveSettings()">
                         </label>
-                        <p class="help-text" style="margin-top:6px;">Mining runs only within this window. Outside it, mining is automatically paused.</p>
+                        <p class="help-text" id="settings-scheduler-times-help" style="margin-top:6px;">Mining runs only within this window. Outside it, mining is automatically paused.</p>
                     </div>
                 </section>
 
@@ -529,27 +529,27 @@
 
                 <!-- Stats Section -->
                 <div class="stats-section" style="margin-bottom: 32px;">
-                    <h2 style="margin-bottom: 16px; color: var(--text);">Drop Statistics</h2>
+                    <h2 id="analytics-stats-header" style="margin-bottom: 16px; color: var(--text);">Drop Statistics</h2>
                     <div id="stats-summary" style="display:flex; gap:12px; margin-bottom:24px; flex-wrap:wrap;">
                         <div class="stat-card">
                             <div class="stat-value" id="stats-total">—</div>
-                            <div class="stat-label">Total Claims</div>
+                            <div class="stat-label" id="analytics-total-label">Total Claims</div>
                         </div>
                         <div class="stat-card">
                             <div class="stat-value" id="stats-games">—</div>
-                            <div class="stat-label">Games</div>
+                            <div class="stat-label" id="analytics-games-label">Games</div>
                         </div>
                         <div class="stat-card">
                             <div class="stat-value" id="stats-last">—</div>
-                            <div class="stat-label">Last Claim</div>
+                            <div class="stat-label" id="analytics-last-label">Last Claim</div>
                         </div>
                     </div>
                     <div class="stats-section">
-                        <h3>Claims by Game</h3>
+                        <h3 id="analytics-by-game-header">Claims by Game</h3>
                         <div id="stats-by-game"></div>
                     </div>
                     <div class="stats-section" style="margin-top:24px;">
-                        <h3>Claims Activity</h3>
+                        <h3 id="analytics-activity-header">Claims Activity</h3>
                         <div id="stats-contribution-grid" style="overflow-x:auto;"></div>
                     </div>
                 </div>
@@ -557,7 +557,7 @@
                 <!-- Channel Points Section -->
                 <section class="settings-section" style="margin-bottom: 24px;">
                     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-                        <h2 style="margin:0;border:none;padding:0;">Channel Points</h2>
+                        <h2 id="analytics-cp-header" style="margin:0;border:none;padding:0;">Channel Points</h2>
                         <div style="display:flex;gap:8px;align-items:center;">
                             <span id="cp-tab-summary" style="font-size:0.85rem;color:#adadb8;"></span>
                             <button id="cp-tab-refresh-btn" class="secondary-btn">↻ Refresh</button>
@@ -570,7 +570,7 @@
                 <!-- History Section -->
                 <section class="settings-section" style="margin-bottom: 0;">
                     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-                        <h2 style="margin:0;border:none;padding:0;">Drop History</h2>
+                        <h2 id="analytics-history-header" style="margin:0;border:none;padding:0;">Drop History</h2>
                         <div style="display:flex;gap:8px;align-items:center;">
                             <span id="history-summary" style="font-size:0.85rem;color:#adadb8;"></span>
                             <button id="history-refresh-btn" class="secondary-btn">&#x21BB; Refresh</button>
