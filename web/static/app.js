@@ -112,16 +112,24 @@ socket.on('connect', () => {
     console.log('Connected to server');
     state.connected = true;
     const connText = state.translations.gui?.websocket?.connected || 'Connected';
-    document.getElementById('connection-indicator').textContent = '● ' + connText;
-    document.getElementById('connection-indicator').className = 'connected';
+    const ci = document.getElementById('connection-indicator');
+    ci.className = 'connected';
+    const dot = ci.querySelector('.conn-dot');
+    const txt = ci.querySelector('.conn-text');
+    if (dot && txt) txt.textContent = ' ' + connText;
+    else ci.textContent = '● ' + connText;
 });
 
 socket.on('disconnect', () => {
     console.log('Disconnected from server');
     state.connected = false;
     const disconnText = state.translations.gui?.websocket?.disconnected || 'Disconnected';
-    document.getElementById('connection-indicator').textContent = '● ' + disconnText;
-    document.getElementById('connection-indicator').className = 'disconnected';
+    const ci = document.getElementById('connection-indicator');
+    ci.className = 'disconnected';
+    const dot = ci.querySelector('.conn-dot');
+    const txt = ci.querySelector('.conn-text');
+    if (dot && txt) txt.textContent = ' ' + disconnText;
+    else ci.textContent = '● ' + disconnText;
 });
 
 socket.on('initial_state', (data) => {
@@ -191,6 +199,11 @@ socket.on('initial_state', (data) => {
 
     if (data.watching_channel) {
         const login = data.watching_channel.login;
+        const gameEl = document.getElementById('status-game');
+        if (gameEl && data.watching_channel.game) {
+            gameEl.textContent = data.watching_channel.game;
+            gameEl.style.display = '';
+        }
         updateChannelPointsDisplay(login, null);
         // Proactively check cp_enabled for current channel
         fetch(API_BASE + `/api/channel-points/${login}`).then(r => r.json()).then(d => {
@@ -732,6 +745,10 @@ function renderChannelPointsTab() {
 
 function updateStatus(status) {
     document.getElementById('status-text').textContent = status;
+    if (!/watching/i.test(status)) {
+        const gameEl = document.getElementById('status-game');
+        if (gameEl) { gameEl.textContent = ''; gameEl.style.display = 'none'; }
+    }
     updateQCButtons(status);
 }
 
@@ -2714,11 +2731,12 @@ function applyTranslations(t) {
         // Update connection indicator
         const connIndicator = document.getElementById('connection-indicator');
         if (connIndicator) {
-            if (state.connected) {
-                connIndicator.textContent = '● ' + (t.gui.websocket.connected || 'Connected');
-            } else {
-                connIndicator.textContent = '● ' + (t.gui.websocket.disconnected || 'Disconnected');
-            }
+            const txt = connIndicator.querySelector('.conn-text');
+            const label = state.connected
+                ? (t.gui.websocket.connected || 'Connected')
+                : (t.gui.websocket.disconnected || 'Disconnected');
+            if (txt) txt.textContent = ' ' + label;
+            else connIndicator.textContent = '● ' + label;
         }
     }
 }
