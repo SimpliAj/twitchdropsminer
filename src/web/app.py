@@ -299,6 +299,51 @@ def set_managers(gui: WebGUIManager, twitch: Twitch):
     gui_manager = gui
     twitch_client = twitch
     gui.set_socketio(sio)
+    _patch_status_for_persistence(gui)
+    asyncio.create_task(_auto_resume_mode())
+
+
+def _patch_status_for_persistence(gui: WebGUIManager) -> None:
+    """Wrap StatusManager.update to auto-save last_mode when idle."""
+    import re as _re
+    _orig = gui.status.update
+
+    def _patched(status: str) -> None:
+        if "💤" in status or "idle watching" in status.lower():
+            cfg = _load_web_config()
+            cfg["last_mode"] = "idle_watch"
+            m = _re.search(r"idle watching:\s*(\S+)", status, _re.IGNORECASE)
+            if m:
+                cfg["last_idle_channel"] = m.group(1)
+            _save_web_config(cfg)
+        _orig(status)
+
+    gui.status.update = _patched
+
+
+async def _auto_resume_mode() -> None:
+    """After startup, resume idle_watch if that was the last mode."""
+    await asyncio.sleep(20)  # Wait for miner to log in and initialize
+    if not twitch_client or not gui_manager:
+        return
+    cfg = _load_web_config()
+    if cfg.get("last_mode") != "idle_watch":
+        return
+    # Only resume if the miner isn't already doing something active
+    current_status = gui_manager.status.get().lower()
+    if "💤" in current_status or "idle" in current_status:
+        return  # Already idle-watching
+    last_channel = cfg.get("last_idle_channel")
+    if not last_channel:
+        return
+    try:
+        channel = await twitch_client._fetch_idle_channel_by_login(last_channel)
+        if channel is not None:
+            twitch_client.gui.clear_drop()
+            twitch_client.watch(channel, update_status=False)
+            twitch_client.gui.status.update(f"💤 Idle watching: {channel.name}")
+    except Exception:
+        pass
 
 
 # Pydantic models for API

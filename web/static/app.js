@@ -222,7 +222,7 @@ socket.on('initial_state', (data) => {
         if (!alreadyIdle && (data.settings?.idle_channels?.length > 0 || data.settings?.idle_use_followed)) {
             setTimeout(() => {
                 fetch(API_BASE + '/api/idle-watch/resume', { method: 'POST' }).catch(() => {});
-            }, 3000);
+            }, 1000);
         }
     }
 });
