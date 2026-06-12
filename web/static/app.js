@@ -2192,6 +2192,41 @@ async function saveSettings() {
     }
 }
 
+async function loadPushConfig() {
+    try {
+        const resp = await fetch(API_BASE + '/api/push-config');
+        const cfg = await resp.json();
+        const pushToggle = document.getElementById('push-enabled-toggle');
+        const soundToggle = document.getElementById('push-sound-toggle');
+        const alertsToggle = document.getElementById('campaign-alerts-toggle');
+        if (pushToggle) pushToggle.checked = !!cfg.push_notifications_enabled;
+        if (soundToggle) soundToggle.checked = cfg.push_sound_enabled !== false;
+        if (alertsToggle) alertsToggle.checked = cfg.campaign_end_alerts_enabled !== false;
+    } catch (e) {
+        console.error('Failed to load push config:', e);
+    }
+}
+
+async function savePushConfig() {
+    const pushToggle = document.getElementById('push-enabled-toggle');
+    const soundToggle = document.getElementById('push-sound-toggle');
+    const alertsToggle = document.getElementById('campaign-alerts-toggle');
+    const payload = {
+        push_notifications_enabled: pushToggle?.checked || false,
+        push_sound_enabled: soundToggle?.checked !== false,
+        campaign_end_alerts_enabled: alertsToggle?.checked !== false,
+    };
+    try {
+        await fetch(API_BASE + '/api/push-config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+    } catch (e) {
+        console.error('Failed to save push config:', e);
+    }
+}
+
 function updatePauseState(paused) {
     state.paused = paused;
     const btn = document.getElementById('pause-resume-btn');
@@ -2419,6 +2454,15 @@ function applyTranslations(t) {
 
         const benefitsHelp = document.getElementById('settings-benefits-help');
         if (benefitsHelp && t.gui.settings.mining_benefits_help) benefitsHelp.textContent = t.gui.settings.mining_benefits_help;
+
+        const notifHeader = document.getElementById('settings-notifications-header');
+        if (notifHeader && t.gui.settings.notifications_header) notifHeader.textContent = t.gui.settings.notifications_header;
+        const pushLabel = document.getElementById('settings-push-enabled-label');
+        if (pushLabel && t.gui.settings.push_enabled) pushLabel.textContent = t.gui.settings.push_enabled;
+        const soundLabel = document.getElementById('settings-push-sound-label');
+        if (soundLabel && t.gui.settings.push_sound) soundLabel.textContent = t.gui.settings.push_sound;
+        const alertLabel = document.getElementById('settings-campaign-alerts-label');
+        if (alertLabel && t.gui.settings.campaign_end_alerts_enabled) alertLabel.textContent = t.gui.settings.campaign_end_alerts_enabled;
 
         const gamesHelp = document.getElementById('settings-games-help');
         if (gamesHelp) gamesHelp.textContent = t.gui.settings.games_help;
@@ -2675,7 +2719,10 @@ function switchTab(tabName) {
     document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
     if (tabName === 'history') loadDropHistory();
     if (tabName === 'stats') loadStats();
-    if (tabName === 'settings') fetch(API_BASE + '/api/pair/status').then(r => r.json()).then(d => updateBotPairedUI(d.paired)).catch(() => {});
+    if (tabName === 'settings') {
+        fetch(API_BASE + '/api/pair/status').then(r => r.json()).then(d => updateBotPairedUI(d.paired)).catch(() => {});
+        loadPushConfig();
+    }
 }
 
 // ==================== Event Listeners ====================
@@ -2785,6 +2832,15 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('drop-blacklist-input')?.addEventListener('change', saveSettings);
     document.getElementById('discord-webhook-points')?.addEventListener('blur', saveSettings);
     document.getElementById('claim-channel-points')?.addEventListener('change', saveSettings);
+
+    document.getElementById('push-enabled-toggle')?.addEventListener('change', async function() {
+        if (this.checked && 'Notification' in window && Notification.permission !== 'granted') {
+            await Notification.requestPermission();
+        }
+        savePushConfig();
+    });
+    document.getElementById('push-sound-toggle')?.addEventListener('change', savePushConfig);
+    document.getElementById('campaign-alerts-toggle')?.addEventListener('change', savePushConfig);
 
     document.getElementById('cp-tab-refresh-btn')?.addEventListener('click', async () => {
         const btn = document.getElementById('cp-tab-refresh-btn');
