@@ -106,6 +106,45 @@ def _get_push_config() -> dict:
     }
 
 
+def _aggregate_stats() -> dict:
+    from collections import defaultdict
+    hist_file = _DATA_DIR / "drops_history.json"
+    if not hist_file.exists():
+        return {"total_claims": 0, "by_game": [], "by_day": [], "recent": []}
+    try:
+        history: list[dict] = json.loads(hist_file.read_text())
+    except Exception:
+        return {"total_claims": 0, "by_game": [], "by_day": [], "recent": []}
+
+    by_game: dict[str, int] = defaultdict(int)
+    by_day: dict[str, int] = defaultdict(int)
+
+    for entry in history:
+        by_game[entry.get("game", "Unknown")] += 1
+        ts = entry.get("timestamp", "")
+        if ts:
+            day = ts[:10]  # "YYYY-MM-DD"
+            by_day[day] += 1
+
+    sorted_games = sorted(by_game.items(), key=lambda x: x[1], reverse=True)
+    sorted_days = sorted(by_day.items())
+
+    recent = [e for e in history if e.get("image_url")][:10]
+    if len(recent) < 10:
+        seen = {e.get("reward") for e in recent}
+        for e in history:
+            if e.get("reward") not in seen and len(recent) < 10:
+                recent.append(e)
+                seen.add(e.get("reward"))
+
+    return {
+        "total_claims": len(history),
+        "by_game": [{"game": g, "count": c} for g, c in sorted_games[:10]],
+        "by_day": [{"date": d, "count": c} for d, c in sorted_days[-30:]],
+        "recent": recent[:10],
+    }
+
+
 def _vienna_today() -> str:
     from datetime import datetime
     from zoneinfo import ZoneInfo
@@ -538,6 +577,10 @@ async def get_drops_history():
     except Exception:
         pass
     return []
+
+@app.get("/api/stats")
+async def get_stats(request: Request):
+    return _aggregate_stats()
 
 @app.get("/api/idle-watch/status")
 async def idle_watch_status():
