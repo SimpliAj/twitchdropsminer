@@ -637,9 +637,29 @@ async def idle_watch_switch():
             twitch_client.gui.clear_drop()
             twitch_client.watch(channel, update_status=False)
             twitch_client.gui.status.update(f"💤 Idle watching: {channel.name}")
+            cfg2 = _load_web_config()
+            cfg2["last_idle_channel"] = next_login
+            _save_web_config(cfg2)
             return {"switched_to": next_login}
 
     raise HTTPException(status_code=404, detail="No other idle channels are online")
+
+
+@app.post("/api/idle-watch/resume")
+async def idle_watch_resume():
+    """Resume watching the last known idle channel, falling back to switch."""
+    if not gui_manager or not twitch_client:
+        raise HTTPException(status_code=503, detail="Not ready")
+    cfg = _load_web_config()
+    last_channel = cfg.get("last_idle_channel")
+    if last_channel:
+        channel = await twitch_client._fetch_idle_channel_by_login(last_channel)
+        if channel is not None:
+            twitch_client.gui.clear_drop()
+            twitch_client.watch(channel, update_status=False)
+            twitch_client.gui.status.update(f"💤 Idle watching: {channel.name}")
+            return {"switched_to": last_channel, "resumed": True}
+    return await idle_watch_switch()
 
 
 @app.get("/api/settings")

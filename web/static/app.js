@@ -221,7 +221,7 @@ socket.on('initial_state', (data) => {
         const alreadyIdle = currentStatus.includes('idle') || currentStatus.includes('💤');
         if (!alreadyIdle && (data.settings?.idle_channels?.length > 0 || data.settings?.idle_use_followed)) {
             setTimeout(() => {
-                fetch(API_BASE + '/api/idle-watch/switch', { method: 'POST' }).catch(() => {});
+                fetch(API_BASE + '/api/idle-watch/resume', { method: 'POST' }).catch(() => {});
             }, 3000);
         }
     }
