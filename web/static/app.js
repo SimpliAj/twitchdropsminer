@@ -556,37 +556,6 @@ async function loadStats() {
             gridEl.appendChild(grid);
         }
 
-        // Recent claims
-        const recentEl = document.getElementById('stats-recent');
-        recentEl.textContent = '';
-        for (const drop of data.recent) {
-            const date = drop.timestamp ? new Date(drop.timestamp).toLocaleString() : '';
-            const item = document.createElement('div');
-            item.className = 'stats-recent-item';
-            if (drop.image_url) {
-                const img = document.createElement('img');
-                img.className = 'stats-recent-img';
-                img.src = drop.image_url;
-                img.alt = '';
-                item.appendChild(img);
-            } else {
-                const placeholder = document.createElement('div');
-                placeholder.className = 'stats-recent-img';
-                item.appendChild(placeholder);
-            }
-            const info = document.createElement('div');
-            info.className = 'stats-recent-info';
-            const reward = document.createElement('div');
-            reward.className = 'stats-recent-reward';
-            reward.textContent = drop.reward || drop.drop;
-            const meta = document.createElement('div');
-            meta.className = 'stats-recent-meta';
-            meta.textContent = drop.game + ' · ' + date;
-            info.appendChild(reward);
-            info.appendChild(meta);
-            item.appendChild(info);
-            recentEl.appendChild(item);
-        }
     } catch (e) {
         console.error('Failed to load stats:', e);
     }
