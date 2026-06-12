@@ -2295,11 +2295,12 @@ header h1 {
     }
 
     .tab-button {
-        flex: 0 0 auto;
-        padding: 10px 14px;
+        flex: 1 1 0;
+        padding: 10px 8px;
         font-size: 12px;
         border-radius: 8px;
         white-space: nowrap;
+        text-align: center;
     }
 
     /* Inventory filters */
