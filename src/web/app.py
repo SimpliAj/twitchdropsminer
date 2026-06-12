@@ -108,7 +108,7 @@ def _get_push_config() -> dict:
 
 def _aggregate_stats() -> dict:
     from collections import defaultdict
-    hist_file = _DATA_DIR / "drops_history.json"
+    hist_file = _get_account_data_dir() / "drops_history.json"
     if not hist_file.exists():
         return {"total_claims": 0, "by_game": [], "by_day": [], "recent": []}
     try:
