@@ -674,7 +674,7 @@ class Twitch:
                 self.gui.status.update(_.t["gui"]["status"]["exiting"])
                 # we've been requested to exit the application
                 break
-            if self._state is State.IDLE:
+            if self._state is State.IDLE and not self._idle_topic_ids:
                 try:
                     await asyncio.wait_for(self._state_change.wait(), timeout=3600)
                 except asyncio.TimeoutError:
