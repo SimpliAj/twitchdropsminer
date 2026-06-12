@@ -56,6 +56,7 @@
             <button class="tab-button" data-tab="settings">Settings</button>
             <button class="tab-button" data-tab="system" id="tab-btn-system">System</button>
             <button class="tab-button" data-tab="help">Help</button>
+            <button class="tab-button" data-tab="stats">Stats</button>
         </nav>
 
         <!-- Main Tab -->
@@ -903,6 +904,46 @@
                     </div><!-- end help-body -->
                 </div><!-- end help-layout -->
             </div><!-- end help-wiki -->
+        </div>
+        <!-- Stats Tab -->
+        <div id="stats-tab" class="tab-content">
+            <div style="padding: 16px; max-width: 900px; margin: 0 auto;">
+                <h2 style="margin-bottom: 16px; color: var(--text);">Drop Statistics</h2>
+
+                <!-- Summary row -->
+                <div id="stats-summary" style="display:flex; gap:12px; margin-bottom:24px; flex-wrap:wrap;">
+                    <div class="stat-card">
+                        <div class="stat-value" id="stats-total">—</div>
+                        <div class="stat-label">Total Claims</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stats-games">—</div>
+                        <div class="stat-label">Games</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stats-last">—</div>
+                        <div class="stat-label">Last Claim</div>
+                    </div>
+                </div>
+
+                <!-- By Game bar chart -->
+                <div class="stats-section">
+                    <h3>Claims by Game</h3>
+                    <div id="stats-by-game"></div>
+                </div>
+
+                <!-- By Day bar chart -->
+                <div class="stats-section" style="margin-top:24px;">
+                    <h3>Claims per Day (last 30 days)</h3>
+                    <canvas id="stats-by-day-canvas" height="120" style="width:100%;"></canvas>
+                </div>
+
+                <!-- Recent claims -->
+                <div class="stats-section" style="margin-top:24px;">
+                    <h3>Recent Claims</h3>
+                    <div id="stats-recent"></div>
+                </div>
+            </div>
         </div>
         <!-- Footer -->
         <footer class="footer">
