@@ -690,7 +690,13 @@ async def get_instance():
     import os as _eos
     port = int(_eos.environ.get("TDM_PORT", 8080))
     label = _eos.environ.get("TDM_LABEL", f"Instance {port}")
-    return {"port": port, "label": label}
+    login = None
+    try:
+        if twitch_client and hasattr(twitch_client._auth_state, "user_login"):
+            login = twitch_client._auth_state.user_login
+    except Exception:
+        pass
+    return {"port": port, "label": label, "login": login}
 
 
 @app.get("/api/version")
