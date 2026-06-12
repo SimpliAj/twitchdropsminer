@@ -26,6 +26,14 @@ The following features and fixes have been added on top of the upstream codebase
 - Full CRUD via REST API: `/api/accounts` (list, add, switch, delete)
 - Drop history and channel points are saved per-account; switching accounts shows the correct data instantly
 
+### 🔀 Multi-Account Parallel Mode
+- Run two completely independent miner instances simultaneously — each on its own port, with its own data directory and login session
+- Instance 1 runs on port **8080** with data in `data/`, instance 2 runs on port **8082** with data in `data2/`
+- Configured via environment variables: `TDM_PORT` (listening port) and `TDM_DATA_DIR` (data directory path)
+- An Nginx reverse proxy exposes both instances on a single domain: account 1 at `/`, account 2 at `/acc2/`
+- The web dashboard includes account switcher buttons that show the Twitch username of each logged-in account; clicking switches you between the two dashboards via `?acc=2` URL parameter
+- Both instances are fully independent — separate cookies, settings, drop history, channel points, and campaigns
+
 ### 💰 Channel Points Auto-Claimer
 - Automatically claims bonus channel point chests via both WebSocket (PubSub) and GQL polling (60s fallback)
 - Fixes upstream issues where chests were missed due to unreliable PubSub delivery
@@ -168,6 +176,45 @@ python main.py
 ```
 
 Visit 👉 **<http://localhost:8080>**
+
+### 👥 Multi-Account Parallel (Two Instances)
+
+Run both accounts simultaneously with Docker Compose:
+
+```yaml
+services:
+  tdm-account1:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - TZ=Europe/Vienna
+      - WEB_PASSWORD=yourpassword
+      - TDM_PORT=8080
+      - TDM_DATA_DIR=data
+    restart: unless-stopped
+
+  tdm-account2:
+    build: .
+    ports:
+      - "8082:8082"
+    volumes:
+      - ./data2:/app/data
+      - ./logs2:/app/logs
+    environment:
+      - TZ=Europe/Vienna
+      - WEB_PASSWORD=yourpassword
+      - TDM_PORT=8082
+      - TDM_DATA_DIR=data
+    restart: unless-stopped
+```
+
+Then visit:
+- Account 1: **<http://localhost:8080>**
+- Account 2: **<http://localhost:8082>**
 
 ---
 
