@@ -525,60 +525,59 @@
 
         <!-- Analytics Tab (Stats + Channel Points + History) -->
         <div id="analytics-tab" class="tab-content">
-            <div style="padding: 16px; max-width: 900px; margin: 0 auto;">
+            <div class="analytics-layout">
 
-                <!-- Stats Section -->
-                <div class="stats-section" style="margin-bottom: 32px;">
-                    <h2 id="analytics-stats-header" style="margin-bottom: 16px; color: var(--text);">Drop Statistics</h2>
-                    <div id="stats-summary" style="display:flex; gap:8px; margin-bottom:24px;">
-                        <div class="stat-card">
-                            <div class="stat-value" id="stats-total">—</div>
-                            <div class="stat-label" id="analytics-total-label">Total Claims</div>
+                <!-- LEFT: Statistics -->
+                <div class="analytics-left">
+                    <section class="settings-section">
+                        <h2 id="analytics-stats-header" style="margin-bottom:16px;">Drop Statistics</h2>
+                        <div id="stats-summary" style="display:flex;gap:8px;margin-bottom:24px;">
+                            <div class="stat-card">
+                                <div class="stat-value" id="stats-total">—</div>
+                                <div class="stat-label" id="analytics-total-label">Total Claims</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="stats-games">—</div>
+                                <div class="stat-label" id="analytics-games-label">Games</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="stats-last">—</div>
+                                <div class="stat-label" id="analytics-last-label">Last Claim</div>
+                            </div>
                         </div>
-                        <div class="stat-card">
-                            <div class="stat-value" id="stats-games">—</div>
-                            <div class="stat-label" id="analytics-games-label">Games</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-value" id="stats-last">—</div>
-                            <div class="stat-label" id="analytics-last-label">Last Claim</div>
-                        </div>
-                    </div>
-                    <div class="stats-section">
-                        <h3 id="analytics-by-game-header">Claims by Game</h3>
+                        <h3 id="analytics-by-game-header" style="margin-bottom:10px;">Claims by Game</h3>
                         <div id="stats-by-game"></div>
-                    </div>
-                    <div class="stats-section" style="margin-top:24px;">
-                        <h3 id="analytics-activity-header">Claims Activity</h3>
+                        <h3 id="analytics-activity-header" style="margin:20px 0 10px;">Claims Activity</h3>
                         <div id="stats-contribution-grid" style="overflow-x:auto;"></div>
-                    </div>
+                    </section>
                 </div>
 
-                <!-- Channel Points Section -->
-                <section class="settings-section" style="margin-bottom: 24px;">
-                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-                        <h2 id="analytics-cp-header" style="margin:0;border:none;padding:0;">Channel Points</h2>
-                        <div style="display:flex;gap:8px;align-items:center;">
-                            <span id="cp-tab-summary" style="font-size:0.85rem;color:#adadb8;"></span>
-                            <button id="cp-tab-refresh-btn" class="secondary-btn">↻ Refresh</button>
+                <!-- RIGHT: Channel Points + History -->
+                <div class="analytics-right">
+                    <section class="settings-section" style="margin-bottom:16px;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                            <h2 id="analytics-cp-header" style="margin:0;border:none;padding:0;">Channel Points</h2>
+                            <div style="display:flex;gap:8px;align-items:center;">
+                                <span id="cp-tab-summary" style="font-size:0.85rem;color:#adadb8;"></span>
+                                <button id="cp-tab-refresh-btn" class="secondary-btn">↻ Refresh</button>
+                            </div>
                         </div>
-                    </div>
-                    <div id="cp-tab-empty" style="color:#adadb8;font-size:0.9rem;padding:20px 0;">No channel points data yet. Points are recorded while watching channels.</div>
-                    <div id="cp-tab-list" style="display:none;"></div>
-                </section>
+                        <div id="cp-tab-empty" style="color:#adadb8;font-size:0.9rem;padding:12px 0;">No channel points data yet.</div>
+                        <div id="cp-tab-list" style="display:none;"></div>
+                    </section>
 
-                <!-- History Section -->
-                <section class="settings-section" style="margin-bottom: 0;">
-                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-                        <h2 id="analytics-history-header" style="margin:0;border:none;padding:0;">Drop History</h2>
-                        <div style="display:flex;gap:8px;align-items:center;">
-                            <span id="history-summary" style="font-size:0.85rem;color:#adadb8;"></span>
-                            <button id="history-refresh-btn" class="secondary-btn">&#x21BB; Refresh</button>
+                    <section class="settings-section">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                            <h2 id="analytics-history-header" style="margin:0;border:none;padding:0;">Drop History</h2>
+                            <div style="display:flex;gap:8px;align-items:center;">
+                                <span id="history-summary" style="font-size:0.85rem;color:#adadb8;"></span>
+                                <button id="history-refresh-btn" class="secondary-btn">&#x21BB; Refresh</button>
+                            </div>
                         </div>
-                    </div>
-                    <div id="history-empty" style="color:#adadb8;font-size:0.9rem;padding:20px 0;">No drops claimed yet.</div>
-                    <div id="history-list" style="display:none;"></div>
-                </section>
+                        <div id="history-empty" style="color:#adadb8;font-size:0.9rem;padding:12px 0;">No drops claimed yet.</div>
+                        <div id="history-list" style="display:none;"></div>
+                    </section>
+                </div>
 
             </div>
         </div>
@@ -1014,7 +1013,7 @@
         </footer>
     </div>
 
-    <script src="/static/app.js?v=1749746400"></script>
+    <script src="/static/app.js?v=1749746800"></script>
 </body>
 
 </html>
