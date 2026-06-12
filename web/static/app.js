@@ -490,23 +490,69 @@ async function loadStats() {
             gameContainer.appendChild(row);
         }
 
-        // By day canvas chart
-        const canvas = document.getElementById('stats-by-day-canvas');
-        if (canvas && data.by_day.length > 0) {
-            const W = canvas.offsetWidth || 600;
-            canvas.width = W;
-            canvas.height = 120;
-            const ctx = canvas.getContext('2d');
-            const maxDay = Math.max(...data.by_day.map(d => d.count), 1);
-            const barW = Math.max(4, Math.floor(W / data.by_day.length) - 2);
-            ctx.clearRect(0, 0, W, 120);
-            data.by_day.forEach(({ date, count }, i) => {
-                const h = Math.round((count / maxDay) * 100);
-                const x = i * (barW + 2);
-                ctx.fillStyle = getComputedStyle(document.documentElement)
-                    .getPropertyValue('--accent-color').trim() || '#9147ff';
-                ctx.fillRect(x, 120 - h, barW, h);
-            });
+        // Contribution grid (GitHub-style)
+        const gridEl = document.getElementById('stats-contribution-grid');
+        if (gridEl && data.by_day.length > 0) {
+            // Build date->count map
+            const dayMap = {};
+            for (const { date, count } of data.by_day) dayMap[date] = count;
+            const maxCount = Math.max(...Object.values(dayMap), 1);
+
+            // Generate last 52 weeks starting from nearest Sunday
+            const today = new Date();
+            const endSunday = new Date(today);
+            endSunday.setDate(today.getDate() - today.getDay()); // last Sunday
+            const startDate = new Date(endSunday);
+            startDate.setDate(endSunday.getDate() - 52 * 7 + 1);
+
+            // Build week columns
+            const weeks = [];
+            let cur = new Date(startDate);
+            while (cur <= endSunday) {
+                const week = [];
+                for (let d = 0; d < 7; d++) {
+                    const ds = cur.toISOString().slice(0, 10);
+                    week.push({ date: ds, count: dayMap[ds] || 0 });
+                    cur.setDate(cur.getDate() + 1);
+                }
+                weeks.push(week);
+            }
+
+            // Month labels
+            const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            const labelsDiv = document.createElement('div');
+            labelsDiv.className = 'contrib-labels';
+            let lastMonth = -1;
+            for (const week of weeks) {
+                const m = new Date(week[0].date).getMonth();
+                const span = document.createElement('span');
+                span.className = 'contrib-month-label';
+                span.style.minWidth = '15px';
+                if (m !== lastMonth) { span.textContent = monthNames[m]; lastMonth = m; }
+                labelsDiv.appendChild(span);
+            }
+            gridEl.innerHTML = '';
+            gridEl.appendChild(labelsDiv);
+
+            const grid = document.createElement('div');
+            grid.className = 'contrib-grid';
+            for (const week of weeks) {
+                const col = document.createElement('div');
+                col.className = 'contrib-col';
+                for (const { date, count } of week) {
+                    const cell = document.createElement('div');
+                    cell.className = 'contrib-cell';
+                    cell.setAttribute('data-count', count);
+                    if (count > 0) {
+                        const level = count >= 6 ? 4 : count >= 4 ? 3 : count >= 2 ? 2 : 1;
+                        cell.setAttribute('data-level', level);
+                    }
+                    cell.title = count > 0 ? `${date}: ${count} claim${count > 1 ? 's' : ''}` : date;
+                    col.appendChild(cell);
+                }
+                grid.appendChild(col);
+            }
+            gridEl.appendChild(grid);
         }
 
         // Recent claims

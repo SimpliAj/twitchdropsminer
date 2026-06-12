@@ -140,7 +140,7 @@ def _aggregate_stats() -> dict:
     return {
         "total_claims": len(history),
         "by_game": [{"game": g, "count": c} for g, c in sorted_games[:10]],
-        "by_day": [{"date": d, "count": c} for d, c in sorted_days[-30:]],
+        "by_day": [{"date": d, "count": c} for d, c in sorted_days[-365:]],
         "recent": recent[:10],
     }
 
