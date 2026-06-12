@@ -182,7 +182,38 @@
       "notifications_header": "Notifications",
       "push_enabled": "Browser Push Notifications",
       "push_sound": "Notification Sound",
-      "campaign_end_alerts_enabled": "Campaign End Alerts (24h warning)"
+      "campaign_end_alerts_enabled": "Campaign End Alerts (24h warning)",
+      "channel_points_section": "Channel Points",
+      "channel_points_auto_claim": "Auto-claim bonus channel points",
+      "channel_points_auto_claim_help": "Automatically claims the bonus chest when it appears on watched channels.",
+      "discord_notifications": "Discord Notifications",
+      "discord_drops_webhook_label": "Drop Claimed Webhook:",
+      "discord_drops_webhook_help": "Fires when a Twitch drop is successfully claimed.",
+      "discord_points_webhook_label": "Channel Points Webhook:",
+      "discord_points_webhook_help": "Fires when a bonus channel point chest is claimed.",
+      "test_webhook": "Test",
+      "proxy_url_label": "Proxy URL:",
+      "set_proxy": "Set Proxy",
+      "verify_proxy": "Verify",
+      "proxy_url_help": "Leave empty to disable. Supports HTTP/HTTPS/SOCKS.",
+      "idle_watch": "Idle Watch",
+      "idle_watch_help": "Channels to watch when no drops are available. Add in priority order.",
+      "idle_auto_followed": "Auto: use followed channels",
+      "idle_auto_followed_help": "Automatically watches live channels you follow on Twitch when idle.",
+      "idle_channel_placeholder": "Manual channel name...",
+      "idle_channel_add": "Add",
+      "blacklist": "Drop Name Blacklist",
+      "blacklist_help": "Comma-separated keywords. Drops whose name contains any keyword are ignored. Useful for regional/exclusive drops (e.g. JP, Korea, (KR)).",
+      "scheduler": "Scheduler",
+      "scheduler_help": "Automatically pause and resume mining based on time of day.",
+      "scheduler_enable": "Enable time-based scheduler",
+      "scheduler_active_from": "Active from",
+      "scheduler_active_until": "Active until",
+      "scheduler_times_help": "Mining runs only within this window. Outside it, mining is automatically paused.",
+      "bot_notification_channels": "Notification Channels",
+      "bot_setchannel_hint": "Use /setchannel in Discord to set channels.",
+      "add_account": "+ Add Account",
+      "account_label_placeholder": "Label (e.g. Main, Alt)"
     },
     "help": {
       "about": "Twitch Drops Miner Hakkında",
@@ -253,7 +284,21 @@
       "logout_btn": "Logout",
       "reload_ok": "Campaigns reload triggered.",
       "restart_confirm": "Restart the miner? PM2 will restart it automatically.",
-      "restart_ok": "Miner stopping — will restart via PM2 in a few seconds."
+      "restart_ok": "Miner stopping — will restart via PM2 in a few seconds.",
+      "accounts_header": "Accounts"
+    },
+    "analytics": {
+      "stats_header": "Drop Statistics",
+      "total_claims": "Total Claims",
+      "games_label": "Games",
+      "last_claim": "Last Claim",
+      "claims_by_game": "Claims by Game",
+      "claims_activity": "Claims Activity",
+      "channel_points": "Channel Points",
+      "refresh": "↻ Refresh",
+      "no_channel_points": "No channel points data yet. Points are recorded while watching channels.",
+      "drop_history": "Drop History",
+      "no_history": "No drops claimed yet."
     }
   }
 }
