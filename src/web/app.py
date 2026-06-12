@@ -97,6 +97,15 @@ def _is_setup_done() -> bool:
     return _load_web_config().get("setup_done", False)
 
 
+def _get_push_config() -> dict:
+    cfg = _load_web_config()
+    return {
+        "push_notifications_enabled": cfg.get("push_notifications_enabled", False),
+        "push_sound_enabled": cfg.get("push_sound_enabled", True),
+        "campaign_end_alerts_enabled": cfg.get("campaign_end_alerts_enabled", True),
+    }
+
+
 def _vienna_today() -> str:
     from datetime import datetime
     from zoneinfo import ZoneInfo
@@ -1173,6 +1182,22 @@ async def migration_hint():
     cfg = _load_web_config()
     has_active = bool(cfg.get("active_account"))
     return {"has_legacy": legacy_cookies and not has_active, "migrated": has_active}
+
+
+@app.get("/api/push-config")
+async def get_push_config(request: Request):
+    return _get_push_config()
+
+
+@app.post("/api/push-config")
+async def set_push_config(request: Request):
+    body = await request.json()
+    cfg = _load_web_config()
+    for key in ("push_notifications_enabled", "push_sound_enabled", "campaign_end_alerts_enabled"):
+        if key in body:
+            cfg[key] = bool(body[key])
+    _save_web_config(cfg)
+    return {"ok": True}
 
 
 # ==================== Socket.IO Events ====================
