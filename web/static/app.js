@@ -201,7 +201,7 @@ socket.on('initial_state', (data) => {
         const login = data.watching_channel.login;
         const gameEl = document.getElementById('status-game');
         if (gameEl && data.watching_channel.game) {
-            gameEl.textContent = data.watching_channel.game;
+            gameEl.textContent = 'Game: ' + data.watching_channel.game;
             gameEl.style.display = '';
         }
         updateChannelPointsDisplay(login, null);
