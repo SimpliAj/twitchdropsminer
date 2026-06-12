@@ -2939,7 +2939,7 @@ header h1 {
     grid-template-columns: 1fr 1fr;
     gap: 20px;
     padding: 16px;
-    align-items: start;
+    align-items: stretch;
     min-width: 0;
 }
 .analytics-stats-col { grid-column: 1; grid-row: 1; min-width: 0; }
