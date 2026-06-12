@@ -362,18 +362,29 @@ The dashboard will show a password prompt on first visit. Auth is stored as a 30
 
 ## 🖼️ Screenshots
 
-### Main Dashboard
+<details>
+<summary>📊 Main Dashboard</summary>
+
 ![Main Tab](./docs/screenshots/main-tab.jpg)
+</details>
 
-### Inventory
+<details>
+<summary>🎒 Inventory</summary>
+
 ![Inventory Tab](./docs/screenshots/inventory-tab.jpg)
+</details>
 
-### Analytics
+<details>
+<summary>📈 Analytics</summary>
+
 ![Analytics Tab](./docs/screenshots/analytics-tab.jpg)
+</details>
 
-### Help
+<details>
+<summary>❓ Help</summary>
+
 ![Help Tab](./docs/screenshots/help-tab.jpg)
-
+</details>
 
 
 ---
