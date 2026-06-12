@@ -1,253 +1,258 @@
 {
-    "language_name": "繁體中文",
-    "english_name": "Traditional Chinese",
+  "language_name": "繁體中文",
+  "english_name": "Traditional Chinese",
+  "status": {
+    "terminated": "\n應用程式已終止，請關閉視窗以離開應用程式。",
+    "watching": "正在觀看：{channel}",
+    "goes_online": "{channel} 頻道已開始實況，正在跳轉…",
+    "goes_offline": "{channel} 頻道已結束實況，正在跳轉…",
+    "claimed_drop": "已領取掉寶：{drop}",
+    "no_channel": "沒有可觀看的頻道，正在等待一個正在實況的頻道…",
+    "no_campaign": "沒有可用於掉寶的活動，正在等待一個有效的掉寶活動…"
+  },
+  "login": {
+    "unexpected_content": "回傳的內容類型有誤，通常是由於被重新導向導致。您需要設置 VPN 或者確認登入頁面才能上網嗎？",
+    "error_code": "登入錯誤代碼：{error_code}",
+    "incorrect_login_pass": "使用者名稱或密碼錯誤。",
+    "incorrect_email_code": "電子郵件驗證碼錯誤。",
+    "incorrect_twofa_code": "2FA 驗證碼不正確。",
+    "email_code_required": "需要電子郵件驗證碼，請查看您的電子郵件信箱。",
+    "twofa_code_required": "需要 2FA 驗證碼。",
     "status": {
-        "terminated": "\n應用程式已終止，請關閉視窗以離開應用程式。",
-        "watching": "正在觀看：{channel}",
-        "goes_online": "{channel} 頻道已開始實況，正在跳轉…",
-        "goes_offline": "{channel} 頻道已結束實況，正在跳轉…",
-        "claimed_drop": "已領取掉寶：{drop}",
-        "no_channel": "沒有可觀看的頻道，正在等待一個正在實況的頻道…",
-        "no_campaign": "沒有可用於掉寶的活動，正在等待一個有效的掉寶活動…"
+      "logged_in": "已登入",
+      "logged_out": "未登入",
+      "logging_in": "正在登入…",
+      "required": "需要登入",
+      "waiting_auth": "正在等待身份驗證..."
+    },
+    "oauth_prompt": "請在此處輸入此代碼：",
+    "oauth_activate": "啟用 Twitch",
+    "oauth_confirm": "我已輸入代碼"
+  },
+  "error": {
+    "captcha": "您的登入被 CAPTCHA 拒絕，請於12小時後重試。",
+    "site_down": "Twitch 網頁目前無法開啟，將在 {seconds} 秒後重試…",
+    "no_connection": "無法連接到 Twitch，將在 {seconds} 秒後重試…"
+  },
+  "gui": {
+    "output": "輸出日誌",
+    "status": {
+      "name": "狀態",
+      "idle": "已完成獲取",
+      "exiting": "正在退出…",
+      "terminated": "已終止運行",
+      "cleanup": "正在清除頻道…",
+      "gathering": "正在搜索實況頻道…",
+      "switching": "正在切換實況頻道…",
+      "fetching_inventory": "正在獲取庫存…",
+      "fetching_campaigns": "正在獲取掉寶活動…",
+      "adding_campaigns": "將掉寶活動列表新增至庫存… {counter}"
+    },
+    "tabs": {
+      "main": "主要",
+      "inventory": "庫存",
+      "settings": "設置",
+      "help": "幫助",
+      "system": "System",
+      "stats": "Stats"
     },
     "login": {
-        "unexpected_content": "回傳的內容類型有誤，通常是由於被重新導向導致。您需要設置 VPN 或者確認登入頁面才能上網嗎？",
-        "error_code": "登入錯誤代碼：{error_code}",
-        "incorrect_login_pass": "使用者名稱或密碼錯誤。",
-        "incorrect_email_code": "電子郵件驗證碼錯誤。",
-        "incorrect_twofa_code": "2FA 驗證碼不正確。",
-        "email_code_required": "需要電子郵件驗證碼，請查看您的電子郵件信箱。",
-        "twofa_code_required": "需要 2FA 驗證碼。",
-        "status": {
-            "logged_in": "已登入",
-            "logged_out": "未登入",
-            "logging_in": "正在登入…",
-            "required": "需要登入",
-            "waiting_auth": "正在等待身份驗證..."
-        },
-        "oauth_prompt": "請在此處輸入此代碼：",
-        "oauth_activate": "啟用 Twitch",
-        "oauth_confirm": "我已輸入代碼"
+      "name": "登入 Twitch",
+      "labels": "狀態：\n用戶ID：",
+      "request": "請先登入以繼續。",
+      "username": "使用者名稱",
+      "password": "密碼",
+      "twofa_code": "2FA 驗證碼（選用）",
+      "button": "登入",
+      "oauth_prompt": "Enter this code at:",
+      "oauth_activate": "Twitch Activate",
+      "oauth_confirm": "I've entered the code"
     },
-    "error": {
-        "captcha": "您的登入被 CAPTCHA 拒絕，請於12小時後重試。",
-        "site_down": "Twitch 網頁目前無法開啟，將在 {seconds} 秒後重試…",
-        "no_connection": "無法連接到 Twitch，將在 {seconds} 秒後重試…"
+    "websocket": {
+      "name": "Websocket 狀態",
+      "websocket": "Websocket #{id}:",
+      "initializing": "正在初始化…",
+      "connected": "已連接",
+      "disconnected": "中斷連接",
+      "connecting": "正在連接…",
+      "disconnecting": "正在中斷連接…",
+      "reconnecting": "正在重新連接…"
     },
-    "gui": {
-        "output": "輸出日誌",
-        "status": {
-            "name": "狀態",
-            "idle": "已完成獲取",
-            "exiting": "正在退出…",
-            "terminated": "已終止運行",
-            "cleanup": "正在清除頻道…",
-            "gathering": "正在搜索實況頻道…",
-            "switching": "正在切換實況頻道…",
-            "fetching_inventory": "正在獲取庫存…",
-            "fetching_campaigns": "正在獲取掉寶活動…",
-            "adding_campaigns": "將掉寶活動列表新增至庫存… {counter}"
-        },
-        "tabs": {
-            "main": "主要",
-            "inventory": "庫存",
-            "settings": "設置",
-            "help": "幫助",
-            "system": "System"
-        },
-        "login": {
-            "name": "登入 Twitch",
-            "labels": "狀態：\n用戶ID：",
-            "request": "請先登入以繼續。",
-            "username": "使用者名稱",
-            "password": "密碼",
-            "twofa_code": "2FA 驗證碼（選用）",
-            "button": "登入",
-            "oauth_prompt": "Enter this code at:",
-            "oauth_activate": "Twitch Activate",
-            "oauth_confirm": "I've entered the code"
-        },
-        "websocket": {
-            "name": "Websocket 狀態",
-            "websocket": "Websocket #{id}:",
-            "initializing": "正在初始化…",
-            "connected": "已連接",
-            "disconnected": "中斷連接",
-            "connecting": "正在連接…",
-            "disconnecting": "正在中斷連接…",
-            "reconnecting": "正在重新連接…"
-        },
-        "progress": {
-            "name": "掉寶活動進度",
-            "drop": "掉寶獎勵：",
-            "game": "遊戲：",
-            "remaining": "剩餘時間：{time}",
-            "campaign": "掉寶活動名稱：",
-            "drop_progress": "掉寶進度：",
-            "campaign_progress": "活動進度：",
-            "no_drop": "沒有活躍的掉落",
-            "return_to_auto": "返回自動模式",
-            "manual_mode_info": "手動模式：挖礦中"
-        },
-        "channels": {
-            "name": "活動頻道",
-            "online": "上線 ✔",
-            "pending": "離線 ⏳",
-            "offline": "離線 ❌",
-            "no_channels": "尚未追蹤任何頻道...",
-            "no_channels_for_games": "找不到所選遊戲的頻道...",
-            "channel_count": "頻道",
-            "channel_count_plural": "頻道",
-            "viewers": "觀眾"
-        },
-        "inventory": {
-            "status": {
-                "active": "已上線 ✔",
-                "upcoming": "即將開始 ⏳",
-                "expired": "已結束 ❌",
-                "claimed": "已領取 ✔"
-            },
-            "starts": "開始時間：{time}",
-            "ends": "結束時間：{time}",
-            "no_campaigns": "尚未載入任何活動...",
-            "claimed_drops": "已領取",
-            "filters": {
-                "active": "活動中",
-                "not_linked": "未連結",
-                "upcoming": "即將開始",
-                "expired": "已過期",
-                "finished": "已完成",
-                "item": "物品",
-                "badge": "徽章",
-                "emote": "表情",
-                "other": "其他",
-                "clear": "清除過濾器",
-                "search_placeholder": "搜尋遊戲..."
-            },
-            "filter_linked": "Linked"
-        },
-        "settings": {
-            "general": {
-                "name": "一般",
-                "dark_mode": "深色模式"
-            },
-            "reload": "重新載入",
-            "games_to_watch": "觀看遊戲",
-            "games_help": "選擇要觀看的遊戲。順序很重要 - 拖曳以重新排序優先級（頂部 = 最高優先級）。",
-            "search_games": "搜尋遊戲...",
-            "add_game": "Add Game",
-            "add_game_hint": " Click \"Add Game\" to add it manually.",
-            "select_all": "全選",
-            "deselect_all": "取消全選",
-            "selected_games": "已選遊戲（拖曳以重新排序）",
-            "available_games": "可用遊戲",
-            "no_games_selected": "未選擇遊戲。勾選下方遊戲以新增。",
-            "no_games_match": "沒有遊戲符合您的搜尋。",
-            "all_games_selected": "所有遊戲都已選擇或沒有可用遊戲。",
-            "actions": "操作",
-            "connection_quality": "連線品質：",
-            "minimum_refresh": "最小重新整理間隔（分鐘）：",
-            "reload_campaigns": "重新載入活動",
-            "mining_benefits": "挖掘獎勵",
-            "mining_benefits_help": "選擇您想要獲取的掉落類型。",
-            "select_linked": "Select Linked",
-            "password_header": "Login & Password",
-            "password_current_label": "Current Password",
-            "password_current_placeholder": "Leave empty if no password set",
-            "password_new_label": "New Password",
-            "password_new_placeholder": "New password (empty = disable login)",
-            "password_confirm_label": "Confirm New Password",
-            "password_confirm_placeholder": "Confirm",
-            "password_save": "Save Password",
-            "password_disable": "Disable Login",
-            "password_saved": "Password saved.",
-            "password_disabled_msg": "Login disabled.",
-            "password_mismatch": "Passwords don't match.",
-            "password_status_active": "🔒 Login active — Password set",
-            "password_status_inactive": "🔓 No login — publicly accessible",
-            "discord_bot": {
-                "header": "Discord Bot",
-                "description": "Pair a Discord bot to control TwitchDropsMiner via chat commands.",
-                "not_connected": "Not connected",
-                "connected": "✅ Connected",
-                "generate_code": "Generate code",
-                "generating": "Generating...",
-                "disconnect": "Disconnect",
-                "disconnect_confirm": "Disconnect the Discord bot?",
-                "invite_bot": "Invite bot",
-                "expires": "Expires in 10 min"
-            }
-        },
-        "help": {
-            "about": "關於 Twitch Drops Miner",
-            "about_text": "此應用程式會自動挖掘定時的 Twitch 掉落，而無需下載串流資料。",
-            "how_to_use": "使用方法",
-            "features": "功能",
-            "important_notes": "重要注意事項",
-            "github_repo": "GitHub 儲存庫",
-            "how_to_use_items": [
-                "使用您的 Twitch 帳戶登入（OAuth 裝置代碼流程）",
-                "在 <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a> 連結您的帳戶",
-                "挖礦器將自動發現活動並開始挖礦",
-                "在設定中配置優先遊戲以專注於您想要的內容",
-                "在主要和庫存頁籤中監控進度"
-            ],
-            "features_items": [
-                "無串流掉落挖礦 - 節省頻寬",
-                "遊戲優先級和排除清單",
-                "同時追蹤最多 199 個頻道",
-                "自動頻道切換",
-                "即時進度追蹤"
-            ],
-            "important_notes_items": [
-                "挖礦時請勿在同一帳戶上觀看串流",
-                "保持您的 cookies.jar 檔案安全",
-                "需要連結的遊戲帳戶才能獲得掉落"
-            ]
-        },
-        "header": {
-            "title": "Twitch Drops Miner",
-            "language": "語言：",
-            "initializing": "正在初始化...",
-            "auto_mode": "AUTO",
-            "manual_mode": "手動",
-            "connected": "已連接",
-            "disconnected": "已中斷連接"
-        },
-        "footer": {
-            "version": "版本:",
-            "loading": "載入中...",
-            "update_available": "可用更新:"
-        },
-        "badges": {
-            "manual": {
-                "title": "手動模式已啟用 - 正在觀看特定遊戲"
-            },
-            "auto": {
-                "title": "自動模式 - 遵循遊戲優先級"
-            },
-            "proxy": {
-                "title": "代理連接已啟用"
-            }
-        },
-        "wanted": {
-            "name": "期望掉落隊列",
-            "none": "隊列中沒有期望的掉落..."
-        },
-        "system": {
-            "header": "System",
-            "miner_header": "Miner",
-            "miner_desc": "Reload campaigns and restart the mining loop.",
-            "reload_btn": "Reload Campaigns",
-            "restart_header": "Restart",
-            "restart_desc": "Stop the miner process. PM2 will restart it automatically.",
-            "restart_btn": "Restart Miner",
-            "session_header": "Session",
-            "session_desc": "Log out of the web interface.",
-            "logout_btn": "Logout",
-            "reload_ok": "Campaigns reload triggered.",
-            "restart_confirm": "Restart the miner? PM2 will restart it automatically.",
-            "restart_ok": "Miner stopping — will restart via PM2 in a few seconds."
-        }
+    "progress": {
+      "name": "掉寶活動進度",
+      "drop": "掉寶獎勵：",
+      "game": "遊戲：",
+      "remaining": "剩餘時間：{time}",
+      "campaign": "掉寶活動名稱：",
+      "drop_progress": "掉寶進度：",
+      "campaign_progress": "活動進度：",
+      "no_drop": "沒有活躍的掉落",
+      "return_to_auto": "返回自動模式",
+      "manual_mode_info": "手動模式：挖礦中"
+    },
+    "channels": {
+      "name": "活動頻道",
+      "online": "上線 ✔",
+      "pending": "離線 ⏳",
+      "offline": "離線 ❌",
+      "no_channels": "尚未追蹤任何頻道...",
+      "no_channels_for_games": "找不到所選遊戲的頻道...",
+      "channel_count": "頻道",
+      "channel_count_plural": "頻道",
+      "viewers": "觀眾"
+    },
+    "inventory": {
+      "status": {
+        "active": "已上線 ✔",
+        "upcoming": "即將開始 ⏳",
+        "expired": "已結束 ❌",
+        "claimed": "已領取 ✔"
+      },
+      "starts": "開始時間：{time}",
+      "ends": "結束時間：{time}",
+      "no_campaigns": "尚未載入任何活動...",
+      "claimed_drops": "已領取",
+      "filters": {
+        "active": "活動中",
+        "not_linked": "未連結",
+        "upcoming": "即將開始",
+        "expired": "已過期",
+        "finished": "已完成",
+        "item": "物品",
+        "badge": "徽章",
+        "emote": "表情",
+        "other": "其他",
+        "clear": "清除過濾器",
+        "search_placeholder": "搜尋遊戲..."
+      },
+      "filter_linked": "Linked"
+    },
+    "settings": {
+      "general": {
+        "name": "一般",
+        "dark_mode": "深色模式"
+      },
+      "reload": "重新載入",
+      "games_to_watch": "觀看遊戲",
+      "games_help": "選擇要觀看的遊戲。順序很重要 - 拖曳以重新排序優先級（頂部 = 最高優先級）。",
+      "search_games": "搜尋遊戲...",
+      "add_game": "Add Game",
+      "add_game_hint": " Click \"Add Game\" to add it manually.",
+      "select_all": "全選",
+      "deselect_all": "取消全選",
+      "selected_games": "已選遊戲（拖曳以重新排序）",
+      "available_games": "可用遊戲",
+      "no_games_selected": "未選擇遊戲。勾選下方遊戲以新增。",
+      "no_games_match": "沒有遊戲符合您的搜尋。",
+      "all_games_selected": "所有遊戲都已選擇或沒有可用遊戲。",
+      "actions": "操作",
+      "connection_quality": "連線品質：",
+      "minimum_refresh": "最小重新整理間隔（分鐘）：",
+      "reload_campaigns": "重新載入活動",
+      "mining_benefits": "挖掘獎勵",
+      "mining_benefits_help": "選擇您想要獲取的掉落類型。",
+      "select_linked": "Select Linked",
+      "password_header": "Login & Password",
+      "password_current_label": "Current Password",
+      "password_current_placeholder": "Leave empty if no password set",
+      "password_new_label": "New Password",
+      "password_new_placeholder": "New password (empty = disable login)",
+      "password_confirm_label": "Confirm New Password",
+      "password_confirm_placeholder": "Confirm",
+      "password_save": "Save Password",
+      "password_disable": "Disable Login",
+      "password_saved": "Password saved.",
+      "password_disabled_msg": "Login disabled.",
+      "password_mismatch": "Passwords don't match.",
+      "password_status_active": "🔒 Login active — Password set",
+      "password_status_inactive": "🔓 No login — publicly accessible",
+      "discord_bot": {
+        "header": "Discord Bot",
+        "description": "Pair a Discord bot to control TwitchDropsMiner via chat commands.",
+        "not_connected": "Not connected",
+        "connected": "✅ Connected",
+        "generate_code": "Generate code",
+        "generating": "Generating...",
+        "disconnect": "Disconnect",
+        "disconnect_confirm": "Disconnect the Discord bot?",
+        "invite_bot": "Invite bot",
+        "expires": "Expires in 10 min"
+      },
+      "notifications_header": "Notifications",
+      "push_enabled": "Browser Push Notifications",
+      "push_sound": "Notification Sound",
+      "campaign_end_alerts_enabled": "Campaign End Alerts (24h warning)"
+    },
+    "help": {
+      "about": "關於 Twitch Drops Miner",
+      "about_text": "此應用程式會自動挖掘定時的 Twitch 掉落，而無需下載串流資料。",
+      "how_to_use": "使用方法",
+      "features": "功能",
+      "important_notes": "重要注意事項",
+      "github_repo": "GitHub 儲存庫",
+      "how_to_use_items": [
+        "使用您的 Twitch 帳戶登入（OAuth 裝置代碼流程）",
+        "在 <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a> 連結您的帳戶",
+        "挖礦器將自動發現活動並開始挖礦",
+        "在設定中配置優先遊戲以專注於您想要的內容",
+        "在主要和庫存頁籤中監控進度"
+      ],
+      "features_items": [
+        "無串流掉落挖礦 - 節省頻寬",
+        "遊戲優先級和排除清單",
+        "同時追蹤最多 199 個頻道",
+        "自動頻道切換",
+        "即時進度追蹤"
+      ],
+      "important_notes_items": [
+        "挖礦時請勿在同一帳戶上觀看串流",
+        "保持您的 cookies.jar 檔案安全",
+        "需要連結的遊戲帳戶才能獲得掉落"
+      ]
+    },
+    "header": {
+      "title": "Twitch Drops Miner",
+      "language": "語言：",
+      "initializing": "正在初始化...",
+      "auto_mode": "AUTO",
+      "manual_mode": "手動",
+      "connected": "已連接",
+      "disconnected": "已中斷連接"
+    },
+    "footer": {
+      "version": "版本:",
+      "loading": "載入中...",
+      "update_available": "可用更新:"
+    },
+    "badges": {
+      "manual": {
+        "title": "手動模式已啟用 - 正在觀看特定遊戲"
+      },
+      "auto": {
+        "title": "自動模式 - 遵循遊戲優先級"
+      },
+      "proxy": {
+        "title": "代理連接已啟用"
+      }
+    },
+    "wanted": {
+      "name": "期望掉落隊列",
+      "none": "隊列中沒有期望的掉落..."
+    },
+    "system": {
+      "header": "System",
+      "miner_header": "Miner",
+      "miner_desc": "Reload campaigns and restart the mining loop.",
+      "reload_btn": "Reload Campaigns",
+      "restart_header": "Restart",
+      "restart_desc": "Stop the miner process. PM2 will restart it automatically.",
+      "restart_btn": "Restart Miner",
+      "session_header": "Session",
+      "session_desc": "Log out of the web interface.",
+      "logout_btn": "Logout",
+      "reload_ok": "Campaigns reload triggered.",
+      "restart_confirm": "Restart the miner? PM2 will restart it automatically.",
+      "restart_ok": "Miner stopping — will restart via PM2 in a few seconds."
     }
+  }
 }

@@ -1,253 +1,258 @@
 {
-    "language_name": "Indonesian",
-    "english_name": "Indonesian",
+  "language_name": "Indonesian",
+  "english_name": "Indonesian",
+  "status": {
+    "terminated": "\nAplikasi telah dihentikan. \nSilakan tutup aplikasi.",
+    "watching": "Menonton : {channel}",
+    "goes_online": "{channel} Tiket masuk ONLINE, ganti...",
+    "goes_offline": "{channel} menjadi OFF-LINE, ubah...",
+    "claimed_drop": "Drop dipulihkan : {drop}",
+    "no_channel": "Tidak ada saluran yang tersedia untuk ditonton. Menunggu saluran secara ONLINE...",
+    "no_campaign": "Tidak ada kampanye aktif yang bisa ditambang. Menunggu kampanye aktif..."
+  },
+  "login": {
+    "error_code": "Kode kesalahan koneksi: {error_code}",
+    "unexpected_content": "Jenis konten yang tidak diharapkan yang dikembalikan, biasanya karena pengalihan. Apakah Anda perlu tersambung untuk mengakses Internet ?",
+    "incorrect_login_pass": "Nama pengguna atau kata sandi yang dimasukkan salah.",
+    "incorrect_email_code": "Kode verifikasi email salah.",
+    "incorrect_twofa_code": "Kode verifikasi 2FA salah.",
+    "email_code_required": "Diperlukan kode verifikasi email. Silakan periksa email Anda.",
+    "twofa_code_required": "Diperlukan kode 2FA.",
     "status": {
-        "terminated": "\nAplikasi telah dihentikan. \nSilakan tutup aplikasi.",
-        "watching": "Menonton : {channel}",
-        "goes_online": "{channel} Tiket masuk ONLINE, ganti...",
-        "goes_offline": "{channel} menjadi OFF-LINE, ubah...",
-        "claimed_drop": "Drop dipulihkan : {drop}",
-        "no_channel": "Tidak ada saluran yang tersedia untuk ditonton. Menunggu saluran secara ONLINE...",
-        "no_campaign": "Tidak ada kampanye aktif yang bisa ditambang. Menunggu kampanye aktif..."
+      "logged_in": "Online",
+      "logged_out": "Terputus",
+      "logging_in": "Koneksi dalam proses...",
+      "required": "Diperlukan sambungan",
+      "waiting_auth": "Menunggu autentikasi..."
+    },
+    "oauth_prompt": "Masukkan kode ini di:",
+    "oauth_activate": "Aktifkan Twitch",
+    "oauth_confirm": "Saya telah memasukkan kode"
+  },
+  "error": {
+    "captcha": "Sambungan ditolak oleh CAPTCHA. Silakan coba lagi dalam waktu sekitar 12 jam.",
+    "site_down": "Twitch tidak tersedia. Silakan coba lagi dalam {seconds} detik....",
+    "no_connection": "Tidak dapat tersambung ke Twitch. Silakan coba lagi dalam {detik} detik...."
+  },
+  "gui": {
+    "output": "Keluaran",
+    "status": {
+      "name": "Status",
+      "idle": "Tidak aktif",
+      "exiting": "Keluar...",
+      "terminated": "Diakhiri",
+      "cleanup": "Membersihkan saluran...",
+      "gathering": "Pencarian saluran langsung...",
+      "switching": "Koleksi saluran yang sedang berlangsung...",
+      "fetching_inventory": "Mmengambil inventaris...",
+      "fetching_campaigns": "Mengambil kampanye...",
+      "adding_campaigns": "Menambahkan daftar kampanye ke inventaris... {counter}"
+    },
+    "tabs": {
+      "main": "Utama",
+      "inventory": "Inventaris",
+      "settings": "Parameter",
+      "help": "Bantuan",
+      "system": "System",
+      "stats": "Stats"
     },
     "login": {
-        "error_code": "Kode kesalahan koneksi: {error_code}",
-        "unexpected_content": "Jenis konten yang tidak diharapkan yang dikembalikan, biasanya karena pengalihan. Apakah Anda perlu tersambung untuk mengakses Internet ?",
-        "incorrect_login_pass": "Nama pengguna atau kata sandi yang dimasukkan salah.",
-        "incorrect_email_code": "Kode verifikasi email salah.",
-        "incorrect_twofa_code": "Kode verifikasi 2FA salah.",
-        "email_code_required": "Diperlukan kode verifikasi email. Silakan periksa email Anda.",
-        "twofa_code_required": "Diperlukan kode 2FA.",
-        "status": {
-            "logged_in": "Online",
-            "logged_out": "Terputus",
-            "logging_in": "Koneksi dalam proses...",
-            "required": "Diperlukan sambungan",
-            "waiting_auth": "Menunggu autentikasi..."
-        },
-        "oauth_prompt": "Masukkan kode ini di:",
-        "oauth_activate": "Aktifkan Twitch",
-        "oauth_confirm": "Saya telah memasukkan kode"
+      "name": "Formulir masuk",
+      "labels": "Status :\nID Pengguna :",
+      "request": "Silakan masuk untuk melanjutkan.",
+      "username": "Nama pengguna",
+      "password": "Kata sandi",
+      "twofa_code": "Kode 2FA (opsional)",
+      "button": "Masuk",
+      "oauth_prompt": "Enter this code at:",
+      "oauth_activate": "Twitch Activate",
+      "oauth_confirm": "I've entered the code"
     },
-    "error": {
-        "captcha": "Sambungan ditolak oleh CAPTCHA. Silakan coba lagi dalam waktu sekitar 12 jam.",
-        "site_down": "Twitch tidak tersedia. Silakan coba lagi dalam {seconds} detik....",
-        "no_connection": "Tidak dapat tersambung ke Twitch. Silakan coba lagi dalam {detik} detik...."
+    "websocket": {
+      "name": "Status Websocket",
+      "websocket": "Soket web #{id}:",
+      "initializing": "Menginisialisasi...",
+      "connected": "Tersambung",
+      "disconnected": "Terputus",
+      "connecting": "Menyambungkan...",
+      "disconnecting": "Memutusan sambungan...",
+      "reconnecting": "Menyambungkan kembali..."
     },
-    "gui": {
-        "output": "Keluaran",
-        "status": {
-            "name": "Status",
-            "idle": "Tidak aktif",
-            "exiting": "Keluar...",
-            "terminated": "Diakhiri",
-            "cleanup": "Membersihkan saluran...",
-            "gathering": "Pencarian saluran langsung...",
-            "switching": "Koleksi saluran yang sedang berlangsung...",
-            "fetching_inventory": "Mmengambil inventaris...",
-            "fetching_campaigns": "Mengambil kampanye...",
-            "adding_campaigns": "Menambahkan daftar kampanye ke inventaris... {counter}"
-        },
-        "tabs": {
-            "main": "Utama",
-            "inventory": "Inventaris",
-            "settings": "Parameter",
-            "help": "Bantuan",
-            "system": "System"
-        },
-        "login": {
-            "name": "Formulir masuk",
-            "labels": "Status :\nID Pengguna :",
-            "request": "Silakan masuk untuk melanjutkan.",
-            "username": "Nama pengguna",
-            "password": "Kata sandi",
-            "twofa_code": "Kode 2FA (opsional)",
-            "button": "Masuk",
-            "oauth_prompt": "Enter this code at:",
-            "oauth_activate": "Twitch Activate",
-            "oauth_confirm": "I've entered the code"
-        },
-        "websocket": {
-            "name": "Status Websocket",
-            "websocket": "Soket web #{id}:",
-            "initializing": "Menginisialisasi...",
-            "connected": "Tersambung",
-            "disconnected": "Terputus",
-            "connecting": "Menyambungkan...",
-            "disconnecting": "Memutusan sambungan...",
-            "reconnecting": "Menyambungkan kembali..."
-        },
-        "progress": {
-            "name": "Perkembangan kampanye",
-            "drop": "Drop :",
-            "game": "Game",
-            "campaign": "Kampanye :",
-            "remaining": "{time} tersisa",
-            "drop_progress": "Perkembangan :",
-            "campaign_progress": "Perkembangan :",
-            "no_drop": "Tidak ada drop aktif",
-            "return_to_auto": "Kembali ke Mode Otomatis",
-            "manual_mode_info": "Mode Manual: Mining"
-        },
-        "channels": {
-            "name": "Saluran",
-            "online": "ONLINE  ✔",
-            "pending": "DITUNDA ⏳",
-            "offline": "OFFLINE ❌",
-            "no_channels": "Belum ada channel yang dilacak...",
-            "no_channels_for_games": "Tidak ada channel ditemukan untuk game yang dipilih...",
-            "channel_count": "channel",
-            "channel_count_plural": "channel",
-            "viewers": "penonton"
-        },
-        "inventory": {
-            "status": {
-                "active": "Aktif ✔",
-                "upcoming": "Segera hadir ⏳",
-                "expired": "Kedaluarsa ❌",
-                "claimed": "Diklaim ✔"
-            },
-            "starts": "Mulai : {time}",
-            "ends": "Akhir : {time}",
-            "no_campaigns": "Belum ada kampanye yang dimuat...",
-            "claimed_drops": "diklaim",
-            "filters": {
-                "active": "Aktif",
-                "not_linked": "Tidak Terhubung",
-                "upcoming": "Mendatang",
-                "expired": "Kadaluarsa",
-                "finished": "Selesai",
-                "item": "Item",
-                "badge": "Lencana",
-                "emote": "Emote",
-                "other": "Lainnya",
-                "clear": "Hapus Filter",
-                "search_placeholder": "Cari game..."
-            },
-            "filter_linked": "Linked"
-        },
-        "settings": {
-            "general": {
-                "name": "Umum",
-                "dark_mode": "Mode Gelap"
-            },
-            "reload": "Muat Ulang",
-            "games_to_watch": "Game untuk Ditonton",
-            "games_help": "Pilih game untuk ditonton. Urutan penting - seret untuk mengatur ulang prioritas (atas = prioritas tertinggi).",
-            "search_games": "Cari game...",
-            "add_game": "Add Game",
-            "add_game_hint": " Click \"Add Game\" to add it manually.",
-            "select_all": "Pilih Semua",
-            "deselect_all": "Batalkan Semua",
-            "selected_games": "Game yang Dipilih (seret untuk mengatur ulang)",
-            "available_games": "Game Tersedia",
-            "no_games_selected": "Tidak ada game yang dipilih. Centang game di bawah untuk menambahkannya.",
-            "no_games_match": "Tidak ada game yang cocok dengan pencarian Anda.",
-            "all_games_selected": "Semua game telah dipilih atau tidak ada game tersedia.",
-            "actions": "Tindakan",
-            "connection_quality": "Kualitas Koneksi:",
-            "minimum_refresh": "Interval Refresh Minimum (menit):",
-            "reload_campaigns": "Muat Ulang Kampanye",
-            "mining_benefits": "Manfaat Penambangan",
-            "mining_benefits_help": "Pilih jenis drops yang ingin Anda tambang.",
-            "select_linked": "Select Linked",
-            "password_header": "Login & Password",
-            "password_current_label": "Current Password",
-            "password_current_placeholder": "Leave empty if no password set",
-            "password_new_label": "New Password",
-            "password_new_placeholder": "New password (empty = disable login)",
-            "password_confirm_label": "Confirm New Password",
-            "password_confirm_placeholder": "Confirm",
-            "password_save": "Save Password",
-            "password_disable": "Disable Login",
-            "password_saved": "Password saved.",
-            "password_disabled_msg": "Login disabled.",
-            "password_mismatch": "Passwords don't match.",
-            "password_status_active": "🔒 Login active — Password set",
-            "password_status_inactive": "🔓 No login — publicly accessible",
-            "discord_bot": {
-                "header": "Discord Bot",
-                "description": "Pair a Discord bot to control TwitchDropsMiner via chat commands.",
-                "not_connected": "Not connected",
-                "connected": "✅ Connected",
-                "generate_code": "Generate code",
-                "generating": "Generating...",
-                "disconnect": "Disconnect",
-                "disconnect_confirm": "Disconnect the Discord bot?",
-                "invite_bot": "Invite bot",
-                "expires": "Expires in 10 min"
-            }
-        },
-        "help": {
-            "about": "Tentang Twitch Drops Miner",
-            "about_text": "Aplikasi ini secara otomatis menambang drop Twitch berwaktu tanpa mengunduh data streaming.",
-            "how_to_use": "Cara Menggunakan",
-            "features": "Fitur",
-            "important_notes": "Catatan Penting",
-            "github_repo": "Repository GitHub",
-            "how_to_use_items": [
-                "Masuk menggunakan akun Twitch Anda (alur kode perangkat OAuth)",
-                "Tautkan akun Anda di <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
-                "Penambang akan secara otomatis menemukan kampanye dan mulai menambang",
-                "Konfigurasikan game prioritas di Pengaturan untuk fokus pada yang Anda inginkan",
-                "Pantau kemajuan di tab Utama dan Inventaris"
-            ],
-            "features_items": [
-                "Penambangan drop tanpa streaming - menghemat bandwidth",
-                "Daftar prioritas dan pengecualian game",
-                "Melacak hingga 199 channel secara bersamaan",
-                "Perpindahan channel otomatis",
-                "Pelacakan kemajuan waktu nyata"
-            ],
-            "important_notes_items": [
-                "Jangan menonton stream di akun yang sama saat menambang",
-                "Jaga keamanan file cookies.jar Anda",
-                "Memerlukan akun game yang ditautkan untuk drop"
-            ]
-        },
-        "header": {
-            "title": "Twitch Drops Miner",
-            "language": "Bahasa:",
-            "initializing": "Menginisialisasi...",
-            "auto_mode": "AUTO",
-            "manual_mode": "MANUAL",
-            "connected": "Terhubung",
-            "disconnected": "Terputus"
-        },
-        "footer": {
-            "version": "Versi:",
-            "loading": "Memuat...",
-            "update_available": "Pembaruan Tersedia:"
-        },
-        "badges": {
-            "manual": {
-                "title": "Mode manual aktif - menonton game tertentu"
-            },
-            "auto": {
-                "title": "Mode otomatis - mengikuti prioritas game"
-            },
-            "proxy": {
-                "title": "Koneksi proxy aktif"
-            }
-        },
-        "wanted": {
-            "name": "Antrean Drops yang Diinginkan",
-            "none": "Tidak ada drops yang diinginkan dalam antrean..."
-        },
-        "system": {
-            "header": "System",
-            "miner_header": "Miner",
-            "miner_desc": "Reload campaigns and restart the mining loop.",
-            "reload_btn": "Reload Campaigns",
-            "restart_header": "Restart",
-            "restart_desc": "Stop the miner process. PM2 will restart it automatically.",
-            "restart_btn": "Restart Miner",
-            "session_header": "Session",
-            "session_desc": "Log out of the web interface.",
-            "logout_btn": "Logout",
-            "reload_ok": "Campaigns reload triggered.",
-            "restart_confirm": "Restart the miner? PM2 will restart it automatically.",
-            "restart_ok": "Miner stopping — will restart via PM2 in a few seconds."
-        }
+    "progress": {
+      "name": "Perkembangan kampanye",
+      "drop": "Drop :",
+      "game": "Game",
+      "campaign": "Kampanye :",
+      "remaining": "{time} tersisa",
+      "drop_progress": "Perkembangan :",
+      "campaign_progress": "Perkembangan :",
+      "no_drop": "Tidak ada drop aktif",
+      "return_to_auto": "Kembali ke Mode Otomatis",
+      "manual_mode_info": "Mode Manual: Mining"
+    },
+    "channels": {
+      "name": "Saluran",
+      "online": "ONLINE  ✔",
+      "pending": "DITUNDA ⏳",
+      "offline": "OFFLINE ❌",
+      "no_channels": "Belum ada channel yang dilacak...",
+      "no_channels_for_games": "Tidak ada channel ditemukan untuk game yang dipilih...",
+      "channel_count": "channel",
+      "channel_count_plural": "channel",
+      "viewers": "penonton"
+    },
+    "inventory": {
+      "status": {
+        "active": "Aktif ✔",
+        "upcoming": "Segera hadir ⏳",
+        "expired": "Kedaluarsa ❌",
+        "claimed": "Diklaim ✔"
+      },
+      "starts": "Mulai : {time}",
+      "ends": "Akhir : {time}",
+      "no_campaigns": "Belum ada kampanye yang dimuat...",
+      "claimed_drops": "diklaim",
+      "filters": {
+        "active": "Aktif",
+        "not_linked": "Tidak Terhubung",
+        "upcoming": "Mendatang",
+        "expired": "Kadaluarsa",
+        "finished": "Selesai",
+        "item": "Item",
+        "badge": "Lencana",
+        "emote": "Emote",
+        "other": "Lainnya",
+        "clear": "Hapus Filter",
+        "search_placeholder": "Cari game..."
+      },
+      "filter_linked": "Linked"
+    },
+    "settings": {
+      "general": {
+        "name": "Umum",
+        "dark_mode": "Mode Gelap"
+      },
+      "reload": "Muat Ulang",
+      "games_to_watch": "Game untuk Ditonton",
+      "games_help": "Pilih game untuk ditonton. Urutan penting - seret untuk mengatur ulang prioritas (atas = prioritas tertinggi).",
+      "search_games": "Cari game...",
+      "add_game": "Add Game",
+      "add_game_hint": " Click \"Add Game\" to add it manually.",
+      "select_all": "Pilih Semua",
+      "deselect_all": "Batalkan Semua",
+      "selected_games": "Game yang Dipilih (seret untuk mengatur ulang)",
+      "available_games": "Game Tersedia",
+      "no_games_selected": "Tidak ada game yang dipilih. Centang game di bawah untuk menambahkannya.",
+      "no_games_match": "Tidak ada game yang cocok dengan pencarian Anda.",
+      "all_games_selected": "Semua game telah dipilih atau tidak ada game tersedia.",
+      "actions": "Tindakan",
+      "connection_quality": "Kualitas Koneksi:",
+      "minimum_refresh": "Interval Refresh Minimum (menit):",
+      "reload_campaigns": "Muat Ulang Kampanye",
+      "mining_benefits": "Manfaat Penambangan",
+      "mining_benefits_help": "Pilih jenis drops yang ingin Anda tambang.",
+      "select_linked": "Select Linked",
+      "password_header": "Login & Password",
+      "password_current_label": "Current Password",
+      "password_current_placeholder": "Leave empty if no password set",
+      "password_new_label": "New Password",
+      "password_new_placeholder": "New password (empty = disable login)",
+      "password_confirm_label": "Confirm New Password",
+      "password_confirm_placeholder": "Confirm",
+      "password_save": "Save Password",
+      "password_disable": "Disable Login",
+      "password_saved": "Password saved.",
+      "password_disabled_msg": "Login disabled.",
+      "password_mismatch": "Passwords don't match.",
+      "password_status_active": "🔒 Login active — Password set",
+      "password_status_inactive": "🔓 No login — publicly accessible",
+      "discord_bot": {
+        "header": "Discord Bot",
+        "description": "Pair a Discord bot to control TwitchDropsMiner via chat commands.",
+        "not_connected": "Not connected",
+        "connected": "✅ Connected",
+        "generate_code": "Generate code",
+        "generating": "Generating...",
+        "disconnect": "Disconnect",
+        "disconnect_confirm": "Disconnect the Discord bot?",
+        "invite_bot": "Invite bot",
+        "expires": "Expires in 10 min"
+      },
+      "notifications_header": "Notifications",
+      "push_enabled": "Browser Push Notifications",
+      "push_sound": "Notification Sound",
+      "campaign_end_alerts_enabled": "Campaign End Alerts (24h warning)"
+    },
+    "help": {
+      "about": "Tentang Twitch Drops Miner",
+      "about_text": "Aplikasi ini secara otomatis menambang drop Twitch berwaktu tanpa mengunduh data streaming.",
+      "how_to_use": "Cara Menggunakan",
+      "features": "Fitur",
+      "important_notes": "Catatan Penting",
+      "github_repo": "Repository GitHub",
+      "how_to_use_items": [
+        "Masuk menggunakan akun Twitch Anda (alur kode perangkat OAuth)",
+        "Tautkan akun Anda di <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
+        "Penambang akan secara otomatis menemukan kampanye dan mulai menambang",
+        "Konfigurasikan game prioritas di Pengaturan untuk fokus pada yang Anda inginkan",
+        "Pantau kemajuan di tab Utama dan Inventaris"
+      ],
+      "features_items": [
+        "Penambangan drop tanpa streaming - menghemat bandwidth",
+        "Daftar prioritas dan pengecualian game",
+        "Melacak hingga 199 channel secara bersamaan",
+        "Perpindahan channel otomatis",
+        "Pelacakan kemajuan waktu nyata"
+      ],
+      "important_notes_items": [
+        "Jangan menonton stream di akun yang sama saat menambang",
+        "Jaga keamanan file cookies.jar Anda",
+        "Memerlukan akun game yang ditautkan untuk drop"
+      ]
+    },
+    "header": {
+      "title": "Twitch Drops Miner",
+      "language": "Bahasa:",
+      "initializing": "Menginisialisasi...",
+      "auto_mode": "AUTO",
+      "manual_mode": "MANUAL",
+      "connected": "Terhubung",
+      "disconnected": "Terputus"
+    },
+    "footer": {
+      "version": "Versi:",
+      "loading": "Memuat...",
+      "update_available": "Pembaruan Tersedia:"
+    },
+    "badges": {
+      "manual": {
+        "title": "Mode manual aktif - menonton game tertentu"
+      },
+      "auto": {
+        "title": "Mode otomatis - mengikuti prioritas game"
+      },
+      "proxy": {
+        "title": "Koneksi proxy aktif"
+      }
+    },
+    "wanted": {
+      "name": "Antrean Drops yang Diinginkan",
+      "none": "Tidak ada drops yang diinginkan dalam antrean..."
+    },
+    "system": {
+      "header": "System",
+      "miner_header": "Miner",
+      "miner_desc": "Reload campaigns and restart the mining loop.",
+      "reload_btn": "Reload Campaigns",
+      "restart_header": "Restart",
+      "restart_desc": "Stop the miner process. PM2 will restart it automatically.",
+      "restart_btn": "Restart Miner",
+      "session_header": "Session",
+      "session_desc": "Log out of the web interface.",
+      "logout_btn": "Logout",
+      "reload_ok": "Campaigns reload triggered.",
+      "restart_confirm": "Restart the miner? PM2 will restart it automatically.",
+      "restart_ok": "Miner stopping — will restart via PM2 in a few seconds."
     }
+  }
 }

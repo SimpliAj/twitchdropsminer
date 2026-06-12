@@ -1,250 +1,255 @@
 {
-    "language_name": "简体中文",
-    "english_name": "Simplified Chinese",
+  "language_name": "简体中文",
+  "english_name": "Simplified Chinese",
+  "status": {
+    "terminated": "\n应用程序已终止，请关闭窗口以退出应用程序.",
+    "watching": "正在观看: {channel}",
+    "goes_online": "{channel} 该频道已上线, 正在切换...",
+    "goes_offline": "{channel} 该频道已离线, 正在切换...",
+    "claimed_drop": "已领取掉宝: {drop}",
+    "no_channel": "没有可观看的频道，等待一个在线直播频道...",
+    "no_campaign": "没有可用于掉宝的活动，等待一个有效的掉宝活动..."
+  },
+  "login": {
+    "unexpected_content": "返回的内容类型有误通常是由于被重定向.您需要VPN才能登录吗？ ",
+    "error_code": "登录出错: {error_code}",
+    "incorrect_login_pass": "用户名或密码错误.",
+    "incorrect_email_code": "电子邮箱验证码错误.",
+    "incorrect_twofa_code": "手机2FA令牌双重验证码错误.",
+    "email_code_required": "需要电子邮件验证码,查看你的邮箱.",
+    "twofa_code_required": "需要手机2FA令牌双重验证.",
     "status": {
-        "terminated": "\n应用程序已终止，请关闭窗口以退出应用程序.",
-        "watching": "正在观看: {channel}",
-        "goes_online": "{channel} 该频道已上线, 正在切换...",
-        "goes_offline": "{channel} 该频道已离线, 正在切换...",
-        "claimed_drop": "已领取掉宝: {drop}",
-        "no_channel": "没有可观看的频道，等待一个在线直播频道...",
-        "no_campaign": "没有可用于掉宝的活动，等待一个有效的掉宝活动..."
+      "logged_in": "已登录",
+      "logged_out": "未登录",
+      "logging_in": "正在登录中...",
+      "required": "请先登录",
+      "waiting_auth": "Waiting for authentication..."
+    }
+  },
+  "error": {
+    "captcha": "您的登录存在异常,Twitch官方已进行限制,请在12小时后重试.",
+    "site_down": "Twitch无法连接，{seconds} 秒后重试...",
+    "no_connection": "无法连接到Twitch,{seconds} 秒后重试,请确保已经开启VPN添加了代理并查阅教程..."
+  },
+  "gui": {
+    "output": "输出日志",
+    "status": {
+      "name": "状态",
+      "idle": "已完成获取",
+      "exiting": "正在退出...",
+      "terminated": "应用已终止运行",
+      "cleanup": "清除频道中...",
+      "gathering": "搜索直播频道...",
+      "switching": "切换直播频道中...",
+      "fetching_inventory": "获取库存中...",
+      "fetching_campaigns": "获取掉宝活动...",
+      "adding_campaigns": "将掉宝活动列表添加至库存... {counter}"
+    },
+    "tabs": {
+      "main": "主面板",
+      "inventory": "掉宝库存",
+      "settings": "设置",
+      "help": "帮助",
+      "system": "System",
+      "stats": "Stats"
     },
     "login": {
-        "unexpected_content": "返回的内容类型有误通常是由于被重定向.您需要VPN才能登录吗？ ",
-        "error_code": "登录出错: {error_code}",
-        "incorrect_login_pass": "用户名或密码错误.",
-        "incorrect_email_code": "电子邮箱验证码错误.",
-        "incorrect_twofa_code": "手机2FA令牌双重验证码错误.",
-        "email_code_required": "需要电子邮件验证码,查看你的邮箱.",
-        "twofa_code_required": "需要手机2FA令牌双重验证.",
-        "status": {
-            "logged_in": "已登录",
-            "logged_out": "未登录",
-            "logging_in": "正在登录中...",
-            "required": "请先登录",
-            "waiting_auth": "Waiting for authentication..."
-        }
+      "name": "登录Twitch账号",
+      "labels": "状态:\n用户ID:",
+      "request": "请先登录以访问更多内容.",
+      "username": "用户名",
+      "password": "密码",
+      "twofa_code": "令牌验证码",
+      "button": "登录",
+      "oauth_prompt": "在此网站输入代码：",
+      "oauth_activate": "Twitch 激活",
+      "oauth_confirm": "我已输入代码"
     },
-    "error": {
-        "captcha": "您的登录存在异常,Twitch官方已进行限制,请在12小时后重试.",
-        "site_down": "Twitch无法连接，{seconds} 秒后重试...",
-        "no_connection": "无法连接到Twitch,{seconds} 秒后重试,请确保已经开启VPN添加了代理并查阅教程..."
+    "websocket": {
+      "name": "网络协议连接状态",
+      "websocket": "Websocket #{id}:",
+      "initializing": "初始化...",
+      "connected": "已连接",
+      "disconnected": "断开连接",
+      "connecting": "连接中...",
+      "disconnecting": "断开连接中...",
+      "reconnecting": "重新连接中..."
     },
-    "gui": {
-        "output": "输出日志",
-        "status": {
-            "name": "状态",
-            "idle": "已完成获取",
-            "exiting": "正在退出...",
-            "terminated": "应用已终止运行",
-            "cleanup": "清除频道中...",
-            "gathering": "搜索直播频道...",
-            "switching": "切换直播频道中...",
-            "fetching_inventory": "获取库存中...",
-            "fetching_campaigns": "获取掉宝活动...",
-            "adding_campaigns": "将掉宝活动列表添加至库存... {counter}"
-        },
-        "tabs": {
-            "main": "主面板",
-            "inventory": "掉宝库存",
-            "settings": "设置",
-            "help": "帮助",
-            "system": "System"
-        },
-        "login": {
-            "name": "登录Twitch账号",
-            "labels": "状态:\n用户ID:",
-            "request": "请先登录以访问更多内容.",
-            "username": "用户名",
-            "password": "密码",
-            "twofa_code": "令牌验证码",
-            "button": "登录",
-            "oauth_prompt": "在此网站输入代码：",
-            "oauth_activate": "Twitch 激活",
-            "oauth_confirm": "我已输入代码"
-        },
-        "websocket": {
-            "name": "网络协议连接状态",
-            "websocket": "Websocket #{id}:",
-            "initializing": "初始化...",
-            "connected": "已连接",
-            "disconnected": "断开连接",
-            "connecting": "连接中...",
-            "disconnecting": "断开连接中...",
-            "reconnecting": "重新连接中..."
-        },
-        "progress": {
-            "name": "掉宝活动进度",
-            "drop": "掉宝奖励:",
-            "game": "游戏名称:",
-            "remaining": "剩余 {time}",
-            "campaign": "掉宝活动名称:",
-            "drop_progress": "掉宝进度:",
-            "campaign_progress": "活动进度:",
-            "no_drop": "无活跃掉宝",
-            "return_to_auto": "返回自动模式",
-            "manual_mode_info": "手动模式：正在挖掘"
-        },
-        "channels": {
-            "name": "活动频道",
-            "online": "ONLINE  ✔",
-            "pending": "OFFLINE ⏳",
-            "offline": "OFFLINE ❌",
-            "no_channels": "尚未跟踪任何频道...",
-            "no_channels_for_games": "所选游戏未找到频道...",
-            "channel_count": "频道",
-            "channel_count_plural": "频道",
-            "viewers": "观众"
-        },
-        "inventory": {
-            "status": {
-                "active": "已上线 ✔",
-                "upcoming": "即将上线 ⏳",
-                "expired": "已结束 ❌",
-                "claimed": "已领取 ✔"
-            },
-            "starts": "开始时间: {time}",
-            "ends": "结束时间: {time}",
-            "no_campaigns": "尚未加载任何活动...",
-            "claimed_drops": "已领取",
-            "filters": {
-                "active": "活动中",
-                "not_linked": "未关联",
-                "upcoming": "即将开始",
-                "expired": "已过期",
-                "finished": "已完成",
-                "item": "物品",
-                "badge": "徽章",
-                "emote": "表情",
-                "other": "其他",
-                "clear": "清除过滤器",
-                "search_placeholder": "搜索游戏..."
-            },
-            "filter_linked": "Linked"
-        },
-        "settings": {
-            "general": {
-                "name": "常规设置",
-                "dark_mode": "深色模式"
-            },
-            "reload": "刷新",
-            "games_to_watch": "观看游戏",
-            "games_help": "选择要观看的游戏。顺序很重要 - 拖动以重新排序优先级（顶部 = 最高优先级）。",
-            "search_games": "搜索游戏...",
-            "add_game": "Add Game",
-            "add_game_hint": " Click \"Add Game\" to add it manually.",
-            "select_all": "全选",
-            "deselect_all": "取消全选",
-            "selected_games": "已选游戏（拖动以重新排序）",
-            "available_games": "可用游戏",
-            "no_games_selected": "未选择游戏。勾选下方游戏以添加。",
-            "no_games_match": "没有游戏符合您的搜索。",
-            "all_games_selected": "所有游戏都已选择或没有可用游戏。",
-            "actions": "操作",
-            "connection_quality": "连接质量：",
-            "minimum_refresh": "最小刷新间隔（分钟）：",
-            "reload_campaigns": "重新加载活动",
-            "mining_benefits": "挖掘奖励",
-            "mining_benefits_help": "选择您想要获取的掉落类型。",
-            "select_linked": "Select Linked",
-            "password_header": "Login & Password",
-            "password_current_label": "Current Password",
-            "password_current_placeholder": "Leave empty if no password set",
-            "password_new_label": "New Password",
-            "password_new_placeholder": "New password (empty = disable login)",
-            "password_confirm_label": "Confirm New Password",
-            "password_confirm_placeholder": "Confirm",
-            "password_save": "Save Password",
-            "password_disable": "Disable Login",
-            "password_saved": "Password saved.",
-            "password_disabled_msg": "Login disabled.",
-            "password_mismatch": "Passwords don't match.",
-            "password_status_active": "🔒 Login active — Password set",
-            "password_status_inactive": "🔓 No login — publicly accessible",
-            "discord_bot": {
-                "header": "Discord Bot",
-                "description": "Pair a Discord bot to control TwitchDropsMiner via chat commands.",
-                "not_connected": "Not connected",
-                "connected": "✅ Connected",
-                "generate_code": "Generate code",
-                "generating": "Generating...",
-                "disconnect": "Disconnect",
-                "disconnect_confirm": "Disconnect the Discord bot?",
-                "invite_bot": "Invite bot",
-                "expires": "Expires in 10 min"
-            }
-        },
-        "help": {
-            "about": "关于 Twitch 掉宝矿工",
-            "about_text": "此应用程序可在不下载流数据的情况下自动挖掘定时 Twitch 掉宝。",
-            "how_to_use": "使用方法",
-            "features": "功能",
-            "important_notes": "重要提示",
-            "github_repo": "GitHub 仓库",
-            "how_to_use_items": [
-                "使用您的 Twitch 账号登录（OAuth 设备代码流程）",
-                "在 <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a> 关联您的账号",
-                "矿工将自动发现活动并开始挖掘",
-                "在设置中配置优先游戏以关注您想要的内容",
-                "在主界面和库存选项卡中监控进度"
-            ],
-            "features_items": [
-                "无流挖掘 - 节省带宽",
-                "游戏优先级和排除列表",
-                "同时跟踪最多 199 个频道",
-                "自动切换频道",
-                "实时进度跟踪"
-            ],
-            "important_notes_items": [
-                "挖掘时请勿在同一账号上观看流",
-                "保护好您的 cookies.jar 文件",
-                "需要关联游戏账号才能掉宝"
-            ]
-        },
-        "header": {
-            "title": "Twitch Drops Miner",
-            "language": "语言：",
-            "initializing": "初始化中...",
-            "auto_mode": "AUTO",
-            "manual_mode": "MANUAL",
-            "connected": "已连接",
-            "disconnected": "已断开"
-        },
-        "footer": {
-            "version": "版本:",
-            "loading": "加载中...",
-            "update_available": "可用更新:"
-        },
-        "badges": {
-            "manual": {
-                "title": "手动模式已激活 - 正在观看特定游戏"
-            },
-            "auto": {
-                "title": "自动模式 - 遵循游戏优先级"
-            },
-            "proxy": {
-                "title": "代理连接已激活"
-            }
-        },
-        "wanted": {
-            "name": "期望掉落队列",
-            "none": "队列中没有期望的掉落..."
-        },
-        "system": {
-            "header": "System",
-            "miner_header": "Miner",
-            "miner_desc": "Reload campaigns and restart the mining loop.",
-            "reload_btn": "Reload Campaigns",
-            "restart_header": "Restart",
-            "restart_desc": "Stop the miner process. PM2 will restart it automatically.",
-            "restart_btn": "Restart Miner",
-            "session_header": "Session",
-            "session_desc": "Log out of the web interface.",
-            "logout_btn": "Logout",
-            "reload_ok": "Campaigns reload triggered.",
-            "restart_confirm": "Restart the miner? PM2 will restart it automatically.",
-            "restart_ok": "Miner stopping — will restart via PM2 in a few seconds."
-        }
+    "progress": {
+      "name": "掉宝活动进度",
+      "drop": "掉宝奖励:",
+      "game": "游戏名称:",
+      "remaining": "剩余 {time}",
+      "campaign": "掉宝活动名称:",
+      "drop_progress": "掉宝进度:",
+      "campaign_progress": "活动进度:",
+      "no_drop": "无活跃掉宝",
+      "return_to_auto": "返回自动模式",
+      "manual_mode_info": "手动模式：正在挖掘"
+    },
+    "channels": {
+      "name": "活动频道",
+      "online": "ONLINE  ✔",
+      "pending": "OFFLINE ⏳",
+      "offline": "OFFLINE ❌",
+      "no_channels": "尚未跟踪任何频道...",
+      "no_channels_for_games": "所选游戏未找到频道...",
+      "channel_count": "频道",
+      "channel_count_plural": "频道",
+      "viewers": "观众"
+    },
+    "inventory": {
+      "status": {
+        "active": "已上线 ✔",
+        "upcoming": "即将上线 ⏳",
+        "expired": "已结束 ❌",
+        "claimed": "已领取 ✔"
+      },
+      "starts": "开始时间: {time}",
+      "ends": "结束时间: {time}",
+      "no_campaigns": "尚未加载任何活动...",
+      "claimed_drops": "已领取",
+      "filters": {
+        "active": "活动中",
+        "not_linked": "未关联",
+        "upcoming": "即将开始",
+        "expired": "已过期",
+        "finished": "已完成",
+        "item": "物品",
+        "badge": "徽章",
+        "emote": "表情",
+        "other": "其他",
+        "clear": "清除过滤器",
+        "search_placeholder": "搜索游戏..."
+      },
+      "filter_linked": "Linked"
+    },
+    "settings": {
+      "general": {
+        "name": "常规设置",
+        "dark_mode": "深色模式"
+      },
+      "reload": "刷新",
+      "games_to_watch": "观看游戏",
+      "games_help": "选择要观看的游戏。顺序很重要 - 拖动以重新排序优先级（顶部 = 最高优先级）。",
+      "search_games": "搜索游戏...",
+      "add_game": "Add Game",
+      "add_game_hint": " Click \"Add Game\" to add it manually.",
+      "select_all": "全选",
+      "deselect_all": "取消全选",
+      "selected_games": "已选游戏（拖动以重新排序）",
+      "available_games": "可用游戏",
+      "no_games_selected": "未选择游戏。勾选下方游戏以添加。",
+      "no_games_match": "没有游戏符合您的搜索。",
+      "all_games_selected": "所有游戏都已选择或没有可用游戏。",
+      "actions": "操作",
+      "connection_quality": "连接质量：",
+      "minimum_refresh": "最小刷新间隔（分钟）：",
+      "reload_campaigns": "重新加载活动",
+      "mining_benefits": "挖掘奖励",
+      "mining_benefits_help": "选择您想要获取的掉落类型。",
+      "select_linked": "Select Linked",
+      "password_header": "Login & Password",
+      "password_current_label": "Current Password",
+      "password_current_placeholder": "Leave empty if no password set",
+      "password_new_label": "New Password",
+      "password_new_placeholder": "New password (empty = disable login)",
+      "password_confirm_label": "Confirm New Password",
+      "password_confirm_placeholder": "Confirm",
+      "password_save": "Save Password",
+      "password_disable": "Disable Login",
+      "password_saved": "Password saved.",
+      "password_disabled_msg": "Login disabled.",
+      "password_mismatch": "Passwords don't match.",
+      "password_status_active": "🔒 Login active — Password set",
+      "password_status_inactive": "🔓 No login — publicly accessible",
+      "discord_bot": {
+        "header": "Discord Bot",
+        "description": "Pair a Discord bot to control TwitchDropsMiner via chat commands.",
+        "not_connected": "Not connected",
+        "connected": "✅ Connected",
+        "generate_code": "Generate code",
+        "generating": "Generating...",
+        "disconnect": "Disconnect",
+        "disconnect_confirm": "Disconnect the Discord bot?",
+        "invite_bot": "Invite bot",
+        "expires": "Expires in 10 min"
+      },
+      "notifications_header": "Notifications",
+      "push_enabled": "Browser Push Notifications",
+      "push_sound": "Notification Sound",
+      "campaign_end_alerts_enabled": "Campaign End Alerts (24h warning)"
+    },
+    "help": {
+      "about": "关于 Twitch 掉宝矿工",
+      "about_text": "此应用程序可在不下载流数据的情况下自动挖掘定时 Twitch 掉宝。",
+      "how_to_use": "使用方法",
+      "features": "功能",
+      "important_notes": "重要提示",
+      "github_repo": "GitHub 仓库",
+      "how_to_use_items": [
+        "使用您的 Twitch 账号登录（OAuth 设备代码流程）",
+        "在 <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a> 关联您的账号",
+        "矿工将自动发现活动并开始挖掘",
+        "在设置中配置优先游戏以关注您想要的内容",
+        "在主界面和库存选项卡中监控进度"
+      ],
+      "features_items": [
+        "无流挖掘 - 节省带宽",
+        "游戏优先级和排除列表",
+        "同时跟踪最多 199 个频道",
+        "自动切换频道",
+        "实时进度跟踪"
+      ],
+      "important_notes_items": [
+        "挖掘时请勿在同一账号上观看流",
+        "保护好您的 cookies.jar 文件",
+        "需要关联游戏账号才能掉宝"
+      ]
+    },
+    "header": {
+      "title": "Twitch Drops Miner",
+      "language": "语言：",
+      "initializing": "初始化中...",
+      "auto_mode": "AUTO",
+      "manual_mode": "MANUAL",
+      "connected": "已连接",
+      "disconnected": "已断开"
+    },
+    "footer": {
+      "version": "版本:",
+      "loading": "加载中...",
+      "update_available": "可用更新:"
+    },
+    "badges": {
+      "manual": {
+        "title": "手动模式已激活 - 正在观看特定游戏"
+      },
+      "auto": {
+        "title": "自动模式 - 遵循游戏优先级"
+      },
+      "proxy": {
+        "title": "代理连接已激活"
+      }
+    },
+    "wanted": {
+      "name": "期望掉落队列",
+      "none": "队列中没有期望的掉落..."
+    },
+    "system": {
+      "header": "System",
+      "miner_header": "Miner",
+      "miner_desc": "Reload campaigns and restart the mining loop.",
+      "reload_btn": "Reload Campaigns",
+      "restart_header": "Restart",
+      "restart_desc": "Stop the miner process. PM2 will restart it automatically.",
+      "restart_btn": "Restart Miner",
+      "session_header": "Session",
+      "session_desc": "Log out of the web interface.",
+      "logout_btn": "Logout",
+      "reload_ok": "Campaigns reload triggered.",
+      "restart_confirm": "Restart the miner? PM2 will restart it automatically.",
+      "restart_ok": "Miner stopping — will restart via PM2 in a few seconds."
     }
+  }
 }
