@@ -63,6 +63,7 @@ class GUITabs(TypedDict):
     help: str
     system: str
     stats: str
+    analytics: str
 
 
 class GUILoginForm(TypedDict):

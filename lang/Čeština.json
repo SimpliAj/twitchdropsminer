@@ -53,7 +53,8 @@
       "settings": "Nastavení",
       "help": "Nápověda",
       "system": "System",
-      "stats": "Stats"
+      "stats": "Stats",
+      "analytics": "Analytics"
     },
     "login": {
       "name": "Přihlášení k službě Twitch",

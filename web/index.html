@@ -51,12 +51,9 @@
         <nav class="tabs">
             <button class="tab-button active" data-tab="main">Main</button>
             <button class="tab-button" data-tab="inventory">Inventory</button>
-            <button class="tab-button" data-tab="history">History</button>
             <button class="tab-button" data-tab="settings">Settings</button>
             <button class="tab-button" data-tab="help">Help</button>
-            <button class="tab-button" data-tab="channel-points">Channel Points</button>
-            <button class="tab-button" data-tab="stats">Stats</button>
-            <button class="tab-button" data-tab="system" id="tab-btn-system">System</button>
+            <button class="tab-button" data-tab="analytics">Analytics</button>
         </nav>
 
         <!-- Main Tab -->
@@ -489,13 +486,79 @@
                     <div id="pw-result" style="margin-top:8px;font-size:.82rem;display:none"></div>
                 </section>
                 </div>
+
+                <!-- System Section (merged from System tab) -->
+                <section class="settings-section" id="system-section">
+                    <h2 id="system-header">System</h2>
+                    <div class="system-card" id="accounts-card" style="margin-bottom:16px">
+                        <h3 id="system-accounts-header">Accounts</h3>
+                        <div id="accounts-list" class="accounts-list" style="margin-top:10px"></div>
+                        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+                            <input type="text" id="new-account-label" placeholder="Label (z.B. Main, Alt)" style="flex:1;min-width:120px;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:6px;padding:7px 10px;color:var(--text-primary);font-size:.85rem;outline:none">
+                            <button id="add-account-btn" class="btn-primary" style="width:auto;padding:7px 14px;font-size:.85rem">+ Add Account</button>
+                        </div>
+                        <div id="accounts-status" style="margin-top:8px;font-size:.82rem;display:none"></div>
+                    </div>
+                    <div class="system-controls">
+                        <div class="system-card">
+                            <h3 id="system-miner-header">Miner</h3>
+                            <p id="system-miner-desc">Reload campaigns and restart the mining loop.</p>
+                            <button id="system-reload-btn" class="btn-primary">Reload Campaigns</button>
+                        </div>
+                        <div class="system-card danger">
+                            <h3 id="system-restart-header">Restart</h3>
+                            <p id="system-restart-desc">Stop the miner process. PM2 will restart it automatically.</p>
+                            <button id="system-restart-btn" class="btn-danger">Restart Miner</button>
+                        </div>
+                        <div class="system-card">
+                            <h3 id="system-session-header">Session</h3>
+                            <p id="system-session-desc">Log out of the web interface.</p>
+                            <button id="system-logout-btn" class="btn-secondary">Logout</button>
+                        </div>
+                    </div>
+                    <div id="system-status" class="system-status"></div>
+                </section>
+
             </div>
         </div>
 
-        <!-- Channel Points Tab -->
-        <div id="channel-points-tab" class="tab-content">
-            <div>
-                <section class="settings-section">
+        <!-- Analytics Tab (Stats + Channel Points + History) -->
+        <div id="analytics-tab" class="tab-content">
+            <div style="padding: 16px; max-width: 900px; margin: 0 auto;">
+
+                <!-- Stats Section -->
+                <div class="stats-section" style="margin-bottom: 32px;">
+                    <h2 style="margin-bottom: 16px; color: var(--text);">Drop Statistics</h2>
+                    <div id="stats-summary" style="display:flex; gap:12px; margin-bottom:24px; flex-wrap:wrap;">
+                        <div class="stat-card">
+                            <div class="stat-value" id="stats-total">—</div>
+                            <div class="stat-label">Total Claims</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="stats-games">—</div>
+                            <div class="stat-label">Games</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="stats-last">—</div>
+                            <div class="stat-label">Last Claim</div>
+                        </div>
+                    </div>
+                    <div class="stats-section">
+                        <h3>Claims by Game</h3>
+                        <div id="stats-by-game"></div>
+                    </div>
+                    <div class="stats-section" style="margin-top:24px;">
+                        <h3>Claims Activity</h3>
+                        <div id="stats-contribution-grid" style="overflow-x:auto;"></div>
+                    </div>
+                    <div class="stats-section" style="margin-top:24px;">
+                        <h3>Recent Claims</h3>
+                        <div id="stats-recent"></div>
+                    </div>
+                </div>
+
+                <!-- Channel Points Section -->
+                <section class="settings-section" style="margin-bottom: 24px;">
                     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
                         <h2 style="margin:0;border:none;padding:0;">Channel Points</h2>
                         <div style="display:flex;gap:8px;align-items:center;">
@@ -506,13 +569,9 @@
                     <div id="cp-tab-empty" style="color:#adadb8;font-size:0.9rem;padding:20px 0;">No channel points data yet. Points are recorded while watching channels.</div>
                     <div id="cp-tab-list" style="display:none;"></div>
                 </section>
-            </div>
-        </div>
 
-        <!-- History Tab -->
-        <div id="history-tab" class="tab-content">
-            <div style="padding:0;">
-                <section class="settings-section" style="margin-bottom:0;">
+                <!-- History Section -->
+                <section class="settings-section" style="margin-bottom: 0;">
                     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
                         <h2 style="margin:0;border:none;padding:0;">Drop History</h2>
                         <div style="display:flex;gap:8px;align-items:center;">
@@ -523,41 +582,7 @@
                     <div id="history-empty" style="color:#adadb8;font-size:0.9rem;padding:20px 0;">No drops claimed yet.</div>
                     <div id="history-list" style="display:none;"></div>
                 </section>
-            </div>
-        </div>
 
-        <!-- Help Tab -->
-        <div id="system-tab" class="tab-content">
-            <div class="settings-section">
-                <h2 id="system-header">System</h2>
-                <div class="system-card" id="accounts-card" style="margin-bottom:16px">
-                    <h3 id="system-accounts-header">Accounts</h3>
-                    <div id="accounts-list" class="accounts-list" style="margin-top:10px"></div>
-                    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-                        <input type="text" id="new-account-label" placeholder="Label (z.B. Main, Alt)" style="flex:1;min-width:120px;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:6px;padding:7px 10px;color:var(--text-primary);font-size:.85rem;outline:none">
-                        <button id="add-account-btn" class="btn-primary" style="width:auto;padding:7px 14px;font-size:.85rem">+ Add Account</button>
-                    </div>
-                    <div id="accounts-status" style="margin-top:8px;font-size:.82rem;display:none"></div>
-                </div>
-
-                <div class="system-controls">
-                    <div class="system-card">
-                        <h3 id="system-miner-header">Miner</h3>
-                        <p id="system-miner-desc">Reload campaigns and restart the mining loop.</p>
-                        <button id="system-reload-btn" class="btn-primary">Reload Campaigns</button>
-                    </div>
-                    <div class="system-card danger">
-                        <h3 id="system-restart-header">Restart</h3>
-                        <p id="system-restart-desc">Stop the miner process. PM2 will restart it automatically.</p>
-                        <button id="system-restart-btn" class="btn-danger">Restart Miner</button>
-                    </div>
-                    <div class="system-card">
-                        <h3 id="system-session-header">Session</h3>
-                        <p id="system-session-desc">Log out of the web interface.</p>
-                        <button id="system-logout-btn" class="btn-secondary">Logout</button>
-                    </div>
-                </div>
-                <div id="system-status" class="system-status"></div>
             </div>
         </div>
 
@@ -974,46 +999,6 @@
                 </div><!-- end help-layout -->
             </div><!-- end help-wiki -->
         </div>
-        <!-- Stats Tab -->
-        <div id="stats-tab" class="tab-content">
-            <div style="padding: 16px; max-width: 900px; margin: 0 auto;">
-                <h2 style="margin-bottom: 16px; color: var(--text);">Drop Statistics</h2>
-
-                <!-- Summary row -->
-                <div id="stats-summary" style="display:flex; gap:12px; margin-bottom:24px; flex-wrap:wrap;">
-                    <div class="stat-card">
-                        <div class="stat-value" id="stats-total">—</div>
-                        <div class="stat-label">Total Claims</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="stats-games">—</div>
-                        <div class="stat-label">Games</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="stats-last">—</div>
-                        <div class="stat-label">Last Claim</div>
-                    </div>
-                </div>
-
-                <!-- By Game bar chart -->
-                <div class="stats-section">
-                    <h3>Claims by Game</h3>
-                    <div id="stats-by-game"></div>
-                </div>
-
-                <!-- By Day bar chart -->
-                <div class="stats-section" style="margin-top:24px;">
-                    <h3>Claims Activity</h3>
-                    <div id="stats-contribution-grid" style="overflow-x:auto;"></div>
-                </div>
-
-                <!-- Recent claims -->
-                <div class="stats-section" style="margin-top:24px;">
-                    <h3>Recent Claims</h3>
-                    <div id="stats-recent"></div>
-                </div>
-            </div>
-        </div>
         <!-- Footer -->
         <footer class="footer">
             <div class="footer-content">
@@ -1032,7 +1017,7 @@
         </footer>
     </div>
 
-    <script src="/static/app.js?v=1749564000"></script>
+    <script src="/static/app.js?v=1749736800"></script>
 </body>
 
 </html>

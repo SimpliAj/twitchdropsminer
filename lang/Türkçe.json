@@ -54,7 +54,8 @@
       "settings": "Ayarlar",
       "help": "Yardım",
       "system": "System",
-      "stats": "Stats"
+      "stats": "Stats",
+      "analytics": "Analytics"
     },
     "login": {
       "name": "Giriş Yap",
