@@ -498,17 +498,17 @@ async function loadStats() {
             for (const { date, count } of data.by_day) dayMap[date] = count;
             const maxCount = Math.max(...Object.values(dayMap), 1);
 
-            // Generate last 52 weeks starting from nearest Sunday
+            // Generate last 52 weeks: current week on left, oldest on right
             const today = new Date();
-            const endSunday = new Date(today);
-            endSunday.setDate(today.getDate() - today.getDay()); // last Sunday
-            const startDate = new Date(endSunday);
-            startDate.setDate(endSunday.getDate() - 52 * 7 + 1);
+            const startOfCurrentWeek = new Date(today);
+            startOfCurrentWeek.setDate(today.getDate() - today.getDay()); // last Sunday
+            const oldestSunday = new Date(startOfCurrentWeek);
+            oldestSunday.setDate(startOfCurrentWeek.getDate() - 51 * 7);
 
-            // Build week columns
+            // Build week columns oldest→newest, then reverse so newest is left
             const weeks = [];
-            let cur = new Date(startDate);
-            while (cur <= endSunday) {
+            let cur = new Date(oldestSunday);
+            while (cur <= startOfCurrentWeek) {
                 const week = [];
                 for (let d = 0; d < 7; d++) {
                     const ds = cur.toISOString().slice(0, 10);
@@ -517,6 +517,7 @@ async function loadStats() {
                 }
                 weeks.push(week);
             }
+            weeks.reverse(); // newest week first (leftmost)
 
             // Month labels
             const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -2391,14 +2392,14 @@ function applyTranslations(t) {
         'inventory': document.querySelector('[data-tab="inventory"]'),
         'settings': document.querySelector('[data-tab="settings"]'),
         'help': document.querySelector('[data-tab="help"]'),
-        'stats': document.querySelector('[data-tab="stats"]'),
+        'analytics': document.querySelector('[data-tab="analytics"]'),
     };
 
     if (tabButtons.main && t.gui?.tabs) tabButtons.main.textContent = t.gui.tabs.main;
     if (tabButtons.inventory && t.gui?.tabs) tabButtons.inventory.textContent = t.gui.tabs.inventory;
     if (tabButtons.settings && t.gui?.tabs) tabButtons.settings.textContent = t.gui.tabs.settings;
     if (tabButtons.help && t.gui?.tabs) tabButtons.help.textContent = t.gui.tabs.help;
-    if (tabButtons.stats && t.gui?.tabs) tabButtons.stats.textContent = t.gui.tabs.stats;
+    if (tabButtons.analytics && t.gui?.tabs) tabButtons.analytics.textContent = t.gui.tabs.analytics ?? 'Analytics';
 
     // Update Main tab - Login section
     const mainTab = document.getElementById('main-tab');
@@ -2777,11 +2778,11 @@ function switchTab(tabName) {
     // Show selected tab
     document.getElementById(`${tabName}-tab`).classList.add('active');
     document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-    if (tabName === 'history') loadDropHistory();
-    if (tabName === 'stats') loadStats();
+    if (tabName === 'analytics') { loadStats(); loadDropHistory(); }
     if (tabName === 'settings') {
         fetch(API_BASE + '/api/pair/status').then(r => r.json()).then(d => updateBotPairedUI(d.paired)).catch(() => {});
         loadPushConfig();
+        loadAccounts();
     }
 }
 
@@ -3171,14 +3172,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Load accounts when System tab is opened
+    // Load accounts when Settings tab is opened (system section now part of settings)
     document.querySelectorAll('.tab-button').forEach(btn => {
         btn.addEventListener('click', () => {
-            if (btn.dataset.tab === 'system') loadAccounts();
+            if (btn.dataset.tab === 'settings') loadAccounts();
         });
     });
-    // Also load on init if system tab is active
-    if (document.getElementById('system-tab')?.classList.contains('active')) loadAccounts();
 });
 
 

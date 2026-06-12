@@ -54,7 +54,8 @@
       "settings": "Instellingen",
       "help": "Help",
       "system": "System",
-      "stats": "Stats"
+      "stats": "Stats",
+      "analytics": "Analytics"
     },
     "login": {
       "name": "Login",

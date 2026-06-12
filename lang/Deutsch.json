@@ -51,7 +51,8 @@
       "settings": "Einstellungen",
       "help": "Hilfe",
       "system": "System",
-      "stats": "Stats"
+      "stats": "Stats",
+      "analytics": "Analytics"
     },
     "login": {
       "name": "Login",

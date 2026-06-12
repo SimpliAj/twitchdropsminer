@@ -54,7 +54,8 @@
       "settings": "الإعدادات",
       "help": "مساعدة",
       "system": "System",
-      "stats": "Stats"
+      "stats": "Stats",
+      "analytics": "Analytics"
     },
     "login": {
       "name": "تسجيل الدخول و معلومات عن الحساب",

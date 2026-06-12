@@ -54,7 +54,8 @@
       "settings": "Setări",
       "help": "Ajutor",
       "system": "System",
-      "stats": "Stats"
+      "stats": "Stats",
+      "analytics": "Analytics"
     },
     "login": {
       "name": "Formular de conectare",

@@ -54,7 +54,8 @@
       "settings": "Configurações",
       "help": "Ajuda",
       "system": "System",
-      "stats": "Stats"
+      "stats": "Stats",
+      "analytics": "Analytics"
     },
     "login": {
       "name": "Tela de login",

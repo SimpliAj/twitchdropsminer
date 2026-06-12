@@ -54,7 +54,8 @@
       "settings": "設定",
       "help": "ヘルプ",
       "system": "System",
-      "stats": "Stats"
+      "stats": "Stats",
+      "analytics": "Analytics"
     },
     "login": {
       "name": "ログインフォーム",

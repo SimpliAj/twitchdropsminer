@@ -51,7 +51,8 @@
       "settings": "Indstillinger",
       "help": "Hjælp",
       "system": "System",
-      "stats": "Stats"
+      "stats": "Stats",
+      "analytics": "Analytics"
     },
     "login": {
       "name": "Login formular",

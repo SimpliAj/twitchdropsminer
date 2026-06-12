@@ -51,7 +51,8 @@
       "settings": "Configuración",
       "help": "Ayuda",
       "system": "System",
-      "stats": "Stats"
+      "stats": "Stats",
+      "analytics": "Analytics"
     },
     "login": {
       "name": "Inicio de sesión",
