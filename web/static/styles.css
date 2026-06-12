@@ -1018,6 +1018,14 @@ header h1 {
     border-radius: 8px;
     overflow: hidden;
     transition: border-color 0.15s;
+    /* override sortable-item flex row */
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding: 0 !important;
+    margin-bottom: 0 !important;
+    cursor: default !important;
+    gap: 0 !important;
 }
 .wq-row:first-child { border-color: var(--accent-color); }
 .wq-row.dragging { opacity: 0.4; }
@@ -1095,6 +1103,20 @@ header h1 {
     width: 14px;
     text-align: center;
 }
+
+.wq-move {
+    background: none;
+    border: none;
+    color: #4d4d5a;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 0 2px;
+    line-height: 1;
+    flex-shrink: 0;
+    transition: color 0.15s;
+}
+.wq-move:hover:not(:disabled) { color: var(--accent-color); }
+.wq-move:disabled { opacity: 0.2; cursor: default; }
 
 .wq-remove {
     background: none;

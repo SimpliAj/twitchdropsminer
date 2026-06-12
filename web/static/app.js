@@ -3363,6 +3363,26 @@ function renderWantedItems(tree) {
         // Toggle
         const toggleEl = makeElement('span', { class: 'wq-toggle' }, '▾');
 
+        // Up/Down move buttons (mobile-friendly)
+        const moveUpEl = makeElement('button', { class: 'wq-move', title: 'Move up' }, '↑');
+        const moveDownEl = makeElement('button', { class: 'wq-move', title: 'Move down' }, '↓');
+        if (index === 0) moveUpEl.disabled = true;
+        if (index === tree.length - 1) moveDownEl.disabled = true;
+
+        const moveGame = (dir) => {
+            const games = state.settings.games_to_watch || [];
+            const idx = games.indexOf(gameGroup.game_name);
+            if (idx < 0) return;
+            const swapIdx = idx + dir;
+            if (swapIdx < 0 || swapIdx >= games.length) return;
+            [games[idx], games[swapIdx]] = [games[swapIdx], games[idx]];
+            state.settings.games_to_watch = [...games];
+            saveSettings();
+            renderGamesToWatch();
+        };
+        moveUpEl.addEventListener('click', (e) => { e.stopPropagation(); moveGame(-1); });
+        moveDownEl.addEventListener('click', (e) => { e.stopPropagation(); moveGame(1); });
+
         // Remove button
         const removeEl = makeElement('button', { class: 'wq-remove', title: 'Remove from watch list' }, '×');
         removeEl.addEventListener('click', (e) => {
@@ -3375,7 +3395,7 @@ function renderWantedItems(tree) {
 
         // Header row click → toggle expand
         const headerEl = makeElement('div', { class: 'wq-header' }, '', el => {
-            [handle, badge, iconEl, nameEl, countEl, toggleEl, removeEl].forEach(c => el.appendChild(c));
+            [handle, badge, iconEl, nameEl, countEl, moveUpEl, moveDownEl, toggleEl, removeEl].forEach(c => el.appendChild(c));
         });
 
         // Expanded content
