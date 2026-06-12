@@ -20,6 +20,9 @@ settings.json
 logs/
 .claude/
 data/
+data2/
+discord_bot/live_stats.json
+docs/superpowers/
 .ruff_cache/
 .vscode/
 .idea/
