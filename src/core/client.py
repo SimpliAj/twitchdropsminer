@@ -695,6 +695,8 @@ class Twitch:
                     url += f"&after={cursor}"
                 async with self._http_client.request("GET", url, headers=headers) as resp:
                     if resp.status != 200:
+                        body = await resp.text()
+                        logger.warning(f"Idle (followed): Helix returned {resp.status}: {body[:200]}")
                         break
                     data = await resp.json()
                 logins.extend(s["user_login"] for s in data.get("data", []))
