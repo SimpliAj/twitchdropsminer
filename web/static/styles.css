@@ -1705,6 +1705,44 @@ header h1 {
     word-break: break-all;
 }
 
+/* Remote Access step blocks */
+.help-step-block {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 12px 0;
+}
+.help-step-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent-color);
+    margin-bottom: 8px;
+}
+.help-step-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+}
+.help-tab-btn {
+    padding: 4px 12px;
+    font-size: 0.78rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.help-tab-btn.active, .help-tab-btn:hover {
+    background: var(--accent-color);
+    color: #fff;
+    border-color: var(--accent-color);
+}
+
 /* Note / callout */
 .help-note {
     display: flex;
