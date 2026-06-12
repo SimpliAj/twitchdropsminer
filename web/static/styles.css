@@ -2830,3 +2830,99 @@ header h1 {
     color: var(--text-secondary);
     min-width: 12px;
 }
+
+/* ── WQ mobile compact + reward modal ── */
+@media (max-width: 768px) {
+    .wq-drag-handle { display: none; }
+    .wq-header { padding: 7px 10px; gap: 6px; }
+    .wq-name { font-size: 0.82rem; }
+    .wq-badge { font-size: 0.65rem; padding: 1px 5px; }
+    .wq-icon, .wq-icon img { width: 22px !important; height: 29px !important; }
+    .wq-count { font-size: 0.72rem; padding: 1px 6px; }
+    .wq-body { padding: 6px 10px; }
+}
+
+/* Benefit with image */
+.wq-benefit {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.wq-benefit img {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+/* Clickable drop row */
+.wq-drop {
+    cursor: pointer;
+    transition: background 0.12s;
+}
+.wq-drop:hover { background: rgba(145,70,255,0.12); }
+
+/* Reward modal */
+.wq-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.wq-modal {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    max-width: 360px;
+    width: 100%;
+    position: relative;
+}
+.wq-modal-close {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.4rem;
+    cursor: pointer;
+    line-height: 1;
+}
+.wq-modal-close:hover { color: var(--text-primary); }
+.wq-modal-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 14px;
+    padding-right: 24px;
+    color: var(--text-primary);
+}
+.wq-modal-benefits {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.wq-modal-benefit {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 10px 12px;
+}
+.wq-modal-benefit img {
+    width: 48px;
+    height: 48px;
+    border-radius: 6px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+.wq-modal-benefit-name {
+    font-size: 0.88rem;
+    color: var(--text-primary);
+}

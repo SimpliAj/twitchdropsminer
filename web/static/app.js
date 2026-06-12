@@ -3402,15 +3402,25 @@ function renderWantedItems(tree) {
         const bodyEl = makeElement('div', { class: 'wq-body' }, '');
         gameGroup.campaigns.forEach(campaign => {
             const campEl = makeElement('div', { class: 'wq-campaign' }, '', el => {
-                el.appendChild(makeElement('a', {
-                    href: campaign.url, target: '_blank', rel: 'noopener noreferrer',
-                    class: 'wq-campaign-link'
-                }, campaign.name));
+                el.appendChild(makeElement('span', { class: 'wq-campaign-link' }, campaign.name));
                 campaign.drops.forEach(drop => {
                     const dropEl = makeElement('div', { class: 'wq-drop' }, '', d => {
                         d.appendChild(makeElement('span', { class: 'wq-drop-name' }, drop.name));
-                        drop.benefits.forEach(b => d.appendChild(makeElement('span', { class: 'wq-benefit' }, b)));
+                        (drop.benefits || []).forEach(b => {
+                            const benefitEl = document.createElement('span');
+                            benefitEl.className = 'wq-benefit';
+                            const bName = typeof b === 'string' ? b : b.name;
+                            const bImg = typeof b === 'object' && b.image_url ? b.image_url : null;
+                            if (bImg) {
+                                const img = document.createElement('img');
+                                img.src = bImg; img.alt = bName;
+                                benefitEl.appendChild(img);
+                            }
+                            benefitEl.appendChild(document.createTextNode(bName));
+                            d.appendChild(benefitEl);
+                        });
                     });
+                    dropEl.addEventListener('click', (e) => { e.stopPropagation(); showRewardModal(drop); });
                     el.appendChild(dropEl);
                 });
             });
@@ -3440,6 +3450,50 @@ function renderWantedItems(tree) {
 
         container.appendChild(row);
     });
+}
+
+function showRewardModal(drop) {
+    document.getElementById('wq-reward-modal')?.remove();
+    const overlay = document.createElement('div');
+    overlay.id = 'wq-reward-modal';
+    overlay.className = 'wq-modal-overlay';
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+
+    const modal = document.createElement('div');
+    modal.className = 'wq-modal';
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'wq-modal-close';
+    closeBtn.textContent = '×';
+    closeBtn.addEventListener('click', () => overlay.remove());
+    modal.appendChild(closeBtn);
+
+    const title = document.createElement('div');
+    title.className = 'wq-modal-title';
+    title.textContent = drop.name;
+    modal.appendChild(title);
+
+    const benefitsList = document.createElement('div');
+    benefitsList.className = 'wq-modal-benefits';
+    (drop.benefits || []).forEach(b => {
+        const bName = typeof b === 'string' ? b : b.name;
+        const bImg = typeof b === 'object' && b.image_url ? b.image_url : null;
+        const item = document.createElement('div');
+        item.className = 'wq-modal-benefit';
+        if (bImg) {
+            const img = document.createElement('img');
+            img.src = bImg; img.alt = bName;
+            item.appendChild(img);
+        }
+        const nameEl = document.createElement('span');
+        nameEl.className = 'wq-modal-benefit-name';
+        nameEl.textContent = bName;
+        item.appendChild(nameEl);
+        benefitsList.appendChild(item);
+    });
+    modal.appendChild(benefitsList);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
 }
 
 function handleWantedDragEnd(e) {
