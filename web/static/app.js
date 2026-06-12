@@ -337,10 +337,24 @@ socket.on('theme_change', (data) => {
 });
 
 socket.on('notification', (data) => {
-    if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification(data.title, {
-            body: data.message,
-            icon: '/static/icon.png'
+    const pushToggle = document.getElementById('push-enabled-toggle');
+    if (!pushToggle?.checked) return;
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+    const title = data.title || 'Drop Claimed!';
+    const body = data.message || '';
+    const icon = data.image_url || '/static/icon.png';
+    new Notification(title, { body, icon });
+});
+
+socket.on('campaign_end_alert', (campaigns) => {
+    const pushToggle = document.getElementById('push-enabled-toggle');
+    if (!pushToggle?.checked) return;
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+    for (const c of campaigns) {
+        new Notification(`⏰ Campaign ending in ~${c.hours_left}h`, {
+            body: `${c.name} — ${c.game} (${c.remaining_drops} drops left)`,
         });
     }
 });
