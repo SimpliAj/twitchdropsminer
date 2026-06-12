@@ -514,71 +514,6 @@ async function loadStats() {
             gameContainer.appendChild(row);
         }
 
-        // Contribution grid (GitHub-style)
-        const gridEl = document.getElementById('stats-contribution-grid');
-        if (gridEl && data.by_day.length > 0) {
-            // Build date->count map
-            const dayMap = {};
-            for (const { date, count } of data.by_day) dayMap[date] = count;
-            const maxCount = Math.max(...Object.values(dayMap), 1);
-
-            // Generate last 52 weeks: current week on left, oldest on right
-            const today = new Date();
-            const startOfCurrentWeek = new Date(today);
-            startOfCurrentWeek.setDate(today.getDate() - today.getDay()); // last Sunday
-            const oldestSunday = new Date(startOfCurrentWeek);
-            oldestSunday.setDate(startOfCurrentWeek.getDate() - 51 * 7);
-
-            // Build week columns oldest→newest, then reverse so newest is left
-            const weeks = [];
-            let cur = new Date(oldestSunday);
-            while (cur <= startOfCurrentWeek) {
-                const week = [];
-                for (let d = 0; d < 7; d++) {
-                    const ds = cur.toISOString().slice(0, 10);
-                    week.push({ date: ds, count: dayMap[ds] || 0 });
-                    cur.setDate(cur.getDate() + 1);
-                }
-                weeks.push(week);
-            }
-            weeks.reverse(); // newest week first (leftmost)
-
-            // Month labels
-            const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-            const labelsDiv = document.createElement('div');
-            labelsDiv.className = 'contrib-labels';
-            let lastMonth = -1;
-            for (const week of weeks) {
-                const m = new Date(week[0].date).getMonth();
-                const span = document.createElement('span');
-                span.className = 'contrib-month-label';
-                span.style.minWidth = '15px';
-                if (m !== lastMonth) { span.textContent = monthNames[m]; lastMonth = m; }
-                labelsDiv.appendChild(span);
-            }
-            gridEl.innerHTML = '';
-            gridEl.appendChild(labelsDiv);
-
-            const grid = document.createElement('div');
-            grid.className = 'contrib-grid';
-            for (const week of weeks) {
-                const col = document.createElement('div');
-                col.className = 'contrib-col';
-                for (const { date, count } of week) {
-                    const cell = document.createElement('div');
-                    cell.className = 'contrib-cell';
-                    cell.setAttribute('data-count', count);
-                    if (count > 0) {
-                        const level = count >= 6 ? 4 : count >= 4 ? 3 : count >= 2 ? 2 : 1;
-                        cell.setAttribute('data-level', level);
-                    }
-                    cell.title = count > 0 ? `${date}: ${count} claim${count > 1 ? 's' : ''}` : date;
-                    col.appendChild(cell);
-                }
-                grid.appendChild(col);
-            }
-            gridEl.appendChild(grid);
-        }
 
     } catch (e) {
         console.error('Failed to load stats:', e);
@@ -2713,8 +2648,6 @@ function applyTranslations(t) {
         if (lastLabel) lastLabel.textContent = a.last_claim;
         const byGameHeader = document.getElementById('analytics-by-game-header');
         if (byGameHeader) byGameHeader.textContent = a.claims_by_game;
-        const activityHeader = document.getElementById('analytics-activity-header');
-        if (activityHeader) activityHeader.textContent = a.claims_activity;
         const cpHeader = document.getElementById('analytics-cp-header');
         if (cpHeader) cpHeader.textContent = a.channel_points;
         const cpRefreshBtn = document.getElementById('cp-tab-refresh-btn');
