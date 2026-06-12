@@ -100,6 +100,8 @@ class Twitch:
         self._user_override: bool = False
         self._scheduler_task: asyncio.Task[None] | None = None
         self._scheduler_service: SchedulerService = SchedulerService(self)
+        from src.services.campaign_alert_service import CampaignAlertService
+        self._campaign_alert_service: CampaignAlertService = CampaignAlertService(self)
         # Skip game tracking (set grows until all games tried, then resets)
         self._skipped_games: set[Game] = set()
 
@@ -313,6 +315,9 @@ class Twitch:
                 # ensure the websocket is running
                 await self.websocket.start()
                 await self.fetch_inventory()
+                asyncio.create_task(
+                    self._campaign_alert_service.check_and_alert(list(self.inventory))
+                )
                 self.gui.set_games({campaign.game for campaign in self.inventory})
                 # Broadcast unwanted items (based on settings)
                 self.gui.broadcast_wanted_items()
