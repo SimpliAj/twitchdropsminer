@@ -1,253 +1,258 @@
 {
-    "language_name": "Nederlandse",
-    "english_name": "Dutch",
+  "language_name": "Nederlandse",
+  "english_name": "Dutch",
+  "status": {
+    "terminated": "\nToepassing gestopt.\nSLuit het venster om de toepassing af te sluiten",
+    "watching": "{channel} wordt gekeken",
+    "goes_online": "{channel} is ONLINE gegaan, wijzig...",
+    "goes_offline": "{channel} is OFFLINE gegaan, wijzig...",
+    "claimed_drop": "Drop verkregen: {drop}",
+    "no_channel": "Geen deelnemende kanalen online. Wachten op steamers...",
+    "no_campaign": "Geen actieve campagnes beschikbaar. Wachten op nieuwe campagne..."
+  },
+  "login": {
+    "error_code": "Login Foutcode: {error_code}",
+    "unexpected_content": "Onverwacht inhoudstype geretourneerd, meestal als gevolg van een omleiding.\nIs inloggen vereist voor toegang tot internet?",
+    "incorrect_login_pass": "Verkeerde gebruikersnaam of wachtwoord.",
+    "incorrect_email_code": "Onjuiste e-mailcode.",
+    "incorrect_twofa_code": "Onjuiste 2FA Code.",
+    "email_code_required": "E-mailcode vereist. Controleer de e-mail.",
+    "twofa_code_required": "2FA Token vereist.",
     "status": {
-        "terminated": "\nToepassing gestopt.\nSLuit het venster om de toepassing af te sluiten",
-        "watching": "{channel} wordt gekeken",
-        "goes_online": "{channel} is ONLINE gegaan, wijzig...",
-        "goes_offline": "{channel} is OFFLINE gegaan, wijzig...",
-        "claimed_drop": "Drop verkregen: {drop}",
-        "no_channel": "Geen deelnemende kanalen online. Wachten op steamers...",
-        "no_campaign": "Geen actieve campagnes beschikbaar. Wachten op nieuwe campagne..."
+      "logged_in": "Geregistreerd",
+      "logged_out": "Uitgelogd",
+      "logging_in": "Aanmelden...",
+      "required": "Aanmelden vereist",
+      "waiting_auth": "Wachten op authenticatie..."
+    },
+    "oauth_prompt": "Voer deze code in op:",
+    "oauth_activate": "Activeer Twitch",
+    "oauth_confirm": "Ik heb de code ingevoerd"
+  },
+  "error": {
+    "captcha": "De inlogpoging is geweigerd door CAPTCHA.\nProbeer het over minimaal 12 uur opnieuw.",
+    "site_down": "Twitch is niet beschikbaar. Probeer het over {seconds} seconden opnieuw...",
+    "no_connection": "Kan geen verbinding maken met Twitch. Probeer het over {seconds} seconden opnieuw..."
+  },
+  "gui": {
+    "output": "Protocol",
+    "status": {
+      "name": "Status",
+      "idle": "Inactief",
+      "exiting": "Beëindigd...",
+      "terminated": "Geannuleerd",
+      "cleanup": "Kanalen opruimen..",
+      "gathering": "Kanalen verzamelen...",
+      "switching": "Het kanaal wijzigen...",
+      "fetching_inventory": "Ophalen van inventaris...",
+      "fetching_campaigns": "Ophalen van de campagne...",
+      "adding_campaigns": "De campagnelijst toevoegen aan de inventaris... {counter}"
+    },
+    "tabs": {
+      "main": "Hoofd",
+      "inventory": "Inventaris",
+      "settings": "Instellingen",
+      "help": "Help",
+      "system": "System",
+      "stats": "Stats"
     },
     "login": {
-        "error_code": "Login Foutcode: {error_code}",
-        "unexpected_content": "Onverwacht inhoudstype geretourneerd, meestal als gevolg van een omleiding.\nIs inloggen vereist voor toegang tot internet?",
-        "incorrect_login_pass": "Verkeerde gebruikersnaam of wachtwoord.",
-        "incorrect_email_code": "Onjuiste e-mailcode.",
-        "incorrect_twofa_code": "Onjuiste 2FA Code.",
-        "email_code_required": "E-mailcode vereist. Controleer de e-mail.",
-        "twofa_code_required": "2FA Token vereist.",
-        "status": {
-            "logged_in": "Geregistreerd",
-            "logged_out": "Uitgelogd",
-            "logging_in": "Aanmelden...",
-            "required": "Aanmelden vereist",
-            "waiting_auth": "Wachten op authenticatie..."
-        },
-        "oauth_prompt": "Voer deze code in op:",
-        "oauth_activate": "Activeer Twitch",
-        "oauth_confirm": "Ik heb de code ingevoerd"
+      "name": "Login",
+      "labels": "Status:\nGebruiker ID:",
+      "request": "Log in om door te gaan.",
+      "username": "Gebruikersnaam",
+      "password": "Wachtwoord",
+      "twofa_code": "2FA Code (optioneel)",
+      "button": "Aanmelden",
+      "oauth_prompt": "Enter this code at:",
+      "oauth_activate": "Twitch Activate",
+      "oauth_confirm": "I've entered the code"
     },
-    "error": {
-        "captcha": "De inlogpoging is geweigerd door CAPTCHA.\nProbeer het over minimaal 12 uur opnieuw.",
-        "site_down": "Twitch is niet beschikbaar. Probeer het over {seconds} seconden opnieuw...",
-        "no_connection": "Kan geen verbinding maken met Twitch. Probeer het over {seconds} seconden opnieuw..."
+    "websocket": {
+      "name": "Websocket Status",
+      "websocket": "WebSocket #{id}:",
+      "initializing": "Initialiseren...",
+      "connected": "Verbonden",
+      "disconnected": "Verbinding verloren",
+      "connecting": "Verbinden...",
+      "disconnecting": "Verbinding verbroken...",
+      "reconnecting": "Opnieuw verbinden..."
     },
-    "gui": {
-        "output": "Protocol",
-        "status": {
-            "name": "Status",
-            "idle": "Inactief",
-            "exiting": "Beëindigd...",
-            "terminated": "Geannuleerd",
-            "cleanup": "Kanalen opruimen..",
-            "gathering": "Kanalen verzamelen...",
-            "switching": "Het kanaal wijzigen...",
-            "fetching_inventory": "Ophalen van inventaris...",
-            "fetching_campaigns": "Ophalen van de campagne...",
-            "adding_campaigns": "De campagnelijst toevoegen aan de inventaris... {counter}"
-        },
-        "tabs": {
-            "main": "Hoofd",
-            "inventory": "Inventaris",
-            "settings": "Instellingen",
-            "help": "Help",
-            "system": "System"
-        },
-        "login": {
-            "name": "Login",
-            "labels": "Status:\nGebruiker ID:",
-            "request": "Log in om door te gaan.",
-            "username": "Gebruikersnaam",
-            "password": "Wachtwoord",
-            "twofa_code": "2FA Code (optioneel)",
-            "button": "Aanmelden",
-            "oauth_prompt": "Enter this code at:",
-            "oauth_activate": "Twitch Activate",
-            "oauth_confirm": "I've entered the code"
-        },
-        "websocket": {
-            "name": "Websocket Status",
-            "websocket": "WebSocket #{id}:",
-            "initializing": "Initialiseren...",
-            "connected": "Verbonden",
-            "disconnected": "Verbinding verloren",
-            "connecting": "Verbinden...",
-            "disconnecting": "Verbinding verbroken...",
-            "reconnecting": "Opnieuw verbinden..."
-        },
-        "progress": {
-            "name": "Voortgang van de campagne",
-            "drop": "Drop:",
-            "game": "Spel:",
-            "campaign": "Campagne:",
-            "remaining": "{time} resterend",
-            "drop_progress": "Voortgang:",
-            "campaign_progress": "Voortgang:",
-            "no_drop": "Geen actieve drop",
-            "return_to_auto": "Terug naar Auto Modus",
-            "manual_mode_info": "Handmatige Modus: Mining"
-        },
-        "channels": {
-            "name": "Kanaal",
-            "online": "ONLINE ✔",
-            "pending": "OFFLINE ⏳",
-            "offline": "OFFLINE ❌",
-            "no_channels": "Nog geen kanalen gevolgd...",
-            "no_channels_for_games": "Geen kanalen gevonden voor geselecteerde games...",
-            "channel_count": "kanaal",
-            "channel_count_plural": "kanalen",
-            "viewers": "kijkers"
-        },
-        "inventory": {
-            "status": {
-                "active": "Actief ✔",
-                "upcoming": "Verwacht ⏳",
-                "expired": "Verlopen ❌",
-                "claimed": "Verkregen ✔"
-            },
-            "starts": "Begint: {time}",
-            "ends": "Eindigt: {time}",
-            "no_campaigns": "Nog geen campagnes geladen...",
-            "claimed_drops": "geclaimd",
-            "filters": {
-                "active": "Actief",
-                "not_linked": "Niet gekoppeld",
-                "upcoming": "Aankomend",
-                "expired": "Verlopen",
-                "finished": "Voltooid",
-                "item": "Item",
-                "badge": "Badge",
-                "emote": "Emote",
-                "other": "Overig",
-                "clear": "Filters wissen",
-                "search_placeholder": "Zoek spellen..."
-            },
-            "filter_linked": "Linked"
-        },
-        "settings": {
-            "general": {
-                "name": "Algemeen",
-                "dark_mode": "Donkere Modus"
-            },
-            "reload": "Herladen",
-            "games_to_watch": "Games om te kijken",
-            "games_help": "Selecteer games om te kijken. Volgorde is belangrijk - sleep om prioriteit te wijzigen (bovenaan = hoogste prioriteit).",
-            "search_games": "Zoek games...",
-            "add_game": "Add Game",
-            "add_game_hint": " Click \"Add Game\" to add it manually.",
-            "select_all": "Alles selecteren",
-            "deselect_all": "Alles deselecteren",
-            "selected_games": "Geselecteerde games (sleep om te herschikken)",
-            "available_games": "Beschikbare games",
-            "no_games_selected": "Geen games geselecteerd. Vink games hieronder aan om ze toe te voegen.",
-            "no_games_match": "Geen games komen overeen met uw zoekopdracht.",
-            "all_games_selected": "Alle games zijn geselecteerd of er zijn geen games beschikbaar.",
-            "actions": "Acties",
-            "connection_quality": "Verbindingskwaliteit:",
-            "minimum_refresh": "Minimaal verversingsinterval (minuten):",
-            "reload_campaigns": "Herlaad Campagnes",
-            "mining_benefits": "Mining Voordelen",
-            "mining_benefits_help": "Selecteer welke soorten drops je wilt minen.",
-            "select_linked": "Select Linked",
-            "password_header": "Login & Password",
-            "password_current_label": "Current Password",
-            "password_current_placeholder": "Leave empty if no password set",
-            "password_new_label": "New Password",
-            "password_new_placeholder": "New password (empty = disable login)",
-            "password_confirm_label": "Confirm New Password",
-            "password_confirm_placeholder": "Confirm",
-            "password_save": "Save Password",
-            "password_disable": "Disable Login",
-            "password_saved": "Password saved.",
-            "password_disabled_msg": "Login disabled.",
-            "password_mismatch": "Passwords don't match.",
-            "password_status_active": "🔒 Login active — Password set",
-            "password_status_inactive": "🔓 No login — publicly accessible",
-            "discord_bot": {
-                "header": "Discord Bot",
-                "description": "Pair a Discord bot to control TwitchDropsMiner via chat commands.",
-                "not_connected": "Not connected",
-                "connected": "✅ Connected",
-                "generate_code": "Generate code",
-                "generating": "Generating...",
-                "disconnect": "Disconnect",
-                "disconnect_confirm": "Disconnect the Discord bot?",
-                "invite_bot": "Invite bot",
-                "expires": "Expires in 10 min"
-            }
-        },
-        "help": {
-            "about": "Over Twitch Drops Miner",
-            "about_text": "Deze applicatie minet automatisch getimede Twitch drops zonder streamgegevens te downloaden.",
-            "how_to_use": "Hoe te gebruiken",
-            "features": "Functies",
-            "important_notes": "Belangrijke opmerkingen",
-            "github_repo": "GitHub Repository",
-            "how_to_use_items": [
-                "Log in met uw Twitch-account (OAuth apparaatcode stroom)",
-                "Koppel uw accounts op <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
-                "De miner zal automatisch campagnes ontdekken en beginnen met minen",
-                "Configureer prioriteitsgames in Instellingen om te focussen op wat u wilt",
-                "Controleer de voortgang in de Hoofd- en Inventaris-tabbladen"
-            ],
-            "features_items": [
-                "Stream-loos drop mining - bespaart bandbreedte",
-                "Game prioriteits- en uitsluitingslijsten",
-                "Volgt tot 199 kanalen tegelijkertijd",
-                "Automatische kanaalwisseling",
-                "Realtime voortgangsregistratie"
-            ],
-            "important_notes_items": [
-                "Bekijk geen streams op hetzelfde account tijdens het minen",
-                "Houd uw cookies.jar-bestand veilig",
-                "Vereist gekoppelde game-accounts voor drops"
-            ]
-        },
-        "header": {
-            "title": "Twitch Drops Miner",
-            "language": "Taal:",
-            "initializing": "Initialiseren...",
-            "auto_mode": "AUTO",
-            "manual_mode": "HANDMATIG",
-            "connected": "Verbonden",
-            "disconnected": "Verbinding verbroken"
-        },
-        "footer": {
-            "version": "Versie:",
-            "loading": "Laden...",
-            "update_available": "Update beschikbaar:"
-        },
-        "badges": {
-            "manual": {
-                "title": "Handmatige modus actief - specifiek spel kijken"
-            },
-            "auto": {
-                "title": "Automatische modus - spelprioriteit volgen"
-            },
-            "proxy": {
-                "title": "Proxy-verbinding actief"
-            }
-        },
-        "wanted": {
-            "name": "Gewenste Drops Wachtrij",
-            "none": "Geen gewenste drops in de wachtrij..."
-        },
-        "system": {
-            "header": "System",
-            "miner_header": "Miner",
-            "miner_desc": "Reload campaigns and restart the mining loop.",
-            "reload_btn": "Reload Campaigns",
-            "restart_header": "Restart",
-            "restart_desc": "Stop the miner process. PM2 will restart it automatically.",
-            "restart_btn": "Restart Miner",
-            "session_header": "Session",
-            "session_desc": "Log out of the web interface.",
-            "logout_btn": "Logout",
-            "reload_ok": "Campaigns reload triggered.",
-            "restart_confirm": "Restart the miner? PM2 will restart it automatically.",
-            "restart_ok": "Miner stopping — will restart via PM2 in a few seconds."
-        }
+    "progress": {
+      "name": "Voortgang van de campagne",
+      "drop": "Drop:",
+      "game": "Spel:",
+      "campaign": "Campagne:",
+      "remaining": "{time} resterend",
+      "drop_progress": "Voortgang:",
+      "campaign_progress": "Voortgang:",
+      "no_drop": "Geen actieve drop",
+      "return_to_auto": "Terug naar Auto Modus",
+      "manual_mode_info": "Handmatige Modus: Mining"
+    },
+    "channels": {
+      "name": "Kanaal",
+      "online": "ONLINE ✔",
+      "pending": "OFFLINE ⏳",
+      "offline": "OFFLINE ❌",
+      "no_channels": "Nog geen kanalen gevolgd...",
+      "no_channels_for_games": "Geen kanalen gevonden voor geselecteerde games...",
+      "channel_count": "kanaal",
+      "channel_count_plural": "kanalen",
+      "viewers": "kijkers"
+    },
+    "inventory": {
+      "status": {
+        "active": "Actief ✔",
+        "upcoming": "Verwacht ⏳",
+        "expired": "Verlopen ❌",
+        "claimed": "Verkregen ✔"
+      },
+      "starts": "Begint: {time}",
+      "ends": "Eindigt: {time}",
+      "no_campaigns": "Nog geen campagnes geladen...",
+      "claimed_drops": "geclaimd",
+      "filters": {
+        "active": "Actief",
+        "not_linked": "Niet gekoppeld",
+        "upcoming": "Aankomend",
+        "expired": "Verlopen",
+        "finished": "Voltooid",
+        "item": "Item",
+        "badge": "Badge",
+        "emote": "Emote",
+        "other": "Overig",
+        "clear": "Filters wissen",
+        "search_placeholder": "Zoek spellen..."
+      },
+      "filter_linked": "Linked"
+    },
+    "settings": {
+      "general": {
+        "name": "Algemeen",
+        "dark_mode": "Donkere Modus"
+      },
+      "reload": "Herladen",
+      "games_to_watch": "Games om te kijken",
+      "games_help": "Selecteer games om te kijken. Volgorde is belangrijk - sleep om prioriteit te wijzigen (bovenaan = hoogste prioriteit).",
+      "search_games": "Zoek games...",
+      "add_game": "Add Game",
+      "add_game_hint": " Click \"Add Game\" to add it manually.",
+      "select_all": "Alles selecteren",
+      "deselect_all": "Alles deselecteren",
+      "selected_games": "Geselecteerde games (sleep om te herschikken)",
+      "available_games": "Beschikbare games",
+      "no_games_selected": "Geen games geselecteerd. Vink games hieronder aan om ze toe te voegen.",
+      "no_games_match": "Geen games komen overeen met uw zoekopdracht.",
+      "all_games_selected": "Alle games zijn geselecteerd of er zijn geen games beschikbaar.",
+      "actions": "Acties",
+      "connection_quality": "Verbindingskwaliteit:",
+      "minimum_refresh": "Minimaal verversingsinterval (minuten):",
+      "reload_campaigns": "Herlaad Campagnes",
+      "mining_benefits": "Mining Voordelen",
+      "mining_benefits_help": "Selecteer welke soorten drops je wilt minen.",
+      "select_linked": "Select Linked",
+      "password_header": "Login & Password",
+      "password_current_label": "Current Password",
+      "password_current_placeholder": "Leave empty if no password set",
+      "password_new_label": "New Password",
+      "password_new_placeholder": "New password (empty = disable login)",
+      "password_confirm_label": "Confirm New Password",
+      "password_confirm_placeholder": "Confirm",
+      "password_save": "Save Password",
+      "password_disable": "Disable Login",
+      "password_saved": "Password saved.",
+      "password_disabled_msg": "Login disabled.",
+      "password_mismatch": "Passwords don't match.",
+      "password_status_active": "🔒 Login active — Password set",
+      "password_status_inactive": "🔓 No login — publicly accessible",
+      "discord_bot": {
+        "header": "Discord Bot",
+        "description": "Pair a Discord bot to control TwitchDropsMiner via chat commands.",
+        "not_connected": "Not connected",
+        "connected": "✅ Connected",
+        "generate_code": "Generate code",
+        "generating": "Generating...",
+        "disconnect": "Disconnect",
+        "disconnect_confirm": "Disconnect the Discord bot?",
+        "invite_bot": "Invite bot",
+        "expires": "Expires in 10 min"
+      },
+      "notifications_header": "Notifications",
+      "push_enabled": "Browser Push Notifications",
+      "push_sound": "Notification Sound",
+      "campaign_end_alerts_enabled": "Campaign End Alerts (24h warning)"
+    },
+    "help": {
+      "about": "Over Twitch Drops Miner",
+      "about_text": "Deze applicatie minet automatisch getimede Twitch drops zonder streamgegevens te downloaden.",
+      "how_to_use": "Hoe te gebruiken",
+      "features": "Functies",
+      "important_notes": "Belangrijke opmerkingen",
+      "github_repo": "GitHub Repository",
+      "how_to_use_items": [
+        "Log in met uw Twitch-account (OAuth apparaatcode stroom)",
+        "Koppel uw accounts op <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
+        "De miner zal automatisch campagnes ontdekken en beginnen met minen",
+        "Configureer prioriteitsgames in Instellingen om te focussen op wat u wilt",
+        "Controleer de voortgang in de Hoofd- en Inventaris-tabbladen"
+      ],
+      "features_items": [
+        "Stream-loos drop mining - bespaart bandbreedte",
+        "Game prioriteits- en uitsluitingslijsten",
+        "Volgt tot 199 kanalen tegelijkertijd",
+        "Automatische kanaalwisseling",
+        "Realtime voortgangsregistratie"
+      ],
+      "important_notes_items": [
+        "Bekijk geen streams op hetzelfde account tijdens het minen",
+        "Houd uw cookies.jar-bestand veilig",
+        "Vereist gekoppelde game-accounts voor drops"
+      ]
+    },
+    "header": {
+      "title": "Twitch Drops Miner",
+      "language": "Taal:",
+      "initializing": "Initialiseren...",
+      "auto_mode": "AUTO",
+      "manual_mode": "HANDMATIG",
+      "connected": "Verbonden",
+      "disconnected": "Verbinding verbroken"
+    },
+    "footer": {
+      "version": "Versie:",
+      "loading": "Laden...",
+      "update_available": "Update beschikbaar:"
+    },
+    "badges": {
+      "manual": {
+        "title": "Handmatige modus actief - specifiek spel kijken"
+      },
+      "auto": {
+        "title": "Automatische modus - spelprioriteit volgen"
+      },
+      "proxy": {
+        "title": "Proxy-verbinding actief"
+      }
+    },
+    "wanted": {
+      "name": "Gewenste Drops Wachtrij",
+      "none": "Geen gewenste drops in de wachtrij..."
+    },
+    "system": {
+      "header": "System",
+      "miner_header": "Miner",
+      "miner_desc": "Reload campaigns and restart the mining loop.",
+      "reload_btn": "Reload Campaigns",
+      "restart_header": "Restart",
+      "restart_desc": "Stop the miner process. PM2 will restart it automatically.",
+      "restart_btn": "Restart Miner",
+      "session_header": "Session",
+      "session_desc": "Log out of the web interface.",
+      "logout_btn": "Logout",
+      "reload_ok": "Campaigns reload triggered.",
+      "restart_confirm": "Restart the miner? PM2 will restart it automatically.",
+      "restart_ok": "Miner stopping — will restart via PM2 in a few seconds."
     }
+  }
 }

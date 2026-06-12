@@ -1,253 +1,258 @@
 {
-    "language_name": "Italiano",
-    "english_name": "Italian",
+  "language_name": "Italiano",
+  "english_name": "Italian",
+  "status": {
+    "terminated": "\nApplicazione Terminata.\nChiudi la finestra per uscire dall'applicazione.",
+    "watching": "Guardando: {channel}",
+    "goes_online": "{channel} è ONLINE, cambiando...",
+    "goes_offline": "{channel} è OFFLINE, cambiando...",
+    "claimed_drop": "Contenuti riscattati: {drop}",
+    "no_channel": "Nessun canale disponibile da guardare. In attesa di un canale ONLINE...",
+    "no_campaign": "Nessuna campagna attiva per ottenere i premi. In attesa di una campagna attiva..."
+  },
+  "login": {
+    "unexpected_content": "Tipo di contenuto inaspettato restituito, di solito a causa di un reindirizzamento. Hai bisogno di fare il login per accedere a internet?",
+    "error_code": "Codice di errore del login: {error_code}",
+    "incorrect_login_pass": "Nome utente o password errati.",
+    "incorrect_email_code": "Codice email errato.",
+    "incorrect_twofa_code": "Codice 2FA errato.",
+    "email_code_required": "Codice email richiesto. Controlla la tua email.",
+    "twofa_code_required": "Token 2FA richiesto.",
     "status": {
-        "terminated": "\nApplicazione Terminata.\nChiudi la finestra per uscire dall'applicazione.",
-        "watching": "Guardando: {channel}",
-        "goes_online": "{channel} è ONLINE, cambiando...",
-        "goes_offline": "{channel} è OFFLINE, cambiando...",
-        "claimed_drop": "Contenuti riscattati: {drop}",
-        "no_channel": "Nessun canale disponibile da guardare. In attesa di un canale ONLINE...",
-        "no_campaign": "Nessuna campagna attiva per ottenere i premi. In attesa di una campagna attiva..."
+      "logged_in": "Loggato",
+      "logged_out": "Non loggato",
+      "logging_in": "Loggando...",
+      "required": "Login richiesto",
+      "waiting_auth": "In attesa di autenticazione..."
+    },
+    "oauth_prompt": "Inserisci questo codice su:",
+    "oauth_activate": "Attiva Twitch",
+    "oauth_confirm": "Ho inserito il codice"
+  },
+  "error": {
+    "captcha": "Il tuo tentativo di login è stato negato da CAPTCHA.\nRiprova tra 12+ ore.",
+    "site_down": "Twitch è irraggiungibile, riprovo tra {seconds} secondi...",
+    "no_connection": "Impossibile connettersi a Twitch, riprovo tra {seconds} secondi..."
+  },
+  "gui": {
+    "output": "Output",
+    "status": {
+      "name": "Stato",
+      "idle": "Inattivo",
+      "exiting": "Uscendo...",
+      "terminated": "Terminato",
+      "cleanup": "Pulendo i canali...",
+      "gathering": "Raccogliendo i canali...",
+      "switching": "Cambiando canale...",
+      "fetching_inventory": "Recupero dell'inventario...",
+      "fetching_campaigns": "Recupero delle campagne...",
+      "adding_campaigns": "Aggiunta delle campagne all'inventario... {counter}"
+    },
+    "tabs": {
+      "main": "Principale",
+      "inventory": "Inventario",
+      "settings": "Impostazioni",
+      "help": "Aiuto",
+      "system": "System",
+      "stats": "Stats"
     },
     "login": {
-        "unexpected_content": "Tipo di contenuto inaspettato restituito, di solito a causa di un reindirizzamento. Hai bisogno di fare il login per accedere a internet?",
-        "error_code": "Codice di errore del login: {error_code}",
-        "incorrect_login_pass": "Nome utente o password errati.",
-        "incorrect_email_code": "Codice email errato.",
-        "incorrect_twofa_code": "Codice 2FA errato.",
-        "email_code_required": "Codice email richiesto. Controlla la tua email.",
-        "twofa_code_required": "Token 2FA richiesto.",
-        "status": {
-            "logged_in": "Loggato",
-            "logged_out": "Non loggato",
-            "logging_in": "Loggando...",
-            "required": "Login richiesto",
-            "waiting_auth": "In attesa di autenticazione..."
-        },
-        "oauth_prompt": "Inserisci questo codice su:",
-        "oauth_activate": "Attiva Twitch",
-        "oauth_confirm": "Ho inserito il codice"
+      "name": "Dettagli Login",
+      "labels": "Stato:\nID Utente:",
+      "request": "Per favore, effettua il login per continuare.",
+      "username": "Nome utente",
+      "password": "Password",
+      "twofa_code": "Codice 2FA (opzionale)",
+      "button": "Login",
+      "oauth_prompt": "Enter this code at:",
+      "oauth_activate": "Twitch Activate",
+      "oauth_confirm": "I've entered the code"
     },
-    "error": {
-        "captcha": "Il tuo tentativo di login è stato negato da CAPTCHA.\nRiprova tra 12+ ore.",
-        "site_down": "Twitch è irraggiungibile, riprovo tra {seconds} secondi...",
-        "no_connection": "Impossibile connettersi a Twitch, riprovo tra {seconds} secondi..."
+    "websocket": {
+      "name": "Stato Websocket",
+      "websocket": "Websocket #{id}:",
+      "initializing": "Inizializzando...",
+      "connected": "Connesso",
+      "disconnected": "Disconnesso",
+      "connecting": "Connettendo...",
+      "disconnecting": "Disconnettendo...",
+      "reconnecting": "Riconnettendo..."
     },
-    "gui": {
-        "output": "Output",
-        "status": {
-            "name": "Stato",
-            "idle": "Inattivo",
-            "exiting": "Uscendo...",
-            "terminated": "Terminato",
-            "cleanup": "Pulendo i canali...",
-            "gathering": "Raccogliendo i canali...",
-            "switching": "Cambiando canale...",
-            "fetching_inventory": "Recupero dell'inventario...",
-            "fetching_campaigns": "Recupero delle campagne...",
-            "adding_campaigns": "Aggiunta delle campagne all'inventario... {counter}"
-        },
-        "tabs": {
-            "main": "Principale",
-            "inventory": "Inventario",
-            "settings": "Impostazioni",
-            "help": "Aiuto",
-            "system": "System"
-        },
-        "login": {
-            "name": "Dettagli Login",
-            "labels": "Stato:\nID Utente:",
-            "request": "Per favore, effettua il login per continuare.",
-            "username": "Nome utente",
-            "password": "Password",
-            "twofa_code": "Codice 2FA (opzionale)",
-            "button": "Login",
-            "oauth_prompt": "Enter this code at:",
-            "oauth_activate": "Twitch Activate",
-            "oauth_confirm": "I've entered the code"
-        },
-        "websocket": {
-            "name": "Stato Websocket",
-            "websocket": "Websocket #{id}:",
-            "initializing": "Inizializzando...",
-            "connected": "Connesso",
-            "disconnected": "Disconnesso",
-            "connecting": "Connettendo...",
-            "disconnecting": "Disconnettendo...",
-            "reconnecting": "Riconnettendo..."
-        },
-        "progress": {
-            "name": "Progresso della Campagna",
-            "drop": "Contenuto:",
-            "game": "Gioco:",
-            "campaign": "Campagna:",
-            "remaining": "{time} rimanenti",
-            "drop_progress": "Progresso:",
-            "campaign_progress": "Progresso:",
-            "no_drop": "Nessun drop attivo",
-            "return_to_auto": "Torna alla modalità automatica",
-            "manual_mode_info": "Modalità manuale: Mining"
-        },
-        "channels": {
-            "name": "Canali",
-            "online": "ONLINE  ✔",
-            "pending": "OFFLINE ⏳",
-            "offline": "OFFLINE ❌",
-            "no_channels": "Nessun canale tracciato ancora...",
-            "no_channels_for_games": "Nessun canale trovato per i giochi selezionati...",
-            "channel_count": "canale",
-            "channel_count_plural": "canali",
-            "viewers": "spettatori"
-        },
-        "inventory": {
-            "status": {
-                "active": "Attivo ✔",
-                "upcoming": "In arrivo ⏳",
-                "expired": "Scaduto ❌",
-                "claimed": "Riscattato ✔"
-            },
-            "starts": "Inizia: {time}",
-            "ends": "Finisce: {time}",
-            "no_campaigns": "Nessuna campagna caricata ancora...",
-            "claimed_drops": "reclamato",
-            "filters": {
-                "active": "Attivo",
-                "not_linked": "Non Collegato",
-                "upcoming": "In Arrivo",
-                "expired": "Scaduto",
-                "finished": "Finito",
-                "item": "Oggetto",
-                "badge": "Badge",
-                "emote": "Emote",
-                "other": "Altro",
-                "clear": "Pulisci Filtri",
-                "search_placeholder": "Cerca giochi..."
-            },
-            "filter_linked": "Linked"
-        },
-        "settings": {
-            "general": {
-                "name": "Generale",
-                "dark_mode": "Modalità scura"
-            },
-            "reload": "Ricarica",
-            "games_to_watch": "Giochi da guardare",
-            "games_help": "Seleziona i giochi da guardare. L'ordine è importante - trascina per riordinare la priorità (in alto = priorità massima).",
-            "search_games": "Cerca giochi...",
-            "add_game": "Add Game",
-            "add_game_hint": " Click \"Add Game\" to add it manually.",
-            "select_all": "Seleziona tutto",
-            "deselect_all": "Deseleziona tutto",
-            "selected_games": "Giochi selezionati (trascina per riordinare)",
-            "available_games": "Giochi disponibili",
-            "no_games_selected": "Nessun gioco selezionato. Seleziona i giochi qui sotto per aggiungerli.",
-            "no_games_match": "Nessun gioco corrisponde alla tua ricerca.",
-            "all_games_selected": "Tutti i giochi sono selezionati o non ci sono giochi disponibili.",
-            "actions": "Azioni",
-            "connection_quality": "Qualità della connessione:",
-            "minimum_refresh": "Intervallo minimo di aggiornamento (minuti):",
-            "reload_campaigns": "Ricarica campagne",
-            "mining_benefits": "Vantaggi Minatori",
-            "mining_benefits_help": "Seleziona quali tipi di drop vuoi minare.",
-            "select_linked": "Select Linked",
-            "password_header": "Login & Password",
-            "password_current_label": "Current Password",
-            "password_current_placeholder": "Leave empty if no password set",
-            "password_new_label": "New Password",
-            "password_new_placeholder": "New password (empty = disable login)",
-            "password_confirm_label": "Confirm New Password",
-            "password_confirm_placeholder": "Confirm",
-            "password_save": "Save Password",
-            "password_disable": "Disable Login",
-            "password_saved": "Password saved.",
-            "password_disabled_msg": "Login disabled.",
-            "password_mismatch": "Passwords don't match.",
-            "password_status_active": "🔒 Login active — Password set",
-            "password_status_inactive": "🔓 No login — publicly accessible",
-            "discord_bot": {
-                "header": "Discord Bot",
-                "description": "Collega un bot Discord per controllare TwitchDropsMiner via comandi chat.",
-                "not_connected": "Non connesso",
-                "connected": "✅ Connesso",
-                "generate_code": "Genera codice",
-                "generating": "Generando...",
-                "disconnect": "Disconnetti",
-                "disconnect_confirm": "Disconnettere il bot Discord?",
-                "invite_bot": "Invita bot",
-                "expires": "Scade in 10 min"
-            }
-        },
-        "help": {
-            "about": "Informazioni su Twitch Drops Miner",
-            "about_text": "Questa applicazione estrae automaticamente i drop Twitch temporizzati senza scaricare dati di streaming.",
-            "how_to_use": "Come usare",
-            "features": "Funzionalità",
-            "important_notes": "Note importanti",
-            "github_repo": "Repository GitHub",
-            "how_to_use_items": [
-                "Accedi utilizzando il tuo account Twitch (flusso del codice dispositivo OAuth)",
-                "Collega i tuoi account su <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
-                "Il miner scoprirà automaticamente le campagne e inizierà il mining",
-                "Configura i giochi prioritari nelle Impostazioni per concentrarti su ciò che desideri",
-                "Monitora i progressi nelle schede Principale e Inventario"
-            ],
-            "features_items": [
-                "Mining di drop senza streaming - risparmia larghezza di banda",
-                "Liste di priorità ed esclusione dei giochi",
-                "Traccia fino a 199 canali simultaneamente",
-                "Cambio automatico di canale",
-                "Tracciamento dei progressi in tempo reale"
-            ],
-            "important_notes_items": [
-                "Non guardare stream sullo stesso account durante il mining",
-                "Mantieni sicuro il tuo file cookies.jar",
-                "Richiede account di gioco collegati per i drop"
-            ]
-        },
-        "header": {
-            "title": "Twitch Drops Miner",
-            "language": "Lingua:",
-            "initializing": "Inizializzazione...",
-            "auto_mode": "AUTO",
-            "manual_mode": "MANUALE",
-            "connected": "Connesso",
-            "disconnected": "Disconnesso"
-        },
-        "footer": {
-            "version": "Versione:",
-            "loading": "Caricamento...",
-            "update_available": "Aggiornamento disponibile:"
-        },
-        "badges": {
-            "manual": {
-                "title": "Modalità manuale attiva - guardando gioco specifico"
-            },
-            "auto": {
-                "title": "Modalità automatica - seguendo priorità giochi"
-            },
-            "proxy": {
-                "title": "Connessione proxy attiva"
-            }
-        },
-        "wanted": {
-            "name": "Coda Drops Desiderati",
-            "none": "Nessun drop desiderato in coda..."
-        },
-        "system": {
-            "header": "System",
-            "miner_header": "Miner",
-            "miner_desc": "Reload campaigns and restart the mining loop.",
-            "reload_btn": "Reload Campaigns",
-            "restart_header": "Restart",
-            "restart_desc": "Stop the miner process. PM2 will restart it automatically.",
-            "restart_btn": "Restart Miner",
-            "session_header": "Session",
-            "session_desc": "Log out of the web interface.",
-            "logout_btn": "Logout",
-            "reload_ok": "Campaigns reload triggered.",
-            "restart_confirm": "Restart the miner? PM2 will restart it automatically.",
-            "restart_ok": "Miner stopping — will restart via PM2 in a few seconds."
-        }
+    "progress": {
+      "name": "Progresso della Campagna",
+      "drop": "Contenuto:",
+      "game": "Gioco:",
+      "campaign": "Campagna:",
+      "remaining": "{time} rimanenti",
+      "drop_progress": "Progresso:",
+      "campaign_progress": "Progresso:",
+      "no_drop": "Nessun drop attivo",
+      "return_to_auto": "Torna alla modalità automatica",
+      "manual_mode_info": "Modalità manuale: Mining"
+    },
+    "channels": {
+      "name": "Canali",
+      "online": "ONLINE  ✔",
+      "pending": "OFFLINE ⏳",
+      "offline": "OFFLINE ❌",
+      "no_channels": "Nessun canale tracciato ancora...",
+      "no_channels_for_games": "Nessun canale trovato per i giochi selezionati...",
+      "channel_count": "canale",
+      "channel_count_plural": "canali",
+      "viewers": "spettatori"
+    },
+    "inventory": {
+      "status": {
+        "active": "Attivo ✔",
+        "upcoming": "In arrivo ⏳",
+        "expired": "Scaduto ❌",
+        "claimed": "Riscattato ✔"
+      },
+      "starts": "Inizia: {time}",
+      "ends": "Finisce: {time}",
+      "no_campaigns": "Nessuna campagna caricata ancora...",
+      "claimed_drops": "reclamato",
+      "filters": {
+        "active": "Attivo",
+        "not_linked": "Non Collegato",
+        "upcoming": "In Arrivo",
+        "expired": "Scaduto",
+        "finished": "Finito",
+        "item": "Oggetto",
+        "badge": "Badge",
+        "emote": "Emote",
+        "other": "Altro",
+        "clear": "Pulisci Filtri",
+        "search_placeholder": "Cerca giochi..."
+      },
+      "filter_linked": "Linked"
+    },
+    "settings": {
+      "general": {
+        "name": "Generale",
+        "dark_mode": "Modalità scura"
+      },
+      "reload": "Ricarica",
+      "games_to_watch": "Giochi da guardare",
+      "games_help": "Seleziona i giochi da guardare. L'ordine è importante - trascina per riordinare la priorità (in alto = priorità massima).",
+      "search_games": "Cerca giochi...",
+      "add_game": "Add Game",
+      "add_game_hint": " Click \"Add Game\" to add it manually.",
+      "select_all": "Seleziona tutto",
+      "deselect_all": "Deseleziona tutto",
+      "selected_games": "Giochi selezionati (trascina per riordinare)",
+      "available_games": "Giochi disponibili",
+      "no_games_selected": "Nessun gioco selezionato. Seleziona i giochi qui sotto per aggiungerli.",
+      "no_games_match": "Nessun gioco corrisponde alla tua ricerca.",
+      "all_games_selected": "Tutti i giochi sono selezionati o non ci sono giochi disponibili.",
+      "actions": "Azioni",
+      "connection_quality": "Qualità della connessione:",
+      "minimum_refresh": "Intervallo minimo di aggiornamento (minuti):",
+      "reload_campaigns": "Ricarica campagne",
+      "mining_benefits": "Vantaggi Minatori",
+      "mining_benefits_help": "Seleziona quali tipi di drop vuoi minare.",
+      "select_linked": "Select Linked",
+      "password_header": "Login & Password",
+      "password_current_label": "Current Password",
+      "password_current_placeholder": "Leave empty if no password set",
+      "password_new_label": "New Password",
+      "password_new_placeholder": "New password (empty = disable login)",
+      "password_confirm_label": "Confirm New Password",
+      "password_confirm_placeholder": "Confirm",
+      "password_save": "Save Password",
+      "password_disable": "Disable Login",
+      "password_saved": "Password saved.",
+      "password_disabled_msg": "Login disabled.",
+      "password_mismatch": "Passwords don't match.",
+      "password_status_active": "🔒 Login active — Password set",
+      "password_status_inactive": "🔓 No login — publicly accessible",
+      "discord_bot": {
+        "header": "Discord Bot",
+        "description": "Collega un bot Discord per controllare TwitchDropsMiner via comandi chat.",
+        "not_connected": "Non connesso",
+        "connected": "✅ Connesso",
+        "generate_code": "Genera codice",
+        "generating": "Generando...",
+        "disconnect": "Disconnetti",
+        "disconnect_confirm": "Disconnettere il bot Discord?",
+        "invite_bot": "Invita bot",
+        "expires": "Scade in 10 min"
+      },
+      "notifications_header": "Notifications",
+      "push_enabled": "Browser Push Notifications",
+      "push_sound": "Notification Sound",
+      "campaign_end_alerts_enabled": "Campaign End Alerts (24h warning)"
+    },
+    "help": {
+      "about": "Informazioni su Twitch Drops Miner",
+      "about_text": "Questa applicazione estrae automaticamente i drop Twitch temporizzati senza scaricare dati di streaming.",
+      "how_to_use": "Come usare",
+      "features": "Funzionalità",
+      "important_notes": "Note importanti",
+      "github_repo": "Repository GitHub",
+      "how_to_use_items": [
+        "Accedi utilizzando il tuo account Twitch (flusso del codice dispositivo OAuth)",
+        "Collega i tuoi account su <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
+        "Il miner scoprirà automaticamente le campagne e inizierà il mining",
+        "Configura i giochi prioritari nelle Impostazioni per concentrarti su ciò che desideri",
+        "Monitora i progressi nelle schede Principale e Inventario"
+      ],
+      "features_items": [
+        "Mining di drop senza streaming - risparmia larghezza di banda",
+        "Liste di priorità ed esclusione dei giochi",
+        "Traccia fino a 199 canali simultaneamente",
+        "Cambio automatico di canale",
+        "Tracciamento dei progressi in tempo reale"
+      ],
+      "important_notes_items": [
+        "Non guardare stream sullo stesso account durante il mining",
+        "Mantieni sicuro il tuo file cookies.jar",
+        "Richiede account di gioco collegati per i drop"
+      ]
+    },
+    "header": {
+      "title": "Twitch Drops Miner",
+      "language": "Lingua:",
+      "initializing": "Inizializzazione...",
+      "auto_mode": "AUTO",
+      "manual_mode": "MANUALE",
+      "connected": "Connesso",
+      "disconnected": "Disconnesso"
+    },
+    "footer": {
+      "version": "Versione:",
+      "loading": "Caricamento...",
+      "update_available": "Aggiornamento disponibile:"
+    },
+    "badges": {
+      "manual": {
+        "title": "Modalità manuale attiva - guardando gioco specifico"
+      },
+      "auto": {
+        "title": "Modalità automatica - seguendo priorità giochi"
+      },
+      "proxy": {
+        "title": "Connessione proxy attiva"
+      }
+    },
+    "wanted": {
+      "name": "Coda Drops Desiderati",
+      "none": "Nessun drop desiderato in coda..."
+    },
+    "system": {
+      "header": "System",
+      "miner_header": "Miner",
+      "miner_desc": "Reload campaigns and restart the mining loop.",
+      "reload_btn": "Reload Campaigns",
+      "restart_header": "Restart",
+      "restart_desc": "Stop the miner process. PM2 will restart it automatically.",
+      "restart_btn": "Restart Miner",
+      "session_header": "Session",
+      "session_desc": "Log out of the web interface.",
+      "logout_btn": "Logout",
+      "reload_ok": "Campaigns reload triggered.",
+      "restart_confirm": "Restart the miner? PM2 will restart it automatically.",
+      "restart_ok": "Miner stopping — will restart via PM2 in a few seconds."
     }
+  }
 }

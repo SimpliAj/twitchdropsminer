@@ -1,253 +1,258 @@
 {
-    "language_name": "Română",
-    "english_name": "Romanian",
+  "language_name": "Română",
+  "english_name": "Romanian",
+  "status": {
+    "terminated": "\nAplicația a fost oprită.\nVă rugăm să închideți aplicația.",
+    "watching": "Se vizionează : {channel}",
+    "goes_online": "{channel} intră ONLINE, se schimbă...",
+    "goes_offline": "{channel} intră OFFLINE, se schimbă...",
+    "claimed_drop": "Drop-ul a fost recuperat : {drop}",
+    "no_channel": "Nu există canale disponibile pentru vizionare. În așteptarea unui canal ONLINE...",
+    "no_campaign": "Nu există campanii active pentru a mina drop-uri. În așteptarea unei campanii active..."
+  },
+  "login": {
+    "error_code": "Cod de eroare de conexiune: {error_code}",
+    "unexpected_content": "Tip de conținut neașteptat returnat, de obicei din cauza unei redirecționări. Trebuie să vă autentificați pentru a accesa Internetul?",
+    "incorrect_login_pass": "Numele de utilizator sau parola introdusă este incorectă.",
+    "incorrect_email_code": "Codul de verificare din e-mail este incorect.",
+    "incorrect_twofa_code": "Codul 2FA este incorect.",
+    "email_code_required": "Codul de verificare din e-mail este necesar. Vă rugăm să vă verificați e-mailul.",
+    "twofa_code_required": "Este necesar un cod 2FA.",
     "status": {
-        "terminated": "\nAplicația a fost oprită.\nVă rugăm să închideți aplicația.",
-        "watching": "Se vizionează : {channel}",
-        "goes_online": "{channel} intră ONLINE, se schimbă...",
-        "goes_offline": "{channel} intră OFFLINE, se schimbă...",
-        "claimed_drop": "Drop-ul a fost recuperat : {drop}",
-        "no_channel": "Nu există canale disponibile pentru vizionare. În așteptarea unui canal ONLINE...",
-        "no_campaign": "Nu există campanii active pentru a mina drop-uri. În așteptarea unei campanii active..."
+      "logged_in": "Conectat",
+      "logged_out": "Deconectat",
+      "logging_in": "Se conectează...",
+      "required": "Este necesară conectarea",
+      "waiting_auth": "Se așteaptă autentificarea..."
+    },
+    "oauth_prompt": "Introduceți acest cod la:",
+    "oauth_activate": "Activează Twitch",
+    "oauth_confirm": "Am introdus codul"
+  },
+  "error": {
+    "captcha": "Conexiunea a fost respinsă de CAPTCHA. Vă rugăm să încercați din nou în aprox. 12 ore.",
+    "site_down": "Twitch nu este disponibil. Vă rugăm să încercați din nou în {seconds} secunde...",
+    "no_connection": "Nu se poate conecta la Twitch. Vă rugăm să încercați din nou în {seconds} secunde..."
+  },
+  "gui": {
+    "output": "Ieșire",
+    "status": {
+      "name": "Statut",
+      "idle": "Inactiv",
+      "exiting": "Ieșire...",
+      "terminated": "Terminat",
+      "cleanup": "Curățarea canalelor...",
+      "gathering": "Se caută canale live...",
+      "switching": "Colectarea canalelor în curs...",
+      "fetching_inventory": "Se precuperează inventarul...",
+      "fetching_campaigns": "Se recuperează campaniile...",
+      "adding_campaigns": "S-a adăugat lista de campanii la inventar... {counter}"
+    },
+    "tabs": {
+      "main": "Principal",
+      "inventory": "Inventar",
+      "settings": "Setări",
+      "help": "Ajutor",
+      "system": "System",
+      "stats": "Stats"
     },
     "login": {
-        "error_code": "Cod de eroare de conexiune: {error_code}",
-        "unexpected_content": "Tip de conținut neașteptat returnat, de obicei din cauza unei redirecționări. Trebuie să vă autentificați pentru a accesa Internetul?",
-        "incorrect_login_pass": "Numele de utilizator sau parola introdusă este incorectă.",
-        "incorrect_email_code": "Codul de verificare din e-mail este incorect.",
-        "incorrect_twofa_code": "Codul 2FA este incorect.",
-        "email_code_required": "Codul de verificare din e-mail este necesar. Vă rugăm să vă verificați e-mailul.",
-        "twofa_code_required": "Este necesar un cod 2FA.",
-        "status": {
-            "logged_in": "Conectat",
-            "logged_out": "Deconectat",
-            "logging_in": "Se conectează...",
-            "required": "Este necesară conectarea",
-            "waiting_auth": "Se așteaptă autentificarea..."
-        },
-        "oauth_prompt": "Introduceți acest cod la:",
-        "oauth_activate": "Activează Twitch",
-        "oauth_confirm": "Am introdus codul"
+      "name": "Formular de conectare",
+      "labels": "Statut :\nID-ul de utilizator :",
+      "request": "Vă rugăm să vă conectați pentru a continua.",
+      "username": "Nume utilizator",
+      "password": "Parolă",
+      "twofa_code": "Cod 2FA (opțional)",
+      "button": "Conectare",
+      "oauth_prompt": "Enter this code at:",
+      "oauth_activate": "Twitch Activate",
+      "oauth_confirm": "I've entered the code"
     },
-    "error": {
-        "captcha": "Conexiunea a fost respinsă de CAPTCHA. Vă rugăm să încercați din nou în aprox. 12 ore.",
-        "site_down": "Twitch nu este disponibil. Vă rugăm să încercați din nou în {seconds} secunde...",
-        "no_connection": "Nu se poate conecta la Twitch. Vă rugăm să încercați din nou în {seconds} secunde..."
+    "websocket": {
+      "name": "Status Websocket",
+      "websocket": "Websocket #{id}:",
+      "initializing": "Se inițializează...",
+      "connected": "Conectat",
+      "disconnected": "Deconectat",
+      "connecting": "Se conectează...",
+      "disconnecting": "Se deconectează...",
+      "reconnecting": "Reconectare..."
     },
-    "gui": {
-        "output": "Ieșire",
-        "status": {
-            "name": "Statut",
-            "idle": "Inactiv",
-            "exiting": "Ieșire...",
-            "terminated": "Terminat",
-            "cleanup": "Curățarea canalelor...",
-            "gathering": "Se caută canale live...",
-            "switching": "Colectarea canalelor în curs...",
-            "fetching_inventory": "Se precuperează inventarul...",
-            "fetching_campaigns": "Se recuperează campaniile...",
-            "adding_campaigns": "S-a adăugat lista de campanii la inventar... {counter}"
-        },
-        "tabs": {
-            "main": "Principal",
-            "inventory": "Inventar",
-            "settings": "Setări",
-            "help": "Ajutor",
-            "system": "System"
-        },
-        "login": {
-            "name": "Formular de conectare",
-            "labels": "Statut :\nID-ul de utilizator :",
-            "request": "Vă rugăm să vă conectați pentru a continua.",
-            "username": "Nume utilizator",
-            "password": "Parolă",
-            "twofa_code": "Cod 2FA (opțional)",
-            "button": "Conectare",
-            "oauth_prompt": "Enter this code at:",
-            "oauth_activate": "Twitch Activate",
-            "oauth_confirm": "I've entered the code"
-        },
-        "websocket": {
-            "name": "Status Websocket",
-            "websocket": "Websocket #{id}:",
-            "initializing": "Se inițializează...",
-            "connected": "Conectat",
-            "disconnected": "Deconectat",
-            "connecting": "Se conectează...",
-            "disconnecting": "Se deconectează...",
-            "reconnecting": "Reconectare..."
-        },
-        "progress": {
-            "name": "Progresul campaniei",
-            "drop": "Drop :",
-            "game": "Joc :",
-            "campaign": "Campanie :",
-            "remaining": "{time} rămas",
-            "drop_progress": "Avansare :",
-            "campaign_progress": "Avansare :",
-            "no_drop": "Niciun drop activ",
-            "return_to_auto": "Revenire la modul automat",
-            "manual_mode_info": "Mod manual: Mining"
-        },
-        "channels": {
-            "name": "Canale",
-            "online": "ONLINE  ✔",
-            "pending": "OFFLINE ⏳",
-            "offline": "OFFLINE ❌",
-            "no_channels": "Niciun canal urmărit încă...",
-            "no_channels_for_games": "Nu s-au găsit canale pentru jocurile selectate...",
-            "channel_count": "canal",
-            "channel_count_plural": "canale",
-            "viewers": "spectatori"
-        },
-        "inventory": {
-            "status": {
-                "active": "Activ ✔",
-                "upcoming": "În viitor ⏳",
-                "expired": "Expirat ❌",
-                "claimed": "Revendicat ✔"
-            },
-            "starts": "Începe : {time}",
-            "ends": "Se termină : {time}",
-            "no_campaigns": "Nicio campanie încărcată încă...",
-            "claimed_drops": "revendicat",
-            "filters": {
-                "active": "Activ",
-                "not_linked": "Neconectat",
-                "upcoming": "Viitor",
-                "expired": "Expirat",
-                "finished": "Terminat",
-                "item": "Obiect",
-                "badge": "Insignă",
-                "emote": "Emoticon",
-                "other": "Altele",
-                "clear": "Șterge filtre",
-                "search_placeholder": "Caută jocuri..."
-            },
-            "filter_linked": "Linked"
-        },
-        "settings": {
-            "general": {
-                "name": "General",
-                "dark_mode": "Mod întunecat"
-            },
-            "reload": "Reîncarcă",
-            "games_to_watch": "Jocuri de urmărit",
-            "games_help": "Selectați jocurile de urmărit. Ordinea contează - trageți pentru a reordona prioritatea (sus = prioritate maximă).",
-            "search_games": "Căutați jocuri...",
-            "add_game": "Add Game",
-            "add_game_hint": " Click \"Add Game\" to add it manually.",
-            "select_all": "Selectați tot",
-            "deselect_all": "Deselectați tot",
-            "selected_games": "Jocuri selectate (trageți pentru a reordona)",
-            "available_games": "Jocuri disponibile",
-            "no_games_selected": "Niciun joc selectat. Bifați jocurile de mai jos pentru a le adăuga.",
-            "no_games_match": "Niciun joc nu corespunde căutării dvs.",
-            "all_games_selected": "Toate jocurile sunt selectate sau nu sunt jocuri disponibile.",
-            "actions": "Acțiuni",
-            "connection_quality": "Calitatea conexiunii:",
-            "minimum_refresh": "Interval minim de reîmprospătare (minute):",
-            "reload_campaigns": "Reîncarcă campaniile",
-            "mining_benefits": "Beneficii Minerit",
-            "mining_benefits_help": "Selectați ce tipuri de drops doriți să minați.",
-            "select_linked": "Select Linked",
-            "password_header": "Login & Password",
-            "password_current_label": "Current Password",
-            "password_current_placeholder": "Leave empty if no password set",
-            "password_new_label": "New Password",
-            "password_new_placeholder": "New password (empty = disable login)",
-            "password_confirm_label": "Confirm New Password",
-            "password_confirm_placeholder": "Confirm",
-            "password_save": "Save Password",
-            "password_disable": "Disable Login",
-            "password_saved": "Password saved.",
-            "password_disabled_msg": "Login disabled.",
-            "password_mismatch": "Passwords don't match.",
-            "password_status_active": "🔒 Login active — Password set",
-            "password_status_inactive": "🔓 No login — publicly accessible",
-            "discord_bot": {
-                "header": "Discord Bot",
-                "description": "Asociați un bot Discord pentru a controla TwitchDropsMiner prin comenzi.",
-                "not_connected": "Neconectat",
-                "connected": "✅ Conectat",
-                "generate_code": "Generează cod",
-                "generating": "Generare...",
-                "disconnect": "Deconectare",
-                "disconnect_confirm": "Deconectați botul Discord?",
-                "invite_bot": "Invitați botul",
-                "expires": "Expiră în 10 min"
-            }
-        },
-        "help": {
-            "about": "Despre Twitch Drops Miner",
-            "about_text": "Această aplicație minează automat dropuri Twitch cronometrate fără a descărca date de streaming.",
-            "how_to_use": "Cum se folosește",
-            "features": "Caracteristici",
-            "important_notes": "Note importante",
-            "github_repo": "Depozit GitHub",
-            "how_to_use_items": [
-                "Autentificați-vă folosind contul Twitch (flux cod dispozitiv OAuth)",
-                "Legați conturile la <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
-                "Minerul va descoperi automat campaniile și va începe mineritul",
-                "Configurați jocurile prioritare în Setări pentru a vă concentra pe ceea ce doriți",
-                "Monitorizați progresul în filele Principal și Inventar"
-            ],
-            "features_items": [
-                "Minare de dropuri fără streaming - economisește lățime de bandă",
-                "Liste de prioritate și excludere a jocurilor",
-                "Urmărește până la 199 de canale simultan",
-                "Comutare automată a canalelor",
-                "Urmărire progres în timp real"
-            ],
-            "important_notes_items": [
-                "Nu vizionați streaming-uri pe același cont în timp ce minați",
-                "Păstrați fișierul cookies.jar în siguranță",
-                "Necesită conturi de joc legate pentru dropuri"
-            ]
-        },
-        "header": {
-            "title": "Twitch Drops Miner",
-            "language": "Limbă:",
-            "initializing": "Inițializare...",
-            "auto_mode": "AUTO",
-            "manual_mode": "MANUAL",
-            "connected": "Conectat",
-            "disconnected": "Deconectat"
-        },
-        "footer": {
-            "version": "Versiune:",
-            "loading": "Se încarcă...",
-            "update_available": "Actualizare disponibilă:"
-        },
-        "badges": {
-            "manual": {
-                "title": "Mod manual activ - vizionare joc specific"
-            },
-            "auto": {
-                "title": "Mod automat - urmărire prioritate jocuri"
-            },
-            "proxy": {
-                "title": "Conexiune proxy activă"
-            }
-        },
-        "wanted": {
-            "name": "Coadă Drops Dorite",
-            "none": "Niciun drop dorit în coadă..."
-        },
-        "system": {
-            "header": "System",
-            "miner_header": "Miner",
-            "miner_desc": "Reload campaigns and restart the mining loop.",
-            "reload_btn": "Reload Campaigns",
-            "restart_header": "Restart",
-            "restart_desc": "Stop the miner process. PM2 will restart it automatically.",
-            "restart_btn": "Restart Miner",
-            "session_header": "Session",
-            "session_desc": "Log out of the web interface.",
-            "logout_btn": "Logout",
-            "reload_ok": "Campaigns reload triggered.",
-            "restart_confirm": "Restart the miner? PM2 will restart it automatically.",
-            "restart_ok": "Miner stopping — will restart via PM2 in a few seconds."
-        }
+    "progress": {
+      "name": "Progresul campaniei",
+      "drop": "Drop :",
+      "game": "Joc :",
+      "campaign": "Campanie :",
+      "remaining": "{time} rămas",
+      "drop_progress": "Avansare :",
+      "campaign_progress": "Avansare :",
+      "no_drop": "Niciun drop activ",
+      "return_to_auto": "Revenire la modul automat",
+      "manual_mode_info": "Mod manual: Mining"
+    },
+    "channels": {
+      "name": "Canale",
+      "online": "ONLINE  ✔",
+      "pending": "OFFLINE ⏳",
+      "offline": "OFFLINE ❌",
+      "no_channels": "Niciun canal urmărit încă...",
+      "no_channels_for_games": "Nu s-au găsit canale pentru jocurile selectate...",
+      "channel_count": "canal",
+      "channel_count_plural": "canale",
+      "viewers": "spectatori"
+    },
+    "inventory": {
+      "status": {
+        "active": "Activ ✔",
+        "upcoming": "În viitor ⏳",
+        "expired": "Expirat ❌",
+        "claimed": "Revendicat ✔"
+      },
+      "starts": "Începe : {time}",
+      "ends": "Se termină : {time}",
+      "no_campaigns": "Nicio campanie încărcată încă...",
+      "claimed_drops": "revendicat",
+      "filters": {
+        "active": "Activ",
+        "not_linked": "Neconectat",
+        "upcoming": "Viitor",
+        "expired": "Expirat",
+        "finished": "Terminat",
+        "item": "Obiect",
+        "badge": "Insignă",
+        "emote": "Emoticon",
+        "other": "Altele",
+        "clear": "Șterge filtre",
+        "search_placeholder": "Caută jocuri..."
+      },
+      "filter_linked": "Linked"
+    },
+    "settings": {
+      "general": {
+        "name": "General",
+        "dark_mode": "Mod întunecat"
+      },
+      "reload": "Reîncarcă",
+      "games_to_watch": "Jocuri de urmărit",
+      "games_help": "Selectați jocurile de urmărit. Ordinea contează - trageți pentru a reordona prioritatea (sus = prioritate maximă).",
+      "search_games": "Căutați jocuri...",
+      "add_game": "Add Game",
+      "add_game_hint": " Click \"Add Game\" to add it manually.",
+      "select_all": "Selectați tot",
+      "deselect_all": "Deselectați tot",
+      "selected_games": "Jocuri selectate (trageți pentru a reordona)",
+      "available_games": "Jocuri disponibile",
+      "no_games_selected": "Niciun joc selectat. Bifați jocurile de mai jos pentru a le adăuga.",
+      "no_games_match": "Niciun joc nu corespunde căutării dvs.",
+      "all_games_selected": "Toate jocurile sunt selectate sau nu sunt jocuri disponibile.",
+      "actions": "Acțiuni",
+      "connection_quality": "Calitatea conexiunii:",
+      "minimum_refresh": "Interval minim de reîmprospătare (minute):",
+      "reload_campaigns": "Reîncarcă campaniile",
+      "mining_benefits": "Beneficii Minerit",
+      "mining_benefits_help": "Selectați ce tipuri de drops doriți să minați.",
+      "select_linked": "Select Linked",
+      "password_header": "Login & Password",
+      "password_current_label": "Current Password",
+      "password_current_placeholder": "Leave empty if no password set",
+      "password_new_label": "New Password",
+      "password_new_placeholder": "New password (empty = disable login)",
+      "password_confirm_label": "Confirm New Password",
+      "password_confirm_placeholder": "Confirm",
+      "password_save": "Save Password",
+      "password_disable": "Disable Login",
+      "password_saved": "Password saved.",
+      "password_disabled_msg": "Login disabled.",
+      "password_mismatch": "Passwords don't match.",
+      "password_status_active": "🔒 Login active — Password set",
+      "password_status_inactive": "🔓 No login — publicly accessible",
+      "discord_bot": {
+        "header": "Discord Bot",
+        "description": "Asociați un bot Discord pentru a controla TwitchDropsMiner prin comenzi.",
+        "not_connected": "Neconectat",
+        "connected": "✅ Conectat",
+        "generate_code": "Generează cod",
+        "generating": "Generare...",
+        "disconnect": "Deconectare",
+        "disconnect_confirm": "Deconectați botul Discord?",
+        "invite_bot": "Invitați botul",
+        "expires": "Expiră în 10 min"
+      },
+      "notifications_header": "Notifications",
+      "push_enabled": "Browser Push Notifications",
+      "push_sound": "Notification Sound",
+      "campaign_end_alerts_enabled": "Campaign End Alerts (24h warning)"
+    },
+    "help": {
+      "about": "Despre Twitch Drops Miner",
+      "about_text": "Această aplicație minează automat dropuri Twitch cronometrate fără a descărca date de streaming.",
+      "how_to_use": "Cum se folosește",
+      "features": "Caracteristici",
+      "important_notes": "Note importante",
+      "github_repo": "Depozit GitHub",
+      "how_to_use_items": [
+        "Autentificați-vă folosind contul Twitch (flux cod dispozitiv OAuth)",
+        "Legați conturile la <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
+        "Minerul va descoperi automat campaniile și va începe mineritul",
+        "Configurați jocurile prioritare în Setări pentru a vă concentra pe ceea ce doriți",
+        "Monitorizați progresul în filele Principal și Inventar"
+      ],
+      "features_items": [
+        "Minare de dropuri fără streaming - economisește lățime de bandă",
+        "Liste de prioritate și excludere a jocurilor",
+        "Urmărește până la 199 de canale simultan",
+        "Comutare automată a canalelor",
+        "Urmărire progres în timp real"
+      ],
+      "important_notes_items": [
+        "Nu vizionați streaming-uri pe același cont în timp ce minați",
+        "Păstrați fișierul cookies.jar în siguranță",
+        "Necesită conturi de joc legate pentru dropuri"
+      ]
+    },
+    "header": {
+      "title": "Twitch Drops Miner",
+      "language": "Limbă:",
+      "initializing": "Inițializare...",
+      "auto_mode": "AUTO",
+      "manual_mode": "MANUAL",
+      "connected": "Conectat",
+      "disconnected": "Deconectat"
+    },
+    "footer": {
+      "version": "Versiune:",
+      "loading": "Se încarcă...",
+      "update_available": "Actualizare disponibilă:"
+    },
+    "badges": {
+      "manual": {
+        "title": "Mod manual activ - vizionare joc specific"
+      },
+      "auto": {
+        "title": "Mod automat - urmărire prioritate jocuri"
+      },
+      "proxy": {
+        "title": "Conexiune proxy activă"
+      }
+    },
+    "wanted": {
+      "name": "Coadă Drops Dorite",
+      "none": "Niciun drop dorit în coadă..."
+    },
+    "system": {
+      "header": "System",
+      "miner_header": "Miner",
+      "miner_desc": "Reload campaigns and restart the mining loop.",
+      "reload_btn": "Reload Campaigns",
+      "restart_header": "Restart",
+      "restart_desc": "Stop the miner process. PM2 will restart it automatically.",
+      "restart_btn": "Restart Miner",
+      "session_header": "Session",
+      "session_desc": "Log out of the web interface.",
+      "logout_btn": "Logout",
+      "reload_ok": "Campaigns reload triggered.",
+      "restart_confirm": "Restart the miner? PM2 will restart it automatically.",
+      "restart_ok": "Miner stopping — will restart via PM2 in a few seconds."
     }
+  }
 }

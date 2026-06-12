@@ -1,254 +1,259 @@
 {
-    "language_name": "Русский",
-    "english_name": "Russian",
+  "language_name": "Русский",
+  "english_name": "Russian",
+  "status": {
+    "terminated": "\nПриложение остановлено.\nЗакройте окно, чтобы выйти из приложения.",
+    "watching": "Просмотр канала: {channel}",
+    "goes_online": "Изменение: {channel} онлайн",
+    "goes_offline": "Изменение: {channel} онлайн",
+    "claimed_drop": "Drop получено: {drop}",
+    "no_channel": "Нет участвующих каналов онлайн. Ожидание каналов...",
+    "no_campaign": "Нет участвующих кампаний онлайн. Ожидание кампаний..."
+  },
+  "login": {
+    "error_code": "Код ошибки входа в систему: {error_code}",
+    "unexpected_content": "Возвращен неожиданный тип содержимого, обычно из-за перенаправления. Требуется ли логин для доступа в Интернет?",
+    "incorrect_login_pass": "Неправильное имя пользователя или пароль.",
+    "incorrect_email_code": "Неправильный код электронной почты.",
+    "incorrect_twofa_code": "Неправильный код 2FA.",
+    "email_code_required": "Требуется код электронной почты. Пожалуйста, проверьте электронную почту.",
+    "twofa_code_required": "Требуется код 2FA.",
     "status": {
-        "terminated": "\nПриложение остановлено.\nЗакройте окно, чтобы выйти из приложения.",
-        "watching": "Просмотр канала: {channel}",
-        "goes_online": "Изменение: {channel} онлайн",
-        "goes_offline": "Изменение: {channel} онлайн",
-        "claimed_drop": "Drop получено: {drop}",
-        "no_channel": "Нет участвующих каналов онлайн. Ожидание каналов...",
-        "no_campaign": "Нет участвующих кампаний онлайн. Ожидание кампаний..."
+      "logged_in": "Авторизован",
+      "logged_out": "не авторизован",
+      "logging_in": "Авторизация...",
+      "required": "Требуется авторизация",
+      "waiting_auth": "Ожидание аутентификации..."
+    },
+    "oauth_prompt": "Введите этот код на:",
+    "oauth_activate": "Активировать Twitch",
+    "oauth_confirm": "Я ввёл код"
+  },
+  "error": {
+    "captcha": "Попытка входа в систему была отклонена CAPTCHA.\nПожалуйста, повторите попытку не менее чем через 12 часов.",
+    "site_down": "Twitch недоступен. Повторите попытку через {seconds} секунд...",
+    "no_connection": "Невозможно подключиться к Twitch. Повторите попытку через {seconds} секунд..."
+  },
+  "gui": {
+    "output": "Протокол",
+    "status": {
+      "name": "Статус",
+      "idle": "Вхолостую",
+      "exiting": "Выход...",
+      "terminated": "Прекращено",
+      "cleanup": "Очистка каналов...",
+      "gathering": "Поиск каналов...",
+      "switching": "Переключение канала...",
+      "fetching_inventory": "Получение инвентаря...",
+      "fetching_campaigns": "Получение кампаний...",
+      "adding_campaigns": "Добавление кампаний в инвентарь... {counter}"
+    },
+    "tabs": {
+      "main": "Главная",
+      "inventory": "Инвентарь",
+      "settings": "Настройки",
+      "help": "Помощь",
+      "system": "System",
+      "stats": "Stats"
     },
     "login": {
-        "error_code": "Код ошибки входа в систему: {error_code}",
-        "unexpected_content": "Возвращен неожиданный тип содержимого, обычно из-за перенаправления. Требуется ли логин для доступа в Интернет?",
-        "incorrect_login_pass": "Неправильное имя пользователя или пароль.",
-        "incorrect_email_code": "Неправильный код электронной почты.",
-        "incorrect_twofa_code": "Неправильный код 2FA.",
-        "email_code_required": "Требуется код электронной почты. Пожалуйста, проверьте электронную почту.",
-        "twofa_code_required": "Требуется код 2FA.",
-        "status": {
-            "logged_in": "Авторизован",
-            "logged_out": "не авторизован",
-            "logging_in": "Авторизация...",
-            "required": "Требуется авторизация",
-            "waiting_auth": "Ожидание аутентификации..."
-        },
-        "oauth_prompt": "Введите этот код на:",
-        "oauth_activate": "Активировать Twitch",
-        "oauth_confirm": "Я ввёл код"
+      "name": "Авторизация",
+      "labels": "Статус:\nID пользователя:",
+      "request": "Пожалуйста, авторизуйтесь, чтобы продолжить.",
+      "username": "Имя пользователя",
+      "password": "Пароль",
+      "twofa_code": "2FA код (опционально)",
+      "button": "Войти",
+      "oauth_prompt": "Enter this code at:",
+      "oauth_activate": "Twitch Activate",
+      "oauth_confirm": "I've entered the code"
     },
-    "error": {
-        "captcha": "Попытка входа в систему была отклонена CAPTCHA.\nПожалуйста, повторите попытку не менее чем через 12 часов.",
-        "site_down": "Twitch недоступен. Повторите попытку через {seconds} секунд...",
-        "no_connection": "Невозможно подключиться к Twitch. Повторите попытку через {seconds} секунд..."
+    "websocket": {
+      "name": "Статус Websocket",
+      "websocket": "WebSocket #{id}:",
+      "initializing": "Инициализация...",
+      "connected": "Подключено",
+      "disconnected": "Отключено",
+      "connecting": "Подключение...",
+      "disconnecting": "Отключение...",
+      "reconnecting": "Переподключение..."
     },
-    "gui": {
-        "output": "Протокол",
-        "status": {
-            "name": "Статус",
-            "idle": "Вхолостую",
-            "exiting": "Выход...",
-            "terminated": "Прекращено",
-            "cleanup": "Очистка каналов...",
-            "gathering": "Поиск каналов...",
-            "switching": "Переключение канала...",
-            "fetching_inventory": "Получение инвентаря...",
-            "fetching_campaigns": "Получение кампаний...",
-            "adding_campaigns": "Добавление кампаний в инвентарь... {counter}"
-        },
-        "tabs": {
-            "main": "Главная",
-            "inventory": "Инвентарь",
-            "settings": "Настройки",
-            "help": "Помощь",
-            "system": "System"
-        },
-        "login": {
-            "name": "Авторизация",
-            "labels": "Статус:\nID пользователя:",
-            "request": "Пожалуйста, авторизуйтесь, чтобы продолжить.",
-            "username": "Имя пользователя",
-            "password": "Пароль",
-            "twofa_code": "2FA код (опционально)",
-            "button": "Войти",
-            "oauth_prompt": "Enter this code at:",
-            "oauth_activate": "Twitch Activate",
-            "oauth_confirm": "I've entered the code"
-        },
-        "websocket": {
-            "name": "Статус Websocket",
-            "websocket": "WebSocket #{id}:",
-            "initializing": "Инициализация...",
-            "connected": "Подключено",
-            "disconnected": "Отключено",
-            "connecting": "Подключение...",
-            "disconnecting": "Отключение...",
-            "reconnecting": "Переподключение..."
-        },
-        "progress": {
-            "name": "Ход кампании",
-            "drop": "Drop:",
-            "game": "Игра:",
-            "campaign": "Кампания:",
-            "remaining": "{time} осталось",
-            "drop_progress": "Прогресс:",
-            "campaign_progress": "Прогресс:",
-            "no_drop": "Нет активного дропа",
-            "return_to_auto": "Вернуться в автоматический режим",
-            "manual_mode_info": "Ручной режим: Майнинг"
-        },
-        "channels": {
-            "name": "Каналы",
-            "online": "ОНЛАЙН ✔",
-            "pending": "ОЖИДАНИЕ ⏳",
-            "offline": "ОФЛАЙН ❌",
-            "no_channels": "Пока не отслеживаются каналы...",
-            "no_channels_for_games": "Не найдено каналов для выбранных игр...",
-            "channel_count": "канал",
-            "channel_count_plural": "каналы",
-            "viewers": "зрителей"
-        },
-        "inventory": {
-            "status": {
-                "active": "Активное ✔",
-                "upcoming": "Будущее ⏳",
-                "expired": "Прошедшее ❌",
-                "claimed": "Получено ✔"
-            },
-            "starts": "Начало: {time}",
-            "ends": "Окончание: {time}",
-            "no_campaigns": "Кампании ещё не загружены...",
-            "claimed_drops": "получено",
-            "filters": {
-                "active": "Активные",
-                "not_linked": "Не связаны",
-                "upcoming": "Предстоящие",
-                "expired": "Истекшие",
-                "finished": "Завершенные",
-                "item": "Предмет",
-                "badge": "Значок",
-                "emote": "Смайлик",
-                "other": "Другое",
-                "clear": "Очистить фильтры",
-                "search_placeholder": "Поиск игр..."
-            },
-            "filter_linked": "Linked"
-        },
-        "settings": {
-            "general": {
-                "name": "Общие",
-                "dark_mode": "Тёмный режим"
-            },
-            "exclude": "Исключения",
-            "reload": "Перезагрузить",
-            "games_to_watch": "Игры для просмотра",
-            "games_help": "Выберите игры для просмотра. Порядок имеет значение - перетащите для изменения приоритета (вверху = наивысший приоритет).",
-            "search_games": "Поиск игр...",
-            "add_game": "Add Game",
-            "add_game_hint": " Click \"Add Game\" to add it manually.",
-            "select_all": "Выбрать все",
-            "deselect_all": "Снять выбор",
-            "selected_games": "Выбранные игры (перетащите для изменения порядка)",
-            "available_games": "Доступные игры",
-            "no_games_selected": "Игры не выбраны. Отметьте игры ниже, чтобы добавить их.",
-            "no_games_match": "Нет игр, соответствующих вашему запросу.",
-            "all_games_selected": "Все игры выбраны или нет доступных игр.",
-            "actions": "Действия",
-            "connection_quality": "Качество соединения:",
-            "minimum_refresh": "Минимальный интервал обновления (минуты):",
-            "reload_campaigns": "Перезагрузить кампании",
-            "mining_benefits": "Преимущества майнинга",
-            "mining_benefits_help": "Выберите типы drops, которые вы хотите майнить.",
-            "select_linked": "Select Linked",
-            "password_header": "Login & Password",
-            "password_current_label": "Current Password",
-            "password_current_placeholder": "Leave empty if no password set",
-            "password_new_label": "New Password",
-            "password_new_placeholder": "New password (empty = disable login)",
-            "password_confirm_label": "Confirm New Password",
-            "password_confirm_placeholder": "Confirm",
-            "password_save": "Save Password",
-            "password_disable": "Disable Login",
-            "password_saved": "Password saved.",
-            "password_disabled_msg": "Login disabled.",
-            "password_mismatch": "Passwords don't match.",
-            "password_status_active": "🔒 Login active — Password set",
-            "password_status_inactive": "🔓 No login — publicly accessible",
-            "discord_bot": {
-                "header": "Discord Bot",
-                "description": "Подключите бота Discord для управления TwitchDropsMiner через команды.",
-                "not_connected": "Не подключен",
-                "connected": "✅ Подключен",
-                "generate_code": "Создать код",
-                "generating": "Создание...",
-                "disconnect": "Отключить",
-                "disconnect_confirm": "Отключить бота Discord?",
-                "invite_bot": "Пригласить бота",
-                "expires": "Истекает через 10 мин"
-            }
-        },
-        "help": {
-            "about": "О Twitch Drops Miner",
-            "about_text": "Это приложение автоматически майнит временные дропы Twitch без загрузки данных стрима.",
-            "how_to_use": "Как использовать",
-            "features": "Возможности",
-            "important_notes": "Важные заметки",
-            "github_repo": "Репозиторий GitHub",
-            "how_to_use_items": [
-                "Войдите, используя свой аккаунт Twitch (поток кода устройства OAuth)",
-                "Свяжите свои аккаунты на <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
-                "Майнер автоматически обнаружит кампании и начнёт майнинг",
-                "Настройте приоритетные игры в Настройках, чтобы сосредоточиться на том, что вы хотите",
-                "Отслеживайте прогресс во вкладках Главная и Инвентарь"
-            ],
-            "features_items": [
-                "Майнинг дропов без стрима - экономит пропускную способность",
-                "Списки приоритетов и исключений игр",
-                "Отслеживает до 199 каналов одновременно",
-                "Автоматическое переключение каналов",
-                "Отслеживание прогресса в реальном времени"
-            ],
-            "important_notes_items": [
-                "Не смотрите стримы на том же аккаунте во время майнинга",
-                "Храните файл cookies.jar в безопасности",
-                "Требуются связанные игровые аккаунты для дропов"
-            ]
-        },
-        "header": {
-            "title": "Twitch Drops Miner",
-            "language": "Язык:",
-            "initializing": "Инициализация...",
-            "auto_mode": "AUTO",
-            "manual_mode": "РУЧНОЙ",
-            "connected": "Подключено",
-            "disconnected": "Отключено"
-        },
-        "footer": {
-            "version": "Версия:",
-            "loading": "Загрузка...",
-            "update_available": "Доступно обновление:"
-        },
-        "badges": {
-            "manual": {
-                "title": "Ручной режим - просмотр конкретной игры"
-            },
-            "auto": {
-                "title": "Автоматический режим - по приоритету игр"
-            },
-            "proxy": {
-                "title": "Прокси подключен"
-            }
-        },
-        "wanted": {
-            "name": "Очередь желаемых дропов",
-            "none": "Нет желаемых дропов в очереди..."
-        },
-        "system": {
-            "header": "System",
-            "miner_header": "Miner",
-            "miner_desc": "Reload campaigns and restart the mining loop.",
-            "reload_btn": "Reload Campaigns",
-            "restart_header": "Restart",
-            "restart_desc": "Stop the miner process. PM2 will restart it automatically.",
-            "restart_btn": "Restart Miner",
-            "session_header": "Session",
-            "session_desc": "Log out of the web interface.",
-            "logout_btn": "Logout",
-            "reload_ok": "Campaigns reload triggered.",
-            "restart_confirm": "Restart the miner? PM2 will restart it automatically.",
-            "restart_ok": "Miner stopping — will restart via PM2 in a few seconds."
-        }
+    "progress": {
+      "name": "Ход кампании",
+      "drop": "Drop:",
+      "game": "Игра:",
+      "campaign": "Кампания:",
+      "remaining": "{time} осталось",
+      "drop_progress": "Прогресс:",
+      "campaign_progress": "Прогресс:",
+      "no_drop": "Нет активного дропа",
+      "return_to_auto": "Вернуться в автоматический режим",
+      "manual_mode_info": "Ручной режим: Майнинг"
+    },
+    "channels": {
+      "name": "Каналы",
+      "online": "ОНЛАЙН ✔",
+      "pending": "ОЖИДАНИЕ ⏳",
+      "offline": "ОФЛАЙН ❌",
+      "no_channels": "Пока не отслеживаются каналы...",
+      "no_channels_for_games": "Не найдено каналов для выбранных игр...",
+      "channel_count": "канал",
+      "channel_count_plural": "каналы",
+      "viewers": "зрителей"
+    },
+    "inventory": {
+      "status": {
+        "active": "Активное ✔",
+        "upcoming": "Будущее ⏳",
+        "expired": "Прошедшее ❌",
+        "claimed": "Получено ✔"
+      },
+      "starts": "Начало: {time}",
+      "ends": "Окончание: {time}",
+      "no_campaigns": "Кампании ещё не загружены...",
+      "claimed_drops": "получено",
+      "filters": {
+        "active": "Активные",
+        "not_linked": "Не связаны",
+        "upcoming": "Предстоящие",
+        "expired": "Истекшие",
+        "finished": "Завершенные",
+        "item": "Предмет",
+        "badge": "Значок",
+        "emote": "Смайлик",
+        "other": "Другое",
+        "clear": "Очистить фильтры",
+        "search_placeholder": "Поиск игр..."
+      },
+      "filter_linked": "Linked"
+    },
+    "settings": {
+      "general": {
+        "name": "Общие",
+        "dark_mode": "Тёмный режим"
+      },
+      "exclude": "Исключения",
+      "reload": "Перезагрузить",
+      "games_to_watch": "Игры для просмотра",
+      "games_help": "Выберите игры для просмотра. Порядок имеет значение - перетащите для изменения приоритета (вверху = наивысший приоритет).",
+      "search_games": "Поиск игр...",
+      "add_game": "Add Game",
+      "add_game_hint": " Click \"Add Game\" to add it manually.",
+      "select_all": "Выбрать все",
+      "deselect_all": "Снять выбор",
+      "selected_games": "Выбранные игры (перетащите для изменения порядка)",
+      "available_games": "Доступные игры",
+      "no_games_selected": "Игры не выбраны. Отметьте игры ниже, чтобы добавить их.",
+      "no_games_match": "Нет игр, соответствующих вашему запросу.",
+      "all_games_selected": "Все игры выбраны или нет доступных игр.",
+      "actions": "Действия",
+      "connection_quality": "Качество соединения:",
+      "minimum_refresh": "Минимальный интервал обновления (минуты):",
+      "reload_campaigns": "Перезагрузить кампании",
+      "mining_benefits": "Преимущества майнинга",
+      "mining_benefits_help": "Выберите типы drops, которые вы хотите майнить.",
+      "select_linked": "Select Linked",
+      "password_header": "Login & Password",
+      "password_current_label": "Current Password",
+      "password_current_placeholder": "Leave empty if no password set",
+      "password_new_label": "New Password",
+      "password_new_placeholder": "New password (empty = disable login)",
+      "password_confirm_label": "Confirm New Password",
+      "password_confirm_placeholder": "Confirm",
+      "password_save": "Save Password",
+      "password_disable": "Disable Login",
+      "password_saved": "Password saved.",
+      "password_disabled_msg": "Login disabled.",
+      "password_mismatch": "Passwords don't match.",
+      "password_status_active": "🔒 Login active — Password set",
+      "password_status_inactive": "🔓 No login — publicly accessible",
+      "discord_bot": {
+        "header": "Discord Bot",
+        "description": "Подключите бота Discord для управления TwitchDropsMiner через команды.",
+        "not_connected": "Не подключен",
+        "connected": "✅ Подключен",
+        "generate_code": "Создать код",
+        "generating": "Создание...",
+        "disconnect": "Отключить",
+        "disconnect_confirm": "Отключить бота Discord?",
+        "invite_bot": "Пригласить бота",
+        "expires": "Истекает через 10 мин"
+      },
+      "notifications_header": "Notifications",
+      "push_enabled": "Browser Push Notifications",
+      "push_sound": "Notification Sound",
+      "campaign_end_alerts_enabled": "Campaign End Alerts (24h warning)"
+    },
+    "help": {
+      "about": "О Twitch Drops Miner",
+      "about_text": "Это приложение автоматически майнит временные дропы Twitch без загрузки данных стрима.",
+      "how_to_use": "Как использовать",
+      "features": "Возможности",
+      "important_notes": "Важные заметки",
+      "github_repo": "Репозиторий GitHub",
+      "how_to_use_items": [
+        "Войдите, используя свой аккаунт Twitch (поток кода устройства OAuth)",
+        "Свяжите свои аккаунты на <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
+        "Майнер автоматически обнаружит кампании и начнёт майнинг",
+        "Настройте приоритетные игры в Настройках, чтобы сосредоточиться на том, что вы хотите",
+        "Отслеживайте прогресс во вкладках Главная и Инвентарь"
+      ],
+      "features_items": [
+        "Майнинг дропов без стрима - экономит пропускную способность",
+        "Списки приоритетов и исключений игр",
+        "Отслеживает до 199 каналов одновременно",
+        "Автоматическое переключение каналов",
+        "Отслеживание прогресса в реальном времени"
+      ],
+      "important_notes_items": [
+        "Не смотрите стримы на том же аккаунте во время майнинга",
+        "Храните файл cookies.jar в безопасности",
+        "Требуются связанные игровые аккаунты для дропов"
+      ]
+    },
+    "header": {
+      "title": "Twitch Drops Miner",
+      "language": "Язык:",
+      "initializing": "Инициализация...",
+      "auto_mode": "AUTO",
+      "manual_mode": "РУЧНОЙ",
+      "connected": "Подключено",
+      "disconnected": "Отключено"
+    },
+    "footer": {
+      "version": "Версия:",
+      "loading": "Загрузка...",
+      "update_available": "Доступно обновление:"
+    },
+    "badges": {
+      "manual": {
+        "title": "Ручной режим - просмотр конкретной игры"
+      },
+      "auto": {
+        "title": "Автоматический режим - по приоритету игр"
+      },
+      "proxy": {
+        "title": "Прокси подключен"
+      }
+    },
+    "wanted": {
+      "name": "Очередь желаемых дропов",
+      "none": "Нет желаемых дропов в очереди..."
+    },
+    "system": {
+      "header": "System",
+      "miner_header": "Miner",
+      "miner_desc": "Reload campaigns and restart the mining loop.",
+      "reload_btn": "Reload Campaigns",
+      "restart_header": "Restart",
+      "restart_desc": "Stop the miner process. PM2 will restart it automatically.",
+      "restart_btn": "Restart Miner",
+      "session_header": "Session",
+      "session_desc": "Log out of the web interface.",
+      "logout_btn": "Logout",
+      "reload_ok": "Campaigns reload triggered.",
+      "restart_confirm": "Restart the miner? PM2 will restart it automatically.",
+      "restart_ok": "Miner stopping — will restart via PM2 in a few seconds."
     }
+  }
 }
