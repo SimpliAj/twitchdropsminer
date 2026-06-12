@@ -878,7 +878,7 @@
                                 <span class="help-section-icon">🌐</span>
                                 <h2>Remote Access</h2>
                             </div>
-                            <p>Access the dashboard from any device by exposing the ports externally.</p>
+                            <p>To use the Discord Bot or access the dashboard from outside your network, your TDM instance needs a public URL. Choose the method that fits your setup.</p>
 
                             <h3>Ports</h3>
                             <table class="help-table">
@@ -889,21 +889,74 @@
                                 </tbody>
                             </table>
 
-                            <h3>Access Options</h3>
-                            <div class="help-cards">
-                                <div class="help-card">
-                                    <div class="help-card-title">nginx Reverse Proxy</div>
-                                    <p>Recommended. Route a subdomain (e.g. <code>drops.example.com</code>) through nginx with SSL to port 8080. Keeps ports closed to the internet.</p>
+                            <!-- Option 1: Cloudflare Tunnel -->
+                            <h3 style="margin-top:20px;">⭐ Option 1: Cloudflare Tunnel <span style="font-size:.75rem;color:#3ddc84;font-weight:normal;">(Recommended — no port forwarding needed)</span></h3>
+                            <p>Works on any machine — home PC, VPS, laptop. No router config, no open ports. Cloudflare gives you a free HTTPS URL instantly.</p>
+
+                            <div class="help-step-block">
+                                <div class="help-step-label">1 — Install cloudflared</div>
+                                <div class="help-step-tabs">
+                                    <button class="help-tab-btn active" onclick="showRemoteTab(this,'cf-linux')">Linux / VPS</button>
+                                    <button class="help-tab-btn" onclick="showRemoteTab(this,'cf-mac')">macOS</button>
+                                    <button class="help-tab-btn" onclick="showRemoteTab(this,'cf-win')">Windows</button>
                                 </div>
-                                <div class="help-card">
-                                    <div class="help-card-title">Direct Port Exposure</div>
-                                    <p>Open ports 8080 and 8082 in your firewall/router. Access via <code>http://your-ip:8080</code>. Use only on trusted networks or with a password set.</p>
+                                <div id="cf-linux" class="help-step-content">
+                                    <div class="help-code">curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb -o cloudflared.deb &amp;&amp; sudo dpkg -i cloudflared.deb</div>
+                                </div>
+                                <div id="cf-mac" class="help-step-content" style="display:none">
+                                    <div class="help-code">brew install cloudflared</div>
+                                </div>
+                                <div id="cf-win" class="help-step-content" style="display:none">
+                                    <div class="help-code">winget install Cloudflare.cloudflared</div>
                                 </div>
                             </div>
 
-                            <h3>Password Protection</h3>
-                            <p>Set the <code>WEB_PASSWORD</code> environment variable before starting the miner to lock the dashboard with a password. Sessions last <strong>30 days</strong> via a secure cookie. To change the password after logging in, go to <strong>Settings → Security</strong>.</p>
-                            <div class="help-code">WEB_PASSWORD=mysecretpassword pm2 start miner.js</div>
+                            <div class="help-step-block">
+                                <div class="help-step-label">2 — Start tunnel (Account 1)</div>
+                                <div class="help-code">cloudflared tunnel --url http://localhost:8080</div>
+                                <p style="margin-top:8px;font-size:.85rem;color:var(--text-secondary);">Cloudflare prints a URL like <code>https://random-name.trycloudflare.com</code> — use that as your public URL.</p>
+                            </div>
+
+                            <div class="help-step-block">
+                                <div class="help-step-label">3 — Link Discord Bot</div>
+                                <p style="font-size:.85rem;">In your Discord server, run:<br><code>/link https://random-name.trycloudflare.com YOUR_CODE</code></p>
+                                <p style="font-size:.82rem;color:var(--text-secondary);">⚠ Free Cloudflare URLs change every restart. For a permanent URL, create a free Cloudflare account and set up a named tunnel.</p>
+                            </div>
+
+                            <!-- Option 2: VPS / Ubuntu -->
+                            <h3 style="margin-top:24px;">Option 2: VPS / Ubuntu — Open Firewall Port</h3>
+                            <p>If you're running on a VPS (Hetzner, DigitalOcean, etc.), open the port in UFW and access via your server IP.</p>
+                            <div class="help-code"># Allow port 8080 (TCP only)
+sudo ufw allow 8080/tcp
+sudo ufw reload
+
+# Check it's open
+sudo ufw status</div>
+                            <p style="margin-top:8px;font-size:.85rem;color:var(--text-secondary);">Access via <code>http://YOUR-SERVER-IP:8080</code>. Set a password (see below) — never expose without one.</p>
+
+                            <!-- Option 3: nginx -->
+                            <h3 style="margin-top:24px;">Option 3: nginx Reverse Proxy</h3>
+                            <p>For a clean domain + HTTPS on a VPS. Install nginx, then add a site config:</p>
+                            <div class="help-code">server {
+    listen 80;
+    server_name drops.yourdomain.com;
+
+    location / {
+        proxy_pass         http://127.0.0.1:8080;
+        proxy_http_version 1.1;
+        proxy_set_header   Upgrade $http_upgrade;
+        proxy_set_header   Connection "upgrade";
+        proxy_set_header   Host $host;
+    }
+}</div>
+                            <p style="margin-top:8px;font-size:.85rem;color:var(--text-secondary);">Then run <code>sudo certbot --nginx -d drops.yourdomain.com</code> for free HTTPS.</p>
+
+                            <h3 style="margin-top:20px;">🔒 Password Protection</h3>
+                            <p>Always set a password when exposing publicly. Set <code>WEB_PASSWORD</code> before starting:</p>
+                            <div class="help-code">WEB_PASSWORD=mysecretpassword python main.py
+# or with PM2:
+TDM_PORT=8080 WEB_PASSWORD=mysecretpassword pm2 start main.py --name twitchdrops --interpreter python3</div>
+                            <p style="margin-top:8px;font-size:.85rem;color:var(--text-secondary);">Sessions last 30 days via secure cookie. Change the password anytime in <strong>Settings → System → Login &amp; Password</strong>.</p>
                         </section>
 
                         <!-- Tips -->
@@ -1004,7 +1057,7 @@
         </footer>
     </div>
 
-    <script src="/static/app.js?v=1749826500"></script>
+    <script src="/static/app.js?v=1749827000"></script>
 </body>
 
 </html>

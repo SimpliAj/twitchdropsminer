@@ -3560,3 +3560,11 @@ function appendTrustedHelpContent(parent, text) {
         parent.appendChild(document.createTextNode(source.slice(lastIndex)));
     }
 }
+
+function showRemoteTab(btn, targetId) {
+    const block = btn.closest('.help-step-block');
+    block.querySelectorAll('.help-step-content').forEach(el => el.style.display = 'none');
+    block.querySelectorAll('.help-tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(targetId).style.display = '';
+    btn.classList.add('active');
+}
