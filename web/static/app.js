@@ -567,9 +567,13 @@ function renderDropHistory(drops) {
 
         dayDrops.forEach(drop => {
             const row = document.createElement('div');
-            row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:5px 4px;border-radius:4px;transition:background 0.1s;min-width:0;';
+            row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:5px 4px;border-radius:4px;transition:background 0.1s;min-width:0;cursor:pointer;';
             row.addEventListener('mouseover', () => row.style.background = 'rgba(255,255,255,0.04)');
             row.addEventListener('mouseout', () => row.style.background = '');
+            row.addEventListener('click', () => showRewardModal({
+                name: drop.drop,
+                benefits: drop.image_url ? [{ name: drop.reward, image_url: drop.image_url }] : [{ name: drop.reward }]
+            }));
 
             // Item image (28×28)
             const imgWrap = document.createElement('div');
