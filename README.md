@@ -374,8 +374,7 @@ The dashboard will show a password prompt on first visit. Auth is stored as a 30
 ### Help
 ![Help Tab](./docs/screenshots/help-tab.jpg)
 
-### Mobile
-![Mobile Drop History](./docs/screenshots/mobile-drop-history.jpg)
+
 
 ---
 
