@@ -3319,10 +3319,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ==================== Wanted Items Rendering ====================
 
+// Store last known tree for reorder/remove operations
+let _wantedTree = [];
+
 function renderWantedItems(tree) {
+    _wantedTree = tree || [];
     const container = document.getElementById('wanted-items-list');
     if (!container) return;
-
     container.innerHTML = '';
 
     if (!tree || tree.length === 0) {
@@ -3332,56 +3335,106 @@ function renderWantedItems(tree) {
     }
 
     tree.forEach((gameGroup, index) => {
-        const groupEl = document.createElement('div');
-        groupEl.className = 'wanted-game-group';
+        const totalDrops = gameGroup.campaigns.reduce((n, c) => n + c.drops.length, 0);
+        let iconUrl = gameGroup.game_icon
+            ? gameGroup.game_icon.replace('{width}', '30').replace('{height}', '40')
+            : null;
 
-        // Game Icon
-        let iconUrl = gameGroup.game_icon;
-        if (iconUrl) {
-            iconUrl = iconUrl.replace('{width}', '40').replace('{height}', '53');
-        }
+        const row = document.createElement('div');
+        row.className = 'wq-row sortable-item';
+        row.draggable = true;
+        row.dataset.game = gameGroup.game_name;
 
-        const headerChildren = [makeElement('span', { class: 'wanted-game-index' }, `#${index + 1}`)];
-        if (iconUrl) {
-            headerChildren.push(makeImageElement(iconUrl, gameGroup.game_name, 'wanted-game-icon'));
-        }
-        headerChildren.push(makeElement('span', { class: 'wanted-game-title' }, gameGroup.game_name));
+        // Drag handle
+        const handle = makeElement('span', { class: 'wq-drag-handle drag-handle' }, '⠿');
 
-        const headerEl = makeElement('div', { class: 'wanted-game-header' }, '', el => {
-            headerChildren.forEach(child => el.appendChild(child));
+        // Priority badge
+        const badge = makeElement('span', { class: 'wq-badge' }, `#${index + 1}`);
+
+        // Icon
+        const iconEl = iconUrl ? makeImageElement(iconUrl, gameGroup.game_name, 'wq-icon') : makeElement('span', { class: 'wq-icon-placeholder' }, '🎮');
+
+        // Name
+        const nameEl = makeElement('span', { class: 'wq-name' }, gameGroup.game_name);
+
+        // Drop count
+        const countEl = makeElement('span', { class: 'wq-count' }, `${totalDrops} drop${totalDrops !== 1 ? 's' : ''}`);
+
+        // Toggle
+        const toggleEl = makeElement('span', { class: 'wq-toggle' }, '▾');
+
+        // Remove button
+        const removeEl = makeElement('button', { class: 'wq-remove', title: 'Remove from watch list' }, '×');
+        removeEl.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const games = state.settings.games_to_watch || [];
+            state.settings.games_to_watch = games.filter(g => g !== gameGroup.game_name);
+            saveSettings();
+            renderGamesToWatch();
         });
-        groupEl.appendChild(headerEl);
 
-        const campaignListEl = document.createElement('div');
-        campaignListEl.className = 'wanted-campaign-list';
+        // Header row click → toggle expand
+        const headerEl = makeElement('div', { class: 'wq-header' }, '', el => {
+            [handle, badge, iconEl, nameEl, countEl, toggleEl, removeEl].forEach(c => el.appendChild(c));
+        });
 
+        // Expanded content
+        const bodyEl = makeElement('div', { class: 'wq-body' }, '');
         gameGroup.campaigns.forEach(campaign => {
-            const dropContainer = makeElement('div', {});
-            const cardEl = makeElement('div', { class: 'wanted-card' }, '', el => {
-                el.appendChild(makeElement('div', { class: 'wanted-card-header' }, '', h =>
-                    h.appendChild(makeElement('a', { href: campaign.url, target: '_blank', rel: 'noopener noreferrer', class: 'wanted-card-campaign-link', title: campaign.name }, campaign.name))
-                ));
-                el.appendChild(makeElement('div', { class: 'wanted-card-body' }, '', b =>
-                    b.appendChild(dropContainer)
-                ));
-            });
-
-            campaign.drops.forEach(drop => {
-                const dropEl = makeElement('div', { class: 'wanted-drop-item' }, '', el => {
-                    el.appendChild(makeElement('span', { class: 'wanted-drop-name' }, drop.name));
-                    drop.benefits.forEach(benefit => {
-                        el.appendChild(makeElement('span', { class: 'wanted-benefit-pill' }, benefit));
+            const campEl = makeElement('div', { class: 'wq-campaign' }, '', el => {
+                el.appendChild(makeElement('a', {
+                    href: campaign.url, target: '_blank', rel: 'noopener noreferrer',
+                    class: 'wq-campaign-link'
+                }, campaign.name));
+                campaign.drops.forEach(drop => {
+                    const dropEl = makeElement('div', { class: 'wq-drop' }, '', d => {
+                        d.appendChild(makeElement('span', { class: 'wq-drop-name' }, drop.name));
+                        drop.benefits.forEach(b => d.appendChild(makeElement('span', { class: 'wq-benefit' }, b)));
                     });
+                    el.appendChild(dropEl);
                 });
-                dropContainer.appendChild(dropEl);
             });
-
-            campaignListEl.appendChild(cardEl);
+            bodyEl.appendChild(campEl);
         });
 
-        groupEl.appendChild(campaignListEl);
-        container.appendChild(groupEl);
+        // Collapse by default unless first item
+        if (index !== 0) {
+            bodyEl.style.display = 'none';
+            toggleEl.textContent = '▸';
+        }
+
+        headerEl.addEventListener('click', (e) => {
+            if (e.target === removeEl || e.target === handle) return;
+            const open = bodyEl.style.display !== 'none';
+            bodyEl.style.display = open ? 'none' : '';
+            toggleEl.textContent = open ? '▸' : '▾';
+        });
+
+        row.appendChild(headerEl);
+        row.appendChild(bodyEl);
+
+        // Drag handlers
+        row.addEventListener('dragstart', handleDragStart);
+        row.addEventListener('dragover', handleDragOver);
+        row.addEventListener('dragend', handleWantedDragEnd);
+
+        container.appendChild(row);
     });
+}
+
+function handleWantedDragEnd(e) {
+    e.target.classList.remove('dragging');
+    const container = document.getElementById('wanted-items-list');
+    if (!container) return;
+    const items = container.querySelectorAll('.sortable-item');
+    const newOrder = Array.from(items).map(item => item.dataset.game);
+    // Update full games_to_watch preserving any games not in wanted list
+    const current = state.settings.games_to_watch || [];
+    const wantedSet = new Set(newOrder);
+    const extras = current.filter(g => !wantedSet.has(g));
+    state.settings.games_to_watch = [...newOrder, ...extras];
+    saveSettings();
+    renderGamesToWatch();
 }
 
 // ==================== DOM Utilities ====================
