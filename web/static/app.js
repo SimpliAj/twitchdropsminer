@@ -3561,6 +3561,15 @@ function appendTrustedHelpContent(parent, text) {
     }
 }
 
+function toggleAccordion(btn) {
+    const body = btn.nextElementSibling;
+    const arrow = btn.querySelector('.help-accordion-arrow');
+    const open = body.style.display !== 'none';
+    body.style.display = open ? 'none' : '';
+    arrow.textContent = open ? '▸' : '▾';
+    btn.classList.toggle('open', !open);
+}
+
 function showRemoteTab(btn, targetId) {
     const block = btn.closest('.help-step-block');
     block.querySelectorAll('.help-step-content').forEach(el => el.style.display = 'none');
