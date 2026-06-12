@@ -765,7 +765,29 @@ def register_commands(bot: TwitchDropsBot):
             save_pairings(bot.users_data)
             log.info("User %s linked instance '%s' to %s", uid, name, url)
             label = f"instance `{name}` " if name != "default" else ""
-            await interaction.followup.send(embed=success_embed(f"✅ Connected {label}to `{url}`\n\nUse `/dashboard` to post a live stats embed with control buttons."), ephemeral=True)
+
+            # Check if Account 2 is available at /acc2/
+            acc2_note = ""
+            base = url.rstrip("/")
+            already_linked_acc2 = any(
+                p.get("url", "").rstrip("/") == f"{base}/acc2"
+                for p in bot.users_data.get(uid, {}).values()
+            )
+            if not already_linked_acc2:
+                try:
+                    async with aiohttp.ClientSession() as s2:
+                        async with s2.get(f"{base}/acc2/api/instance", timeout=aiohttp.ClientTimeout(total=3)) as r2:
+                            if r2.status == 200:
+                                inst2 = await r2.json()
+                                acc2_login = inst2.get("login", "Account 2")
+                                acc2_note = (
+                                    f"\n\n**Account 2 detected** (`{acc2_login}` at `{base}/acc2`)\n"
+                                    f"Link it separately: `/link {base}/acc2 <code> acc2`"
+                                )
+                except Exception:
+                    pass
+
+            await interaction.followup.send(embed=success_embed(f"✅ Connected {label}to `{url}`\n\nUse `/dashboard` to post a live stats embed with control buttons.{acc2_note}"), ephemeral=True)
         except aiohttp.ClientError:
             await interaction.followup.send(embed=error_embed("❌ Dashboard unreachable. Is the URL correct?"), ephemeral=True)
         except Exception as e:
