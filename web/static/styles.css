@@ -145,6 +145,9 @@ header h1 {
     color: var(--text-secondary);
     line-height: 1.5;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 #connection-indicator {
@@ -2269,28 +2272,34 @@ header h1 {
         gap: 6px;
     }
 
-    /* Tabs */
+    /* Hide connection text + language selector on mobile */
+    .conn-text,
+    .language-selector {
+        display: none;
+    }
+
+    /* Tabs: single scrollable row */
     .tabs {
-        display: grid;
-        grid-template-columns: repeat(12, 1fr);
+        display: flex;
+        flex-direction: row;
+        overflow-x: auto;
         gap: 4px;
         margin-bottom: 12px;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        padding-bottom: 2px;
+    }
+
+    .tabs::-webkit-scrollbar {
+        display: none;
     }
 
     .tab-button {
-        grid-column: span 3;
-        padding: 10px 4px;
+        flex: 0 0 auto;
+        padding: 10px 14px;
         font-size: 12px;
         border-radius: 8px;
         white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .tab-button:nth-child(5),
-    .tab-button:nth-child(6),
-    .tab-button:nth-child(7) {
-        grid-column: span 4;
     }
 
     /* Inventory filters */

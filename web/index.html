@@ -23,7 +23,7 @@
                     <span>Twitch Drops Miner</span>
                 </h1>
                 <div class="header-brand-right">
-                    <span id="connection-indicator" class="connected">● Connected</span>
+                    <span id="connection-indicator" class="connected"><span class="conn-dot">●</span><span class="conn-text"> Connected</span></span>
                     <label for="language" class="language-selector">
                         <select id="language">
                             <option value="en">🌐 EN</option>
@@ -44,6 +44,7 @@
                 </div>
                 <div class="status-center">
                     <span id="status-text">Initializing...</span>
+                    <span id="status-game" style="display:none;font-size:0.75rem;color:#adadb8;margin-top:2px;"></span>
                 </div>
             </div>
         </header>

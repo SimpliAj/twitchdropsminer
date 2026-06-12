@@ -1269,6 +1269,7 @@ async def connect(sid, environ):
                     {
                         "id": ch.id,
                         "login": ch._login,
+                        "game": ch.game.name if ch.game is not None else "",
                     }
                     if (ch := twitch_client.watching_channel.get_with_default(None)) is not None
                     else None
