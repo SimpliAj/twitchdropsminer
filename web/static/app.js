@@ -2598,10 +2598,14 @@ function initAccountTabs() {
         btn1.classList.remove('active-acc');
         btn2.classList.add('active-acc');
     }
-    fetch(API_BASE + '/api/instance').then(r => r.json()).then(d => {
-        const btn = ACC_NUM === 2 ? btn2 : btn1;
-        if (d.label) btn.textContent = d.label;
-    }).catch(() => {});
+    const acc1Base = '';
+    const acc2Base = '/acc2';
+    const updateBtn = (btn, data) => {
+        if (data.login) btn.textContent = data.login;
+        else if (data.label && !data.label.startsWith('Instance')) btn.textContent = data.label;
+    };
+    fetch(acc1Base + '/api/instance').then(r => r.json()).then(d => updateBtn(btn1, d)).catch(() => {});
+    fetch(acc2Base + '/api/instance').then(r => r.json()).then(d => updateBtn(btn2, d)).catch(() => {});
 }
 
 document.addEventListener('DOMContentLoaded', () => {
