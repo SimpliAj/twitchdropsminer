@@ -27,12 +27,96 @@ The following features and fixes have been added on top of the upstream codebase
 - Drop history and channel points are saved per-account; switching accounts shows the correct data instantly
 
 ### 🔀 Multi-Account Parallel Mode
-- Run two completely independent miner instances simultaneously — each on its own port, with its own data directory and login session
-- Instance 1 runs on port **8080** with data in `data/`, instance 2 runs on port **8082** with data in `data2/`
-- Configured via environment variables: `TDM_PORT` (listening port) and `TDM_DATA_DIR` (data directory path)
-- An Nginx reverse proxy exposes both instances on a single domain: account 1 at `/`, account 2 at `/acc2/`
-- The web dashboard includes account switcher buttons that show the Twitch username of each logged-in account; clicking switches you between the two dashboards via `?acc=2` URL parameter
-- Both instances are fully independent — separate cookies, settings, drop history, channel points, and campaigns
+Run two completely independent miner instances at the same time — two separate processes, two ports, two data directories, one domain.
+
+- Instance 1 runs on port **8080** with data stored in `data/`
+- Instance 2 runs on port **8082** with data stored in `data2/`
+- Each instance has its own cookies, login session, settings, drop history, and channel points — fully isolated
+- Configured via `TDM_PORT` (listening port) and `TDM_DATA_DIR` (data directory) environment variables
+- Both ports need to be reachable, or use Nginx to expose only 80/443 and proxy both instances on one domain
+
+**Docker Compose (both instances):**
+
+```yaml
+services:
+  tdm-account1:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - TZ=Europe/Vienna
+      - WEB_PASSWORD=yourpassword
+      - TDM_PORT=8080
+      - TDM_DATA_DIR=data
+    restart: unless-stopped
+
+  tdm-account2:
+    build: .
+    ports:
+      - "8082:8082"
+    volumes:
+      - ./data2:/app/data
+      - ./logs2:/app/logs
+    environment:
+      - TZ=Europe/Vienna
+      - WEB_PASSWORD=yourpassword
+      - TDM_PORT=8082
+      - TDM_DATA_DIR=data
+    restart: unless-stopped
+```
+
+**From source — PM2 (two named processes):**
+
+```bash
+TDM_PORT=8080 TDM_DATA_DIR=data      pm2 start main.py --name twitchdrops  --interpreter python3
+TDM_PORT=8082 TDM_DATA_DIR=data2     pm2 start main.py --name twitchdrops2 --interpreter python3
+pm2 save
+```
+
+**From source — two terminals:**
+
+```bash
+# Terminal 1
+TDM_PORT=8080 TDM_DATA_DIR=data   python main.py
+
+# Terminal 2
+TDM_PORT=8082 TDM_DATA_DIR=data2  python main.py
+```
+
+**Nginx reverse proxy (single domain, two accounts):**
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name tdm.example.xyz;
+
+    # Account 1 — root path
+    location / {
+        proxy_pass         http://127.0.0.1:8080;
+        proxy_http_version 1.1;
+        proxy_set_header   Upgrade $http_upgrade;
+        proxy_set_header   Connection "upgrade";
+        proxy_set_header   Host $host;
+    }
+
+    # Account 2 — /acc2/ path
+    location /acc2/ {
+        proxy_pass         http://127.0.0.1:8082/;
+        proxy_http_version 1.1;
+        proxy_set_header   Upgrade $http_upgrade;
+        proxy_set_header   Connection "upgrade";
+        proxy_set_header   Host $host;
+    }
+}
+```
+
+**Accessing both dashboards:**
+- Account 1: `https://tdm.example.xyz/` (or `http://localhost:8080`)
+- Account 2: `https://tdm.example.xyz/acc2/` (or `http://localhost:8082`)
+- The web dashboard shows account switcher buttons labeled with each account's Twitch username. Click to jump between dashboards, or append `?acc=2` to the URL to go directly to account 2.
 
 ### 💰 Channel Points Auto-Claimer
 - Automatically claims bonus channel point chests via both WebSocket (PubSub) and GQL polling (60s fallback)
