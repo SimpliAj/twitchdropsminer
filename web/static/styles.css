@@ -1005,123 +1005,156 @@ header h1 {
 }
 
 /* Wanted Items Tree / Groups */
+/* ── Wanted Queue (compact list) ── */
 #wanted-items-list {
     display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
+    flex-direction: column;
+    gap: 4px;
 }
 
-.wanted-game-group {
-    flex: min-content;
-    /* Grow, shrink, basis */
-    min-width: 0;
-    /* Fix for flex item overflow */
+.wq-row {
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    margin-bottom: 20px;
-    break-inside: avoid;
     overflow: hidden;
-    position: relative;
+    transition: border-color 0.15s;
 }
+.wq-row:first-child { border-color: var(--accent-color); }
+.wq-row.dragging { opacity: 0.4; }
+.wq-row:hover { border-color: #4d4d5a; }
 
-.wanted-game-header {
-    padding: 10px 15px;
-    background: var(--bg-panel);
-    border-bottom: 1px solid var(--border-color);
-    font-weight: 700;
-    font-size: 15px;
+.wq-header {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
+    padding: 9px 12px;
+    cursor: pointer;
+    user-select: none;
 }
 
-.wanted-game-index {
+.wq-drag-handle {
+    color: #4d4d5a;
+    cursor: grab;
+    font-size: 1rem;
+    flex-shrink: 0;
+    padding: 0 2px;
+}
+.wq-drag-handle:hover { color: #adadb8; }
+
+.wq-badge {
     background: var(--accent-color);
-    color: white;
-    font-size: 11px;
+    color: #fff;
+    font-size: 0.7rem;
     font-weight: 700;
     padding: 2px 6px;
     border-radius: 4px;
-    min-width: 20px;
+    min-width: 24px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.wq-icon {
+    width: 24px;
+    height: 32px;
+    object-fit: cover;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+.wq-icon-placeholder {
+    width: 24px;
+    text-align: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.wq-name {
+    flex: 1;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.wq-count {
+    font-size: 0.75rem;
+    color: #adadb8;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 1px 7px;
+    flex-shrink: 0;
+}
+
+.wq-toggle {
+    font-size: 0.75rem;
+    color: #adadb8;
+    flex-shrink: 0;
+    width: 14px;
     text-align: center;
 }
 
-.wanted-game-icon {
-    width: 30px;
-    height: 40px;
-    object-fit: cover;
-    border-radius: 3px;
-    background: #000;
+.wq-remove {
+    background: none;
+    border: none;
+    color: #4d4d5a;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 0 2px;
+    line-height: 1;
+    flex-shrink: 0;
+    transition: color 0.15s;
 }
+.wq-remove:hover { color: #eb4a4a; }
 
-.wanted-campaign-list {
-    padding: 10px;
+.wq-body {
+    border-top: 1px solid var(--border-color);
+    padding: 8px 12px 10px 46px;
     display: flex;
     flex-direction: column;
     gap: 10px;
 }
 
-/* Wanted Cards (Nested inside Game Group) */
-.wanted-card {
-    background: var(--bg-panel);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    overflow: hidden;
-    position: relative;
-}
+.wq-campaign { }
 
-.wanted-card-header {
-    padding: 8px 12px;
-    background: var(--bg-tertiary, #262626);
-    /* Slightly darker/different than panel */
-    border-bottom: 1px solid var(--border-color);
-}
-
-/* Removing old wanted-card styles that are handled by group header now */
-
-.wanted-card-campaign-link {
-    font-size: 12px;
+.wq-campaign-link {
+    font-size: 0.8rem;
+    font-weight: 600;
     color: var(--accent-color);
     text-decoration: none;
     display: block;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    margin-bottom: 6px;
 }
+.wq-campaign-link:hover { text-decoration: underline; }
 
-.wanted-card-campaign-link:hover {
-    text-decoration: underline;
-}
-
-.wanted-card-body {
-    padding: 10px;
-}
-
-.wanted-drop-item {
-    font-size: 11px;
-    margin-bottom: 4px;
+.wq-drop {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 6px;
-    padding: 4px;
-    background: var(--bg-secondary);
-    border-radius: 4px;
+    gap: 5px;
+    padding: 4px 6px;
+    background: var(--bg-panel);
+    border-radius: 5px;
+    margin-bottom: 3px;
+    font-size: 0.78rem;
 }
 
-.wanted-drop-name {
-    font-weight: 600;
+.wq-drop-name {
     color: var(--text-secondary);
+    flex: 1;
+    min-width: 0;
 }
 
-.wanted-benefit-pill {
-    background: rgba(145, 70, 255, 0.15);
+.wq-benefit {
+    background: rgba(145,70,255,0.15);
     color: var(--accent-color);
-    padding: 1px 5px;
     border-radius: 8px;
-    font-size: 10px;
+    padding: 1px 6px;
+    font-size: 0.7rem;
     font-weight: 500;
+    white-space: nowrap;
 }
 
 
