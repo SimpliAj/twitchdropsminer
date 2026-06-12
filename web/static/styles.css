@@ -2700,3 +2700,54 @@ header h1 {
 .stats-recent-info { flex: 1; }
 .stats-recent-reward { font-weight: 600; font-size: 0.9em; color: var(--text-primary); }
 .stats-recent-meta { font-size: 0.8em; color: var(--text-secondary); }
+
+/* Contribution grid (GitHub-style) */
+.contrib-grid {
+    display: flex;
+    gap: 3px;
+    padding: 4px 0;
+}
+.contrib-col {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+.contrib-cell {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    background: var(--border-color);
+    cursor: default;
+    position: relative;
+}
+.contrib-cell[data-count="0"] { background: var(--bg-panel, #1e1e2e); border: 1px solid var(--border-color); }
+.contrib-cell[data-level="1"] { background: #1a6335; }
+.contrib-cell[data-level="2"] { background: #26a641; }
+.contrib-cell[data-level="3"] { background: #39d353; }
+.contrib-cell[data-level="4"] { background: #9be9a8; }
+.contrib-cell:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.85);
+    color: #fff;
+    font-size: 11px;
+    white-space: nowrap;
+    padding: 3px 7px;
+    border-radius: 4px;
+    pointer-events: none;
+    z-index: 10;
+}
+.contrib-labels {
+    display: flex;
+    gap: 3px;
+    margin-bottom: 4px;
+    padding-left: 2px;
+}
+.contrib-month-label {
+    font-size: 10px;
+    color: var(--text-secondary);
+    min-width: 12px;
+}

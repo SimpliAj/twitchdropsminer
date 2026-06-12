@@ -51,12 +51,12 @@
         <nav class="tabs">
             <button class="tab-button active" data-tab="main">Main</button>
             <button class="tab-button" data-tab="inventory">Inventory</button>
-            <button class="tab-button" data-tab="channel-points">Channel Points</button>
             <button class="tab-button" data-tab="history">History</button>
             <button class="tab-button" data-tab="settings">Settings</button>
-            <button class="tab-button" data-tab="system" id="tab-btn-system">System</button>
             <button class="tab-button" data-tab="help">Help</button>
+            <button class="tab-button" data-tab="channel-points">Channel Points</button>
             <button class="tab-button" data-tab="stats">Stats</button>
+            <button class="tab-button" data-tab="system" id="tab-btn-system">System</button>
         </nav>
 
         <!-- Main Tab -->
@@ -579,6 +579,8 @@
                         <a href="#help-section-webhook" class="help-toc-link">🔔 Discord Webhook</a>
                         <a href="#help-section-remote" class="help-toc-link">🌐 Remote Access</a>
                         <a href="#help-section-tips" class="help-toc-link">💡 Tips &amp; Tricks</a>
+                        <a href="#help-section-notifications" class="help-toc-link">🔔 Notifications</a>
+                        <a href="#help-section-stats" class="help-toc-link">📊 Stats Tab</a>
                     </nav>
 
                     <!-- Main content -->
@@ -920,6 +922,54 @@
                             </div>
                         </section>
 
+                        <!-- Notifications -->
+                        <section class="help-section" id="help-section-notifications">
+                            <div class="help-section-header">
+                                <span class="help-section-icon">🔔</span>
+                                <h2>Notifications</h2>
+                            </div>
+                            <p>Enable browser push notifications in <strong>Settings → Notifications</strong> to receive alerts even when the tab is in the background.</p>
+                            <table class="help-table">
+                                <thead><tr><th>Setting</th><th>Description</th></tr></thead>
+                                <tbody>
+                                    <tr><td><strong>Browser Push Notifications</strong></td><td>Show a native OS notification when a drop is claimed. Includes the drop image.</td></tr>
+                                    <tr><td><strong>Notification Sound</strong></td><td>Play a sound when a drop notification fires.</td></tr>
+                                    <tr><td><strong>Campaign End Alerts</strong></td><td>Get notified (Discord webhook + push) when a campaign ends in less than 24 hours and you still have unclaimed drops.</td></tr>
+                                </tbody>
+                            </table>
+                            <div class="help-note">
+                                <span class="help-note-icon">ℹ️</span>
+                                <div>Your browser will ask for notification permission the first time you enable push notifications. Make sure to allow it.</div>
+                            </div>
+                        </section>
+
+                        <!-- Stats Tab -->
+                        <section class="help-section" id="help-section-stats">
+                            <div class="help-section-header">
+                                <span class="help-section-icon">📊</span>
+                                <h2>Stats Tab</h2>
+                            </div>
+                            <p>The <strong>Stats</strong> tab shows an overview of all your claimed drops across both accounts.</p>
+                            <div class="help-cards">
+                                <div class="help-card">
+                                    <div class="help-card-title">Summary</div>
+                                    <p>Total claims, number of different games, and date of your last claim.</p>
+                                </div>
+                                <div class="help-card">
+                                    <div class="help-card-title">Claims by Game</div>
+                                    <p>Horizontal bar chart showing your top 10 games ranked by total claims.</p>
+                                </div>
+                                <div class="help-card">
+                                    <div class="help-card-title">Activity Grid</div>
+                                    <p>GitHub-style contribution grid showing claim frequency over the past year. Darker green = more claims that day.</p>
+                                </div>
+                                <div class="help-card">
+                                    <div class="help-card-title">Recent Claims</div>
+                                    <p>Your 10 most recent drop claims with reward images where available.</p>
+                                </div>
+                            </div>
+                        </section>
+
                     </div><!-- end help-body -->
                 </div><!-- end help-layout -->
             </div><!-- end help-wiki -->
@@ -953,8 +1003,8 @@
 
                 <!-- By Day bar chart -->
                 <div class="stats-section" style="margin-top:24px;">
-                    <h3>Claims per Day (last 30 days)</h3>
-                    <canvas id="stats-by-day-canvas" height="120" style="width:100%;"></canvas>
+                    <h3>Claims Activity</h3>
+                    <div id="stats-contribution-grid" style="overflow-x:auto;"></div>
                 </div>
 
                 <!-- Recent claims -->
