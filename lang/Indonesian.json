@@ -54,7 +54,8 @@
       "settings": "Parameter",
       "help": "Bantuan",
       "system": "System",
-      "stats": "Stats"
+      "stats": "Stats",
+      "analytics": "Analytics"
     },
     "login": {
       "name": "Formulir masuk",

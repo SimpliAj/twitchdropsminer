@@ -51,7 +51,8 @@
       "settings": "设置",
       "help": "帮助",
       "system": "System",
-      "stats": "Stats"
+      "stats": "Stats",
+      "analytics": "Analytics"
     },
     "login": {
       "name": "登录Twitch账号",

@@ -51,7 +51,8 @@
       "settings": "Paramètres",
       "help": "Aide",
       "system": "System",
-      "stats": "Stats"
+      "stats": "Stats",
+      "analytics": "Analytics"
     },
     "login": {
       "name": "Formulaire de connexion",

@@ -54,7 +54,8 @@
       "settings": "Настройки",
       "help": "Помощь",
       "system": "System",
-      "stats": "Stats"
+      "stats": "Stats",
+      "analytics": "Analytics"
     },
     "login": {
       "name": "Авторизация",
