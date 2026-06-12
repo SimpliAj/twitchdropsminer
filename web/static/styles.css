@@ -1295,6 +1295,18 @@ header h1 {
     max-width: 100%;
 }
 
+.settings-category-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent-color);
+    padding: 6px 2px 4px;
+    margin-top: 8px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 12px;
+}
+
 .settings-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
