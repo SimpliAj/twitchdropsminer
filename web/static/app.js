@@ -2554,6 +2554,155 @@ function applyTranslations(t) {
             const dbInviteText = document.getElementById('settings-discord-bot-invite-text');
             if (dbInviteText) dbInviteText.textContent = db.invite_bot;
         }
+
+        const s = t.gui.settings;
+
+        // Channel Points section
+        const cpHeader = document.getElementById('settings-cp-header');
+        if (cpHeader && s.channel_points_section) cpHeader.textContent = s.channel_points_section;
+        const cpAutoLabel = document.getElementById('settings-cp-autoclaim-label');
+        if (cpAutoLabel && s.channel_points_auto_claim) cpAutoLabel.textContent = s.channel_points_auto_claim;
+        const cpAutoHelp = document.getElementById('settings-cp-autoclaim-help');
+        if (cpAutoHelp && s.channel_points_auto_claim_help) cpAutoHelp.textContent = s.channel_points_auto_claim_help;
+
+        // Discord Notifications section
+        const discordNotifHeader = document.getElementById('settings-discord-notif-header');
+        if (discordNotifHeader && s.discord_notifications) discordNotifHeader.textContent = s.discord_notifications;
+        const dropsWebhookLabel = document.getElementById('settings-drops-webhook-label');
+        if (dropsWebhookLabel && s.discord_drops_webhook_label) dropsWebhookLabel.textContent = s.discord_drops_webhook_label;
+        const dropsWebhookHelp = document.getElementById('settings-drops-webhook-help');
+        if (dropsWebhookHelp && s.discord_drops_webhook_help) dropsWebhookHelp.textContent = s.discord_drops_webhook_help;
+        const pointsWebhookLabel = document.getElementById('settings-points-webhook-label');
+        if (pointsWebhookLabel && s.discord_points_webhook_label) pointsWebhookLabel.textContent = s.discord_points_webhook_label;
+        const pointsWebhookHelp = document.getElementById('settings-points-webhook-help');
+        if (pointsWebhookHelp && s.discord_points_webhook_help) pointsWebhookHelp.textContent = s.discord_points_webhook_help;
+        const testDropsBtn = document.getElementById('test-drops-webhook-btn');
+        if (testDropsBtn && s.test_webhook) testDropsBtn.textContent = s.test_webhook;
+        const testPointsBtn = document.getElementById('test-points-webhook-btn');
+        if (testPointsBtn && s.test_webhook) testPointsBtn.textContent = s.test_webhook;
+
+        // Proxy section
+        const proxyLabel = document.getElementById('settings-proxy-label');
+        if (proxyLabel && s.proxy_url_label) proxyLabel.textContent = s.proxy_url_label;
+        const setProxyBtn = document.getElementById('set-proxy-btn');
+        if (setProxyBtn && s.set_proxy) setProxyBtn.textContent = s.set_proxy;
+        const verifyProxyBtn = document.getElementById('verify-proxy-btn');
+        if (verifyProxyBtn && s.verify_proxy) verifyProxyBtn.textContent = s.verify_proxy;
+        const proxyHelp = document.getElementById('settings-proxy-help');
+        if (proxyHelp && s.proxy_url_help) proxyHelp.textContent = s.proxy_url_help;
+
+        // Idle Watch section
+        const idleHeader = document.getElementById('settings-idle-header');
+        if (idleHeader && s.idle_watch) idleHeader.textContent = s.idle_watch;
+        const idleHelp = document.getElementById('settings-idle-help');
+        if (idleHelp && s.idle_watch_help) idleHelp.textContent = s.idle_watch_help;
+        const idleAutoLabel = document.getElementById('settings-idle-auto-label');
+        if (idleAutoLabel && s.idle_auto_followed) idleAutoLabel.textContent = s.idle_auto_followed;
+        const idleAutoHelp = document.getElementById('settings-idle-auto-help');
+        if (idleAutoHelp && s.idle_auto_followed_help) idleAutoHelp.textContent = s.idle_auto_followed_help;
+        const idleChannelInput = document.getElementById('idle-channel-input');
+        if (idleChannelInput && s.idle_channel_placeholder) idleChannelInput.placeholder = s.idle_channel_placeholder;
+        const idleAddBtn = document.getElementById('idle-channel-add-btn');
+        if (idleAddBtn && s.idle_channel_add) idleAddBtn.textContent = s.idle_channel_add;
+
+        // Drop Name Blacklist section
+        const blacklistHeader = document.getElementById('settings-blacklist-header');
+        if (blacklistHeader && s.blacklist) blacklistHeader.textContent = s.blacklist;
+        const blacklistHelp = document.getElementById('settings-blacklist-help');
+        if (blacklistHelp && s.blacklist_help) blacklistHelp.textContent = s.blacklist_help;
+
+        // Scheduler section
+        const schedulerHeader = document.getElementById('settings-scheduler-header');
+        if (schedulerHeader && s.scheduler) schedulerHeader.textContent = s.scheduler;
+        const schedulerHelp = document.getElementById('settings-scheduler-help');
+        if (schedulerHelp && s.scheduler_help) schedulerHelp.textContent = s.scheduler_help;
+        const schedulerEnableLabel = document.getElementById('settings-scheduler-enable-label');
+        if (schedulerEnableLabel && s.scheduler_enable) schedulerEnableLabel.textContent = s.scheduler_enable;
+        const schedulerFrom = document.getElementById('settings-scheduler-from');
+        if (schedulerFrom && s.scheduler_active_from) schedulerFrom.textContent = s.scheduler_active_from;
+        const schedulerUntil = document.getElementById('settings-scheduler-until');
+        if (schedulerUntil && s.scheduler_active_until) schedulerUntil.textContent = s.scheduler_active_until;
+        const schedulerTimesHelp = document.getElementById('settings-scheduler-times-help');
+        if (schedulerTimesHelp && s.scheduler_times_help) schedulerTimesHelp.textContent = s.scheduler_times_help;
+
+        // Discord bot channel config texts
+        const botNotifChannelsLabel = document.getElementById('settings-bot-notif-channels-label');
+        if (botNotifChannelsLabel && s.bot_notification_channels) botNotifChannelsLabel.textContent = s.bot_notification_channels;
+        const botSetchannelHint = document.getElementById('settings-bot-setchannel-hint');
+        if (botSetchannelHint && s.bot_setchannel_hint) {
+            botSetchannelHint.textContent = '';
+            const code = document.createElement('code');
+            code.textContent = '/setchannel';
+            botSetchannelHint.appendChild(document.createTextNode('Use '));
+            botSetchannelHint.appendChild(code);
+            botSetchannelHint.appendChild(document.createTextNode(' in Discord to set channels.'));
+            // If translation doesn't match default, override with plain text
+            if (s.bot_setchannel_hint !== 'Use /setchannel in Discord to set channels.') {
+                botSetchannelHint.textContent = s.bot_setchannel_hint;
+            }
+        }
+
+        // Add Account button and placeholder
+        const addAccountBtn = document.getElementById('add-account-btn');
+        if (addAccountBtn && s.add_account) addAccountBtn.textContent = s.add_account;
+        const newAccountLabel = document.getElementById('new-account-label');
+        if (newAccountLabel && s.account_label_placeholder) newAccountLabel.placeholder = s.account_label_placeholder;
+    }
+
+    // Update System section (now inside settings tab)
+    if (t.gui?.system) {
+        const sys = t.gui.system;
+        const systemHeader = document.getElementById('system-header');
+        if (systemHeader) systemHeader.textContent = sys.header;
+        const systemAccountsHeader = document.getElementById('system-accounts-header');
+        if (systemAccountsHeader && sys.accounts_header) systemAccountsHeader.textContent = sys.accounts_header;
+        const systemMinerHeader = document.getElementById('system-miner-header');
+        if (systemMinerHeader) systemMinerHeader.textContent = sys.miner_header;
+        const systemMinerDesc = document.getElementById('system-miner-desc');
+        if (systemMinerDesc) systemMinerDesc.textContent = sys.miner_desc;
+        const systemReloadBtn = document.getElementById('system-reload-btn');
+        if (systemReloadBtn) systemReloadBtn.textContent = sys.reload_btn;
+        const systemRestartHeader = document.getElementById('system-restart-header');
+        if (systemRestartHeader) systemRestartHeader.textContent = sys.restart_header;
+        const systemRestartDesc = document.getElementById('system-restart-desc');
+        if (systemRestartDesc) systemRestartDesc.textContent = sys.restart_desc;
+        const systemRestartBtn = document.getElementById('system-restart-btn');
+        if (systemRestartBtn) systemRestartBtn.textContent = sys.restart_btn;
+        const systemSessionHeader = document.getElementById('system-session-header');
+        if (systemSessionHeader) systemSessionHeader.textContent = sys.session_header;
+        const systemSessionDesc = document.getElementById('system-session-desc');
+        if (systemSessionDesc) systemSessionDesc.textContent = sys.session_desc;
+        const systemLogoutBtn = document.getElementById('system-logout-btn');
+        if (systemLogoutBtn) systemLogoutBtn.textContent = sys.logout_btn;
+    }
+
+    // Update Analytics tab
+    if (t.gui?.analytics) {
+        const a = t.gui.analytics;
+        const statsHeader = document.getElementById('analytics-stats-header');
+        if (statsHeader) statsHeader.textContent = a.stats_header;
+        const totalLabel = document.getElementById('analytics-total-label');
+        if (totalLabel) totalLabel.textContent = a.total_claims;
+        const gamesLabel = document.getElementById('analytics-games-label');
+        if (gamesLabel) gamesLabel.textContent = a.games_label;
+        const lastLabel = document.getElementById('analytics-last-label');
+        if (lastLabel) lastLabel.textContent = a.last_claim;
+        const byGameHeader = document.getElementById('analytics-by-game-header');
+        if (byGameHeader) byGameHeader.textContent = a.claims_by_game;
+        const activityHeader = document.getElementById('analytics-activity-header');
+        if (activityHeader) activityHeader.textContent = a.claims_activity;
+        const cpHeader = document.getElementById('analytics-cp-header');
+        if (cpHeader) cpHeader.textContent = a.channel_points;
+        const cpRefreshBtn = document.getElementById('cp-tab-refresh-btn');
+        if (cpRefreshBtn) cpRefreshBtn.textContent = a.refresh;
+        const cpEmpty = document.getElementById('cp-tab-empty');
+        if (cpEmpty) cpEmpty.textContent = a.no_channel_points;
+        const historyHeader = document.getElementById('analytics-history-header');
+        if (historyHeader) historyHeader.textContent = a.drop_history;
+        const historyRefreshBtn = document.getElementById('history-refresh-btn');
+        if (historyRefreshBtn) historyRefreshBtn.textContent = a.refresh;
+        const historyEmpty = document.getElementById('history-empty');
+        if (historyEmpty) historyEmpty.textContent = a.no_history;
     }
 
     // Update Help tab
