@@ -214,6 +214,17 @@ socket.on('initial_state', (data) => {
             renderPointsTracker();
         }).catch(() => {});
     }
+
+    // Resume last mode after 3s if not already in the right state
+    if (data.last_mode === 'idle_watch') {
+        const currentStatus = (data.status || '').toLowerCase();
+        const alreadyIdle = currentStatus.includes('idle') || currentStatus.includes('💤');
+        if (!alreadyIdle && (data.settings?.idle_channels?.length > 0 || data.settings?.idle_use_followed)) {
+            setTimeout(() => {
+                fetch(API_BASE + '/api/idle-watch/switch', { method: 'POST' }).catch(() => {});
+            }, 3000);
+        }
+    }
 });
 
 socket.on('channel_points_update', (data) => {
@@ -1520,9 +1531,23 @@ function renderInventory() {
             }
         });
 
+        // Toggle button
+        const dropCount = campaign.drops.filter(d => !filters.show_sub_drops ? (d.required_subs || 0) === 0 : true).length;
+        const toggleBtn = makeElement('button', { class: 'inv-toggle-btn' }, `▸ ${dropCount} drop${dropCount !== 1 ? 's' : ''}`);
+
         const campaignStatus = makeElement('div', { class: 'campaign-status' }, '', el => {
             el.appendChild(makeElement('span', {}, statusText));
             el.appendChild(makeElement('span', {}, `${campaign.claimed_drops} / ${campaign.total_drops} ${claimedCountText}`));
+            el.appendChild(toggleBtn);
+        });
+
+        dropsEl.style.display = 'none';
+
+        toggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const open = dropsEl.style.display !== 'none';
+            dropsEl.style.display = open ? 'none' : '';
+            toggleBtn.textContent = open ? `▸ ${dropCount} drop${dropCount !== 1 ? 's' : ''}` : `▾ ${dropCount} drop${dropCount !== 1 ? 's' : ''}`;
         });
 
         card.replaceChildren(campaignHeader, campaignStatus);
@@ -1540,7 +1565,6 @@ function renderInventory() {
         }
 
         card.appendChild(dropsEl);
-
         container.appendChild(card);
     });
 }

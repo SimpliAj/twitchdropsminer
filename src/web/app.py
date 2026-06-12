@@ -605,7 +605,10 @@ async def idle_watch_status():
 
 @app.post("/api/idle-watch/switch")
 async def idle_watch_switch():
-    """Switch to the next idle channel (manual list or followed)."""
+    """Switch to the next idle channel (manual list or followed). Saves last_mode."""
+    cfg = _load_web_config()
+    cfg["last_mode"] = "idle_watch"
+    _save_web_config(cfg)
     if not gui_manager or not twitch_client:
         raise HTTPException(status_code=503, detail="Not ready")
 
@@ -826,6 +829,9 @@ async def trigger_reload():
 
     from src.config import State
 
+    cfg = _load_web_config()
+    cfg["last_mode"] = "drop_mining"
+    _save_web_config(cfg)
     twitch_client.change_state(State.INVENTORY_FETCH)
     return {"success": True}
 
@@ -1276,6 +1282,7 @@ async def connect(sid, environ):
                 ),
                 "channel_points_history": _load_channel_points_history(),
                 "daily_points": _load_daily_points(),
+                "last_mode": _load_web_config().get("last_mode", "drop_mining"),
             },
             room=sid,
         )
