@@ -2992,8 +2992,19 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('claim-channel-points')?.addEventListener('change', saveSettings);
 
     document.getElementById('push-enabled-toggle')?.addEventListener('change', async function() {
-        if (this.checked && 'Notification' in window && Notification.permission !== 'granted') {
-            await Notification.requestPermission();
+        if (this.checked && 'Notification' in window) {
+            if (Notification.permission === 'denied') {
+                this.checked = false;
+                alert('Browser notifications are blocked. Please allow them in your browser settings (click the lock icon in the address bar) and reload the page.');
+                return;
+            }
+            if (Notification.permission !== 'granted') {
+                const result = await Notification.requestPermission();
+                if (result !== 'granted') {
+                    this.checked = false;
+                    return;
+                }
+            }
         }
         savePushConfig();
     });
@@ -3133,10 +3144,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch and apply translations for the current language
     fetchAndApplyTranslations();
 
-    // Request notification permission
-    if ('Notification' in window && Notification.permission === 'default') {
-        Notification.requestPermission();
-    }
 
     // Account management
     async function loadAccounts() {
