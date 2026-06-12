@@ -542,69 +542,367 @@
         </div>
 
         <div id="help-tab" class="tab-content">
-            <div class="help-content">
-                <h2 id="help-about-header">About Twitch Drops Miner</h2>
-                <p>This application automatically mines timed Twitch drops without downloading stream data.</p>
+            <div class="help-wiki">
 
-                <h3 id="help-howto-header">How to Use</h3>
-                <ol>
-                    <li>Login using your Twitch account (OAuth device code flow)</li>
-                    <li>Link your accounts at <a href="https://www.twitch.tv/drops/campaigns"
-                            target="_blank">twitch.tv/drops/campaigns</a></li>
-                    <li>The miner will automatically discover campaigns and start mining</li>
-                    <li>Configure priority games in Settings to focus on what you want</li>
-                    <li>Monitor progress in the Main and Inventory tabs</li>
-                </ol>
+                <!-- TOC Sidebar + Content layout -->
+                <div class="help-layout">
 
-                <h3 id="help-features-header">Features</h3>
-                <ul>
-                    <li>Stream-less drop mining - saves bandwidth</li>
-                    <li>Game priority and exclusion lists</li>
-                    <li>Tracks up to 199 channels simultaneously</li>
-                    <li>Automatic channel switching</li>
-                    <li>Real-time progress tracking</li>
-                </ul>
+                    <!-- Sidebar TOC -->
+                    <nav class="help-toc">
+                        <div class="help-toc-title">Contents</div>
+                        <a href="#help-section-start" class="help-toc-link">🚀 Getting Started</a>
+                        <a href="#help-section-mining" class="help-toc-link">⛏️ Drop Mining</a>
+                        <a href="#help-section-multi" class="help-toc-link">👥 Multi-Account</a>
+                        <a href="#help-section-points" class="help-toc-link">💰 Channel Points</a>
+                        <a href="#help-section-idle" class="help-toc-link">📺 Idle Watch</a>
+                        <a href="#help-section-discord-bot" class="help-toc-link">🤖 Discord Bot</a>
+                        <a href="#help-section-webhook" class="help-toc-link">🔔 Discord Webhook</a>
+                        <a href="#help-section-remote" class="help-toc-link">🌐 Remote Access</a>
+                        <a href="#help-section-tips" class="help-toc-link">💡 Tips &amp; Tricks</a>
+                    </nav>
 
-                <h3 id="help-notes-header">Important Notes</h3>
-                <ul>
-                    <li>Do not watch streams on the same account while mining</li>
-                    <li>Keep your cookies.jar file secure</li>
-                    <li>Requires linked game accounts for drops</li>
-                </ul>
+                    <!-- Main content -->
+                    <div class="help-body">
 
-                <h3 id="help-discord-webhook-header">Discord Webhook</h3>
-                <p>Get notified in Discord when drops are claimed or channel points are earned.</p>
-                <ol>
-                    <li>Go to your Discord server → Channel Settings → Integrations → Webhooks → New Webhook</li>
-                    <li>Copy the webhook URL</li>
-                    <li>Paste it into <strong>Settings → Discord Notifications</strong> (separate URLs for drops and points)</li>
-                    <li>Use <strong>Test Webhook</strong> to verify it works</li>
-                </ol>
+                        <!-- Getting Started -->
+                        <section class="help-section" id="help-section-start">
+                            <div class="help-section-header" id="help-about-header">
+                                <span class="help-section-icon">🚀</span>
+                                <h2>Getting Started</h2>
+                            </div>
+                            <p class="help-intro">Twitch Drops Miner automatically earns timed Twitch drops <strong>without downloading any stream video</strong> — saving bandwidth while collecting rewards 24/7.</p>
 
-                <h3 id="help-discord-bot-header">Discord Bot</h3>
-                <p>Control your miner directly from Discord using slash commands. The bot syncs live stats and can post automatic drop notifications.</p>
-                <h4>Setup</h4>
-                <ol>
-                    <li>Go to <strong>Settings → Discord Bot</strong> and click <strong>Generate code</strong></li>
-                    <li>Note your dashboard URL (e.g. <code>http://your-server:8081</code>) and the code (e.g. <code>DROPS-A1B2C3D4</code>)</li>
-                    <li>In Discord, run: <code>/link http://your-server:8081 DROPS-A1B2C3D4</code></li>
-                    <li>The bot confirms: ✅ Connected</li>
-                </ol>
-                <h4>Commands</h4>
-                <ul>
-                    <li><code>/link &lt;url&gt; &lt;code&gt;</code> — connect to your dashboard</li>
-                    <li><code>/dashboard</code> — post a live-updating embed with control buttons (pause, campaigns, drops)</li>
-                    <li><code>/setchannel drops</code> — send drop notifications to this channel</li>
-                    <li><code>/setchannel points</code> — send channel points notifications to this channel</li>
-                    <li><code>/unlink</code> — disconnect the bot</li>
-                </ul>
-                <p><strong>Note:</strong> The pairing code expires in 10 minutes. Generate a new one if it expires. To rename your profile (shown in bot footer), go to <strong>System → Accounts</strong> and use the ✏️ button.</p>
+                            <div class="help-steps">
+                                <div class="help-step">
+                                    <div class="help-step-num">1</div>
+                                    <div class="help-step-body">
+                                        <strong>Log in with Twitch</strong>
+                                        <p>Click <strong>Login</strong> in the Main tab. A device code appears — open the link, enter the code on Twitch, then return here. Uses OAuth device flow; your password is never stored.</p>
+                                    </div>
+                                </div>
+                                <div class="help-step">
+                                    <div class="help-step-num">2</div>
+                                    <div class="help-step-body">
+                                        <strong>Link game accounts</strong>
+                                        <p>Visit <a href="https://www.twitch.tv/drops/campaigns" target="_blank">twitch.tv/drops/campaigns</a> and connect each game's account (Steam, Epic, etc.) to your Twitch profile. Drops won't be delivered without this step.</p>
+                                    </div>
+                                </div>
+                                <div class="help-step">
+                                    <div class="help-step-num">3</div>
+                                    <div class="help-step-body">
+                                        <strong>Configure priority games (optional)</strong>
+                                        <p>Open <strong>Settings → Priority Games</strong> and add games you want to target first. The miner works all campaigns by default if no priority list is set.</p>
+                                    </div>
+                                </div>
+                                <div class="help-step">
+                                    <div class="help-step-num">4</div>
+                                    <div class="help-step-body">
+                                        <strong>Watch it run</strong>
+                                        <p>The <strong>Main</strong> tab shows the active channel, current drop progress, and live channel points balance. The <strong>Inventory</strong> tab tracks all claimed drops.</p>
+                                    </div>
+                                </div>
+                            </div>
 
-                <div class="help-links">
-                    <a href="https://github.com/SimpliAj/twitchdropsminer" target="_blank">GitHub
-                        Repository</a>
-                </div>
-            </div>
+                            <div class="help-note">
+                                <span class="help-note-icon">ℹ️</span>
+                                <div><strong>No stream video is downloaded.</strong> The miner sends only the minimal Twitch API heartbeats needed to accumulate watch time — bandwidth usage is negligible.</div>
+                            </div>
+                        </section>
+
+                        <!-- Drop Mining -->
+                        <section class="help-section" id="help-section-mining">
+                            <div class="help-section-header" id="help-howto-header">
+                                <span class="help-section-icon">⛏️</span>
+                                <h2>Drop Mining</h2>
+                            </div>
+
+                            <div class="help-cards">
+                                <div class="help-card">
+                                    <div class="help-card-title">How It Works</div>
+                                    <p>The miner discovers all active drop campaigns via the Twitch API, picks a live channel that qualifies for each drop, and sends periodic watch-time signals. No video is ever buffered or downloaded.</p>
+                                </div>
+                                <div class="help-card">
+                                    <div class="help-card-title">Auto Channel Switching</div>
+                                    <p>If the current channel goes offline, ends the drop window, or loses drop eligibility, the miner automatically switches to the next best channel — no intervention needed.</p>
+                                </div>
+                                <div class="help-card">
+                                    <div class="help-card-title">Game Priority Queue</div>
+                                    <p>Add games to <strong>Settings → Priority Games</strong>. Games appear in order — the miner finishes the first game's drops before moving to the next. Unlisted games are queued after all priority games.</p>
+                                </div>
+                                <div class="help-card">
+                                    <div class="help-card-title">Drop Name Blacklist</div>
+                                    <p>In <strong>Settings → Blacklist</strong> you can exclude specific drop names (e.g. duplicates you already own). The miner skips any drop whose name matches an entry in the list.</p>
+                                </div>
+                            </div>
+
+                            <h3 id="help-features-header">Manual Controls</h3>
+                            <table class="help-table">
+                                <thead><tr><th>Control</th><th>Where</th><th>Effect</th></tr></thead>
+                                <tbody>
+                                    <tr><td><strong>Manual Mode</strong></td><td>Main tab toggle</td><td>Pause automatic game selection; you choose which campaign to watch</td></tr>
+                                    <tr><td><strong>Skip Game</strong></td><td>Main tab button</td><td>Skip all remaining drops for the current game and move to the next in queue</td></tr>
+                                    <tr><td><strong>Check for Drops</strong></td><td>Main tab button</td><td>Manually refresh campaign list (equivalent to page reload)</td></tr>
+                                    <tr><td><strong>Reload Campaigns</strong></td><td>System tab</td><td>Force a full campaign reload and restart the mining loop</td></tr>
+                                </tbody>
+                            </table>
+
+                            <div class="help-note help-note-warn" id="help-notes-header">
+                                <span class="help-note-icon">⚠️</span>
+                                <div>Do <strong>not</strong> watch streams on the same Twitch account while mining. Twitch only counts watch time from one source at a time.</div>
+                            </div>
+                        </section>
+
+                        <!-- Multi-Account -->
+                        <section class="help-section" id="help-section-multi">
+                            <div class="help-section-header">
+                                <span class="help-section-icon">👥</span>
+                                <h2>Multi-Account</h2>
+                            </div>
+                            <p>Run two Twitch accounts simultaneously, each with fully isolated data, settings, and sessions.</p>
+
+                            <table class="help-table">
+                                <thead><tr><th>Instance</th><th>Port</th><th>Switch</th></tr></thead>
+                                <tbody>
+                                    <tr><td>Account 1</td><td><code>8080</code></td><td>Click <strong>Account 1</strong> button in the header</td></tr>
+                                    <tr><td>Account 2</td><td><code>8082</code></td><td>Click <strong>Account 2</strong> button in the header</td></tr>
+                                </tbody>
+                            </table>
+
+                            <p>The account buttons in the top header show the actual <strong>Twitch username</strong> once logged in. Each instance has its own:</p>
+                            <ul class="help-list">
+                                <li>Cookie/session storage</li>
+                                <li>Priority games and blacklist</li>
+                                <li>Discord bot/webhook settings</li>
+                                <li>Channel Points history</li>
+                                <li>Idle watch channel list</li>
+                            </ul>
+
+                            <div class="help-note">
+                                <span class="help-note-icon">💡</span>
+                                <div>To rename an account label shown in the header and Discord bot footer, go to <strong>System → Accounts</strong> and click the ✏️ edit button next to the account.</div>
+                            </div>
+                        </section>
+
+                        <!-- Channel Points -->
+                        <section class="help-section" id="help-section-points">
+                            <div class="help-section-header">
+                                <span class="help-section-icon">💰</span>
+                                <h2>Channel Points</h2>
+                            </div>
+                            <p>While the miner watches a channel, it also earns and tracks Channel Points automatically.</p>
+
+                            <div class="help-cards">
+                                <div class="help-card">
+                                    <div class="help-card-title">Auto-Claim Bonus Chests</div>
+                                    <p>When a bonus chest appears on a watched channel, the miner claims it immediately. No manual interaction required.</p>
+                                </div>
+                                <div class="help-card">
+                                    <div class="help-card-title">Live Balance</div>
+                                    <p>Your current point balance for the active channel is shown in real time at the top of the <strong>Main</strong> tab.</p>
+                                </div>
+                                <div class="help-card">
+                                    <div class="help-card-title">Full History</div>
+                                    <p>The <strong>Channel Points</strong> tab lists every earn/spend event across all watched channels with timestamps and amounts.</p>
+                                </div>
+                                <div class="help-card">
+                                    <div class="help-card-title">Idle Watch Points</div>
+                                    <p>Points are also earned while Idle Watch is active (even when no drops are available), so watching keeps accumulating value.</p>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Idle Watch -->
+                        <section class="help-section" id="help-section-idle">
+                            <div class="help-section-header">
+                                <span class="help-section-icon">📺</span>
+                                <h2>Idle Watch</h2>
+                            </div>
+                            <p>When no active drop campaigns are running, Idle Watch keeps the miner watching channels so you continue earning Channel Points.</p>
+
+                            <h3>Configuration</h3>
+                            <table class="help-table">
+                                <thead><tr><th>Setting</th><th>Description</th></tr></thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Manual channel list</strong></td>
+                                        <td>Add specific channel names in <strong>Settings → Idle Watch</strong>. The miner rotates through these when idle.</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Auto: use followed channels</strong></td>
+                                        <td>Enable this toggle to automatically fetch your live followed channels from Twitch and watch whichever are currently streaming.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <h3>Quick Controls</h3>
+                            <p>The <strong>Quick Controls</strong> panel in the Main tab shows <strong>Start Idle</strong> and <strong>Switch Channel</strong> buttons when Idle Watch is active, letting you manage it without navigating to Settings.</p>
+
+                            <div class="help-note">
+                                <span class="help-note-icon">💡</span>
+                                <div>Idle Watch is automatically paused when a drop campaign becomes available and resumes when mining finishes.</div>
+                            </div>
+                        </section>
+
+                        <!-- Discord Bot -->
+                        <section class="help-section" id="help-section-discord-bot">
+                            <div class="help-section-header" id="help-discord-bot-header">
+                                <span class="help-section-icon">🤖</span>
+                                <h2>Discord Bot</h2>
+                            </div>
+                            <p>Control your miner and receive live notifications directly from Discord. Supports multiple servers simultaneously.</p>
+
+                            <h3>Setup</h3>
+                            <div class="help-steps">
+                                <div class="help-step">
+                                    <div class="help-step-num">1</div>
+                                    <div class="help-step-body">
+                                        <strong>Generate a pairing code</strong>
+                                        <p>Go to <strong>Settings → Discord Bot</strong> and click <strong>Generate code</strong>. A code like <code>DROPS-A1B2C3D4</code> is shown (valid for 10 minutes).</p>
+                                    </div>
+                                </div>
+                                <div class="help-step">
+                                    <div class="help-step-num">2</div>
+                                    <div class="help-step-body">
+                                        <strong>Link from Discord</strong>
+                                        <p>In any Discord server or DM where the bot is present, run:</p>
+                                        <div class="help-code">/link http://your-server:8080 DROPS-A1B2C3D4</div>
+                                        <p>The bot replies with ✅ Connected when the link is established.</p>
+                                    </div>
+                                </div>
+                                <div class="help-step">
+                                    <div class="help-step-num">3</div>
+                                    <div class="help-step-body">
+                                        <strong>Set notification channels (optional)</strong>
+                                        <p>Run <code>/setchannel drops</code> and/or <code>/setchannel points</code> in the channels where you want alerts sent.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h3>Commands</h3>
+                            <table class="help-table">
+                                <thead><tr><th>Command</th><th>Description</th></tr></thead>
+                                <tbody>
+                                    <tr><td><code>/link &lt;url&gt; &lt;code&gt;</code></td><td>Connect this Discord server to your dashboard instance</td></tr>
+                                    <tr><td><code>/unlink</code></td><td>Disconnect the bot from this server</td></tr>
+                                    <tr><td><code>/setchannel drops</code></td><td>Send drop claim notifications to the current channel</td></tr>
+                                    <tr><td><code>/setchannel points</code></td><td>Send Channel Points notifications to the current channel</td></tr>
+                                    <tr><td><code>/dashboard</code></td><td>Post a live embed showing miner status (auto-updates every 30 s)</td></tr>
+                                </tbody>
+                            </table>
+
+                            <div class="help-note">
+                                <span class="help-note-icon">ℹ️</span>
+                                <div>The account name shown in the bot embed footer comes from <strong>System → Accounts</strong>. Use the ✏️ button to rename it. The pairing code expires in 10 minutes — generate a new one if it times out.</div>
+                            </div>
+                        </section>
+
+                        <!-- Discord Webhook -->
+                        <section class="help-section" id="help-section-webhook">
+                            <div class="help-section-header" id="help-discord-webhook-header">
+                                <span class="help-section-icon">🔔</span>
+                                <h2>Discord Webhook</h2>
+                            </div>
+                            <p>A simpler alternative to the bot — paste a webhook URL and get push notifications for drops and/or channel points without any bot setup.</p>
+
+                            <div class="help-steps">
+                                <div class="help-step">
+                                    <div class="help-step-num">1</div>
+                                    <div class="help-step-body">
+                                        <strong>Create a webhook in Discord</strong>
+                                        <p>Server Settings → Integrations → Webhooks → <strong>New Webhook</strong>. Copy the URL.</p>
+                                    </div>
+                                </div>
+                                <div class="help-step">
+                                    <div class="help-step-num">2</div>
+                                    <div class="help-step-body">
+                                        <strong>Paste the URL in Settings</strong>
+                                        <p>Go to <strong>Settings → Discord Notifications</strong>. There are separate URL fields for <em>Drop notifications</em> and <em>Channel Points notifications</em> — you can use the same or different webhooks.</p>
+                                    </div>
+                                </div>
+                                <div class="help-step">
+                                    <div class="help-step-num">3</div>
+                                    <div class="help-step-body">
+                                        <strong>Test it</strong>
+                                        <p>Click <strong>Test Webhook</strong> to send a sample message and confirm delivery.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="help-note">
+                                <span class="help-note-icon">ℹ️</span>
+                                <div>Webhook notifications include the account name in the footer so you can tell which instance claimed a drop when running multiple accounts.</div>
+                            </div>
+                        </section>
+
+                        <!-- Remote Access -->
+                        <section class="help-section" id="help-section-remote">
+                            <div class="help-section-header">
+                                <span class="help-section-icon">🌐</span>
+                                <h2>Remote Access</h2>
+                            </div>
+                            <p>Access the dashboard from any device by exposing the ports externally.</p>
+
+                            <h3>Ports</h3>
+                            <table class="help-table">
+                                <thead><tr><th>Instance</th><th>Port</th></tr></thead>
+                                <tbody>
+                                    <tr><td>Account 1</td><td><code>8080</code></td></tr>
+                                    <tr><td>Account 2</td><td><code>8082</code></td></tr>
+                                </tbody>
+                            </table>
+
+                            <h3>Access Options</h3>
+                            <div class="help-cards">
+                                <div class="help-card">
+                                    <div class="help-card-title">nginx Reverse Proxy</div>
+                                    <p>Recommended. Route a subdomain (e.g. <code>drops.example.com</code>) through nginx with SSL to port 8080. Keeps ports closed to the internet.</p>
+                                </div>
+                                <div class="help-card">
+                                    <div class="help-card-title">Direct Port Exposure</div>
+                                    <p>Open ports 8080 and 8082 in your firewall/router. Access via <code>http://your-ip:8080</code>. Use only on trusted networks or with a password set.</p>
+                                </div>
+                            </div>
+
+                            <h3>Password Protection</h3>
+                            <p>Set the <code>WEB_PASSWORD</code> environment variable before starting the miner to lock the dashboard with a password. Sessions last <strong>30 days</strong> via a secure cookie. To change the password after logging in, go to <strong>Settings → Security</strong>.</p>
+                            <div class="help-code">WEB_PASSWORD=mysecretpassword pm2 start miner.js</div>
+                        </section>
+
+                        <!-- Tips -->
+                        <section class="help-section" id="help-section-tips">
+                            <div class="help-section-header" id="help-features-header2">
+                                <span class="help-section-icon">💡</span>
+                                <h2>Tips &amp; Tricks</h2>
+                            </div>
+
+                            <div class="help-cards">
+                                <div class="help-card">
+                                    <div class="help-card-title">Force a campaign refresh</div>
+                                    <p>Click <strong>Check for Drops</strong> in the Main tab to immediately re-fetch campaigns from Twitch without restarting the process.</p>
+                                </div>
+                                <div class="help-card">
+                                    <div class="help-card-title">Restart safely</div>
+                                    <p>Use <strong>System → Restart Miner</strong>. If you're using PM2, it will restart automatically and resume mining within seconds.</p>
+                                </div>
+                                <div class="help-card">
+                                    <div class="help-card-title">Linked accounts required</div>
+                                    <p>Drops are only delivered if your game account is linked at <a href="https://www.twitch.tv/drops/campaigns" target="_blank">twitch.tv/drops/campaigns</a>. Check this first if drops aren't appearing in-game.</p>
+                                </div>
+                                <div class="help-card">
+                                    <div class="help-card-title">Account management</div>
+                                    <p>Add, remove, or rename accounts in <strong>System → Accounts</strong>. Labels appear in the header buttons, Discord bot footer, and webhook notifications.</p>
+                                </div>
+                            </div>
+
+                            <div class="help-links">
+                                <a href="https://github.com/SimpliAj/twitchdropsminer" target="_blank">📁 GitHub Repository</a>
+                                <a href="https://www.twitch.tv/drops/campaigns" target="_blank">🔗 Twitch Campaigns</a>
+                            </div>
+                        </section>
+
+                    </div><!-- end help-body -->
+                </div><!-- end help-layout -->
+            </div><!-- end help-wiki -->
         </div>
         <!-- Footer -->
         <footer class="footer">
