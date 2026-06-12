@@ -250,6 +250,164 @@
         <div id="settings-tab" class="tab-content">
             <div class="settings-container">
 
+                <!-- ─── ⚙️ System ─── -->
+                <div class="settings-category-label">⚙️ System</div>
+                <div class="settings-grid">
+                    <section class="settings-section">
+                        <h2 id="settings-general-header">General</h2>
+                        <label>
+                            <input type="checkbox" id="dark-mode"> Dark Mode
+                        </label>
+                        <label>
+                            Connection Quality:
+                            <input type="number" id="connection-quality" min="1" max="6" value="1">
+                        </label>
+                        <label>
+                            Minimum Refresh Interval (minutes):
+                            <input type="number" id="minimum-refresh-interval" min="1" max="1440" value="30">
+                        </label>
+                        <label>
+                            <span id="settings-proxy-label">Proxy URL:</span>
+                            <input type="text" id="proxy-url" placeholder="http://user:pass@host:port">
+                            <button id="set-proxy-btn" class="secondary-btn" title="Set and verify proxy">Set Proxy</button>
+                            <button id="verify-proxy-btn" class="secondary-btn" title="Test proxy connection">Verify</button>
+                        </label>
+                        <small class="help-text-inline" id="settings-proxy-help" style="margin-top: 5px;">Leave empty to disable. Supports HTTP/HTTPS/SOCKS.</small>
+                        <div id="proxy-verify-result" class="verify-result" style="display: none;"></div>
+                    </section>
+
+                    <section class="settings-section">
+                        <h2 id="settings-password-header">Login & Password</h2>
+                        <div id="pw-status-badge" style="margin-bottom:10px;font-size:.82rem;color:#adadb8"></div>
+                        <div class="form-row">
+                            <label id="pw-current-label" class="form-label">Current</label>
+                            <input type="password" id="pw-current" class="form-input" placeholder="Leave empty if none">
+                        </div>
+                        <div class="form-row">
+                            <label id="pw-new-label" class="form-label">New</label>
+                            <input type="password" id="pw-new" class="form-input" placeholder="New password (empty = disable)">
+                        </div>
+                        <div class="form-row">
+                            <label id="pw-confirm-label" class="form-label">Confirm</label>
+                            <input type="password" id="pw-new2" class="form-input" placeholder="Repeat new password">
+                        </div>
+                        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+                            <button id="pw-save-btn" class="action-button" style="flex:1">Save</button>
+                            <button id="pw-disable-btn" class="action-button" style="flex:1;background:transparent;border:1px solid #3d3d4a;color:#adadb8">Disable Login</button>
+                        </div>
+                        <div id="pw-result" style="margin-top:8px;font-size:.82rem;display:none"></div>
+                    </section>
+                </div>
+
+                <section class="settings-section" id="system-section">
+                    <h2 id="system-header">System</h2>
+                    <div class="system-card" id="accounts-card" style="margin-bottom:16px">
+                        <h3 id="system-accounts-header">Accounts</h3>
+                        <div id="accounts-list" class="accounts-list" style="margin-top:10px"></div>
+                        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+                            <input type="text" id="new-account-label" placeholder="Label (z.B. Main, Alt)" style="flex:1;min-width:120px;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:6px;padding:7px 10px;color:var(--text-primary);font-size:.85rem;outline:none">
+                            <button id="add-account-btn" class="btn-primary" style="width:auto;padding:7px 14px;font-size:.85rem">+ Add Account</button>
+                        </div>
+                        <div id="accounts-status" style="margin-top:8px;font-size:.82rem;display:none"></div>
+                    </div>
+                    <div class="system-controls">
+                        <div class="system-card">
+                            <h3 id="system-miner-header">Miner</h3>
+                            <p id="system-miner-desc">Reload campaigns and restart the mining loop.</p>
+                            <button id="system-reload-btn" class="btn-primary">Reload Campaigns</button>
+                        </div>
+                        <div class="system-card danger">
+                            <h3 id="system-restart-header">Restart</h3>
+                            <p id="system-restart-desc">Stop the miner process. PM2 will restart it automatically.</p>
+                            <button id="system-restart-btn" class="btn-danger">Restart Miner</button>
+                        </div>
+                        <div class="system-card">
+                            <h3 id="system-session-header">Session</h3>
+                            <p id="system-session-desc">Log out of the web interface.</p>
+                            <button id="system-logout-btn" class="btn-secondary">Logout</button>
+                        </div>
+                    </div>
+                    <div id="system-status" class="system-status"></div>
+                </section>
+
+                <!-- ─── 🔔 Notifications ─── -->
+                <div class="settings-category-label">🔔 Notifications</div>
+                <div class="settings-grid">
+                    <section class="settings-section" id="settings-notifications">
+                        <h2 id="settings-notifications-header">Browser</h2>
+                        <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                            <input type="checkbox" id="push-enabled-toggle">
+                            <span id="settings-push-enabled-label">Browser Push Notifications</span>
+                        </label>
+                        <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                            <input type="checkbox" id="push-sound-toggle">
+                            <span id="settings-push-sound-label">Notification Sound</span>
+                        </label>
+                        <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                            <input type="checkbox" id="campaign-alerts-toggle">
+                            <span id="settings-campaign-alerts-label">Campaign End Alerts (24h warning)</span>
+                        </label>
+                    </section>
+
+                    <section class="settings-section">
+                        <h2 id="settings-discord-notif-header">Discord Webhooks</h2>
+                        <label>
+                            <span id="settings-drops-webhook-label">Drop Claimed Webhook:</span>
+                            <div style="display:flex;gap:8px;">
+                                <input type="text" id="discord-webhook-drops" placeholder="https://discord.com/api/webhooks/..." style="flex:1;">
+                                <button id="test-drops-webhook-btn" class="secondary-btn" onclick="testWebhook('drops')" style="white-space:nowrap;">Test</button>
+                            </div>
+                        </label>
+                        <small class="help-text-inline" id="settings-drops-webhook-help" style="margin-bottom:10px;display:block;">Fires when a Twitch drop is successfully claimed.</small>
+                        <label>
+                            <span id="settings-points-webhook-label">Channel Points Webhook:</span>
+                            <div style="display:flex;gap:8px;">
+                                <input type="text" id="discord-webhook-points" placeholder="https://discord.com/api/webhooks/..." style="flex:1;">
+                                <button id="test-points-webhook-btn" class="secondary-btn" onclick="testWebhook('points')" style="white-space:nowrap;">Test</button>
+                            </div>
+                        </label>
+                        <small class="help-text-inline" id="settings-points-webhook-help">Fires when a bonus channel point chest is claimed.</small>
+                    </section>
+
+                    <section class="settings-section">
+                        <h2 id="settings-discord-bot-header">Discord Bot</h2>
+                        <p id="settings-discord-bot-desc" class="help-text">Pair a Discord bot to control TwitchDropsMiner via chat commands.</p>
+                        <div id="bot-status-badge" style="margin-bottom:12px;font-size:.85rem;"></div>
+                        <div id="bot-pair-code-box" style="display:none;background:#0e0e10;border:1px solid #3d3d4a;border-radius:8px;padding:12px;margin-bottom:12px;font-family:monospace;font-size:.85rem;line-height:1.8;">
+                            <div id="bot-pair-code-text"></div>
+                            <small id="settings-discord-bot-expires" style="color:#adadb8;font-size:.78rem;">(Expires in 10 min)</small>
+                        </div>
+                        <div id="bot-channel-config" style="display:none;background:#0e0e10;border:1px solid #3d3d4a;border-radius:8px;padding:12px;margin-bottom:12px;">
+                            <div id="settings-bot-notif-channels-label" style="font-size:.8rem;font-weight:600;color:#adadb8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Notification Channels</div>
+                            <div style="display:flex;flex-direction:column;gap:6px;">
+                                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                                    <div>
+                                        <span style="font-size:.82rem;color:#adadb8;">🎁 Drops: </span>
+                                        <span id="bot-drops-channel" style="font-family:monospace;font-size:.82rem;">—</span>
+                                    </div>
+                                    <button id="bot-drops-clear-btn" class="secondary-btn" style="display:none;font-size:.75rem;padding:2px 8px;color:#eb4a4a;border-color:#eb4a4a;" onclick="botClearChannel('drops')">Clear</button>
+                                </div>
+                                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                                    <div>
+                                        <span style="font-size:.82rem;color:#adadb8;">💰 Points: </span>
+                                        <span id="bot-points-channel" style="font-family:monospace;font-size:.82rem;">—</span>
+                                    </div>
+                                    <button id="bot-points-clear-btn" class="secondary-btn" style="display:none;font-size:.75rem;padding:2px 8px;color:#eb4a4a;border-color:#eb4a4a;" onclick="botClearChannel('points')">Clear</button>
+                                </div>
+                            </div>
+                            <p id="settings-bot-setchannel-hint" style="font-size:.75rem;color:#6b6b7b;margin:8px 0 0;">Use <code>/setchannel</code> in Discord to set channels.</p>
+                        </div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <button id="bot-generate-btn" class="secondary-btn" onclick="botGenerateCode()">Generate code</button>
+                            <button id="bot-revoke-btn" class="secondary-btn" style="display:none;color:#eb4a4a;border-color:#eb4a4a;" onclick="botRevoke()">Disconnect</button>
+                            <a id="bot-invite-link" href="https://discord.com/oauth2/authorize?client_id=1513555081218359506&permissions=84992&integration_type=0&scope=bot" target="_blank" rel="noopener" class="secondary-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
+                                <span id="settings-discord-bot-invite-text">Invite bot</span>
+                            </a>
+                        </div>
+                    </section>
+                </div>
+
                 <!-- ─── 🎮 Mining ─── -->
                 <div class="settings-category-label">🎮 Mining</div>
                 <div class="settings-grid">
@@ -361,163 +519,6 @@
                     </section>
                 </div>
 
-                <!-- ─── 🔔 Notifications ─── -->
-                <div class="settings-category-label">🔔 Notifications</div>
-                <div class="settings-grid">
-                    <section class="settings-section" id="settings-notifications">
-                        <h2 id="settings-notifications-header">Browser</h2>
-                        <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                            <input type="checkbox" id="push-enabled-toggle">
-                            <span id="settings-push-enabled-label">Browser Push Notifications</span>
-                        </label>
-                        <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                            <input type="checkbox" id="push-sound-toggle">
-                            <span id="settings-push-sound-label">Notification Sound</span>
-                        </label>
-                        <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                            <input type="checkbox" id="campaign-alerts-toggle">
-                            <span id="settings-campaign-alerts-label">Campaign End Alerts (24h warning)</span>
-                        </label>
-                    </section>
-
-                    <section class="settings-section">
-                        <h2 id="settings-discord-notif-header">Discord Webhooks</h2>
-                        <label>
-                            <span id="settings-drops-webhook-label">Drop Claimed Webhook:</span>
-                            <div style="display:flex;gap:8px;">
-                                <input type="text" id="discord-webhook-drops" placeholder="https://discord.com/api/webhooks/..." style="flex:1;">
-                                <button id="test-drops-webhook-btn" class="secondary-btn" onclick="testWebhook('drops')" style="white-space:nowrap;">Test</button>
-                            </div>
-                        </label>
-                        <small class="help-text-inline" id="settings-drops-webhook-help" style="margin-bottom:10px;display:block;">Fires when a Twitch drop is successfully claimed.</small>
-                        <label>
-                            <span id="settings-points-webhook-label">Channel Points Webhook:</span>
-                            <div style="display:flex;gap:8px;">
-                                <input type="text" id="discord-webhook-points" placeholder="https://discord.com/api/webhooks/..." style="flex:1;">
-                                <button id="test-points-webhook-btn" class="secondary-btn" onclick="testWebhook('points')" style="white-space:nowrap;">Test</button>
-                            </div>
-                        </label>
-                        <small class="help-text-inline" id="settings-points-webhook-help">Fires when a bonus channel point chest is claimed.</small>
-                    </section>
-
-                    <section class="settings-section">
-                        <h2 id="settings-discord-bot-header">Discord Bot</h2>
-                        <p id="settings-discord-bot-desc" class="help-text">Pair a Discord bot to control TwitchDropsMiner via chat commands.</p>
-                        <div id="bot-status-badge" style="margin-bottom:12px;font-size:.85rem;"></div>
-                        <div id="bot-pair-code-box" style="display:none;background:#0e0e10;border:1px solid #3d3d4a;border-radius:8px;padding:12px;margin-bottom:12px;font-family:monospace;font-size:.85rem;line-height:1.8;">
-                            <div id="bot-pair-code-text"></div>
-                            <small id="settings-discord-bot-expires" style="color:#adadb8;font-size:.78rem;">(Expires in 10 min)</small>
-                        </div>
-                        <div id="bot-channel-config" style="display:none;background:#0e0e10;border:1px solid #3d3d4a;border-radius:8px;padding:12px;margin-bottom:12px;">
-                            <div id="settings-bot-notif-channels-label" style="font-size:.8rem;font-weight:600;color:#adadb8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Notification Channels</div>
-                            <div style="display:flex;flex-direction:column;gap:6px;">
-                                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                                    <div>
-                                        <span style="font-size:.82rem;color:#adadb8;">🎁 Drops: </span>
-                                        <span id="bot-drops-channel" style="font-family:monospace;font-size:.82rem;">—</span>
-                                    </div>
-                                    <button id="bot-drops-clear-btn" class="secondary-btn" style="display:none;font-size:.75rem;padding:2px 8px;color:#eb4a4a;border-color:#eb4a4a;" onclick="botClearChannel('drops')">Clear</button>
-                                </div>
-                                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                                    <div>
-                                        <span style="font-size:.82rem;color:#adadb8;">💰 Points: </span>
-                                        <span id="bot-points-channel" style="font-family:monospace;font-size:.82rem;">—</span>
-                                    </div>
-                                    <button id="bot-points-clear-btn" class="secondary-btn" style="display:none;font-size:.75rem;padding:2px 8px;color:#eb4a4a;border-color:#eb4a4a;" onclick="botClearChannel('points')">Clear</button>
-                                </div>
-                            </div>
-                            <p id="settings-bot-setchannel-hint" style="font-size:.75rem;color:#6b6b7b;margin:8px 0 0;">Use <code>/setchannel</code> in Discord to set channels.</p>
-                        </div>
-                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                            <button id="bot-generate-btn" class="secondary-btn" onclick="botGenerateCode()">Generate code</button>
-                            <button id="bot-revoke-btn" class="secondary-btn" style="display:none;color:#eb4a4a;border-color:#eb4a4a;" onclick="botRevoke()">Disconnect</button>
-                            <a id="bot-invite-link" href="https://discord.com/oauth2/authorize?client_id=1513555081218359506&permissions=84992&integration_type=0&scope=bot" target="_blank" rel="noopener" class="secondary-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
-                                <span id="settings-discord-bot-invite-text">Invite bot</span>
-                            </a>
-                        </div>
-                    </section>
-                </div>
-
-                <!-- ─── ⚙️ System ─── -->
-                <div class="settings-category-label">⚙️ System</div>
-                <div class="settings-grid">
-                    <section class="settings-section">
-                        <h2 id="settings-general-header">General</h2>
-                        <label>
-                            <input type="checkbox" id="dark-mode"> Dark Mode
-                        </label>
-                        <label>
-                            Connection Quality:
-                            <input type="number" id="connection-quality" min="1" max="6" value="1">
-                        </label>
-                        <label>
-                            Minimum Refresh Interval (minutes):
-                            <input type="number" id="minimum-refresh-interval" min="1" max="1440" value="30">
-                        </label>
-                        <label>
-                            <span id="settings-proxy-label">Proxy URL:</span>
-                            <input type="text" id="proxy-url" placeholder="http://user:pass@host:port">
-                            <button id="set-proxy-btn" class="secondary-btn" title="Set and verify proxy">Set Proxy</button>
-                            <button id="verify-proxy-btn" class="secondary-btn" title="Test proxy connection">Verify</button>
-                        </label>
-                        <small class="help-text-inline" id="settings-proxy-help" style="margin-top: 5px;">Leave empty to disable. Supports HTTP/HTTPS/SOCKS.</small>
-                        <div id="proxy-verify-result" class="verify-result" style="display: none;"></div>
-                    </section>
-
-                    <section class="settings-section">
-                        <h2 id="settings-password-header">Login & Password</h2>
-                        <div id="pw-status-badge" style="margin-bottom:10px;font-size:.82rem;color:#adadb8"></div>
-                        <div class="form-row">
-                            <label id="pw-current-label" class="form-label">Current</label>
-                            <input type="password" id="pw-current" class="form-input" placeholder="Leave empty if none">
-                        </div>
-                        <div class="form-row">
-                            <label id="pw-new-label" class="form-label">New</label>
-                            <input type="password" id="pw-new" class="form-input" placeholder="New password (empty = disable)">
-                        </div>
-                        <div class="form-row">
-                            <label id="pw-confirm-label" class="form-label">Confirm</label>
-                            <input type="password" id="pw-new2" class="form-input" placeholder="Repeat new password">
-                        </div>
-                        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-                            <button id="pw-save-btn" class="action-button" style="flex:1">Save</button>
-                            <button id="pw-disable-btn" class="action-button" style="flex:1;background:transparent;border:1px solid #3d3d4a;color:#adadb8">Disable Login</button>
-                        </div>
-                        <div id="pw-result" style="margin-top:8px;font-size:.82rem;display:none"></div>
-                    </section>
-                </div>
-
-                <section class="settings-section" id="system-section">
-                    <h2 id="system-header">System</h2>
-                    <div class="system-card" id="accounts-card" style="margin-bottom:16px">
-                        <h3 id="system-accounts-header">Accounts</h3>
-                        <div id="accounts-list" class="accounts-list" style="margin-top:10px"></div>
-                        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-                            <input type="text" id="new-account-label" placeholder="Label (z.B. Main, Alt)" style="flex:1;min-width:120px;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:6px;padding:7px 10px;color:var(--text-primary);font-size:.85rem;outline:none">
-                            <button id="add-account-btn" class="btn-primary" style="width:auto;padding:7px 14px;font-size:.85rem">+ Add Account</button>
-                        </div>
-                        <div id="accounts-status" style="margin-top:8px;font-size:.82rem;display:none"></div>
-                    </div>
-                    <div class="system-controls">
-                        <div class="system-card">
-                            <h3 id="system-miner-header">Miner</h3>
-                            <p id="system-miner-desc">Reload campaigns and restart the mining loop.</p>
-                            <button id="system-reload-btn" class="btn-primary">Reload Campaigns</button>
-                        </div>
-                        <div class="system-card danger">
-                            <h3 id="system-restart-header">Restart</h3>
-                            <p id="system-restart-desc">Stop the miner process. PM2 will restart it automatically.</p>
-                            <button id="system-restart-btn" class="btn-danger">Restart Miner</button>
-                        </div>
-                        <div class="system-card">
-                            <h3 id="system-session-header">Session</h3>
-                            <p id="system-session-desc">Log out of the web interface.</p>
-                            <button id="system-logout-btn" class="btn-secondary">Logout</button>
-                        </div>
-                    </div>
-                    <div id="system-status" class="system-status"></div>
-                </section>
 
             </div>
         </div>
@@ -1003,7 +1004,7 @@
         </footer>
     </div>
 
-    <script src="/static/app.js?v=1749826000"></script>
+    <script src="/static/app.js?v=1749826500"></script>
 </body>
 
 </html>
