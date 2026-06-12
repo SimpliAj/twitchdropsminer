@@ -3375,10 +3375,17 @@ function renderWantedItems(tree) {
             if (idx < 0) return;
             const swapIdx = idx + dir;
             if (swapIdx < 0 || swapIdx >= games.length) return;
+            const nameA = games[idx], nameB = games[swapIdx];
             [games[idx], games[swapIdx]] = [games[swapIdx], games[idx]];
             state.settings.games_to_watch = [...games];
             saveSettings();
             renderGamesToWatch();
+            // Re-sort and re-render the wanted queue immediately
+            if (_wantedTree && _wantedTree.length > 0) {
+                const order = state.settings.games_to_watch;
+                _wantedTree.sort((a, b) => order.indexOf(a.game_name) - order.indexOf(b.game_name));
+                renderWantedItems([..._wantedTree]);
+            }
         };
         moveUpEl.addEventListener('click', (e) => { e.stopPropagation(); moveGame(-1); });
         moveDownEl.addEventListener('click', (e) => { e.stopPropagation(); moveGame(1); });
