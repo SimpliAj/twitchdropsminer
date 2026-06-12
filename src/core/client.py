@@ -674,7 +674,14 @@ class Twitch:
                 self.gui.status.update(_.t["gui"]["status"]["exiting"])
                 # we've been requested to exit the application
                 break
-            await self._state_change.wait()
+            if self._state is State.IDLE:
+                try:
+                    await asyncio.wait_for(self._state_change.wait(), timeout=3600)
+                except asyncio.TimeoutError:
+                    logger.info("Idle for 1 hour — refreshing campaigns")
+                    self.change_state(State.INVENTORY_FETCH)
+            else:
+                await self._state_change.wait()
 
     async def _fetch_followed_live_logins(self) -> list[str]:
         """Fetch logins of live channels the current user follows via Helix REST API."""
