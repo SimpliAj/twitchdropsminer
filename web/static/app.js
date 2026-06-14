@@ -1488,7 +1488,6 @@ function renderInventory() {
             }
             el.appendChild(makeElement('span', { class: 'campaign-game-name' }, campaign.game_name));
             el.appendChild(linkStatusBadge);
-            el.appendChild(farmToggle);
         });
 
         const campaignHeader = makeElement('div', { class: 'campaign-header' }, '', el => {
@@ -1508,6 +1507,7 @@ function renderInventory() {
         const campaignStatus = makeElement('div', { class: 'campaign-status' }, '', el => {
             el.appendChild(makeElement('span', {}, statusText));
             el.appendChild(makeElement('span', {}, `${campaign.claimed_drops} / ${campaign.total_drops} ${claimedCountText}`));
+            el.appendChild(farmToggle);
             el.appendChild(toggleBtn);
         });
 
