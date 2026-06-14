@@ -1450,6 +1450,36 @@ function renderInventory() {
                 el.addEventListener('click', () => window.open(campaign.link_url, '_blank'));
             });
 
+        // Farm toggle button
+        const gameName = campaign.game_name;
+        const watchList = state.settings.games_to_watch || [];
+        const watchListEmpty = watchList.length === 0;
+        const inWatchList = !watchListEmpty && watchList.some(g => g.toLowerCase() === gameName.toLowerCase());
+        const farmingActive = watchListEmpty || inWatchList;
+
+        const farmToggle = makeElement('button', {
+            class: `farm-toggle-btn ${farmingActive ? 'farming' : 'skipped'}`,
+            title: watchListEmpty ? 'All games farming (no filter active)' : farmingActive ? 'Farming — click to skip' : 'Skipped — click to farm'
+        }, farmingActive ? '⛏' : '⊘');
+
+        farmToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            let current = [...(state.settings.games_to_watch || [])];
+            const existingIdx = current.findIndex(g => g.toLowerCase() === gameName.toLowerCase());
+            if (watchListEmpty) {
+                // No filter active — "skip" this game means add all others to the list
+                const allGames = [...new Set(Object.values(state.campaigns).map(c => c.game_name))];
+                current = allGames.filter(g => g.toLowerCase() !== gameName.toLowerCase());
+            } else if (existingIdx >= 0) {
+                current.splice(existingIdx, 1);
+            } else {
+                current.push(gameName);
+            }
+            state.settings.games_to_watch = current;
+            saveSettings();
+            renderInventory();
+        });
+
         // Link account button
         const campaignGameDiv = makeElement('div', { class: 'campaign-game' }, '', el => {
             if (campaign.game_box_art_url) {
@@ -1458,6 +1488,7 @@ function renderInventory() {
             }
             el.appendChild(makeElement('span', { class: 'campaign-game-name' }, campaign.game_name));
             el.appendChild(linkStatusBadge);
+            el.appendChild(farmToggle);
         });
 
         const campaignHeader = makeElement('div', { class: 'campaign-header' }, '', el => {
