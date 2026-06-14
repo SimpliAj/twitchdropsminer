@@ -970,6 +970,38 @@ header h1 {
     box-shadow: 0 3px 6px rgba(255, 167, 38, 0.4);
 }
 
+.farm-toggle-btn {
+    margin-left: auto;
+    padding: 3px 9px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+}
+.farm-toggle-btn.farming {
+    background: rgba(61, 220, 132, 0.12);
+    border-color: rgba(61, 220, 132, 0.35);
+    color: #3ddc84;
+}
+.farm-toggle-btn.farming:hover {
+    background: rgba(220, 80, 80, 0.12);
+    border-color: rgba(220, 80, 80, 0.35);
+    color: #e05555;
+}
+.farm-toggle-btn.skipped {
+    background: rgba(220, 80, 80, 0.1);
+    border-color: rgba(220, 80, 80, 0.3);
+    color: #e05555;
+}
+.farm-toggle-btn.skipped:hover {
+    background: rgba(61, 220, 132, 0.12);
+    border-color: rgba(61, 220, 132, 0.35);
+    color: #3ddc84;
+}
+
 .link-account-btn {
     margin-top: 8px;
     padding: 8px 16px;
