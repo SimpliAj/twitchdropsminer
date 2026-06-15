@@ -1241,16 +1241,15 @@ header h1 {
 #wanted-items-list {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
 }
 
 .wq-row {
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
-    border-radius: 8px;
+    border-radius: 10px;
     overflow: hidden;
-    transition: border-color 0.15s;
-    /* override sortable-item flex row */
+    transition: border-color 0.15s, transform 0.1s;
     display: flex !important;
     flex-direction: column !important;
     align-items: stretch !important;
@@ -1258,18 +1257,37 @@ header h1 {
     margin-bottom: 0 !important;
     cursor: default !important;
     gap: 0 !important;
+    position: relative;
 }
+.wq-row::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--wq-cover, none) center/cover no-repeat;
+    filter: blur(20px) saturate(0.6);
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+    z-index: 0;
+}
+.wq-row.has-cover::before { opacity: 0.18; }
 .wq-row:first-child { border-color: var(--accent-color); }
 .wq-row.dragging { opacity: 0.4; }
-.wq-row:hover { border-color: #4d4d5a; }
+.wq-row:hover {
+    border-color: #6d6d7a;
+    transform: translateY(-1px);
+}
+.wq-row:first-child:hover { border-color: var(--accent-color); }
 
 .wq-header {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 9px 12px;
+    padding: 10px 14px;
     cursor: pointer;
     user-select: none;
+    position: relative;
+    z-index: 1;
 }
 
 .wq-drag-handle {
@@ -1294,11 +1312,12 @@ header h1 {
 }
 
 .wq-icon {
-    width: 24px;
-    height: 32px;
+    width: 28px;
+    height: 37px;
     object-fit: cover;
-    border-radius: 3px;
+    border-radius: 4px;
     flex-shrink: 0;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.4);
 }
 .wq-icon-placeholder {
     width: 24px;
@@ -3320,4 +3339,7 @@ header h1 {
     .analytics-stats-col,
     .analytics-history-col,
     .analytics-cp-full { grid-column: 1; grid-row: auto; max-height: none; }
+}
+@media (hover: none) {
+    .wq-row:hover { transform: none; }
 }
