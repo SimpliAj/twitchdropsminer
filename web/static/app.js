@@ -2,9 +2,9 @@
 // Socket.IO and API communication
 
 const _accParam = new URLSearchParams(location.search).get('acc');
-const ACC_NUM = _accParam === '2' ? 2 : 1;
-const API_BASE = ACC_NUM === 2 ? '/acc2' : '';
-const SOCKET_PATH = ACC_NUM === 2 ? '/acc2/socket.io' : '/socket.io';
+const ACC_NUM = _accParam && /^\d+$/.test(_accParam) ? parseInt(_accParam) : 1;
+const API_BASE = ACC_NUM > 1 ? `/acc${ACC_NUM}` : '';
+const SOCKET_PATH = ACC_NUM > 1 ? `/acc${ACC_NUM}/socket.io` : '/socket.io';
 
 function _todayStr() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 let _dailyPtsTotal = 0;
@@ -797,6 +797,9 @@ function setWatchingChannel(channelId) {
     Object.values(state.channels).forEach(ch => ch.watching = false);
     if (state.channels[channelId]) {
         state.channels[channelId].watching = true;
+        const game = state.channels[channelId].game;
+        const gameEl = document.getElementById('status-game');
+        if (gameEl && game) { gameEl.textContent = 'Game: ' + game; gameEl.style.display = ''; }
     }
     renderChannels();
 }
@@ -2967,42 +2970,63 @@ function switchTab(tabName) {
 
 // ==================== Event Listeners ====================
 
-function switchAccount(num) {
+function switchAccount(num, prefix) {
     if (num === ACC_NUM) return;
     const url = new URL(location.href);
-    if (num === 2) url.searchParams.set('acc', '2');
-    else url.searchParams.delete('acc');
+    if (num === 1) url.searchParams.delete('acc');
+    else url.searchParams.set('acc', String(num));
     location.href = url.toString();
 }
 
-const _accLabels = { 1: 'Account 1', 2: 'Account 2' };
-const _accLogins = { 1: null, 2: null };
+const _accLabels = {};
+const _accLogins = {};
 
 function applyUsernameVisibility() {
     const show = localStorage.getItem('show_twitch_usernames') !== 'false';
-    const btn1 = document.getElementById('acc-btn-1');
-    const btn2 = document.getElementById('acc-btn-2');
     const toggle = document.getElementById('show-twitch-usernames');
     if (toggle) toggle.checked = show;
-    if (btn1) btn1.textContent = show && _accLogins[1] ? _accLogins[1] : _accLabels[1];
-    if (btn2) btn2.textContent = show && _accLogins[2] ? _accLogins[2] : _accLabels[2];
+    document.querySelectorAll('.acc-tab-btn').forEach(btn => {
+        const num = parseInt(btn.dataset.accNum);
+        if (!num) return;
+        btn.textContent = show && _accLogins[num] ? _accLogins[num] : (_accLabels[num] || `Account ${num}`);
+    });
 }
 
 function initAccountTabs() {
-    const btn1 = document.getElementById('acc-btn-1');
-    const btn2 = document.getElementById('acc-btn-2');
-    if (!btn1 || !btn2) return;
-    if (ACC_NUM === 2) {
-        btn1.classList.remove('active-acc');
-        btn2.classList.add('active-acc');
-    }
-    const storeAndApply = (num, data) => {
-        if (data.login) _accLogins[num] = data.login;
-        else if (data.label && !data.label.startsWith('Instance')) _accLogins[num] = data.label;
+    fetch('/api/manage/instances').then(r => r.json()).then(instances => {
+        const container = document.getElementById('account-tabs');
+        if (!container) return;
+        container.innerHTML = '';
+        const currentPrefix = ACC_NUM === 1 ? '' : `/acc${ACC_NUM}`;
+        instances.forEach(inst => {
+            _accLabels[inst.num] = inst.label;
+            const btn = document.createElement('button');
+            btn.id = `acc-btn-${inst.num}`;
+            btn.className = 'acc-tab-btn' + (inst.prefix === currentPrefix ? ' active-acc' : '');
+            btn.dataset.accNum = inst.num;
+            btn.textContent = inst.label;
+            btn.onclick = () => switchAccount(inst.num, inst.prefix);
+            container.appendChild(btn);
+            const apiPrefix = inst.prefix || '';
+            fetch(apiPrefix + '/api/instance').then(r => r.json()).then(d => {
+                if (d.login) _accLogins[inst.num] = d.login;
+                applyUsernameVisibility();
+            }).catch(() => {});
+        });
         applyUsernameVisibility();
-    };
-    fetch('/api/instance').then(r => r.json()).then(d => storeAndApply(1, d)).catch(() => {});
-    fetch('/acc2/api/instance').then(r => r.json()).then(d => storeAndApply(2, d)).catch(() => {});
+    }).catch(() => {
+        const container = document.getElementById('account-tabs');
+        if (!container || container.children.length) return;
+        [1, 2].forEach(n => {
+            const btn = document.createElement('button');
+            btn.id = `acc-btn-${n}`;
+            btn.className = 'acc-tab-btn' + (ACC_NUM === n ? ' active-acc' : '');
+            btn.dataset.accNum = n;
+            btn.textContent = `Account ${n}`;
+            btn.onclick = () => switchAccount(n, n === 1 ? '' : `/acc${n}`);
+            container.appendChild(btn);
+        });
+    });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -3378,8 +3402,68 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load accounts when Settings tab is opened (system section now part of settings)
     document.querySelectorAll('.tab-button').forEach(btn => {
         btn.addEventListener('click', () => {
-            if (btn.dataset.tab === 'settings') loadAccounts();
+            if (btn.dataset.tab === 'settings') { loadAccounts(); loadInstances(); }
         });
+    });
+
+    // Instance management (only from instance 1)
+    async function loadInstances() {
+        const listEl = document.getElementById('instances-list');
+        const statusEl = document.getElementById('instances-status');
+        const banner = document.getElementById('proxy-rec-banner');
+        if (!listEl) return;
+        try {
+            const r = await fetch('/api/manage/instances');
+            if (!r.ok) return;
+            const instances = await r.json();
+            if (banner) banner.style.display = instances.length >= 3 ? '' : 'none';
+            listEl.innerHTML = '';
+            instances.forEach(inst => {
+                const row = document.createElement('div');
+                row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border-color)';
+                const statusDot = inst.status === 'online' ? '🟢' : '🔴';
+                const link = inst.prefix ? `/?acc=${inst.num}` : '/';
+                row.innerHTML = `<span style="font-size:.85rem;flex:1"><strong>${statusDot} ${inst.label}</strong> <span style="color:var(--text-secondary);font-size:.78rem">port ${inst.port}</span></span><a href="${link}" target="_blank" style="font-size:.78rem;color:var(--accent-color);text-decoration:none" title="Open instance">↗ Open</a>`;
+                if (inst.num > 2) {
+                    const del = document.createElement('button');
+                    del.textContent = '✕';
+                    del.title = 'Remove instance';
+                    del.style.cssText = 'background:none;border:1px solid #f55;color:#f55;border-radius:4px;padding:2px 7px;cursor:pointer;font-size:.8rem';
+                    del.onclick = async () => {
+                        if (!confirm(`Remove ${inst.label}? This stops the PM2 process.`)) return;
+                        del.disabled = true;
+                        const res = await fetch(`/api/manage/instances/${inst.name}`, { method: 'DELETE' });
+                        if (res.ok) { if (statusEl) { statusEl.textContent = `${inst.label} removed.`; statusEl.style.display = 'block'; statusEl.style.color = '#3ddc84'; } loadInstances(); initAccountTabs(); }
+                        else { del.disabled = false; alert('Remove failed'); }
+                    };
+                    row.appendChild(del);
+                }
+                listEl.appendChild(row);
+            });
+        } catch (e) {
+            if (statusEl) { statusEl.textContent = 'Error loading instances.'; statusEl.style.display = 'block'; }
+        }
+    }
+
+    document.getElementById('add-instance-btn')?.addEventListener('click', async () => {
+        const btn = document.getElementById('add-instance-btn');
+        const statusEl = document.getElementById('instances-status');
+        if (btn) { btn.disabled = true; btn.textContent = 'Starting...'; }
+        try {
+            const r = await fetch('/api/manage/instances', { method: 'POST' });
+            const d = await r.json();
+            if (d.success) {
+                if (statusEl) { statusEl.textContent = `${d.label} added on port ${d.port}. Nginx updated.`; statusEl.style.display = 'block'; statusEl.style.color = '#3ddc84'; }
+                loadInstances();
+                initAccountTabs();
+            } else {
+                alert(d.detail || 'Failed to add instance');
+            }
+        } catch (e) {
+            alert('Error: ' + e.message);
+        } finally {
+            if (btn) { btn.disabled = false; btn.textContent = '+ Add Instance'; }
+        }
     });
 });
 
