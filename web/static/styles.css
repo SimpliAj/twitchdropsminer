@@ -333,6 +333,13 @@ header h1 {
     grid-row: 4;
 }
 
+.login-panel.is-logged-in {
+    display: none;
+}
+.login-panel.is-logged-in ~ .channel-points-panel-main {
+    grid-column: 1 / -1;
+}
+
 .console-panel {
     grid-column: 1;
     grid-row: 5;
