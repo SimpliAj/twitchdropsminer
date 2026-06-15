@@ -185,6 +185,7 @@ _UNPROTECTED_PATHS = {
     "/favicon.ico", "/logo.png", "/manifest.json",
     "/api/pair/claim",  # Discord bot pairing — no auth needed to exchange code
     "/api/instance",   # Instance info for switcher — public
+    "/api/instances",  # Instances registry — public
 }
 _UNPROTECTED_PREFIXES = ("/static/",)
 
@@ -1312,6 +1313,49 @@ async def set_push_config(request: Request):
             cfg[key] = bool(body[key])
     _save_web_config(cfg)
     return {"ok": True}
+
+
+# ==================== Instance Management ====================
+
+_INSTANCES_FILE = Path(__file__).parent.parent.parent / "instances.json"
+
+def _load_instances_registry() -> dict:
+    if _INSTANCES_FILE.exists():
+        return json.loads(_INSTANCES_FILE.read_text())
+    return {"instances": [
+        {"n": 1, "port": 8080, "data_dir": "data", "pm2_name": "twitchdrops", "label": "Account 1"},
+        {"n": 2, "port": 8082, "data_dir": "data2", "pm2_name": "twitchdrops2", "label": "Account 2"},
+    ]}
+
+
+@app.get("/api/instances")
+async def get_instances():
+    registry = _load_instances_registry()
+    if len(registry.get("instances", [])) >= 3:
+        registry["proxy_warning"] = True
+    return registry
+
+
+@app.post("/api/instances")
+async def create_instance():
+    import subprocess
+    script = str(Path(__file__).parent.parent.parent / "scripts" / "manage_instance.sh")
+    result = subprocess.run(["bash", script, "create"], capture_output=True, text=True)
+    if result.returncode != 0:
+        raise HTTPException(status_code=500, detail=result.stderr)
+    return {"success": True, "instances": _load_instances_registry()["instances"]}
+
+
+@app.delete("/api/instances/{n}")
+async def remove_instance(n: int):
+    if n == 1:
+        raise HTTPException(status_code=400, detail="Cannot remove main instance")
+    import subprocess
+    script = str(Path(__file__).parent.parent.parent / "scripts" / "manage_instance.sh")
+    result = subprocess.run(["bash", script, "remove", str(n)], capture_output=True, text=True)
+    if result.returncode != 0:
+        raise HTTPException(status_code=500, detail=result.stderr)
+    return {"success": True, "instances": _load_instances_registry()["instances"]}
 
 
 # ==================== Socket.IO Events ====================

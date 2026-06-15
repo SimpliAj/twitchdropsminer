@@ -10,7 +10,7 @@
     <link rel="apple-touch-icon" href="/logo.png">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#9147ff">
-    <link rel="stylesheet" href="/static/styles.css?v=1749863000">
+    <link rel="stylesheet" href="/static/styles.css?v=1781526923">
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
 
@@ -33,8 +33,7 @@
             </div>
             <div class="header-meta">
                 <div id="account-tabs">
-                    <button id="acc-btn-1" onclick="switchAccount(1)" class="acc-tab-btn active-acc">Account 1</button>
-                    <button id="acc-btn-2" onclick="switchAccount(2)" class="acc-tab-btn">Account 2</button>
+                    <!-- dynamically populated by loadInstanceTabs() -->
                 </div>
             </div>
             <div class="status-bar">
@@ -304,11 +303,22 @@
 
                 <section class="settings-section" id="system-section">
                     <h2 id="system-header">System</h2>
+                    <div class="system-card" id="instances-card" style="margin-bottom:16px">
+                        <h3>Instances</h3>
+                        <p style="font-size:.82rem;color:var(--text-secondary);margin:4px 0 10px">Each instance runs a separate TDM process with its own Twitch session.</p>
+                        <div id="instances-list" style="margin-bottom:10px"></div>
+                        <div id="instances-proxy-warning" style="display:none;background:rgba(255,165,0,0.12);border:1px solid rgba(255,165,0,0.4);border-radius:6px;padding:8px 12px;margin-bottom:10px;font-size:.82rem;color:#ffa500">
+                            ⚠️ <strong>Proxy recommended:</strong> Running 3+ accounts from one IP increases Twitch ban risk. Add one proxy per account in Settings → Proxy.
+                        </div>
+                        <button id="add-instance-btn" class="btn-primary" style="width:auto;padding:7px 14px;font-size:.85rem">+ Add Instance</button>
+                        <div id="instances-status" style="margin-top:8px;font-size:.82rem;display:none"></div>
+                    </div>
                     <div class="system-card" id="accounts-card" style="margin-bottom:16px">
-                        <h3 id="system-accounts-header">Accounts</h3>
+                        <h3 id="system-accounts-header">Twitch Accounts</h3>
+                        <p style="font-size:.82rem;color:var(--text-secondary);margin:4px 0 10px">Switch between saved Twitch logins within this instance.</p>
                         <div id="accounts-list" class="accounts-list" style="margin-top:10px"></div>
                         <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-                            <input type="text" id="new-account-label" placeholder="Label (z.B. Main, Alt)" style="flex:1;min-width:120px;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:6px;padding:7px 10px;color:var(--text-primary);font-size:.85rem;outline:none">
+                            <input type="text" id="new-account-label" placeholder="Label (e.g. Main, Alt)" style="flex:1;min-width:120px;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:6px;padding:7px 10px;color:var(--text-primary);font-size:.85rem;outline:none">
                             <button id="add-account-btn" class="btn-primary" style="width:auto;padding:7px 14px;font-size:.85rem">+ Add Account</button>
                         </div>
                         <div id="accounts-status" style="margin-top:8px;font-size:.82rem;display:none"></div>

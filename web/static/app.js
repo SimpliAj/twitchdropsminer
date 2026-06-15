@@ -2,9 +2,9 @@
 // Socket.IO and API communication
 
 const _accParam = new URLSearchParams(location.search).get('acc');
-const ACC_NUM = _accParam === '2' ? 2 : 1;
-const API_BASE = ACC_NUM === 2 ? '/acc2' : '';
-const SOCKET_PATH = ACC_NUM === 2 ? '/acc2/socket.io' : '/socket.io';
+const ACC_NUM = _accParam ? parseInt(_accParam, 10) || 1 : 1;
+const API_BASE = ACC_NUM > 1 ? `/acc${ACC_NUM}` : '';
+const SOCKET_PATH = ACC_NUM > 1 ? `/acc${ACC_NUM}/socket.io` : '/socket.io';
 
 function _todayStr() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 let _dailyPtsTotal = 0;
@@ -2965,6 +2965,7 @@ function switchTab(tabName) {
         fetch(API_BASE + '/api/pair/status').then(r => r.json()).then(d => updateBotPairedUI(d.paired)).catch(() => {});
         loadPushConfig();
         loadAccounts();
+        loadInstances();
     }
 }
 
@@ -2973,39 +2974,57 @@ function switchTab(tabName) {
 function switchAccount(num) {
     if (num === ACC_NUM) return;
     const url = new URL(location.href);
-    if (num === 2) url.searchParams.set('acc', '2');
+    if (num > 1) url.searchParams.set('acc', String(num));
     else url.searchParams.delete('acc');
     location.href = url.toString();
 }
 
-const _accLabels = { 1: 'Account 1', 2: 'Account 2' };
-const _accLogins = { 1: null, 2: null };
+const _accLogins = {};
 
 function applyUsernameVisibility() {
     const show = localStorage.getItem('show_twitch_usernames') !== 'false';
-    const btn1 = document.getElementById('acc-btn-1');
-    const btn2 = document.getElementById('acc-btn-2');
     const toggle = document.getElementById('show-twitch-usernames');
     if (toggle) toggle.checked = show;
-    if (btn1) btn1.textContent = show && _accLogins[1] ? _accLogins[1] : _accLabels[1];
-    if (btn2) btn2.textContent = show && _accLogins[2] ? _accLogins[2] : _accLabels[2];
+    document.querySelectorAll('.acc-tab-btn[data-acc-n]').forEach(btn => {
+        const n = parseInt(btn.dataset.accN, 10);
+        const label = btn.dataset.accLabel || `Account ${n}`;
+        btn.textContent = show && _accLogins[n] ? _accLogins[n] : label;
+    });
 }
 
 function initAccountTabs() {
-    const btn1 = document.getElementById('acc-btn-1');
-    const btn2 = document.getElementById('acc-btn-2');
-    if (!btn1 || !btn2) return;
-    if (ACC_NUM === 2) {
-        btn1.classList.remove('active-acc');
-        btn2.classList.add('active-acc');
-    }
-    const storeAndApply = (num, data) => {
-        if (data.login) _accLogins[num] = data.login;
-        else if (data.label && !data.label.startsWith('Instance')) _accLogins[num] = data.label;
+    loadInstanceTabs();
+}
+
+async function loadInstanceTabs() {
+    const container = document.getElementById('account-tabs');
+    if (!container) return;
+    try {
+        const resp = await fetch('/api/instances');
+        const data = await resp.json();
+        const instances = data.instances || [];
+        container.innerHTML = '';
+        instances.forEach(inst => {
+            const btn = document.createElement('button');
+            btn.className = 'acc-tab-btn' + (inst.n === ACC_NUM ? ' active-acc' : '');
+            btn.dataset.accN = inst.n;
+            btn.dataset.accLabel = inst.label;
+            btn.textContent = inst.label;
+            btn.title = `Port ${inst.port}`;
+            btn.onclick = () => switchAccount(inst.n);
+            container.appendChild(btn);
+            // fetch login name for this instance
+            const apiPath = inst.n > 1 ? `/acc${inst.n}/api/instance` : '/api/instance';
+            fetch(apiPath).then(r => r.json()).then(d => {
+                if (d.login) _accLogins[inst.n] = d.login;
+                applyUsernameVisibility();
+            }).catch(() => {});
+        });
         applyUsernameVisibility();
-    };
-    fetch('/api/instance').then(r => r.json()).then(d => storeAndApply(1, d)).catch(() => {});
-    fetch('/acc2/api/instance').then(r => r.json()).then(d => storeAndApply(2, d)).catch(() => {});
+    } catch(e) {
+        // fallback: render current instance button only
+        container.innerHTML = `<button class="acc-tab-btn active-acc" data-acc-n="${ACC_NUM}">Account ${ACC_NUM}</button>`;
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -3247,6 +3266,82 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchAndApplyTranslations();
 
 
+    // Instance management
+    async function loadInstances() {
+        const listEl = document.getElementById('instances-list');
+        const statusEl = document.getElementById('instances-status');
+        const warningEl = document.getElementById('instances-proxy-warning');
+        if (!listEl) return;
+        try {
+            const r = await fetch('/api/instances');
+            const data = await r.json();
+            if (warningEl) warningEl.style.display = data.proxy_warning ? 'block' : 'none';
+            const instances = data.instances || [];
+            listEl.innerHTML = '';
+            instances.forEach(inst => {
+                const row = document.createElement('div');
+                row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border-color);';
+                const isActive = inst.n === ACC_NUM;
+                const namePart = document.createElement('span');
+                namePart.style.cssText = 'flex:1;font-size:.88rem;font-weight:600;';
+                namePart.textContent = inst.label;
+                const portBadge = document.createElement('span');
+                portBadge.style.cssText = 'font-size:.75rem;color:var(--text-secondary);background:var(--bg-secondary);padding:2px 7px;border-radius:4px;';
+                portBadge.textContent = `:${inst.port}`;
+                const switchBtn = document.createElement('button');
+                switchBtn.className = isActive ? 'btn-secondary' : 'btn-primary';
+                switchBtn.style.cssText = 'padding:4px 10px;font-size:.8rem;width:auto;';
+                switchBtn.textContent = isActive ? 'Active' : 'Switch';
+                switchBtn.disabled = isActive;
+                switchBtn.onclick = () => switchAccount(inst.n);
+                row.appendChild(namePart);
+                row.appendChild(portBadge);
+                row.appendChild(switchBtn);
+                if (inst.n > 1) {
+                    const rmBtn = document.createElement('button');
+                    rmBtn.className = 'btn-secondary';
+                    rmBtn.style.cssText = 'padding:4px 10px;font-size:.8rem;width:auto;color:#e53;border-color:#e53;';
+                    rmBtn.textContent = '✕';
+                    rmBtn.title = 'Remove instance';
+                    rmBtn.onclick = async () => {
+                        if (!confirm(`Remove Account ${inst.n}? The process will be stopped. Data is preserved.`)) return;
+                        rmBtn.disabled = true;
+                        if (statusEl) { statusEl.textContent = `Removing instance ${inst.n}...`; statusEl.style.display = 'block'; }
+                        const res = await fetch(`/api/instances/${inst.n}`, { method: 'DELETE' });
+                        if (res.ok) {
+                            if (statusEl) { statusEl.textContent = `Instance ${inst.n} removed. Reloading...`; }
+                            setTimeout(() => { loadInstanceTabs(); loadInstances(); if (statusEl) statusEl.style.display = 'none'; }, 2000);
+                        } else {
+                            const err = await res.json().catch(() => ({}));
+                            if (statusEl) { statusEl.textContent = `Error: ${err.detail || 'Failed'}`; statusEl.style.display = 'block'; }
+                            rmBtn.disabled = false;
+                        }
+                    };
+                    row.appendChild(rmBtn);
+                }
+                listEl.appendChild(row);
+            });
+        } catch(e) {
+            if (listEl) listEl.textContent = 'Failed to load instances.';
+        }
+    }
+
+    document.getElementById('add-instance-btn')?.addEventListener('click', async () => {
+        const btn = document.getElementById('add-instance-btn');
+        const statusEl = document.getElementById('instances-status');
+        if (btn) btn.disabled = true;
+        if (statusEl) { statusEl.textContent = 'Creating new instance... (this may take ~10s)'; statusEl.style.display = 'block'; }
+        const res = await fetch('/api/instances', { method: 'POST' });
+        if (res.ok) {
+            if (statusEl) { statusEl.textContent = 'Instance created! Reloading...'; }
+            setTimeout(() => { loadInstanceTabs(); loadInstances(); if (statusEl) statusEl.style.display = 'none'; }, 3000);
+        } else {
+            const err = await res.json().catch(() => ({}));
+            if (statusEl) { statusEl.textContent = `Error: ${err.detail || 'Failed to create instance'}`; statusEl.style.display = 'block'; }
+        }
+        if (btn) btn.disabled = false;
+    });
+
     // Account management
     async function loadAccounts() {
         const listEl = document.getElementById('accounts-list');
@@ -3381,7 +3476,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load accounts when Settings tab is opened (system section now part of settings)
     document.querySelectorAll('.tab-button').forEach(btn => {
         btn.addEventListener('click', () => {
-            if (btn.dataset.tab === 'settings') loadAccounts();
+            if (btn.dataset.tab === 'settings') { loadAccounts(); loadInstances(); }
         });
     });
 });
