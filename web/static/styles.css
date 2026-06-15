@@ -1041,6 +1041,26 @@ header h1 {
     font-style: italic;
 }
 
+.campaign-progress-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 15px 8px;
+    font-size: 0.8rem;
+}
+.campaign-remaining-drops {
+    color: var(--accent-color);
+    font-weight: 600;
+}
+.campaign-time-est {
+    color: var(--text-secondary);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 1px 7px;
+    font-size: 0.75rem;
+}
+
 .campaign-drops {
     padding: 15px;
 }
