@@ -638,7 +638,7 @@ header h1 {
 
 /* Console Output */
 .console-output {
-    height: 400px;
+    max-height: 300px;
     overflow-y: auto;
     font-family: 'Courier New', monospace;
     font-size: 12px;
@@ -650,6 +650,33 @@ header h1 {
 
 .console-output div {
     margin-bottom: 2px;
+}
+
+.panel-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+.panel-header-row h2 { margin-bottom: 0; }
+
+.collapse-toggle {
+    background: none;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    transition: all 0.15s;
+    line-height: 1;
+}
+.collapse-toggle:hover {
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+.collapse-toggle[aria-expanded="true"] {
+    transform: rotate(180deg);
 }
 
 /* Channels List */

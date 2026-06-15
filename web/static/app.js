@@ -637,6 +637,16 @@ async function updateStats() {
         if (totalEl) totalEl.textContent = drops.length;
     } catch(e) {}
 }
+
+function toggleConsole() {
+    const output = document.getElementById('console-output');
+    const toggle = document.getElementById('console-toggle');
+    if (!output || !toggle) return;
+    const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
+    output.style.display = isExpanded ? 'none' : 'block';
+    toggle.setAttribute('aria-expanded', isExpanded ? 'false' : 'true');
+}
+
 function renderChannelPointsTab() {
     const emptyEl = document.getElementById('cp-tab-empty');
     const listEl = document.getElementById('cp-tab-list');
