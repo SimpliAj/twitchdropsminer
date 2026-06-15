@@ -959,6 +959,7 @@ function updateDropProgress(data) {
     if (thumbEl) {
         if (data.game_icon) {
             thumbEl.src = data.game_icon.replace('{width}', '60').replace('{height}', '80');
+            thumbEl.alt = data.drop_name || 'Game thumbnail';
             thumbEl.style.display = 'block';
         } else {
             thumbEl.style.display = 'none';
