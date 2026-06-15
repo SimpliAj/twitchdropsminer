@@ -955,14 +955,16 @@ function updateDropProgress(data) {
 
     document.getElementById('drop-name').textContent = data.drop_name;
 
-    // Make campaign name clickable with link to Twitch
+    // Make campaign name clickable — opens drops modal
     const dropGameEl = document.getElementById('drop-game');
     if (data.campaign_id) {
-        const campaignUrl = `https://www.twitch.tv/drops/campaigns?dropID=${data.campaign_id}`;
-        dropGameEl.replaceChildren(
-            makeElement('a', { href: campaignUrl, target: '_blank', rel: 'noopener noreferrer', class: 'drop-campaign-link' }, data.campaign_name),
-            document.createTextNode(` (${data.game_name})`),
-        );
+        const link = document.createElement('span');
+        link.className = 'drop-campaign-link';
+        link.style.cursor = 'pointer';
+        link.title = 'View campaign drops';
+        link.textContent = data.campaign_name;
+        link.addEventListener('click', () => showCampaignDropsModal(data.campaign_id, false));
+        dropGameEl.replaceChildren(link, document.createTextNode(` (${data.game_name})`));
     } else {
         dropGameEl.textContent = `${data.campaign_name} (${data.game_name})`;
     }
@@ -993,6 +995,11 @@ function updateDropProgress(data) {
             ? `${unclaimed.length} drop${unclaimed.length !== 1 ? 's' : ''} left${timeStr ? ' · ' + timeStr : ''}`
             : '✓ All drops claimed';
         dropsLeftEl.style.display = '';
+        dropsLeftEl.style.cursor = unclaimed.length > 0 ? 'pointer' : '';
+        dropsLeftEl.title = unclaimed.length > 0 ? 'View remaining drops' : '';
+        dropsLeftEl.onclick = unclaimed.length > 0
+            ? () => showCampaignDropsModal(data.campaign_id, true)
+            : null;
     } else {
         dropsLeftEl.style.display = 'none';
     }
@@ -3622,6 +3629,121 @@ function renderWantedItems(tree) {
 
         container.appendChild(row);
     });
+}
+
+function showCampaignDropsModal(campaignId, onlyRemaining) {
+    const campaign = campaignId && state.campaigns
+        ? Object.values(state.campaigns).find(c => c.id === campaignId)
+        : null;
+    if (!campaign) return;
+
+    document.getElementById('campaign-drops-modal')?.remove();
+    const overlay = document.createElement('div');
+    overlay.id = 'campaign-drops-modal';
+    overlay.className = 'wq-modal-overlay';
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+
+    const modal = document.createElement('div');
+    modal.className = 'wq-modal cdm-modal';
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'wq-modal-close';
+    closeBtn.textContent = '×';
+    closeBtn.addEventListener('click', () => overlay.remove());
+    modal.appendChild(closeBtn);
+
+    const title = document.createElement('div');
+    title.className = 'wq-modal-title';
+    title.textContent = `${campaign.name}`;
+    modal.appendChild(title);
+
+    const sub = document.createElement('div');
+    sub.style.cssText = 'font-size:.78rem;color:var(--text-secondary);margin:-10px 0 14px';
+    sub.textContent = `${campaign.game_name} · ${onlyRemaining ? 'Remaining drops' : 'All drops'}`;
+    modal.appendChild(sub);
+
+    const drops = onlyRemaining
+        ? (campaign.drops || []).filter(d => !d.is_claimed)
+        : (campaign.drops || []);
+
+    if (drops.length === 0) {
+        const empty = document.createElement('div');
+        empty.style.cssText = 'text-align:center;color:var(--text-secondary);padding:20px 0;font-size:.88rem';
+        empty.textContent = onlyRemaining ? '✓ All drops claimed!' : 'No drops in this campaign.';
+        modal.appendChild(empty);
+    } else {
+        const list = document.createElement('div');
+        list.className = 'wq-modal-benefits';
+        drops.forEach(drop => {
+            const item = document.createElement('div');
+            item.className = 'wq-modal-benefit cdm-drop-item';
+
+            const header = document.createElement('div');
+            header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;width:100%;gap:8px;margin-bottom:4px';
+
+            const dropName = document.createElement('span');
+            dropName.style.cssText = 'font-size:.88rem;font-weight:600;color:var(--text-primary)';
+            dropName.textContent = drop.name;
+            header.appendChild(dropName);
+
+            const badge = document.createElement('span');
+            badge.style.cssText = 'font-size:.72rem;padding:2px 7px;border-radius:20px;white-space:nowrap;flex-shrink:0';
+            if (drop.is_claimed) {
+                badge.style.background = 'rgba(61,220,132,0.15)';
+                badge.style.color = '#3ddc84';
+                badge.textContent = '✓ Claimed';
+            } else if (drop.can_claim) {
+                badge.style.background = 'rgba(255,200,0,0.15)';
+                badge.style.color = '#ffc800';
+                badge.textContent = '⚡ Claim now';
+            } else {
+                const pct = drop.required_minutes > 0 ? Math.round((drop.current_minutes / drop.required_minutes) * 100) : 0;
+                const minsLeft = Math.max(0, drop.required_minutes - drop.current_minutes);
+                badge.style.background = 'rgba(145,70,255,0.15)';
+                badge.style.color = 'var(--accent-color)';
+                badge.textContent = `${pct}% · ${minsLeft}min left`;
+            }
+            header.appendChild(badge);
+            item.appendChild(header);
+
+            if (!drop.is_claimed && drop.required_minutes > 0) {
+                const pct = Math.min(100, (drop.current_minutes / drop.required_minutes) * 100);
+                const bar = document.createElement('div');
+                bar.style.cssText = 'width:100%;height:3px;background:var(--bg-secondary);border-radius:2px;overflow:hidden;margin-bottom:6px';
+                const fill = document.createElement('div');
+                fill.style.cssText = `height:100%;width:${pct}%;background:var(--accent-color);border-radius:2px`;
+                bar.appendChild(fill);
+                item.appendChild(bar);
+            }
+
+            if (drop.benefits && drop.benefits.length > 0) {
+                const bRow = document.createElement('div');
+                bRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px';
+                drop.benefits.forEach(b => {
+                    const bItem = document.createElement('div');
+                    bItem.style.cssText = 'display:flex;align-items:center;gap:6px';
+                    if (b.image_url) {
+                        const img = document.createElement('img');
+                        img.src = b.image_url; img.alt = b.name;
+                        img.style.cssText = 'width:40px;height:40px;border-radius:6px;object-fit:cover;flex-shrink:0';
+                        bItem.appendChild(img);
+                    }
+                    const bName = document.createElement('span');
+                    bName.style.cssText = 'font-size:.78rem;color:var(--text-secondary)';
+                    bName.textContent = b.name;
+                    bItem.appendChild(bName);
+                    bRow.appendChild(bItem);
+                });
+                item.appendChild(bRow);
+            }
+
+            list.appendChild(item);
+        });
+        modal.appendChild(list);
+    }
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
 }
 
 function showRewardModal(drop) {
