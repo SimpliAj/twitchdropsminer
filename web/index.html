@@ -697,6 +697,15 @@
                                 </tbody>
                             </table>
 
+                            <h3>Inventory &amp; Campaign Drops</h3>
+                            <p>The <strong>Inventory</strong> tab shows all campaigns as cards in a 3-column grid.</p>
+                            <ul class="help-list">
+                                <li><strong>Click a campaign name</strong> → popup showing all drops with images, progress bars, and status</li>
+                                <li><strong>Click ▸ N drops left</strong> → same popup filtered to unclaimed drops only (only shown for linked campaigns)</li>
+                                <li><strong>⛏ Farming / ⊘ Skip toggle</strong> → add or remove the game from your watch list without going to Settings</li>
+                                <li>Expired or fully-claimed games are <strong>automatically removed</strong> from the Wanted Queue</li>
+                            </ul>
+
                             <div class="help-note help-note-warn" id="help-notes-header">
                                 <span class="help-note-icon">⚠️</span>
                                 <div>Do <strong>not</strong> watch streams on the same Twitch account while mining. Twitch only counts watch time from one source at a time.</div>
@@ -709,13 +718,19 @@
                                 <span class="help-section-icon">👥</span>
                                 <h2>Multi-Account</h2>
                             </div>
-                            <p>Run two Twitch accounts simultaneously, each with fully isolated data, settings, and sessions.</p>
+                            <p>Run unlimited Twitch accounts simultaneously, each with fully isolated data, settings, and sessions.</p>
+
+                            <div class="help-note">
+                                <span class="help-note-icon">➕</span>
+                                <div>Go to <strong>System → Instances</strong> to add or remove accounts from the dashboard — no config files needed. Nginx updates automatically.</div>
+                            </div>
 
                             <table class="help-table">
-                                <thead><tr><th>Instance</th><th>Port</th><th>Switch</th></tr></thead>
+                                <thead><tr><th>Instance</th><th>Port</th><th>URL</th></tr></thead>
                                 <tbody>
-                                    <tr><td>Account 1</td><td><code>8080</code></td><td>Click <strong>Account 1</strong> button in the header</td></tr>
-                                    <tr><td>Account 2</td><td><code>8082</code></td><td>Click <strong>Account 2</strong> button in the header</td></tr>
+                                    <tr><td>Account 1</td><td><code>8080</code></td><td><code>/</code></td></tr>
+                                    <tr><td>Account 2</td><td><code>8082</code></td><td><code>/acc2/</code></td></tr>
+                                    <tr><td>Account N</td><td><code>8080+(N-1)×2</code></td><td><code>/accN/</code></td></tr>
                                 </tbody>
                             </table>
 
@@ -727,6 +742,11 @@
                                 <li>Channel Points history</li>
                                 <li>Idle watch channel list</li>
                             </ul>
+
+                            <div class="help-note">
+                                <span class="help-note-icon">⚠️</span>
+                                <div>Running 3+ instances on one IP may cause Twitch to flag the accounts. Use proxies if you run more than 2 accounts.</div>
+                            </div>
 
                             <div class="help-note">
                                 <span class="help-note-icon">💡</span>
