@@ -162,9 +162,12 @@
                 </section>
 
                 <!-- Console Output -->
-                <section class="panel console-panel">
-                    <h2 id="console-header">Logs</h2>
-                    <div id="console-output" class="console-output"></div>
+                <section class="panel console-panel" id="console-panel-section">
+                    <div class="panel-header-row">
+                        <h2 id="console-header">Logs</h2>
+                        <button class="collapse-toggle" id="console-toggle" onclick="toggleConsole()" title="Toggle log output" aria-expanded="false">▼</button>
+                    </div>
+                    <div id="console-output" class="console-output" style="display:none;"></div>
                 </section>
 
                 <!-- Channels List -->
