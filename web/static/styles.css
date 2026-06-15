@@ -1023,10 +1023,35 @@ header h1 {
 }
 
 .campaign-status {
-    padding: 10px 15px;
+    padding: 8px 15px;
     font-size: 12px;
     display: flex;
+    align-items: center;
     justify-content: space-between;
+    gap: 8px;
+    border-top: 1px solid var(--border-color);
+}
+.campaign-status-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+.campaign-status-text {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    white-space: nowrap;
+}
+.campaign-claimed-count {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    white-space: nowrap;
+}
+.campaign-status-btns {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
 }
 
 .campaign-timing {
