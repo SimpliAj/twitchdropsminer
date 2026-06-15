@@ -1,0 +1,6 @@
+{
+  "instances": [
+    {"n": 1, "port": 8080, "data_dir": "data", "pm2_name": "twitchdrops", "label": "Account 1"},
+    {"n": 2, "port": 8082, "data_dir": "data2", "pm2_name": "twitchdrops2", "label": "Account 2"}
+  ]
+}
