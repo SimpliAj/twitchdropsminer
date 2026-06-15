@@ -955,6 +955,16 @@ function updateDropProgress(data) {
 
     document.getElementById('drop-name').textContent = data.drop_name;
 
+    const thumbEl = document.getElementById('drop-game-thumb');
+    if (thumbEl) {
+        if (data.game_icon) {
+            thumbEl.src = data.game_icon.replace('{width}', '60').replace('{height}', '80');
+            thumbEl.style.display = 'block';
+        } else {
+            thumbEl.style.display = 'none';
+        }
+    }
+
     // Make campaign name clickable — opens drops modal
     const dropGameEl = document.getElementById('drop-game');
     if (data.campaign_id) {

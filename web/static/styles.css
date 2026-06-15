@@ -559,6 +559,26 @@ header h1 {
     margin-bottom: 15px;
 }
 
+.drop-info-layout {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.drop-game-thumb {
+    width: 60px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 6px;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+.drop-info-body {
+    flex: 1;
+    min-width: 0;
+}
+
 .drop-campaign-link {
     color: #9147ff;
     text-decoration: none;
@@ -2804,6 +2824,8 @@ header h1 {
         height: 48px !important;
     }
 
+    .drop-game-thumb { display: none !important; }
+
     /* Compact campaign progress on mobile */
     .progress-panel {
         padding: 14px 16px 16px;
@@ -3060,6 +3082,8 @@ header h1 {
     .wq-icon, .wq-icon img { width: 22px !important; height: 29px !important; }
     .wq-count { font-size: 0.72rem; padding: 1px 6px; }
     .wq-body { padding: 6px 10px; }
+    .drop-info-layout { gap: 10px; }
+    .drop-game-thumb { width: 44px; height: 59px; border-radius: 4px; }
 }
 
 /* Benefit with image */
