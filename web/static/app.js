@@ -1504,6 +1504,22 @@ function renderInventory() {
         const dropCount = campaign.drops.filter(d => !filters.show_sub_drops ? (d.required_subs || 0) === 0 : true).length;
         const toggleBtn = makeElement('button', { class: 'inv-toggle-btn' }, `▸ ${dropCount} drop${dropCount !== 1 ? 's' : ''}`);
 
+        // Remaining drops + time estimate
+        const unclaimedDrops = campaign.drops.filter(d => !d.is_claimed && (!filters.show_sub_drops ? (d.required_subs || 0) === 0 : true));
+        const remainingMins = unclaimedDrops.reduce((sum, d) => sum + Math.max(0, (d.required_minutes || 0) - (d.current_minutes || 0)), 0);
+        const formatTime = mins => {
+            if (mins <= 0) return null;
+            const h = Math.floor(mins / 60), m = Math.round(mins % 60);
+            return h > 0 ? `~${h}h ${m}m` : `~${m}m`;
+        };
+        const timeEst = formatTime(remainingMins);
+        const progressInfo = unclaimedDrops.length > 0
+            ? makeElement('div', { class: 'campaign-progress-info' }, '', el => {
+                el.appendChild(makeElement('span', { class: 'campaign-remaining-drops' }, `${unclaimedDrops.length} drop${unclaimedDrops.length !== 1 ? 's' : ''} left`));
+                if (timeEst) el.appendChild(makeElement('span', { class: 'campaign-time-est' }, timeEst));
+            })
+            : null;
+
         const campaignStatus = makeElement('div', { class: 'campaign-status' }, '', el => {
             el.appendChild(makeElement('span', {}, statusText));
             el.appendChild(makeElement('span', {}, `${campaign.claimed_drops} / ${campaign.total_drops} ${claimedCountText}`));
@@ -1521,6 +1537,7 @@ function renderInventory() {
         });
 
         card.replaceChildren(campaignHeader, campaignStatus);
+        if (progressInfo) card.appendChild(progressInfo);
 
         // Campaign timing
         if (liveStatus.active && campaign.ends_at) {
