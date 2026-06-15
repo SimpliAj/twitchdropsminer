@@ -2639,10 +2639,10 @@ header h1 {
 
     .main-grid { gap: 12px; }
     .panel { padding: 14px; }
+    .stat-icon { display: none; }
     .stat-card { padding: 10px 6px 8px; }
-    .stat-icon { font-size: 1rem; height: 1.3rem; }
-    .stat-value { font-size: 1.3rem; }
-    .stat-label { font-size: 0.62rem; min-height: 1.8em; }
+    .stat-value { font-size: 1.2rem; }
+    .stat-label { font-size: 0.6rem; min-height: auto; }
 
     .qc-status {
         display: none;
@@ -2896,7 +2896,7 @@ header h1 {
 
 @media (max-width: 600px) {
     .quick-controls-row {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
     }
 
     #account-tabs {
@@ -2994,9 +2994,8 @@ header h1 {
         margin-bottom: 6px;
     }
     .stat-card { padding: 8px 4px 6px; }
-    .stat-icon { font-size: 0.9rem; height: 1.2rem; margin-bottom: 3px; }
-    .stat-value { font-size: 1.1rem; }
-    .stat-label { font-size: 0.58rem; min-height: 1.6em; margin-top: 2px; }
+    .stat-value { font-size: 1rem; }
+    .stat-label { font-size: 0.56rem; min-height: auto; margin-top: 2px; }
 }
 
 .skip-game-btn {
