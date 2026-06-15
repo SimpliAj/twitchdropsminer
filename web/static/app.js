@@ -1431,48 +1431,8 @@ function renderInventory() {
             statusText = t.gui?.inventory?.status?.expired || 'Expired';
         }
 
-        const claimedText = t.gui?.inventory?.status?.claimed || 'Claimed';
         const claimedCountText = t.gui?.inventory?.claimed_drops || 'claimed';
 
-        // Build drops elements
-        const dropsEl = makeElement('div', { class: 'campaign-drops' });
-        campaign.drops.forEach(drop => {
-            if (!filters.show_sub_drops && (drop.required_subs || 0) > 0) return;
-            const dropItem = makeElement('div', { class: `drop-item${drop.is_claimed ? ' claimed' : ''}${drop.can_claim ? ' active' : ''}` });
-            const subBadge = (drop.required_subs || 0) > 0
-                ? makeElement('span', { class: 'sub-required-badge', title: `Requires ${drop.required_subs} subscription(s)` }, '★ Sub')
-                : null;
-            dropItem.appendChild(
-                makeElement('div', { class: 'drop-item-header' }, '', el =>
-                    el.appendChild(makeElement('div', { class: 'drop-item-info' }, '', el2 =>
-                        el2.appendChild(makeElement('div', {}, '', el3 => {
-                            el3.appendChild(makeElement('strong', {}, drop.name));
-                            if (subBadge) el3.appendChild(subBadge);
-                        }))
-                    ))
-                )
-            );
-            const benefitsList = makeElement('div', { class: 'benefits-list' });
-            if (drop.benefits && drop.benefits.length > 0) {
-                drop.benefits.forEach(benefit => {
-                    benefitsList.appendChild(
-                        makeElement('div', { class: 'benefit-item' }, '', el => {
-                            el.appendChild(makeImageElement(benefit.image_url, benefit.name, 'benefit-icon'));
-                            el.appendChild(makeElement('div', { class: 'benefit-info' }, '', el2 => {
-                                el2.appendChild(makeElement('span', { class: 'benefit-name' }, benefit.name));
-                                el2.appendChild(makeElement('span', { class: 'benefit-type' }, `(${benefit.type})`));
-                            }));
-                        })
-                    );
-                });
-            }
-            dropItem.appendChild(benefitsList);
-            dropItem.appendChild(makeElement('div', {}, `${drop.current_minutes} / ${drop.required_minutes} minutes (${Math.round(drop.progress * 100)}%)`));
-            if (drop.is_claimed) {
-                dropItem.appendChild(makeElement('div', {}, `✓ ${claimedText}`));
-            }
-            dropsEl.appendChild(dropItem);
-        });
 
         // Campaign name link
         const campaignNameLink = makeElement('a', { href: campaign.campaign_url, target: '_blank', rel: 'noopener noreferrer', class: 'campaign-name-link' }, campaign.name, el =>
@@ -1565,13 +1525,9 @@ function renderInventory() {
             el.appendChild(btnGroup);
         });
 
-        dropsEl.style.display = 'none';
-
         toggleBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            const open = dropsEl.style.display !== 'none';
-            dropsEl.style.display = open ? 'none' : '';
-            toggleBtn.textContent = open ? `▸ ${dropCount} drop${dropCount !== 1 ? 's' : ''}` : `▾ ${dropCount} drop${dropCount !== 1 ? 's' : ''}`;
+            showCampaignDropsModal(campaign.id, false);
         });
 
         card.replaceChildren(campaignHeader, campaignStatus);
@@ -1589,7 +1545,6 @@ function renderInventory() {
             card.appendChild(makeElement('div', { class: 'campaign-timing' }, endsLabel.replace('{time}', new Date(campaign.ends_at).toLocaleString())));
         }
 
-        card.appendChild(dropsEl);
         container.appendChild(card);
     });
 }
