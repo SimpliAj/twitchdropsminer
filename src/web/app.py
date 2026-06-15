@@ -819,6 +819,103 @@ async def get_instance():
     return {"port": port, "label": label, "login": login}
 
 
+import subprocess as _subprocess
+import re as _re
+
+_TDM_BASE = Path(__file__).parent.parent.parent
+_NGINX_CONF = "/etc/nginx/sites-available/tdm.simpliaj.xyz"
+_PROXY_BLOCK_TPL = """
+    location {prefix}/ {{
+        proxy_pass http://127.0.0.1:{port}/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 86400;
+    }}"""
+
+
+def _list_tdm_instances():
+    try:
+        r = _subprocess.run(['pm2', 'jlist'], capture_output=True, text=True, timeout=10)
+        procs = json.loads(r.stdout)
+    except Exception:
+        return []
+    instances = []
+    for p in procs:
+        name = p.get('name', '')
+        if not name.startswith('twitchdrops') or name == 'twitchdrops-bot':
+            continue
+        env = p.get('pm2_env', {})
+        port = int(env.get('TDM_PORT', 8080))
+        label = env.get('TDM_LABEL', name)
+        suffix = name[len('twitchdrops'):]
+        num = int(suffix) if suffix.isdigit() else 1
+        prefix = '' if num == 1 else f'/acc{num}'
+        instances.append({'name': name, 'num': num, 'port': port, 'prefix': prefix, 'label': label, 'status': env.get('status', 'unknown')})
+    return sorted(instances, key=lambda x: x['num'])
+
+
+def _nginx_add_location(prefix: str, port: int):
+    with open(_NGINX_CONF) as f:
+        content = f.read()
+    block = _PROXY_BLOCK_TPL.format(prefix=prefix, port=port)
+    content = content.replace('\n    listen 443 ssl;', block + '\n\n    listen 443 ssl;')
+    _subprocess.run(['sudo', '-n', 'bash', '-c', f'tee {_NGINX_CONF}'], input=content, text=True, capture_output=True)
+    _subprocess.run(['sudo', '-n', 'nginx', '-s', 'reload'])
+
+
+def _nginx_remove_location(prefix: str):
+    with open(_NGINX_CONF) as f:
+        content = f.read()
+    pattern = r'\n    location ' + _re.escape(prefix) + r'/ \{[^\}]+\}'
+    content = _re.sub(pattern, '', content, flags=_re.DOTALL)
+    _subprocess.run(['sudo', '-n', 'bash', '-c', f'tee {_NGINX_CONF}'], input=content, text=True, capture_output=True)
+    _subprocess.run(['sudo', '-n', 'nginx', '-s', 'reload'])
+
+
+@app.get("/api/manage/instances")
+async def manage_list_instances():
+    return _list_tdm_instances()
+
+
+@app.post("/api/manage/instances")
+async def manage_add_instance():
+    instances = _list_tdm_instances()
+    nums = [i['num'] for i in instances]
+    ports = [i['port'] for i in instances]
+    next_num = max(nums) + 1
+    next_port = max(ports) + 2
+    name = f'twitchdrops{next_num}'
+    data_dir = str(_TDM_BASE / f'data{next_num}')
+    label = f'Account {next_num}'
+    prefix = f'/acc{next_num}'
+    os.makedirs(data_dir, exist_ok=True)
+    python_bin = str(_TDM_BASE / 'venv' / 'bin' / 'python')
+    env = {**os.environ, 'TDM_PORT': str(next_port), 'TDM_DATA_DIR': data_dir, 'TDM_LABEL': label}
+    _subprocess.run(['pm2', 'start', python_bin, '--name', name, '--', '-m', 'src'], env=env, cwd=str(_TDM_BASE), capture_output=True)
+    _subprocess.run(['pm2', 'save'], capture_output=True)
+    _nginx_add_location(prefix, next_port)
+    return {'success': True, 'name': name, 'num': next_num, 'port': next_port, 'prefix': prefix, 'label': label}
+
+
+@app.delete("/api/manage/instances/{name}")
+async def manage_remove_instance(name: str):
+    instances = _list_tdm_instances()
+    target = next((i for i in instances if i['name'] == name), None)
+    if not target:
+        raise HTTPException(status_code=404, detail="Instance not found")
+    if target['num'] <= 2:
+        raise HTTPException(status_code=400, detail="Cannot remove default instances")
+    _subprocess.run(['pm2', 'delete', name], capture_output=True)
+    _subprocess.run(['pm2', 'save'], capture_output=True)
+    _nginx_remove_location(target['prefix'])
+    return {'success': True}
+
+
 @app.get("/api/version")
 async def get_version():
     """Get current application version and check for updates"""
