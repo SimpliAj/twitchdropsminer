@@ -2735,7 +2735,7 @@ function applyTranslations(t) {
         const gamesLabel = document.getElementById('analytics-games-label');
         if (gamesLabel) gamesLabel.textContent = a.games_label;
         const lastLabel = document.getElementById('analytics-last-label');
-        if (lastLabel) lastLabel.textContent = a.last_claim;
+        if (lastLabel) lastLabel.textContent = 'Channel Points';
         const byGameHeader = document.getElementById('analytics-by-game-header');
         if (byGameHeader) byGameHeader.textContent = a.claims_by_game;
         const cpHeader = document.getElementById('analytics-cp-header');

@@ -894,9 +894,8 @@ header h1 {
 /* Inventory Grid */
 .inventory-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 16px;
-    align-items: start;
 }
 
 .campaign-card {
@@ -927,9 +926,6 @@ header h1 {
 .campaign-game-name {
     flex: 1;
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 .campaign-game .game-icon {
@@ -2287,6 +2283,12 @@ header h1 {
 
     .inventory-grid {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 1100px) and (min-width: 769px) {
+    .inventory-grid {
+        grid-template-columns: repeat(2, 1fr);
     }
 }
 
