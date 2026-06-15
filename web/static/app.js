@@ -486,9 +486,9 @@ async function loadStats() {
         // Summary
         document.getElementById('stats-total').textContent = data.total_claims;
         document.getElementById('stats-games').textContent = data.by_game.length;
-        const lastClaim = data.recent[0]?.timestamp;
-        document.getElementById('stats-last').textContent = lastClaim
-            ? new Date(lastClaim).toLocaleDateString()
+        const totalCp = Object.values(state.sessionPoints || {}).reduce((s, v) => s + (v.balance || 0), 0);
+        document.getElementById('stats-last').textContent = totalCp > 0
+            ? totalCp.toLocaleString()
             : '—';
 
         // By game bars
