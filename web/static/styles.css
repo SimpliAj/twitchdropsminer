@@ -299,7 +299,7 @@ header h1 {
 .main-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto auto auto auto auto auto;
+    grid-template-rows: auto auto auto auto auto auto auto;
     gap: 20px;
     min-height: 70vh;
     width: 100%;
@@ -340,14 +340,14 @@ header h1 {
     grid-column: 1 / -1;
 }
 
-.console-panel {
-    grid-column: 1;
+.channels-panel {
+    grid-column: 1 / -1;
     grid-row: 5;
 }
 
-.channels-panel {
-    grid-column: 2;
-    grid-row: 5;
+.console-panel {
+    grid-column: 1 / -1;
+    grid-row: 7;
 }
 
 .wanted-panel {
@@ -494,6 +494,10 @@ header h1 {
     font-size: 1.4rem;
     margin-bottom: 6px;
     line-height: 1;
+    height: 1.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .stat-value {
@@ -688,7 +692,7 @@ header h1 {
 
 /* Channels List */
 .channels-list {
-    height: 400px;
+    max-height: 500px;
     overflow-y: auto;
 }
 
