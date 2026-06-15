@@ -3553,6 +3553,12 @@ function renderWantedItems(tree) {
         row.draggable = true;
         row.dataset.game = gameGroup.game_name;
 
+        if (gameGroup.game_icon) {
+            const coverUrl = gameGroup.game_icon.replace('{width}', '120').replace('{height}', '160');
+            row.style.setProperty('--wq-cover', `url('${coverUrl}')`);
+            row.classList.add('has-cover');
+        }
+
         // Drag handle
         const handle = makeElement('span', { class: 'wq-drag-handle drag-handle' }, '⠿');
 
