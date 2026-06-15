@@ -1547,6 +1547,38 @@ function renderInventory() {
 
         container.appendChild(card);
     });
+
+    autoCleanWantedQueue();
+}
+
+function autoCleanWantedQueue() {
+    const watchList = state.settings.games_to_watch;
+    if (!watchList || watchList.length === 0) return;
+    const allCampaigns = Object.values(state.campaigns);
+    if (allCampaigns.length === 0) return;
+
+    let changed = false;
+    const cleaned = watchList.filter(gameName => {
+        const gameCampaigns = allCampaigns.filter(c =>
+            c.game_name && c.game_name.toLowerCase() === gameName.toLowerCase()
+        );
+        if (gameCampaigns.length === 0) return true;
+
+        const hasActiveUnclaimed = gameCampaigns.some(c => {
+            const { active, upcoming } = getCampaignStatus(c);
+            if (!active && !upcoming) return false;
+            return !(c.total_drops > 0 && c.claimed_drops === c.total_drops);
+        });
+
+        if (!hasActiveUnclaimed) { changed = true; return false; }
+        return true;
+    });
+
+    if (changed) {
+        state.settings.games_to_watch = cleaned;
+        saveSettings();
+        renderGamesToWatch();
+    }
 }
 
 function showLoginForm() {

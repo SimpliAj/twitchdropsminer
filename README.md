@@ -27,13 +27,15 @@ The following features and fixes have been added on top of the upstream codebase
 - Drop history and channel points are saved per-account; switching accounts shows the correct data instantly
 
 ### 🔀 Multi-Account Parallel Mode
-Run two completely independent miner instances at the same time — two separate processes, two ports, two data directories, one domain.
+Run unlimited independent miner instances at the same time — each as a fully isolated process with its own data, settings, and login session.
 
-- Instance 1 runs on port **8080** with data stored in `data/`
-- Instance 2 runs on port **8082** with data stored in `data2/`
-- Each instance has its own cookies, login session, settings, drop history, and channel points — fully isolated
+- **Dynamic management** — add/remove instances directly from the **System → Instances** tab in the dashboard; no manual config needed
+- Instance 1 runs on port **8080** with data stored in `data/` (always present, cannot be removed)
+- Additional instances use ports **8082, 8084, ...** and data dirs `data2/`, `data3/`, ...
+- Each instance is fully isolated: cookies, settings, drop history, channel points
+- Nginx config regenerates automatically when instances are added or removed
+- Proxy warning shown in the dashboard when running 3+ instances on one IP (Twitch may flag the account)
 - Configured via `TDM_PORT` (listening port) and `TDM_DATA_DIR` (data directory) environment variables
-- Both ports need to be reachable, or use Nginx to expose only 80/443 and proxy both instances on one domain
 
 **Docker Compose (both instances):**
 
@@ -174,18 +176,31 @@ A dedicated Discord bot that pairs with your miner instance and sends rich, live
 4. Run `/setchannel drops` and `/setchannel points` in the channels where you want notifications
 5. Run `/dashboard` to post a live-updating stats embed with control buttons
 
+### 🎮 Campaign Drops Modal
+- Click any campaign name in the Inventory to see all its drops in a popup — images, progress bars, and status badges
+- Click **▸ N drops left** to open the same modal filtered to unclaimed drops only
+- "X drops left" count is only shown for **linked** campaigns
+
+### 🃏 Inventory Card Redesign
+- 3-column CSS Grid layout — all cards in a row are always the same height
+- Farm toggle button shows **⛏ Farming** / **⊘ Skip** with hover swap animation
+- Game name no longer truncates with `...`
+- Campaign end date is always pinned to the bottom of the card
+
 ### 🖥️ Web UI Improvements
 - **State-aware Quick Controls** — equal-size 2×2 grid; buttons highlight based on what the miner is currently doing:
   - 🟢 Green: Drop Mining Active (currently farming drops)
   - 🟡 Yellow: Skip Game (while a drop is active)
   - 🟣 Purple: Start Drop Mining / Switch Channel (while idle-watching)
+- **Channel Points total** in Analytics — replaces "Last Claim" with total session points farmed across all accounts
 - **Twitch username** displayed in login form instead of raw user ID
 - **Drop Name Blacklist** — comma-separated keywords; drops whose name contains any keyword are skipped
 - **Inventory filter fixes** — correct AND/OR logic; both Linked/Not-Linked unchecked shows all campaigns
-- **Dark 7-tab layout**: Main, Inventory, Channel Points, History, Settings, System, Help
+- **Dark 7-tab layout**: Main, Inventory, Channel Points, History, Analytics, Settings, System, Help
 - **Drop History tab** — grouped by date, compact single-line rows with item thumbnail images
-- **Mobile-responsive** — full `@media` breakpoints at 768px and 480px
+- **Mobile-responsive** — full `@media` breakpoints at 768px and 480px; compact progress bars on small screens
 - No-cache headers for web assets; auto-updating cache hash on deploy
+- **Discord support link** in footer → [discord.gg/X5YKZBh9xV](https://discord.gg/X5YKZBh9xV)
 
 ### 🔒 Dashboard Password Protection
 - Set `WEB_PASSWORD` to lock the web UI behind a password with 30-day session cookie
