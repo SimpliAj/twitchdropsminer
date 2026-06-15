@@ -535,15 +535,16 @@ header h1 {
 }
 
 .drop-campaign-link {
-    color: #0066cc;
+    color: #9147ff;
     text-decoration: none;
     transition: all 0.2s;
     cursor: pointer;
+    border-bottom: 1px dashed rgba(145,70,255,0.4);
 }
 
 .drop-campaign-link:hover {
-    color: #0052a3;
-    text-decoration: underline;
+    color: #b066ff;
+    border-bottom-color: rgba(145,70,255,0.8);
 }
 
 .progress-bar {
@@ -583,6 +584,11 @@ header h1 {
     color: var(--accent-color);
     font-weight: 600;
     margin-top: 4px;
+    transition: opacity 0.15s;
+}
+.progress-drops-left[title]:hover {
+    opacity: 0.75;
+    text-decoration: underline dotted;
 }
 
 /* Console Output */
@@ -3009,6 +3015,16 @@ header h1 {
     max-width: 360px;
     width: 100%;
     position: relative;
+}
+.cdm-modal {
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+.cdm-drop-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
 }
 .wq-modal-close {
     position: absolute;
