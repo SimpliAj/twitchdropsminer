@@ -1482,7 +1482,7 @@ function renderInventory() {
         // Linked/not linked badge
         const linkStatusBadge = campaign.linked
             ? makeElement('span', { class: 'campaign-badge linked', title: 'Account is linked' }, 'LINKED')
-            : makeElement('span', { class: 'campaign-badge not-linked', title: 'Account not linked. Click to link on Twitch, then use "Check for Drops" to refresh status.' }, 'NOT LINKED', el => {
+            : makeElement('span', { class: 'campaign-badge not-linked', title: 'Click to link your account on Twitch' }, '🔗 Link Account', el => {
                 el.addEventListener('click', () => window.open(campaign.link_url, '_blank'));
             });
 
@@ -1495,8 +1495,11 @@ function renderInventory() {
 
         const farmToggle = makeElement('button', {
             class: `farm-toggle-btn ${farmingActive ? 'farming' : 'skipped'}`,
-            title: watchListEmpty ? 'All games farming (no filter active)' : farmingActive ? 'Farming — click to skip' : 'Skipped — click to farm'
-        }, farmingActive ? '⛏' : '⊘');
+            title: watchListEmpty ? 'All games farming (no filter active)' : farmingActive ? 'Click to skip this game' : 'Click to farm this game'
+        }, '', el => {
+            el.appendChild(makeElement('span', { class: 'farm-state-label' }, farmingActive ? '⛏ Farming' : '⊘ Skipped'));
+            el.appendChild(makeElement('span', { class: 'farm-action-label' }, farmingActive ? '⊘ Skip' : '⛏ Farm'));
+        });
 
         farmToggle.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -1529,11 +1532,6 @@ function renderInventory() {
         const campaignHeader = makeElement('div', { class: 'campaign-header' }, '', el => {
             el.appendChild(campaignGameDiv);
             el.appendChild(campaignNameLink);
-            if (!campaign.linked && campaign.link_url) {
-                el.appendChild(makeElement('button', { class: 'link-account-btn' }, 'Link Account', btn => {
-                    btn.addEventListener('click', () => window.open(campaign.link_url, '_blank'));
-                }));
-            }
         });
 
         // Toggle button
