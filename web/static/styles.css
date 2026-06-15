@@ -739,42 +739,94 @@ header h1 {
 }
 
 .channel-item {
-    padding: 12px;
-    margin-bottom: 8px;
-    margin-left: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    margin-bottom: 6px;
+    margin-left: 8px;
     background: var(--bg-secondary);
-    border: 2px solid var(--border-color);
-    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.15s;
 }
-
-.channel-item:hover {
-    border-color: var(--accent-color);
-}
-
+.channel-item:hover { border-color: #4d4d5a; background: var(--bg-panel); }
 .channel-item.watching {
-    border-color: var(--success-color);
-    background: rgba(145, 70, 255, 0.1);
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 1px var(--accent-color), 0 0 12px rgba(145, 70, 255, 0.25);
+    background: rgba(145, 70, 255, 0.07);
+}
+.channel-item.offline { opacity: 0.55; }
+
+.channel-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--accent-color);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+.channel-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+.channel-item.watching .channel-avatar {
+    box-shadow: 0 0 0 2px var(--accent-color);
 }
 
-.channel-item.online {
-    border-left: 4px solid var(--success-color);
-}
+.channel-body { flex: 1; min-width: 0; }
 
-.channel-item.offline {
-    opacity: 0.6;
+.channel-name-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
 }
 
 .channel-name {
-    font-weight: bold;
-    font-size: 14px;
+    font-weight: 600;
+    font-size: 0.88rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.channel-info {
-    font-size: 12px;
+.channel-meta {
+    font-size: 0.75rem;
     color: var(--text-secondary);
-    margin-top: 4px;
+    margin-top: 2px;
+}
+
+.ch-badge--watching {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--accent-color);
+    background: rgba(145, 70, 255, 0.15);
+    padding: 1px 5px;
+    border-radius: 3px;
+}
+
+.channel-viewers-pill {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #fff;
+    background: rgba(255,255,255,0.12);
+    border-radius: 10px;
+    padding: 2px 7px;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+.channel-item.watching .channel-viewers-pill {
+    background: var(--accent-color);
 }
 
 .channel-badge {
@@ -782,14 +834,12 @@ header h1 {
     padding: 2px 6px;
     border-radius: 3px;
     font-size: 10px;
-    margin-left: 5px;
+    margin-left: 0;
 }
-
 .channel-badge.drops {
     background: var(--success-color);
     color: white;
 }
-
 .channel-badge.acl {
     background: var(--accent-color);
     color: white;
@@ -2748,7 +2798,7 @@ header h1 {
     /* Channels list */
     .channel-item {
         padding: 8px 10px;
-        font-size: 13px;
+        gap: 8px;
     }
 
     /* Footer */
@@ -2859,6 +2909,9 @@ header h1 {
     }
 
     .drop-game-thumb { display: none !important; }
+
+    .channel-avatar { width: 28px; height: 28px; font-size: 0.75rem; }
+    .channel-item { padding: 7px 9px; gap: 8px; }
 
     /* Compact campaign progress on mobile */
     .progress-panel {
