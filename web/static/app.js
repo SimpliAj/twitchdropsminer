@@ -968,6 +968,28 @@ function updateDropProgress(data) {
     document.getElementById('progress-text').textContent =
         `${data.current_minutes} / ${data.required_minutes} minutes`;
 
+    // Drops left + time estimate for this campaign
+    const campData = data.campaign_id && state.campaigns
+        ? Object.values(state.campaigns).find(c => c.id === data.campaign_id || c.campaign_id === data.campaign_id)
+        : null;
+    let dropsLeftEl = document.getElementById('progress-drops-left');
+    if (!dropsLeftEl) {
+        dropsLeftEl = makeElement('div', { id: 'progress-drops-left', class: 'progress-drops-left' });
+        document.getElementById('progress-time').insertAdjacentElement('afterend', dropsLeftEl);
+    }
+    if (campData && campData.drops) {
+        const unclaimed = campData.drops.filter(d => !d.is_claimed);
+        const remainMins = unclaimed.reduce((s, d) => s + Math.max(0, (d.required_minutes || 0) - (d.current_minutes || 0)), 0);
+        const h = Math.floor(remainMins / 60), m = Math.round(remainMins % 60);
+        const timeStr = h > 0 ? `~${h}h ${m}m` : remainMins > 0 ? `~${m}m` : null;
+        dropsLeftEl.textContent = unclaimed.length > 0
+            ? `${unclaimed.length} drop${unclaimed.length !== 1 ? 's' : ''} left${timeStr ? ' · ' + timeStr : ''}`
+            : '✓ All drops claimed';
+        dropsLeftEl.style.display = '';
+    } else {
+        dropsLeftEl.style.display = 'none';
+    }
+
     // Only reset the timer if it's a new drop or if backend time differs by more than 2 seconds
     // This prevents constant timer resets from periodic backend updates
     const shouldResetTimer = isNewDrop || oldRemaining === null || Math.abs(oldRemaining - data.remaining_seconds) > 2;
@@ -2924,6 +2946,9 @@ function switchTab(tabName) {
     document.getElementById(`${tabName}-tab`).classList.add('active');
     document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
     if (tabName === 'analytics') { loadStats(); loadDropHistory(); }
+    if (tabName === 'inventory' || tabName === 'settings') {
+        if (Object.keys(state.campaigns).length === 0) reloadCampaigns();
+    }
     if (tabName === 'settings') {
         fetch(API_BASE + '/api/pair/status').then(r => r.json()).then(d => updateBotPairedUI(d.paired)).catch(() => {});
         loadPushConfig();
@@ -2941,6 +2966,19 @@ function switchAccount(num) {
     location.href = url.toString();
 }
 
+const _accLabels = { 1: 'Account 1', 2: 'Account 2' };
+const _accLogins = { 1: null, 2: null };
+
+function applyUsernameVisibility() {
+    const show = localStorage.getItem('show_twitch_usernames') !== 'false';
+    const btn1 = document.getElementById('acc-btn-1');
+    const btn2 = document.getElementById('acc-btn-2');
+    const toggle = document.getElementById('show-twitch-usernames');
+    if (toggle) toggle.checked = show;
+    if (btn1) btn1.textContent = show && _accLogins[1] ? _accLogins[1] : _accLabels[1];
+    if (btn2) btn2.textContent = show && _accLogins[2] ? _accLogins[2] : _accLabels[2];
+}
+
 function initAccountTabs() {
     const btn1 = document.getElementById('acc-btn-1');
     const btn2 = document.getElementById('acc-btn-2');
@@ -2949,14 +2987,13 @@ function initAccountTabs() {
         btn1.classList.remove('active-acc');
         btn2.classList.add('active-acc');
     }
-    const acc1Base = '';
-    const acc2Base = '/acc2';
-    const updateBtn = (btn, data) => {
-        if (data.login) btn.textContent = data.login;
-        else if (data.label && !data.label.startsWith('Instance')) btn.textContent = data.label;
+    const storeAndApply = (num, data) => {
+        if (data.login) _accLogins[num] = data.login;
+        else if (data.label && !data.label.startsWith('Instance')) _accLogins[num] = data.label;
+        applyUsernameVisibility();
     };
-    fetch(acc1Base + '/api/instance').then(r => r.json()).then(d => updateBtn(btn1, d)).catch(() => {});
-    fetch(acc2Base + '/api/instance').then(r => r.json()).then(d => updateBtn(btn2, d)).catch(() => {});
+    fetch('/api/instance').then(r => r.json()).then(d => storeAndApply(1, d)).catch(() => {});
+    fetch('/acc2/api/instance').then(r => r.json()).then(d => storeAndApply(2, d)).catch(() => {});
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -2964,6 +3001,7 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchAndDisplayVersion();
     updateStats();
     initAccountTabs();
+    applyUsernameVisibility();
     document.getElementById("history-refresh-btn")?.addEventListener("click", loadDropHistory);
 
     // Tab switching
@@ -2987,6 +3025,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         // Then save settings
         saveSettings();
+    });
+    document.getElementById('show-twitch-usernames')?.addEventListener('change', (e) => {
+        localStorage.setItem('show_twitch_usernames', e.target.checked ? 'true' : 'false');
+        applyUsernameVisibility();
     });
     document.getElementById('language').addEventListener('change', saveSettings);
     document.getElementById('connection-quality').addEventListener('change', saveSettings);
