@@ -2639,6 +2639,10 @@ header h1 {
 
     .main-grid { gap: 12px; }
     .panel { padding: 14px; }
+    .stat-card { padding: 10px 6px 8px; }
+    .stat-icon { font-size: 1rem; height: 1.3rem; }
+    .stat-value { font-size: 1.3rem; }
+    .stat-label { font-size: 0.62rem; min-height: 1.8em; }
 
     .qc-status {
         display: none;
@@ -2989,10 +2993,10 @@ header h1 {
         font-size: 0.78rem;
         margin-bottom: 6px;
     }
-    .stat-card { padding: 12px 6px 10px; }
-    .stat-icon { font-size: 1.1rem; }
-    .stat-value { font-size: 1.4rem; }
-    .stat-label { font-size: 0.65rem; }
+    .stat-card { padding: 8px 4px 6px; }
+    .stat-icon { font-size: 0.9rem; height: 1.2rem; margin-bottom: 3px; }
+    .stat-value { font-size: 1.1rem; }
+    .stat-label { font-size: 0.58rem; min-height: 1.6em; margin-top: 2px; }
 }
 
 .skip-game-btn {
