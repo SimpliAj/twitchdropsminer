@@ -2753,6 +2753,39 @@ header h1 {
         width: 36px !important;
         height: 48px !important;
     }
+
+    /* Compact campaign progress on mobile */
+    .progress-panel {
+        padding: 14px 16px 16px;
+    }
+    .progress-panel h2 {
+        font-size: 15px;
+        margin-bottom: 10px;
+        padding-bottom: 6px;
+    }
+    .progress-bar {
+        height: 22px;
+        border-radius: 11px;
+        margin-bottom: 6px;
+    }
+    .progress-text {
+        font-size: 12px;
+        margin-bottom: 1px;
+    }
+    .progress-time {
+        font-size: 11px;
+    }
+    .progress-drops-left {
+        font-size: 0.74rem;
+        margin-top: 2px;
+    }
+    .drop-name {
+        font-size: 0.9rem;
+    }
+    .drop-game {
+        font-size: 0.78rem;
+        margin-bottom: 6px;
+    }
 }
 
 .skip-game-btn {
