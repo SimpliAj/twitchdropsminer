@@ -923,23 +923,48 @@ function renderChannels() {
             if (channel.online) div.classList.add('online');
             else div.classList.add('offline');
 
-            const nameDiv = makeElement('div', { class: 'channel-name' }, channel.name, el => {
-                if (channel.drops_enabled) {
-                    el.appendChild(document.createTextNode(' '));
-                    el.appendChild(makeElement('span', { class: 'channel-badge drops' }, 'DROPS'));
-                }
-                if (channel.acl_based) {
-                    el.appendChild(document.createTextNode(' '));
-                    el.appendChild(makeElement('span', { class: 'channel-badge acl' }, 'ACL'));
-                }
-            });
-            const infoDiv = makeElement('div', { class: 'channel-info' }, channel.viewers !== null ? channel.viewers.toLocaleString() + ' viewers' : 'Offline', el => {
-                if (channel.watching) {
-                    el.appendChild(document.createTextNode(' • '));
-                    el.appendChild(makeElement('strong', {}, 'WATCHING'));
-                }
-            });
-            div.replaceChildren(nameDiv, infoDiv);
+            // Avatar circle (first letter fallback)
+            const avatarEl = document.createElement('div');
+            avatarEl.className = 'channel-avatar';
+            if (channel.logo) {
+                const img = document.createElement('img');
+                img.src = channel.logo;
+                img.alt = channel.name;
+                img.onerror = () => { img.style.display = 'none'; avatarEl.textContent = (channel.name || '?')[0].toUpperCase(); };
+                avatarEl.appendChild(img);
+            } else {
+                avatarEl.textContent = (channel.name || '?')[0].toUpperCase();
+            }
+
+            const bodyEl = document.createElement('div');
+            bodyEl.className = 'channel-body';
+
+            const nameRow = document.createElement('div');
+            nameRow.className = 'channel-name-row';
+            const nameSpan = makeElement('span', { class: 'channel-name' }, channel.name);
+            nameRow.appendChild(nameSpan);
+            if (channel.watching) {
+                nameRow.appendChild(makeElement('span', { class: 'ch-badge ch-badge--watching' }, '● LIVE'));
+            }
+            if (channel.drops_enabled) nameRow.appendChild(makeElement('span', { class: 'channel-badge drops' }, 'DROPS'));
+            if (channel.acl_based) nameRow.appendChild(makeElement('span', { class: 'channel-badge acl' }, 'ACL'));
+
+            const metaEl = makeElement('div', { class: 'channel-meta' },
+                channel.online && channel.viewers !== null ? channel.viewers.toLocaleString() + ' viewers' : 'Offline'
+            );
+
+            bodyEl.replaceChildren(nameRow, metaEl);
+
+            const children = [avatarEl, bodyEl];
+            if (channel.online && channel.viewers !== null) {
+                const viewerPill = makeElement('div', { class: 'channel-viewers-pill' },
+                    channel.viewers >= 1000
+                        ? (channel.viewers / 1000).toFixed(1) + 'K'
+                        : String(channel.viewers)
+                );
+                children.push(viewerPill);
+            }
+            div.replaceChildren(...children);
 
             div.onclick = () => selectChannel(channel.id);
             container.appendChild(div);
