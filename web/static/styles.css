@@ -2626,6 +2626,9 @@ header h1 {
         padding: 10px;
     }
 
+    .main-grid { gap: 12px; }
+    .panel { padding: 14px; }
+
     .qc-status {
         display: none;
     }
@@ -2877,6 +2880,17 @@ header h1 {
 }
 
 @media (max-width: 600px) {
+    .quick-controls-row {
+        grid-template-columns: 1fr;
+    }
+
+    #account-tabs {
+        overflow-x: auto;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+    }
+    #account-tabs::-webkit-scrollbar { display: none; }
+
     .history-row {
         flex-wrap: wrap;
         gap: 4px 8px;
@@ -3342,4 +3356,5 @@ header h1 {
 }
 @media (hover: none) {
     .wq-row:hover { transform: none; }
+    .channel-item:hover { background: var(--bg-secondary); border-color: var(--border-color); }
 }
