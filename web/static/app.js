@@ -1616,20 +1616,21 @@ function showOAuthCode(url, code) {
 
 function updateLoginStatus(data) {
     const statusEl = document.getElementById('login-status');
+    const loginPanel = document.querySelector('.login-panel');
     const t = state.translations;
     if (data.user_id) {
         const name = data.user_login || String(data.user_id);
-        statusEl.textContent = `${data.status} (@${name})`;
+        statusEl.innerHTML = `<span style="color:var(--success-color);font-weight:600;">✓ @${name}</span>`;
         statusEl.removeAttribute('translation-key');
-        statusEl.style.color = 'var(--success-color)';
         document.getElementById('login-form').style.display = 'none';
         document.getElementById('oauth-code-display').style.display = 'none';
+        if (loginPanel) loginPanel.classList.add('is-logged-in');
     } else {
         const loggedOut = t.gui?.login?.logged_out || 'Not logged in';
         statusEl.textContent = data.status || loggedOut;
         statusEl.setAttribute('translation-key', 'logged_out');
         statusEl.style.color = 'var(--text-secondary)';
-        // Check if OAuth is pending (for late-connecting clients)
+        if (loginPanel) loginPanel.classList.remove('is-logged-in');
         if (data.oauth_pending) {
             showOAuthCode(data.oauth_pending.url, data.oauth_pending.code);
         }
