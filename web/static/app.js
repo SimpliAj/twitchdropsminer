@@ -1538,7 +1538,7 @@ function renderInventory() {
         const dropCount = campaign.drops.filter(d => !filters.show_sub_drops ? (d.required_subs || 0) === 0 : true).length;
         const toggleBtn = makeElement('button', { class: 'inv-toggle-btn' }, `▸ ${dropCount} drop${dropCount !== 1 ? 's' : ''}`);
 
-        // Remaining drops + time estimate
+        // Remaining drops + time estimate — only show for linked campaigns
         const unclaimedDrops = campaign.drops.filter(d => !d.is_claimed && (!filters.show_sub_drops ? (d.required_subs || 0) === 0 : true));
         const remainingMins = unclaimedDrops.reduce((sum, d) => sum + Math.max(0, (d.required_minutes || 0) - (d.current_minutes || 0)), 0);
         const formatTime = mins => {
@@ -1547,7 +1547,7 @@ function renderInventory() {
             return h > 0 ? `~${h}h ${m}m` : `~${m}m`;
         };
         const timeEst = formatTime(remainingMins);
-        const progressInfo = unclaimedDrops.length > 0
+        const progressInfo = campaign.linked && unclaimedDrops.length > 0
             ? makeElement('div', { class: 'campaign-progress-info' }, '', el => {
                 el.appendChild(makeElement('span', { class: 'campaign-remaining-drops' }, `${unclaimedDrops.length} drop${unclaimedDrops.length !== 1 ? 's' : ''} left`));
                 if (timeEst) el.appendChild(makeElement('span', { class: 'campaign-time-est' }, timeEst));
@@ -1555,10 +1555,14 @@ function renderInventory() {
             : null;
 
         const campaignStatus = makeElement('div', { class: 'campaign-status' }, '', el => {
-            el.appendChild(makeElement('span', {}, statusText));
-            el.appendChild(makeElement('span', {}, `${campaign.claimed_drops} / ${campaign.total_drops} ${claimedCountText}`));
-            el.appendChild(farmToggle);
-            el.appendChild(toggleBtn);
+            const infoGroup = makeElement('div', { class: 'campaign-status-info' });
+            infoGroup.appendChild(makeElement('span', { class: 'campaign-status-text' }, statusText));
+            infoGroup.appendChild(makeElement('span', { class: 'campaign-claimed-count' }, `${campaign.claimed_drops} / ${campaign.total_drops} ${claimedCountText}`));
+            el.appendChild(infoGroup);
+            const btnGroup = makeElement('div', { class: 'campaign-status-btns' });
+            btnGroup.appendChild(farmToggle);
+            btnGroup.appendChild(toggleBtn);
+            el.appendChild(btnGroup);
         });
 
         dropsEl.style.display = 'none';
