@@ -464,21 +464,46 @@ header h1 {
     text-align: center;
 }
 
-.stat-item {
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+}
+
+.stat-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 18px 12px 14px;
     text-align: center;
-    min-width: 100px;
+    border-right: 1px solid var(--border-color);
+    transition: background 0.15s;
+}
+.stat-card:last-child { border-right: none; }
+.stat-card:hover { background: rgba(145, 70, 255, 0.04); }
+
+.stat-icon {
+    font-size: 1.4rem;
+    margin-bottom: 6px;
+    line-height: 1;
 }
 
 .stat-value {
-    font-size: 1.6rem;
-    font-weight: 700;
+    font-size: 2rem;
+    font-weight: 800;
     color: var(--accent-color, #9147ff);
+    line-height: 1;
+    letter-spacing: -0.02em;
 }
 
 .stat-label {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     color: #adadb8;
-    margin-top: 2px;
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 500;
 }
 
 /* Login */
@@ -2811,6 +2836,10 @@ header h1 {
         font-size: 0.78rem;
         margin-bottom: 6px;
     }
+    .stat-card { padding: 12px 6px 10px; }
+    .stat-icon { font-size: 1.1rem; }
+    .stat-value { font-size: 1.4rem; }
+    .stat-label { font-size: 0.65rem; }
 }
 
 .skip-game-btn {
@@ -3130,8 +3159,6 @@ header h1 {
 
 /* Mobile overflow fixes */
 @media (max-width: 768px) {
-    .stat-item { min-width: 0; flex: 1 1 0; }
-    .stat-value { font-size: 1.3rem; }
     .quick-controls-row { gap: 6px; }
     .qc-btn { padding: 8px 10px; gap: 6px; min-height: 52px; }
     .qc-labels small { font-size: 0.65rem; }
