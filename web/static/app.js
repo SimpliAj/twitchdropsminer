@@ -150,6 +150,10 @@ socket.on('initial_state', (data) => {
             state.campaigns[camp.id] = camp;
         });
         renderInventory();
+        // Keep availableGames in sync so Settings tab works immediately
+        if (availableGames.size === 0) {
+            availableGames = new Set(data.campaigns.map(c => c.game_name).filter(Boolean));
+        }
     }
 
     // Batch update console logs
@@ -2950,6 +2954,11 @@ function switchTab(tabName) {
         if (Object.keys(state.campaigns).length === 0) reloadCampaigns();
     }
     if (tabName === 'settings') {
+        // Populate availableGames from already-loaded campaigns if socket event hasn't fired
+        if (availableGames.size === 0 && Object.keys(state.campaigns).length > 0) {
+            availableGames = new Set(Object.values(state.campaigns).map(c => c.game_name).filter(Boolean));
+            renderGamesToWatch();
+        }
         fetch(API_BASE + '/api/pair/status').then(r => r.json()).then(d => updateBotPairedUI(d.paired)).catch(() => {});
         loadPushConfig();
         loadAccounts();
