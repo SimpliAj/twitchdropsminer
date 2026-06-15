@@ -1,1 +1,1 @@
-__version__ = "1.2.6 - SAJ Fork"
+__version__ = "1.2.7 - SAJ Fork"
