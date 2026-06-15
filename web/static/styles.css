@@ -893,8 +893,10 @@ header h1 {
 
 /* Inventory Grid */
 .inventory-grid {
-    column-width: 350px;
-    column-gap: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+    align-items: start;
 }
 
 .campaign-card {
@@ -904,8 +906,8 @@ header h1 {
     overflow: hidden;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     position: relative;
-    break-inside: avoid;
-    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
 }
 
 .campaign-header {
@@ -1055,10 +1057,11 @@ header h1 {
 }
 
 .campaign-timing {
-    padding: 5px 15px 10px;
+    padding: 4px 15px 10px;
     font-size: 11px;
     color: var(--text-secondary);
     font-style: italic;
+    margin-top: auto;
 }
 
 .campaign-progress-info {
