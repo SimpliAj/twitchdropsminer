@@ -934,17 +934,18 @@ header h1 {
 
 .campaign-name-link {
     font-size: 14px;
-    color: #0066cc;
+    color: var(--accent-color);
     text-decoration: none;
     transition: all 0.2s;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    opacity: 0.85;
 }
 
 .campaign-name-link:hover {
-    color: #0052a3;
+    opacity: 1;
     text-decoration: underline;
 }
 
@@ -973,27 +974,33 @@ header h1 {
 }
 
 .campaign-badge.not-linked {
-    background: var(--warning-color);
-    color: white;
-    box-shadow: 0 2px 4px rgba(255, 167, 38, 0.3);
+    background: rgba(255, 167, 38, 0.15);
+    color: var(--warning-color);
+    border: 1px solid rgba(255, 167, 38, 0.4);
+    cursor: pointer;
 }
 
 .campaign-badge.not-linked:hover {
-    background: #ff9800;
+    background: rgba(255, 167, 38, 0.25);
     transform: translateY(-1px);
-    box-shadow: 0 3px 6px rgba(255, 167, 38, 0.4);
+    box-shadow: 0 2px 6px rgba(255, 167, 38, 0.25);
 }
 
 .farm-toggle-btn {
-    padding: 3px 9px;
+    padding: 3px 10px;
     border-radius: 4px;
     border: 1px solid transparent;
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.15s;
     flex-shrink: 0;
+    min-width: 88px;
+    text-align: center;
 }
+.farm-toggle-btn .farm-action-label { display: none; }
+.farm-toggle-btn:hover .farm-state-label { display: none; }
+.farm-toggle-btn:hover .farm-action-label { display: inline; }
 .farm-toggle-btn.farming {
     background: rgba(61, 220, 132, 0.12);
     border-color: rgba(61, 220, 132, 0.35);
@@ -1013,32 +1020,6 @@ header h1 {
     background: rgba(61, 220, 132, 0.12);
     border-color: rgba(61, 220, 132, 0.35);
     color: #3ddc84;
-}
-
-.link-account-btn {
-    margin-top: 8px;
-    padding: 8px 16px;
-    background: var(--warning-color);
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    box-shadow: 0 2px 4px rgba(255, 167, 38, 0.3);
-    width: 100%;
-}
-
-.link-account-btn:hover {
-    background: #ff9800;
-    transform: translateY(-1px);
-    box-shadow: 0 3px 6px rgba(255, 167, 38, 0.4);
-}
-
-.link-account-btn:active {
-    transform: translateY(0);
-    box-shadow: 0 1px 2px rgba(255, 167, 38, 0.3);
 }
 
 .campaign-status {
