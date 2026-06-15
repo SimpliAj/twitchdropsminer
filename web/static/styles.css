@@ -577,6 +577,14 @@ header h1 {
     font-size: 12px;
 }
 
+.progress-drops-left {
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--accent-color);
+    font-weight: 600;
+    margin-top: 4px;
+}
+
 /* Console Output */
 .console-output {
     height: 400px;
