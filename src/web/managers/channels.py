@@ -72,7 +72,11 @@ class ChannelListManager:
             channel: The channel now being watched
         """
         self._watching_id = channel.id
-        asyncio.create_task(self._broadcaster.emit("channel_watching", {"id": channel.id, "login": channel._login}))
+        asyncio.create_task(self._broadcaster.emit("channel_watching", {
+            "id": channel.id,
+            "login": channel._login,
+            "game": channel.game.name if channel.game else None,
+        }))
 
     def clear_watching(self):
         """Clear the currently watched channel indicator."""
