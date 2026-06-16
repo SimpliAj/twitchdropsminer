@@ -10,7 +10,7 @@
     <link rel="apple-touch-icon" href="/logo.png">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#9147ff">
-    <link rel="stylesheet" href="/static/styles.css?v=1e3e06ce">
+    <link rel="stylesheet" href="/static/styles.css?v=e7314ae3">
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
 
@@ -117,9 +117,12 @@
                                     <div class="drop-game" id="drop-game"></div>
                                     <div class="progress-bar">
                                         <div class="progress-fill" id="progress-fill"></div>
+                                        <span class="progress-percent" id="progress-percent"></span>
                                     </div>
-                                    <div class="progress-text" id="progress-text"></div>
-                                    <div class="progress-time" id="progress-time"></div>
+                                    <div class="progress-meta" id="progress-meta">
+                                        <span class="progress-text" id="progress-text"></span>
+                                        <span class="progress-time" id="progress-time"></span>
+                                    </div>
                                     <div class="progress-drops-left" id="progress-drops-left" style="display:none;"></div>
                                 </div>
                             </div>
@@ -146,14 +149,15 @@
 
                 <!-- Channel Points Display -->
                 <section class="panel channel-points-panel-main" id="channel-points-panel">
-                    <h2>Channel Points</h2>
-                    <div id="channel-points-info" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-                        <span id="channel-points-channel" style="font-weight:500;color:var(--accent-color,#9147ff)">—</span>
-                        <span id="channel-points-balance" style="font-size:1.1rem;font-weight:600;">not watching</span>
-                        <span id="channel-points-claimed" style="font-size:0.85rem;color:#0f9;opacity:0;transition:opacity 0.4s;"></span>
+                    <div class="cp-header-row">
+                        <h2>Channel Points</h2>
+                        <div id="channel-points-info" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                            <span id="channel-points-channel" style="font-weight:500;color:var(--accent-color,#9147ff)">—</span>
+                            <span id="channel-points-balance" style="font-size:1rem;font-weight:600;">not watching</span>
+                            <span id="channel-points-claimed" style="font-size:0.8rem;color:#0f9;opacity:0;transition:opacity 0.4s;"></span>
+                        </div>
                     </div>
-                    <div id="points-tracker-section" style="display:none;margin-top:12px;">
-                        <div style="font-size:0.8rem;color:#adadb8;margin-bottom:6px;">Recent channels:</div>
+                    <div id="points-tracker-section" style="display:none;margin-top:8px;">
                         <div id="points-tracker-list"></div>
                     </div>
                 </section>
@@ -1132,7 +1136,7 @@ TDM_PORT=8080 WEB_PASSWORD=mysecretpassword pm2 start main.py --name twitchdrops
         </footer>
     </div>
 
-    <script src="/static/app.js?v=89f89155"></script>
+    <script src="/static/app.js?v=461780dd"></script>
 </body>
 
 </html>

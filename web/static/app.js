@@ -1021,7 +1021,8 @@ function updateDropProgress(data) {
     const progress = data.progress * 100;
     const fill = document.getElementById('progress-fill');
     fill.style.width = `${progress}%`;
-    fill.textContent = `${Math.round(progress)}%`;
+    const pct = document.getElementById('progress-percent');
+    if (pct) pct.textContent = `${Math.round(progress)}%`;
 
     document.getElementById('progress-text').textContent =
         `${data.current_minutes} / ${data.required_minutes} minutes`;
