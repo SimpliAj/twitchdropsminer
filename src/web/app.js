@@ -875,6 +875,16 @@ function renderChannels() {
         gameGroups[gameId].channels.push(channel);
     });
 
+    // Fallback: fill missing icons from campaigns data
+    Object.entries(gameGroups).forEach(([gameId, group]) => {
+        if (!group.icon) {
+            const camp = Object.values(state.campaigns).find(c =>
+                c.game && (String(c.game.id) === String(gameId) || c.game.name === group.name)
+            );
+            if (camp?.game?.box_art_url) group.icon = camp.game.box_art_url;
+        }
+    });
+
     // Sort games: prioritize games with watching channels, then by total viewers
     const sortedGames = Object.entries(gameGroups).sort(([idA, groupA], [idB, groupB]) => {
         const hasWatchingA = groupA.channels.some(ch => ch.watching);
@@ -905,6 +915,17 @@ function renderChannels() {
 
         const isCollapsed = state.collapsedGameGroups[gameId] !== false;
 
+        // Wrap in WQ-style card
+        const card = document.createElement('div');
+        card.className = 'ch-game-card' + (isCollapsed ? '' : ' ch-game-card--open');
+
+        gameHeader.className = 'ch-game-header';
+        gameHeader.style.cursor = 'pointer';
+        gameHeader.onclick = () => {
+            state.collapsedGameGroups[gameId] = !state.collapsedGameGroups[gameId];
+            renderChannels();
+        };
+
         if (group.icon) {
             gameHeader.appendChild(makeImageElement(group.icon.replace('{width}', '40').replace('{height}', '53'), group.name, 'game-icon'));
         }
@@ -916,13 +937,8 @@ function renderChannels() {
         const chevron = makeElement('span', { class: 'game-group-chevron' }, isCollapsed ? '▸' : '▾');
         gameHeader.appendChild(chevron);
 
-        gameHeader.style.cursor = 'pointer';
-        gameHeader.onclick = () => {
-            state.collapsedGameGroups[gameId] = !state.collapsedGameGroups[gameId];
-            renderChannels();
-        };
-
-        container.appendChild(gameHeader);
+        card.appendChild(gameHeader);
+        container.appendChild(card);
 
         if (isCollapsed) return;
 
@@ -985,7 +1001,7 @@ function renderChannels() {
             div.replaceChildren(...children);
 
             div.onclick = () => selectChannel(channel.id);
-            container.appendChild(div);
+            card.appendChild(div);
         });
     });
 }
