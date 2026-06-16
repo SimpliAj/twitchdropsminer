@@ -291,6 +291,7 @@ socket.on('channel_watching', (data) => {
             if (!state.sessionPoints[data.login]) state.sessionPoints[data.login] = { balance: 0, claimed: 0 };
             state.sessionPoints[data.login].cpEnabled = d.cp_enabled !== false;
             if (d.balance) state.sessionPoints[data.login].balance = d.balance;
+            state.sessionPoints[data.login].lastSeen = Date.now();
             updateChannelPointsDisplay(data.login, null);
             renderPointsTracker();
         }).catch(() => {});
@@ -449,8 +450,7 @@ function renderPointsTracker() {
     section.style.display = 'block';
     list.replaceChildren();
     entries
-        .filter(([, data]) => data.lastSeen)
-        .sort((a, b) => b[1].lastSeen - a[1].lastSeen)
+        .sort((a, b) => (b[1].lastSeen || 0) - (a[1].lastSeen || 0))
         .slice(0, 3)
         .forEach(([login, data]) => {
             const row = document.createElement('div');

@@ -350,6 +350,12 @@ header h1 {
     white-space: nowrap;
 }
 
+.cp-divider {
+    height: 1px;
+    background: var(--border-color, rgba(255,255,255,0.08));
+    margin: 10px 0 8px;
+}
+
 .login-panel.is-logged-in {
     display: none;
 }
