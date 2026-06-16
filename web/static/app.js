@@ -927,7 +927,7 @@ function renderChannels() {
         gameHeader.className = 'ch-game-header';
         gameHeader.style.cursor = 'pointer';
         gameHeader.onclick = () => {
-            state.collapsedGameGroups[gameId] = !state.collapsedGameGroups[gameId];
+            state.collapsedGameGroups[gameId] = !isCollapsed;
             renderChannels();
         };
 
