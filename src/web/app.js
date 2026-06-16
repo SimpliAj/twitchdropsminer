@@ -29,7 +29,8 @@ const state = {
     currentDrop: null,
     countdownTimer: null,  // Track the active countdown timer
     translations: {},  // Store current translations
-    sessionPoints: {}  // channel_login -> { balance, claimed }
+    sessionPoints: {},  // channel_login -> { balance, claimed }
+    collapsedGameGroups: {}  // gameId -> boolean
 };
 
 // ==================== Version Checking ====================
@@ -901,6 +902,8 @@ function renderChannels() {
             : (t.gui?.channels?.channel_count_plural || 'channels');
         const viewersText = t.gui?.channels?.viewers || 'viewers';
 
+        const isCollapsed = !!state.collapsedGameGroups[gameId];
+
         if (group.icon) {
             gameHeader.appendChild(makeImageElement(group.icon.replace('{width}', '40').replace('{height}', '53'), group.name, 'game-icon'));
         }
@@ -909,7 +912,18 @@ function renderChannels() {
             el.appendChild(makeElement('div', { class: 'game-group-stats' }, `${channelCount} ${channelText} • ${totalViewers.toLocaleString()} ${viewersText}`));
         }));
 
+        const chevron = makeElement('span', { class: 'game-group-chevron' }, isCollapsed ? '▸' : '▾');
+        gameHeader.appendChild(chevron);
+
+        gameHeader.style.cursor = 'pointer';
+        gameHeader.onclick = () => {
+            state.collapsedGameGroups[gameId] = !state.collapsedGameGroups[gameId];
+            renderChannels();
+        };
+
         container.appendChild(gameHeader);
+
+        if (isCollapsed) return;
 
         // Sort channels within game: watching first, then online, then by viewers
         group.channels.sort((a, b) => {

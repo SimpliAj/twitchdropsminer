@@ -772,6 +772,17 @@ header h1 {
     margin-top: 0;
 }
 
+.game-group-chevron {
+    margin-left: auto;
+    font-size: 1rem;
+    opacity: 0.8;
+    flex-shrink: 0;
+    transition: opacity 0.15s;
+}
+.game-group-header:hover .game-group-chevron {
+    opacity: 1;
+}
+
 .game-icon {
     width: 40px;
     height: 53px;
