@@ -867,10 +867,11 @@ function renderChannels() {
         if (!gameGroups[gameId]) {
             gameGroups[gameId] = {
                 name: gameName,
-                icon: gameIcon,
+                icon: null,
                 channels: []
             };
         }
+        if (!gameGroups[gameId].icon && gameIcon) gameGroups[gameId].icon = gameIcon;
         gameGroups[gameId].channels.push(channel);
     });
 
@@ -902,7 +903,7 @@ function renderChannels() {
             : (t.gui?.channels?.channel_count_plural || 'channels');
         const viewersText = t.gui?.channels?.viewers || 'viewers';
 
-        const isCollapsed = !!state.collapsedGameGroups[gameId];
+        const isCollapsed = state.collapsedGameGroups[gameId] !== false;
 
         if (group.icon) {
             gameHeader.appendChild(makeImageElement(group.icon.replace('{width}', '40').replace('{height}', '53'), group.name, 'game-icon'));
