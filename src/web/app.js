@@ -284,7 +284,7 @@ socket.on('channels_batch_update', (data) => {
 });
 
 socket.on('channel_watching', (data) => {
-    setWatchingChannel(data.id);
+    setWatchingChannel(data.id, data.game);
     if (data.login) {
         updateChannelPointsDisplay(data.login, null);
         fetch(API_BASE + `/api/channel-points/${data.login}`).then(r => r.json()).then(d => {
@@ -803,13 +803,16 @@ function clearChannels() {
     renderChannels();
 }
 
-function setWatchingChannel(channelId) {
+function setWatchingChannel(channelId, gameOverride) {
     Object.values(state.channels).forEach(ch => ch.watching = false);
     if (state.channels[channelId]) {
         state.channels[channelId].watching = true;
-        const game = state.channels[channelId].game;
-        const gameEl = document.getElementById('status-game');
-        if (gameEl && game) { gameEl.textContent = 'Game: ' + game; gameEl.style.display = ''; }
+    }
+    const game = (state.channels[channelId] && state.channels[channelId].game) || gameOverride;
+    const gameEl = document.getElementById('status-game');
+    if (gameEl) {
+        if (game) { gameEl.textContent = 'Game: ' + game; gameEl.style.display = ''; }
+        else { gameEl.textContent = ''; gameEl.style.display = 'none'; }
     }
     renderChannels();
 }
