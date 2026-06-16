@@ -758,10 +758,28 @@ header h1 {
     overflow: hidden;
     margin-bottom: 6px;
     transition: border-color 0.15s;
+    position: relative;
 }
+.ch-game-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--ch-cover, none) center/cover no-repeat;
+    filter: blur(20px) saturate(0.6);
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+    z-index: 0;
+}
+.ch-game-card.has-cover::before { opacity: 0.18; }
 .ch-game-card:hover { border-color: #6d6d7a; }
 .ch-game-card--open { border-color: var(--accent-color); }
 .ch-game-card--open:hover { border-color: var(--accent-color); }
+
+.ch-game-header {
+    position: relative;
+    z-index: 1;
+}
 
 .ch-game-header {
     display: flex;
@@ -811,6 +829,8 @@ header h1 {
     border-top: 1px solid var(--border-color);
     cursor: pointer;
     transition: background 0.15s;
+    position: relative;
+    z-index: 1;
 }
 .channel-item:hover { background: var(--bg-panel); }
 .channel-item.watching { background: rgba(145, 70, 255, 0.1); }
