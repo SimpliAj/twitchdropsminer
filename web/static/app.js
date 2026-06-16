@@ -879,9 +879,9 @@ function renderChannels() {
     Object.entries(gameGroups).forEach(([gameId, group]) => {
         if (!group.icon) {
             const camp = Object.values(state.campaigns).find(c =>
-                c.game && (String(c.game.id) === String(gameId) || c.game.name === group.name)
+                c.game_name && c.game_name.toLowerCase() === group.name.toLowerCase()
             );
-            if (camp?.game?.box_art_url) group.icon = camp.game.box_art_url;
+            if (camp?.game_box_art_url) group.icon = camp.game_box_art_url;
         }
     });
 
@@ -918,6 +918,11 @@ function renderChannels() {
         // Wrap in WQ-style card
         const card = document.createElement('div');
         card.className = 'ch-game-card' + (isCollapsed ? '' : ' ch-game-card--open');
+        if (group.icon) {
+            const coverUrl = group.icon.replace('{width}', '40').replace('{height}', '53');
+            card.style.setProperty('--ch-cover', `url('${coverUrl}')`);
+            card.classList.add('has-cover');
+        }
 
         gameHeader.className = 'ch-game-header';
         gameHeader.style.cursor = 'pointer';
