@@ -913,7 +913,10 @@ function renderChannels() {
             : (t.gui?.channels?.channel_count_plural || 'channels');
         const viewersText = t.gui?.channels?.viewers || 'viewers';
 
-        const isCollapsed = state.collapsedGameGroups[gameId] !== false;
+        const hasWatching = group.channels.some(ch => ch.watching);
+        const isCollapsed = gameId in state.collapsedGameGroups
+            ? state.collapsedGameGroups[gameId]
+            : !hasWatching;
 
         // Wrap in WQ-style card
         const card = document.createElement('div');
