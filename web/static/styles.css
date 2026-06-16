@@ -2487,6 +2487,12 @@ header h1 {
         grid-row: auto;
     }
 
+    /* Override high-specificity desktop rules */
+    .login-panel.is-logged-in ~ .channel-points-panel-main { grid-column: 1; grid-row: auto; }
+    .main-grid:has(.login-panel.is-logged-in) .channels-panel { grid-row: auto; }
+    .main-grid:has(.login-panel.is-logged-in) .wanted-panel  { grid-row: auto; }
+    .main-grid:has(.login-panel.is-logged-in) .console-panel { grid-row: auto; }
+
     .inventory-grid {
         grid-template-columns: 1fr;
     }
