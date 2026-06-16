@@ -319,17 +319,19 @@ header h1 {
 }
 
 .progress-panel {
-    grid-column: 1 / -1;
-    grid-row: 3;
-}
-
-.login-panel {
     grid-column: 1;
-    grid-row: 4;
+    grid-row: 3;
 }
 
 .channel-points-panel-main {
     grid-column: 2;
+    grid-row: 3;
+    display: flex;
+    flex-direction: column;
+}
+
+.login-panel {
+    grid-column: 1 / -1;
     grid-row: 4;
 }
 
@@ -352,7 +354,7 @@ header h1 {
     display: none;
 }
 .login-panel.is-logged-in ~ .channel-points-panel-main {
-    grid-column: 1 / -1;
+    grid-column: 2;
 }
 
 .channels-panel {
@@ -372,6 +374,11 @@ header h1 {
     grid-column: 1 / -1;
     grid-row: 6;
 }
+
+/* When logged in, login panel is hidden — collapse rows */
+.main-grid:has(.login-panel.is-logged-in) .channels-panel { grid-row: 4; }
+.main-grid:has(.login-panel.is-logged-in) .wanted-panel  { grid-row: 4; }
+.main-grid:has(.login-panel.is-logged-in) .console-panel { grid-row: 5; }
 
 /* Quick Controls */
 .quick-controls-row {
