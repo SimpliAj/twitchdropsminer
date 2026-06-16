@@ -765,13 +765,13 @@ header h1 {
     position: absolute;
     inset: 0;
     background: var(--ch-cover, none) center/cover no-repeat;
-    filter: blur(20px) saturate(0.6);
+    filter: blur(24px) saturate(0.7);
     opacity: 0;
     transition: opacity 0.2s;
     pointer-events: none;
     z-index: 0;
 }
-.ch-game-card.has-cover::before { opacity: 0.18; }
+.ch-game-card.has-cover::before { opacity: 0.28; }
 .ch-game-card:hover { border-color: #6d6d7a; }
 .ch-game-card--open { border-color: var(--accent-color); }
 .ch-game-card--open:hover { border-color: var(--accent-color); }
