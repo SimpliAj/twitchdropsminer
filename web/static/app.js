@@ -899,6 +899,8 @@ function renderChannels() {
         return totalViewersB - totalViewersA;
     });
 
+    const firstGameId = sortedGames[0]?.[0];
+
     // Render each game group
     sortedGames.forEach(([gameId, group]) => {
         // Create game header
@@ -913,10 +915,9 @@ function renderChannels() {
             : (t.gui?.channels?.channel_count_plural || 'channels');
         const viewersText = t.gui?.channels?.viewers || 'viewers';
 
-        const hasWatching = group.channels.some(ch => ch.watching);
         const isCollapsed = gameId in state.collapsedGameGroups
             ? state.collapsedGameGroups[gameId]
-            : !hasWatching;
+            : gameId !== firstGameId;
 
         // Wrap in WQ-style card
         const card = document.createElement('div');
