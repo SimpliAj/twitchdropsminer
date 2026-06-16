@@ -172,7 +172,7 @@ socket.on('initial_state', (data) => {
         }
     }
 
-    if (data.settings) updateSettingsUI(data.settings);
+    if (data.settings) { updateSettingsUI(data.settings); autoCleanWantedQueue(); }
     if (data.login) updateLoginStatus(data.login);
     if (data.manual_mode) updateManualModeUI(data.manual_mode);
     if (data.paused !== undefined) updatePauseState(data.paused);
@@ -1593,8 +1593,6 @@ function renderInventory() {
 
         container.appendChild(card);
     });
-
-    autoCleanWantedQueue();
 }
 
 function autoCleanWantedQueue() {
@@ -3069,6 +3067,20 @@ async function loadInstanceTabs() {
         container.innerHTML = `<button class="acc-tab-btn active-acc" data-acc-n="${ACC_NUM}">Account ${ACC_NUM}</button>`;
     }
 }
+
+function syncChannelsPanelHeight() {
+    const wanted = document.querySelector('.wanted-panel');
+    const channels = document.querySelector('.channels-panel');
+    if (!wanted || !channels) return;
+    channels.style.maxHeight = wanted.offsetHeight + 'px';
+}
+
+const _wantedPanelObserver = new ResizeObserver(syncChannelsPanelHeight);
+document.addEventListener('DOMContentLoaded', () => {
+    const wp = document.querySelector('.wanted-panel');
+    if (wp) _wantedPanelObserver.observe(wp);
+    window.addEventListener('resize', syncChannelsPanelHeight);
+});
 
 document.addEventListener('DOMContentLoaded', () => {
     // Fetch and display version information
