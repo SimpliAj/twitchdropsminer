@@ -33,6 +33,23 @@ const state = {
     collapsedGameGroups: {}  // gameId -> boolean
 };
 
+// ==================== Local Drop Minutes Cache ====================
+// Persists max seen current_minutes per drop ID to localStorage.
+// Corrects Twitch API bugs where earned drops still show 0 minutes.
+const _dropMinutesKey = 'tdm_drop_minutes_v1';
+const _localDropMinutes = JSON.parse(localStorage.getItem(_dropMinutesKey) || '{}');
+
+function updateLocalDropMinutes(dropId, minutes) {
+    if (minutes > 0 && minutes > (_localDropMinutes[dropId] || 0)) {
+        _localDropMinutes[dropId] = minutes;
+        try { localStorage.setItem(_dropMinutesKey, JSON.stringify(_localDropMinutes)); } catch {}
+    }
+}
+
+function getEffectiveMinutes(drop) {
+    return Math.max(drop.current_minutes || 0, _localDropMinutes[drop.id] || 0);
+}
+
 // ==================== Version Checking ====================
 
 async function fetchAndDisplayVersion() {
@@ -329,6 +346,7 @@ socket.on('inventory_batch_update', (data) => {
 });
 
 socket.on('drop_update', (data) => {
+    updateLocalDropMinutes(data.drop.id, data.drop.current_minutes || 0);
     updateDrop(data.campaign_id, data.drop);
 });
 
@@ -1143,6 +1161,7 @@ function clearDropProgress() {
 
 function addCampaign(campaignData) {
     state.campaigns[campaignData.id] = campaignData;
+    (campaignData.drops || []).forEach(d => updateLocalDropMinutes(d.id, d.current_minutes || 0));
     renderInventory();
 }
 
@@ -3786,19 +3805,28 @@ function showCampaignDropsModal(campaignId, onlyRemaining) {
             dropName.textContent = drop.name;
             header.appendChild(dropName);
 
+            const effectiveMinutes = getEffectiveMinutes(drop);
+            const locallyEarned = !drop.is_claimed && drop.required_minutes > 0
+                && effectiveMinutes >= drop.required_minutes;
+
             const badge = document.createElement('span');
             badge.style.cssText = 'font-size:.72rem;padding:2px 7px;border-radius:20px;white-space:nowrap;flex-shrink:0';
             if (drop.is_claimed) {
                 badge.style.background = 'rgba(61,220,132,0.15)';
                 badge.style.color = '#3ddc84';
                 badge.textContent = '✓ Claimed';
+            } else if (locallyEarned) {
+                badge.style.background = 'rgba(61,220,132,0.1)';
+                badge.style.color = '#3ddc84';
+                badge.textContent = '✓ Earned';
+                badge.title = 'Watch time completed — waiting for Twitch to confirm';
             } else if (drop.can_claim) {
                 badge.style.background = 'rgba(255,200,0,0.15)';
                 badge.style.color = '#ffc800';
                 badge.textContent = '⚡ Claim now';
             } else {
-                const pct = drop.required_minutes > 0 ? Math.round((drop.current_minutes / drop.required_minutes) * 100) : 0;
-                const minsLeft = Math.max(0, drop.required_minutes - drop.current_minutes);
+                const pct = drop.required_minutes > 0 ? Math.round((effectiveMinutes / drop.required_minutes) * 100) : 0;
+                const minsLeft = Math.max(0, drop.required_minutes - effectiveMinutes);
                 badge.style.background = 'rgba(145,70,255,0.15)';
                 badge.style.color = 'var(--accent-color)';
                 badge.textContent = `${pct}% · ${minsLeft}min left`;
@@ -3806,8 +3834,8 @@ function showCampaignDropsModal(campaignId, onlyRemaining) {
             header.appendChild(badge);
             item.appendChild(header);
 
-            if (!drop.is_claimed && drop.required_minutes > 0) {
-                const pct = Math.min(100, (drop.current_minutes / drop.required_minutes) * 100);
+            if (!drop.is_claimed && !locallyEarned && drop.required_minutes > 0) {
+                const pct = Math.min(100, (effectiveMinutes / drop.required_minutes) * 100);
                 const bar = document.createElement('div');
                 bar.style.cssText = 'width:100%;height:3px;background:var(--bg-secondary);border-radius:2px;overflow:hidden;margin-bottom:6px';
                 const fill = document.createElement('div');
