@@ -1529,12 +1529,14 @@ function renderInventory() {
             el.appendChild(makeElement('span', { class: 'external-link-icon' }, '🔗'))
         );
 
-        // Linked/not linked badge
+        // Linked/not linked badge — only show "Link Account" if linking is actually required
         const linkStatusBadge = campaign.linked
             ? makeElement('span', { class: 'campaign-badge linked', title: 'Account is linked' }, 'LINKED')
-            : makeElement('span', { class: 'campaign-badge not-linked', title: 'Click to link your account on Twitch' }, '🔗 Link Account', el => {
-                el.addEventListener('click', () => window.open(campaign.link_url, '_blank'));
-            });
+            : campaign.has_badge_or_emote
+                ? null  // badge/emote campaigns don't need account linking
+                : makeElement('span', { class: 'campaign-badge not-linked', title: 'Click to link your account on Twitch' }, '🔗 Link Account', el => {
+                    el.addEventListener('click', () => window.open(campaign.link_url, '_blank'));
+                });
 
         // Farm toggle button
         const gameName = campaign.game_name;
@@ -1576,7 +1578,7 @@ function renderInventory() {
                 el.appendChild(makeImageElement(iconUrl, campaign.game_name, 'game-icon'));
             }
             el.appendChild(makeElement('span', { class: 'campaign-game-name' }, campaign.game_name));
-            el.appendChild(linkStatusBadge);
+            if (linkStatusBadge) el.appendChild(linkStatusBadge);
         });
 
         const campaignHeader = makeElement('div', { class: 'campaign-header' }, '', el => {
