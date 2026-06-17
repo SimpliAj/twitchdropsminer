@@ -58,6 +58,9 @@ if __name__ == "__main__":
         if settings.language:
             _.set_language(settings.language)
 
+        from src.services import drop_minutes_cache as _dmc
+        _dmc.load()
+
         logger.info("=== TwitchDropsMiner Starting ===")
         logger.info(f"Version: {__version__}")
         logger.info(f"Python version: {sys.version}")
