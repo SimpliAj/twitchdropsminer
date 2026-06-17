@@ -50,7 +50,7 @@ jobs:
           tags: |
             ghcr.io/simpliaj/twitchdropsminer:latest
             ghcr.io/simpliaj/twitchdropsminer:${{ steps.version.outputs.version }}
-            simpliaj/twitch-drops-miner:latest
-            simpliaj/twitch-drops-miner:${{ steps.version.outputs.version }}
+            gitsimpliaj/twitch-drops-miner:latest
+            gitsimpliaj/twitch-drops-miner:${{ steps.version.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
