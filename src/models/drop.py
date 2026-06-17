@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from dateutil.parser import isoparse
 
 from src.config.constants import MAX_EXTRA_MINUTES
+from src.services import drop_minutes_cache
 from src.config.operations import GQL_OPERATIONS
 from src.exceptions import GQLException
 from src.i18n import _
@@ -202,10 +203,9 @@ class TimedDrop(BaseDrop):
         self, campaign: DropsCampaign, data: JsonType, claimed_benefits: dict[str, datetime]
     ):
         super().__init__(campaign, data, claimed_benefits)
-        self.real_current_minutes: int = (
-            "self" in data and data["self"]["currentMinutesWatched"] or 0
-        )
+        api_minutes: int = "self" in data and data["self"]["currentMinutesWatched"] or 0
         self.required_minutes: int = data["requiredMinutesWatched"]
+        self.real_current_minutes: int = drop_minutes_cache.get(self.id, api_minutes)
         self.extra_current_minutes: int = 0
         if self.is_claimed:
             # claimed drops may report inconsistent current minutes, so we need to overwrite them
@@ -289,6 +289,7 @@ class TimedDrop(BaseDrop):
         else:
             self.real_current_minutes = self.required_minutes
         self.extra_current_minutes = 0
+        drop_minutes_cache.update(self.id, self.real_current_minutes)
         self._on_state_changed()
 
     def _bump_minutes(self, channel: Channel | None) -> bool:
