@@ -242,29 +242,41 @@ A dedicated Discord bot that pairs with your miner instance and sends rich, live
 
 ## 🧰 Quick Start
 
-### 🐳 Build from Source with Docker (Recommended)
+### 🐳 Pre-built Image (Recommended)
+
+No need to clone or build — pull the image directly from Docker Hub:
+
+```yaml
+# docker-compose.yml
+services:
+  twitch-drops-miner:
+    image: gitsimpliaj/twitch-drops-miner:latest
+    container_name: twitch-drops-miner
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - TZ=Europe/Vienna           # Set your timezone
+      - WEB_PASSWORD=yourpassword  # Optional: lock the dashboard
+    restart: always
+```
+
+```bash
+docker compose up -d
+```
+
+Visit 👉 **<http://localhost:8080>**
+
+Images are built automatically for `linux/amd64` and `linux/arm64` on every release.  
+Also available on GHCR: `ghcr.io/simpliaj/twitchdropsminer:latest`
+
+### 🔨 Build from Source with Docker
 
 ```bash
 git clone https://github.com/SimpliAj/twitchdropsminer.git
 cd twitchdropsminer
 docker compose up -d
-```
-
-### 📦 Docker Compose with custom options
-
-```yaml
-services:
-  twitch-drops-miner:
-    build: .
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./data:/app/data
-      - ./logs:/app/logs
-    environment:
-      - TZ=Europe/Vienna        # Set your timezone
-      - WEB_PASSWORD=yourpassword  # Optional: lock the dashboard
-    restart: unless-stopped
 ```
 
 ### 🧑‍💻 From Source (without Docker)
