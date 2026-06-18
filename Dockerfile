@@ -25,6 +25,9 @@ ENV PYTHONUNBUFFERED=1 \
 # Set working directory
 WORKDIR /app
 
+# Install system dependencies
+RUN apk add --no-cache tzdata
+
 # Copy project metadata and install dependencies
 COPY pyproject.toml .
 
