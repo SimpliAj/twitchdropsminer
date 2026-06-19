@@ -105,9 +105,14 @@ async function fetchAndDisplayVersion() {
                     if (!confirm(`Install v${data.latest_version} and restart?`)) return;
                     updateLink.textContent = '⏳ Updating...';
                     updateLink.style.pointerEvents = 'none';
+                    showUpdateModal('⏳ Pulling update...');
                     try {
-                        await fetch(API_BASE + '/api/self-update', { method: 'POST' });
-                    } catch (_) {}
+                        const res = await fetch(API_BASE + '/api/self-update', { method: 'POST' });
+                        const json = await res.json();
+                        showUpdateModal(json.log + '\n\n⏳ Restarting... page will reconnect.');
+                    } catch (_) {
+                        showUpdateModal('Error contacting server.');
+                    }
                 });
 
                 console.log(`Update available: ${data.latest_version} (current: ${data.current_version})`);
@@ -3880,6 +3885,27 @@ function showCampaignDropsModal(campaignId, onlyRemaining) {
 
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
+}
+
+function showUpdateModal(text) {
+    document.getElementById('update-log-modal')?.remove();
+    const overlay = document.createElement('div');
+    overlay.id = 'update-log-modal';
+    overlay.className = 'wq-modal-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center;';
+    const box = document.createElement('div');
+    box.style.cssText = 'background:var(--card-bg,#1a1a2e);border:1px solid var(--border-color,#333);border-radius:12px;padding:24px;max-width:520px;width:90%;font-family:monospace;';
+    const title = document.createElement('div');
+    title.textContent = '🔄 Self-Update';
+    title.style.cssText = 'font-size:1.1rem;font-weight:700;color:var(--twitch-purple,#9147ff);margin-bottom:12px;';
+    const pre = document.createElement('pre');
+    pre.style.cssText = 'white-space:pre-wrap;word-break:break-all;font-size:.8rem;color:#ccc;background:#111;padding:12px;border-radius:8px;max-height:300px;overflow-y:auto;margin:0;';
+    pre.textContent = text;
+    box.append(title, pre);
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+    return pre;
 }
 
 function showRewardModal(drop) {
