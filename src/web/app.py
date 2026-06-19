@@ -931,23 +931,30 @@ async def self_update():
     import subprocess
 
     repo_dir = Path(__file__).parent.parent.parent
+    logs = []
 
-    async def _update():
-        await asyncio.sleep(0.5)
-        try:
-            subprocess.run(
-                ["git", "pull", "simpliaj", "main"],
-                cwd=str(repo_dir),
-                capture_output=True,
-                timeout=60,
-            )
-        except Exception as e:
-            logger.warning(f"Self-update git pull failed: {e}")
-        await asyncio.sleep(1)
+    try:
+        result = subprocess.run(
+            ["git", "pull", "simpliaj", "main"],
+            cwd=str(repo_dir),
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        logs.append(result.stdout.strip() or "(no output)")
+        if result.stderr.strip():
+            logs.append(result.stderr.strip())
+        success = result.returncode == 0
+    except Exception as e:
+        logs.append(f"Error: {e}")
+        success = False
+
+    async def _restart():
+        await asyncio.sleep(2)
         subprocess.Popen(["pm2", "restart", "twitchdrops", "twitchdrops2"])
 
-    asyncio.create_task(_update())
-    return {"success": True}
+    asyncio.create_task(_restart())
+    return {"success": success, "log": "\n".join(logs)}
 
 
 @app.post("/api/skip-game")
