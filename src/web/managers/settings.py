@@ -130,6 +130,9 @@ class SettingsManager:
         self.check_and_update_setting(
             "auto_prioritize", settings_data.get("auto_prioritize")
         )
+        self.check_and_update_setting(
+            "auto_add_linked", settings_data.get("auto_add_linked")
+        )
 
         self._settings.save()
         asyncio.create_task(self._broadcaster.emit("settings_updated", self.get_settings()))
