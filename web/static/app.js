@@ -99,20 +99,11 @@ async function fetchAndDisplayVersion() {
                     updateLink.appendChild(span);
                 }
 
-                // Self-update on click
-                updateLink.addEventListener('click', async (e) => {
+                // Self-update on click — show release notes first, then update
+                updateLink.addEventListener('click', (e) => {
                     e.preventDefault();
-                    if (!confirm(`Install v${data.latest_version} and restart?`)) return;
-                    updateLink.textContent = '⏳ Updating...';
-                    updateLink.style.pointerEvents = 'none';
-                    showUpdateModal('⏳ Pulling update...');
-                    try {
-                        const res = await fetch(API_BASE + '/api/self-update', { method: 'POST' });
-                        const json = await res.json();
-                        showUpdateModal(json.log + '\n\n⏳ Restarting... page will reconnect.');
-                    } catch (_) {
-                        showUpdateModal('Error contacting server.');
-                    }
+                    const notes = data.release_notes || '(no release notes)';
+                    showUpdateModal(`v${data.latest_version}\n\n${notes}`, true, data.latest_version);
                 });
 
                 console.log(`Update available: ${data.latest_version} (current: ${data.current_version})`);
@@ -3887,21 +3878,48 @@ function showCampaignDropsModal(campaignId, onlyRemaining) {
     document.body.appendChild(overlay);
 }
 
-function showUpdateModal(text) {
+function showUpdateModal(text, withInstallBtn, latestVersion) {
     document.getElementById('update-log-modal')?.remove();
     const overlay = document.createElement('div');
     overlay.id = 'update-log-modal';
     overlay.className = 'wq-modal-overlay';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center;';
     const box = document.createElement('div');
-    box.style.cssText = 'background:var(--card-bg,#1a1a2e);border:1px solid var(--border-color,#333);border-radius:12px;padding:24px;max-width:520px;width:90%;font-family:monospace;';
+    box.style.cssText = 'background:var(--card-bg,#1a1a2e);border:1px solid var(--border-color,#333);border-radius:12px;padding:24px;max-width:520px;width:90%;';
     const title = document.createElement('div');
-    title.textContent = '🔄 Self-Update';
+    title.textContent = '🔄 Update Available';
     title.style.cssText = 'font-size:1.1rem;font-weight:700;color:var(--twitch-purple,#9147ff);margin-bottom:12px;';
     const pre = document.createElement('pre');
-    pre.style.cssText = 'white-space:pre-wrap;word-break:break-all;font-size:.8rem;color:#ccc;background:#111;padding:12px;border-radius:8px;max-height:300px;overflow-y:auto;margin:0;';
+    pre.style.cssText = 'white-space:pre-wrap;word-break:break-word;font-size:.82rem;color:#ccc;background:#111;padding:12px;border-radius:8px;max-height:300px;overflow-y:auto;margin:0;font-family:inherit;';
     pre.textContent = text;
     box.append(title, pre);
+    if (withInstallBtn) {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;gap:10px;margin-top:14px;justify-content:flex-end;';
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.style.cssText = 'padding:8px 16px;border-radius:8px;border:1px solid #444;background:transparent;color:#aaa;cursor:pointer;';
+        cancelBtn.addEventListener('click', () => overlay.remove());
+        const installBtn = document.createElement('button');
+        installBtn.textContent = `Install v${latestVersion}`;
+        installBtn.style.cssText = 'padding:8px 16px;border-radius:8px;border:none;background:var(--twitch-purple,#9147ff);color:#fff;font-weight:600;cursor:pointer;';
+        installBtn.addEventListener('click', async () => {
+            installBtn.textContent = '⏳ Updating...';
+            installBtn.disabled = true;
+            cancelBtn.disabled = true;
+            pre.textContent = 'Pulling latest code from GitHub...\n';
+            try {
+                const res = await fetch(API_BASE + '/api/self-update', { method: 'POST' });
+                const json = await res.json();
+                pre.textContent = json.log + '\n\n⏳ Restarting... page will reconnect shortly.';
+                title.textContent = '✅ Update Applied';
+            } catch (_) {
+                pre.textContent = 'Error contacting server.';
+            }
+        });
+        row.append(cancelBtn, installBtn);
+        box.appendChild(row);
+    }
     overlay.appendChild(box);
     document.body.appendChild(overlay);
     overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });

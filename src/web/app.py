@@ -844,6 +844,7 @@ async def get_version():
                 data = await response.json()
                 latest_version = data.get("tag_name", "").lstrip("v")
                 download_url = data.get("html_url")
+                release_notes = data.get("body", "")
 
                 # Compare versions (simple string comparison works for semantic versioning)
                 if latest_version and latest_version > current_version:
@@ -856,6 +857,7 @@ async def get_version():
         "latest_version": latest_version,
         "update_available": update_available,
         "download_url": download_url or "https://github.com/SimpliAj/twitchdropsminer/releases",
+        "release_notes": release_notes,
     }
 
 
