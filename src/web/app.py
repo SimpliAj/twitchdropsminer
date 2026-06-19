@@ -925,6 +925,31 @@ async def trigger_restart():
     return {"success": True}
 
 
+@app.post("/api/self-update")
+async def self_update():
+    """Pull latest code from GitHub and restart all instances"""
+    import subprocess
+
+    repo_dir = Path(__file__).parent.parent.parent
+
+    async def _update():
+        await asyncio.sleep(0.5)
+        try:
+            subprocess.run(
+                ["git", "pull", "simpliaj", "main"],
+                cwd=str(repo_dir),
+                capture_output=True,
+                timeout=60,
+            )
+        except Exception as e:
+            logger.warning(f"Self-update git pull failed: {e}")
+        await asyncio.sleep(1)
+        subprocess.Popen(["pm2", "restart", "twitchdrops", "twitchdrops2"])
+
+    asyncio.create_task(_update())
+    return {"success": True}
+
+
 @app.post("/api/skip-game")
 async def skip_game():
     """Skip current game and switch to a different game"""

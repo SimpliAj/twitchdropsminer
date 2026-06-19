@@ -86,21 +86,30 @@ async function fetchAndDisplayVersion() {
 
             if (updateIndicator && latestVersionSpan && updateLink) {
                 latestVersionSpan.textContent = data.latest_version;
-                updateLink.href = data.download_url;
+                updateLink.href = '#';
                 updateIndicator.style.display = 'inline-block';
 
                 // Translate update message
                 if (state.translations.gui?.footer) {
                     const updateLabel = state.translations.gui.footer.update_available || 'Update Available:';
                     const linkText = document.createTextNode(` ⚠ ${updateLabel} `);
-                    // Clear existing text nodes but keep the span
-                    const span = updateLink.querySelector('span'); // latest-version span
+                    const span = updateLink.querySelector('span');
                     updateLink.textContent = '';
                     updateLink.appendChild(linkText);
                     updateLink.appendChild(span);
                 }
 
-                // Log to console
+                // Self-update on click
+                updateLink.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    if (!confirm(`Install v${data.latest_version} and restart?`)) return;
+                    updateLink.textContent = '⏳ Updating...';
+                    updateLink.style.pointerEvents = 'none';
+                    try {
+                        await fetch(API_BASE + '/api/self-update', { method: 'POST' });
+                    } catch (_) {}
+                });
+
                 console.log(`Update available: ${data.latest_version} (current: ${data.current_version})`);
             }
         }
