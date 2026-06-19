@@ -3937,14 +3937,14 @@ function showUpdateModal(text, withInstallBtn, latestVersion) {
     const overlay = document.createElement('div');
     overlay.id = 'update-log-modal';
     overlay.className = 'wq-modal-overlay';
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center;';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center;overflow-y:auto;padding:24px;';
     const box = document.createElement('div');
-    box.style.cssText = 'background:var(--card-bg,#1a1a2e);border:1px solid var(--border-color,#333);border-radius:12px;padding:24px;max-width:520px;width:90%;';
+    box.style.cssText = 'background:var(--card-bg,#1a1a2e);border:1px solid var(--border-color,#333);border-radius:12px;padding:24px;max-width:520px;width:90%;margin:auto;';
     const title = document.createElement('div');
     title.textContent = '🔄 Update Available';
     title.style.cssText = 'font-size:1.1rem;font-weight:700;color:var(--twitch-purple,#9147ff);margin-bottom:12px;';
     const pre = document.createElement('div');
-    pre.style.cssText = 'background:#111;padding:12px;border-radius:8px;max-height:300px;overflow-y:auto;margin:0;';
+    pre.style.cssText = 'background:#111;padding:12px;border-radius:8px;margin:0;';
     if (withInstallBtn) {
         pre.appendChild(renderMarkdown(text));
     } else {
