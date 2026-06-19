@@ -731,6 +731,47 @@ function renderChannelPointsTab() {
     });
 }
 
+let _faviconCanvas = null;
+let _faviconImg = null;
+let _lastFaviconCount = -1;
+
+function updateFaviconBadge(count) {
+    if (count === _lastFaviconCount) return;
+    _lastFaviconCount = count;
+    const link = document.querySelector("link[rel~='icon']") || document.createElement('link');
+    link.rel = 'icon';
+    if (!_faviconCanvas) {
+        _faviconCanvas = document.createElement('canvas');
+        _faviconCanvas.width = 32;
+        _faviconCanvas.height = 32;
+    }
+    const ctx = _faviconCanvas.getContext('2d');
+    ctx.clearRect(0, 0, 32, 32);
+    const drawBadge = () => {
+        if (count > 0) {
+            ctx.beginPath();
+            ctx.arc(24, 8, 10, 0, 2 * Math.PI);
+            ctx.fillStyle = '#9147ff';
+            ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(count > 9 ? '9+' : String(count), 24, 8);
+        }
+        link.href = _faviconCanvas.toDataURL('image/png');
+        if (!link.parentNode) document.head.appendChild(link);
+    };
+    if (!_faviconImg) {
+        _faviconImg = new Image();
+        _faviconImg.src = '/static/favicon.png';
+        _faviconImg.onload = () => { ctx.drawImage(_faviconImg, 0, 0, 32, 32); drawBadge(); };
+    } else {
+        ctx.drawImage(_faviconImg, 0, 0, 32, 32);
+        drawBadge();
+    }
+}
+
 function updateStatus(status) {
     document.getElementById('status-text').textContent = status;
     if (!/watching/i.test(status)) {
@@ -738,6 +779,12 @@ function updateStatus(status) {
         if (gameEl) { gameEl.textContent = ''; gameEl.style.display = 'none'; }
     }
     updateQCButtons(status);
+    // Favicon badge: count active (non-expired, non-fully-claimed) campaigns
+    const activeCampaigns = Object.values(state.campaigns).filter(c => {
+        const { active } = getCampaignStatus(c);
+        return active && !(c.total_drops > 0 && c.claimed_drops === c.total_drops);
+    }).length;
+    updateFaviconBadge(activeCampaigns);
 }
 
 function updateQCButtons(status) {
@@ -1168,6 +1215,7 @@ function addCampaign(campaignData) {
     state.campaigns[campaignData.id] = campaignData;
     (campaignData.drops || []).forEach(d => updateLocalDropMinutes(d.id, d.current_minutes || 0));
     renderInventory();
+    if (state.settings?.auto_prioritize) sortGamesByEndDate();
 }
 
 function clearInventory() {
@@ -1765,6 +1813,9 @@ function updateSettingsUI(settings) {
         availableGames = new Set(settings.games_available);
     }
 
+    const autoPrioritizeToggle = document.getElementById('auto-prioritize-toggle');
+    if (autoPrioritizeToggle) autoPrioritizeToggle.checked = !!settings.auto_prioritize;
+
     // Restore inventory filters from settings
     if (settings.inventory_filters) {
         document.getElementById('filter-active').checked = settings.inventory_filters.show_active || false;
@@ -2143,6 +2194,22 @@ function removeGameFromWatch(gameName) {
         renderChannels();
         saveSettings();
     }
+}
+
+function sortGamesByEndDate() {
+    const games = state.settings.games_to_watch || [];
+    const campaigns = Object.values(state.campaigns);
+    const getEarliestEnd = (gameName) => {
+        const active = campaigns.filter(c =>
+            c.game_name?.toLowerCase() === gameName.toLowerCase() && c.ends_at
+        );
+        if (!active.length) return Infinity;
+        return Math.min(...active.map(c => new Date(c.ends_at).getTime()));
+    };
+    state.settings.games_to_watch = [...games].sort((a, b) => getEarliestEnd(a) - getEarliestEnd(b));
+    renderGamesToWatch();
+    renderChannels();
+    saveSettings();
 }
 
 function selectAllGames() {
@@ -3210,6 +3277,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('select-badge-emote-btn')?.addEventListener('click', selectBadgeEmoteGames);
     document.getElementById('add-game-btn').addEventListener('click', addGameFromSearch);
     document.getElementById('games-filter').addEventListener('input', renderGamesToWatch);
+    document.getElementById('sort-by-end-date-btn')?.addEventListener('click', sortGamesByEndDate);
+    document.getElementById('auto-prioritize-toggle')?.addEventListener('change', function() {
+        state.settings.auto_prioritize = this.checked;
+        saveSettings();
+        if (this.checked) sortGamesByEndDate();
+    });
 
     // Inventory filters
     document.getElementById('filter-active').addEventListener('change', onInventoryFilterChange);
