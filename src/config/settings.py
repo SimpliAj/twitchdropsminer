@@ -58,6 +58,7 @@ default_settings = {
     "discord_webhook_drops": "",
     "discord_webhook_points": "",
     "drop_name_blacklist": [],
+    "auto_prioritize": False,
 }
 
 
@@ -80,6 +81,7 @@ class Settings:
     discord_webhook_drops: str
     discord_webhook_points: str
     drop_name_blacklist: list[str]
+    auto_prioritize: bool
 
     def __init__(self):
         self.load()

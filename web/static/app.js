@@ -731,55 +731,10 @@ function renderChannelPointsTab() {
     });
 }
 
-let _faviconCanvas = null;
-let _faviconImg = null;
-let _lastFaviconCount = -1;
+const _BASE_TITLE = document.title;
 
-function updateFaviconBadge(count) {
-    if (count === _lastFaviconCount) return;
-    _lastFaviconCount = count;
-    const link = document.querySelector("link[rel~='icon']") || document.createElement('link');
-    link.rel = 'icon';
-    if (!_faviconCanvas) {
-        _faviconCanvas = document.createElement('canvas');
-        _faviconCanvas.width = 64;
-        _faviconCanvas.height = 64;
-    }
-    const ctx = _faviconCanvas.getContext('2d');
-    ctx.clearRect(0, 0, 64, 64);
-    const drawBadge = () => {
-        if (count > 0) {
-            // Draw favicon smaller (top-left 42x42) to leave room for badge
-            ctx.clearRect(0, 0, 64, 64);
-            if (_faviconImg) ctx.drawImage(_faviconImg, 0, 0, 42, 42);
-            // White border
-            ctx.beginPath();
-            ctx.arc(48, 48, 20, 0, 2 * Math.PI);
-            ctx.fillStyle = '#fff';
-            ctx.fill();
-            // Purple badge
-            ctx.beginPath();
-            ctx.arc(48, 48, 17, 0, 2 * Math.PI);
-            ctx.fillStyle = '#9147ff';
-            ctx.fill();
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 20px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(count > 9 ? '9+' : String(count), 48, 48);
-        } else {
-            if (_faviconImg) ctx.drawImage(_faviconImg, 0, 0, 64, 64);
-        }
-        link.href = _faviconCanvas.toDataURL('image/png');
-        if (!link.parentNode) document.head.appendChild(link);
-    };
-    if (!_faviconImg) {
-        _faviconImg = new Image();
-        _faviconImg.src = '/static/favicon.png';
-        _faviconImg.onload = () => { drawBadge(); };
-    } else {
-        drawBadge();
-    }
+function updateTitleBadge(count) {
+    document.title = count > 0 ? `(${count}) ${_BASE_TITLE}` : _BASE_TITLE;
 }
 
 function updateStatus(status) {
@@ -789,12 +744,11 @@ function updateStatus(status) {
         if (gameEl) { gameEl.textContent = ''; gameEl.style.display = 'none'; }
     }
     updateQCButtons(status);
-    // Favicon badge: count active (non-expired, non-fully-claimed) campaigns
     const activeCampaigns = Object.values(state.campaigns).filter(c => {
         const { active } = getCampaignStatus(c);
         return active && !(c.total_drops > 0 && c.claimed_drops === c.total_drops);
     }).length;
-    updateFaviconBadge(activeCampaigns);
+    updateTitleBadge(activeCampaigns);
 }
 
 function updateQCButtons(status) {

@@ -127,6 +127,9 @@ class SettingsManager:
         self.check_and_update_setting(
             "drop_name_blacklist", settings_data.get("drop_name_blacklist")
         )
+        self.check_and_update_setting(
+            "auto_prioritize", settings_data.get("auto_prioritize")
+        )
 
         self._settings.save()
         asyncio.create_task(self._broadcaster.emit("settings_updated", self.get_settings()))
