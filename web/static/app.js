@@ -1175,10 +1175,29 @@ function clearDropProgress() {
     updateQCButtons(document.getElementById('status-text')?.textContent || '');
 }
 
+function autoAddLinkedGames() {
+    if (!state.settings?.auto_add_linked) return;
+    const watching = new Set(state.settings.games_to_watch || []);
+    let changed = false;
+    Object.values(state.campaigns).forEach(c => {
+        if (c.linked && c.game_name && !watching.has(c.game_name)) {
+            watching.add(c.game_name);
+            changed = true;
+        }
+    });
+    if (changed) {
+        state.settings.games_to_watch = Array.from(watching);
+        saveSettings();
+        renderGamesToWatch();
+        renderChannels();
+    }
+}
+
 function addCampaign(campaignData) {
     state.campaigns[campaignData.id] = campaignData;
     (campaignData.drops || []).forEach(d => updateLocalDropMinutes(d.id, d.current_minutes || 0));
     renderInventory();
+    autoAddLinkedGames();
     if (state.settings?.auto_prioritize) sortGamesByEndDate();
 }
 
@@ -1779,6 +1798,8 @@ function updateSettingsUI(settings) {
 
     const autoPrioritizeToggle = document.getElementById('auto-prioritize-toggle');
     if (autoPrioritizeToggle) autoPrioritizeToggle.checked = !!settings.auto_prioritize;
+    const autoAddLinkedToggle = document.getElementById('auto-add-linked-toggle');
+    if (autoAddLinkedToggle) autoAddLinkedToggle.checked = !!settings.auto_add_linked;
 
     // Restore inventory filters from settings
     if (settings.inventory_filters) {
@@ -3246,6 +3267,11 @@ document.addEventListener('DOMContentLoaded', () => {
         state.settings.auto_prioritize = this.checked;
         saveSettings();
         if (this.checked) sortGamesByEndDate();
+    });
+    document.getElementById('auto-add-linked-toggle')?.addEventListener('change', function() {
+        state.settings.auto_add_linked = this.checked;
+        saveSettings();
+        if (this.checked) autoAddLinkedGames();
     });
 
     // Inventory filters
