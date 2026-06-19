@@ -927,10 +927,29 @@ async def trigger_restart():
     return {"success": True}
 
 
+def _is_docker() -> bool:
+    return Path("/.dockerenv").exists() or _os.environ.get("DOCKER_CONTAINER") == "1"
+
+
 @app.post("/api/self-update")
 async def self_update():
-    """Pull latest code from GitHub and restart all instances"""
+    """Pull latest code from GitHub and restart — detects Docker vs PM2"""
     import subprocess
+
+    if _is_docker():
+        return {
+            "success": False,
+            "docker": True,
+            "log": (
+                "Running inside Docker.\n\n"
+                "To update, run on your host:\n\n"
+                "  docker compose pull\n"
+                "  docker compose up -d\n\n"
+                "Or with docker run:\n\n"
+                "  docker pull gitsimpliaj/twitch-drops-miner:latest\n"
+                "  docker stop <container> && docker run ..."
+            ),
+        }
 
     repo_dir = Path(__file__).parent.parent.parent
     logs = []

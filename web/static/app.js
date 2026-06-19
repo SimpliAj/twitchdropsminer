@@ -3969,12 +3969,25 @@ function showUpdateModal(text, withInstallBtn, latestVersion) {
             installBtn.textContent = '⏳ Updating...';
             installBtn.disabled = true;
             cancelBtn.disabled = true;
+            pre.innerHTML = '';
+            pre.style.fontFamily = 'monospace';
+            pre.style.whiteSpace = 'pre-wrap';
+            pre.style.fontSize = '.8rem';
+            pre.style.color = '#ccc';
             pre.textContent = 'Pulling latest code from GitHub...\n';
             try {
                 const res = await fetch(API_BASE + '/api/self-update', { method: 'POST' });
                 const json = await res.json();
-                pre.textContent = json.log + '\n\n⏳ Restarting... page will reconnect shortly.';
-                title.textContent = '✅ Update Applied';
+                if (json.docker) {
+                    pre.textContent = json.log;
+                    title.textContent = '🐳 Docker detected';
+                    installBtn.style.display = 'none';
+                    cancelBtn.textContent = 'Close';
+                    cancelBtn.disabled = false;
+                } else {
+                    pre.textContent = json.log + '\n\n⏳ Restarting... page will reconnect shortly.';
+                    title.textContent = '✅ Update Applied';
+                }
             } catch (_) {
                 pre.textContent = 'Error contacting server.';
             }
