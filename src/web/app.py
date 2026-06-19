@@ -376,6 +376,7 @@ class SettingsUpdate(BaseModel):
     discord_webhook_drops: str | None = None
     discord_webhook_points: str | None = None
     drop_name_blacklist: list[str] | None = None
+    auto_prioritize: bool | None = None
 
 
 class ProxyVerifyRequest(BaseModel):
