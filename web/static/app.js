@@ -1673,13 +1673,12 @@ function autoCleanWantedQueue() {
         );
         if (gameCampaigns.length === 0) return true;
 
-        const hasActiveUnclaimed = gameCampaigns.some(c => {
-            const { active, upcoming } = getCampaignStatus(c);
-            if (!active && !upcoming) return false;
-            return !(c.total_drops > 0 && c.claimed_drops === c.total_drops);
-        });
+        // Only auto-remove when ALL campaigns for this game have all drops fully claimed
+        const allFullyClaimed = gameCampaigns.every(c =>
+            c.total_drops > 0 && c.claimed_drops === c.total_drops
+        );
 
-        if (!hasActiveUnclaimed) { changed = true; return false; }
+        if (allFullyClaimed) { changed = true; return false; }
         return true;
     });
 
