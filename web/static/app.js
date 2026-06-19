@@ -3878,6 +3878,60 @@ function showCampaignDropsModal(campaignId, onlyRemaining) {
     document.body.appendChild(overlay);
 }
 
+function renderInlineMarkdown(line, container) {
+    // Parse **bold** and `code` using DOM nodes only — no innerHTML
+    const parts = line.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
+    parts.forEach(part => {
+        if (/^\*\*(.+)\*\*$/.test(part)) {
+            const s = document.createElement('strong');
+            s.style.color = '#fff';
+            s.textContent = part.slice(2, -2);
+            container.appendChild(s);
+        } else if (/^`([^`]+)`$/.test(part)) {
+            const c = document.createElement('code');
+            c.style.cssText = 'background:#0d0d0d;padding:1px 5px;border-radius:4px;font-size:.8rem;';
+            c.textContent = part.slice(1, -1);
+            container.appendChild(c);
+        } else {
+            container.appendChild(document.createTextNode(part));
+        }
+    });
+}
+
+function renderMarkdown(md) {
+    const div = document.createElement('div');
+    div.style.cssText = 'font-size:.85rem;color:#ccc;line-height:1.6;';
+    // Replace fenced code blocks with a placeholder line
+    const lines = md.replace(/```[\s\S]*?```/g, '`…`').split('\n');
+    lines.forEach(line => {
+        const el = document.createElement('div');
+        if (/^### /.test(line)) {
+            const s = document.createElement('strong');
+            s.style.cssText = 'color:#fff;font-size:.9rem;';
+            s.textContent = line.slice(4);
+            el.style.marginTop = '10px';
+            el.appendChild(s);
+        } else if (/^## /.test(line)) {
+            const s = document.createElement('strong');
+            s.style.cssText = 'color:var(--twitch-purple,#9147ff);font-size:.95rem;';
+            s.textContent = line.slice(3);
+            el.style.marginTop = '12px';
+            el.appendChild(s);
+        } else if (/^# /.test(line)) {
+            const s = document.createElement('strong');
+            s.style.cssText = 'color:#fff;font-size:1rem;';
+            s.textContent = line.slice(2);
+            el.appendChild(s);
+        } else if (line.trim() === '') {
+            el.style.height = '4px';
+        } else {
+            renderInlineMarkdown(line, el);
+        }
+        div.appendChild(el);
+    });
+    return div;
+}
+
 function showUpdateModal(text, withInstallBtn, latestVersion) {
     document.getElementById('update-log-modal')?.remove();
     const overlay = document.createElement('div');
@@ -3889,9 +3943,17 @@ function showUpdateModal(text, withInstallBtn, latestVersion) {
     const title = document.createElement('div');
     title.textContent = '🔄 Update Available';
     title.style.cssText = 'font-size:1.1rem;font-weight:700;color:var(--twitch-purple,#9147ff);margin-bottom:12px;';
-    const pre = document.createElement('pre');
-    pre.style.cssText = 'white-space:pre-wrap;word-break:break-word;font-size:.82rem;color:#ccc;background:#111;padding:12px;border-radius:8px;max-height:300px;overflow-y:auto;margin:0;font-family:inherit;';
-    pre.textContent = text;
+    const pre = document.createElement('div');
+    pre.style.cssText = 'background:#111;padding:12px;border-radius:8px;max-height:300px;overflow-y:auto;margin:0;';
+    if (withInstallBtn) {
+        pre.appendChild(renderMarkdown(text));
+    } else {
+        pre.style.fontFamily = 'monospace';
+        pre.style.fontSize = '.8rem';
+        pre.style.whiteSpace = 'pre-wrap';
+        pre.style.color = '#ccc';
+        pre.textContent = text;
+    }
     box.append(title, pre);
     if (withInstallBtn) {
         const row = document.createElement('div');
