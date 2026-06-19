@@ -362,10 +362,6 @@
                     <section class="settings-section" id="settings-notifications">
                         <h2 id="settings-notifications-header">Browser</h2>
                         <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                            <input type="checkbox" id="push-enabled-toggle">
-                            <span id="settings-push-enabled-label">Browser Push Notifications</span>
-                        </label>
-                        <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
                             <input type="checkbox" id="push-sound-toggle">
                             <span id="settings-push-sound-label">Notification Sound</span>
                         </label>
@@ -1073,19 +1069,14 @@ TDM_PORT=8080 WEB_PASSWORD=mysecretpassword pm2 start main.py --name twitchdrops
                                 <span class="help-section-icon">🔔</span>
                                 <h2>Notifications</h2>
                             </div>
-                            <p>Enable browser push notifications in <strong>Settings → Notifications</strong> to receive alerts even when the tab is in the background.</p>
+                            <p>Configure notification settings in <strong>Settings → Notifications</strong>.</p>
                             <table class="help-table">
                                 <thead><tr><th>Setting</th><th>Description</th></tr></thead>
                                 <tbody>
-                                    <tr><td><strong>Browser Push Notifications</strong></td><td>Show a native OS notification when a drop is claimed. Includes the drop image.</td></tr>
-                                    <tr><td><strong>Notification Sound</strong></td><td>Play a sound when a drop notification fires.</td></tr>
-                                    <tr><td><strong>Campaign End Alerts</strong></td><td>Get notified (Discord webhook + push) when a campaign ends in less than 24 hours and you still have unclaimed drops.</td></tr>
+                                    <tr><td><strong>Notification Sound</strong></td><td>Play a sound when a drop is claimed.</td></tr>
+                                    <tr><td><strong>Campaign End Alerts</strong></td><td>Get notified via Discord webhook when a campaign ends in less than 24 hours and you still have unclaimed drops.</td></tr>
                                 </tbody>
                             </table>
-                            <div class="help-note">
-                                <span class="help-note-icon">ℹ️</span>
-                                <div>Your browser will ask for notification permission the first time you enable push notifications. Make sure to allow it.</div>
-                            </div>
                         </section>
 
                         <!-- Stats Tab -->
