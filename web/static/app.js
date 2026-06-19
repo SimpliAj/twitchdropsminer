@@ -742,22 +742,28 @@ function updateFaviconBadge(count) {
     link.rel = 'icon';
     if (!_faviconCanvas) {
         _faviconCanvas = document.createElement('canvas');
-        _faviconCanvas.width = 32;
-        _faviconCanvas.height = 32;
+        _faviconCanvas.width = 64;
+        _faviconCanvas.height = 64;
     }
     const ctx = _faviconCanvas.getContext('2d');
-    ctx.clearRect(0, 0, 32, 32);
+    ctx.clearRect(0, 0, 64, 64);
     const drawBadge = () => {
         if (count > 0) {
+            // white border for contrast
             ctx.beginPath();
-            ctx.arc(24, 8, 10, 0, 2 * Math.PI);
+            ctx.arc(46, 18, 16, 0, 2 * Math.PI);
+            ctx.fillStyle = '#fff';
+            ctx.fill();
+            // purple circle
+            ctx.beginPath();
+            ctx.arc(46, 18, 13, 0, 2 * Math.PI);
             ctx.fillStyle = '#9147ff';
             ctx.fill();
             ctx.fillStyle = '#fff';
-            ctx.font = 'bold 12px sans-serif';
+            ctx.font = 'bold 16px sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(count > 9 ? '9+' : String(count), 24, 8);
+            ctx.fillText(count > 9 ? '9+' : String(count), 46, 18);
         }
         link.href = _faviconCanvas.toDataURL('image/png');
         if (!link.parentNode) document.head.appendChild(link);
@@ -765,9 +771,9 @@ function updateFaviconBadge(count) {
     if (!_faviconImg) {
         _faviconImg = new Image();
         _faviconImg.src = '/static/favicon.png';
-        _faviconImg.onload = () => { ctx.drawImage(_faviconImg, 0, 0, 32, 32); drawBadge(); };
+        _faviconImg.onload = () => { ctx.drawImage(_faviconImg, 0, 0, 64, 64); drawBadge(); };
     } else {
-        ctx.drawImage(_faviconImg, 0, 0, 32, 32);
+        ctx.drawImage(_faviconImg, 0, 0, 64, 64);
         drawBadge();
     }
 }
