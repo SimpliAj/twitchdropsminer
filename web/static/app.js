@@ -736,7 +736,7 @@ let _lastActiveCampaignCount = 0;
 
 function updateTitleBadge(count) {
     _lastActiveCampaignCount = count;
-    const enabled = localStorage.getItem('tab_counter') !== 'false';
+    const enabled = state.settings?.tab_counter_enabled !== false;
     document.title = (enabled && count > 0) ? `(${count}) ${_BASE_TITLE}` : _BASE_TITLE;
 }
 
@@ -747,11 +747,13 @@ function updateStatus(status) {
         if (gameEl) { gameEl.textContent = ''; gameEl.style.display = 'none'; }
     }
     updateQCButtons(status);
-    const activeCampaigns = Object.values(state.campaigns).filter(c => {
+    // Count remaining unclaimed drops across all active campaigns
+    const remainingDrops = Object.values(state.campaigns).reduce((sum, c) => {
         const { active } = getCampaignStatus(c);
-        return active && !(c.total_drops > 0 && c.claimed_drops === c.total_drops);
-    }).length;
-    updateTitleBadge(activeCampaigns);
+        if (!active) return sum;
+        return sum + Math.max(0, (c.total_drops || 0) - (c.claimed_drops || 0));
+    }, 0);
+    updateTitleBadge(remainingDrops);
 }
 
 function updateQCButtons(status) {
@@ -1803,6 +1805,8 @@ function updateSettingsUI(settings) {
     if (autoPrioritizeToggle) autoPrioritizeToggle.checked = !!settings.auto_prioritize;
     const autoAddLinkedToggle = document.getElementById('auto-add-linked-toggle');
     if (autoAddLinkedToggle) autoAddLinkedToggle.checked = !!settings.auto_add_linked;
+    const tabCounterToggle = document.getElementById('tab-counter-toggle');
+    if (tabCounterToggle) tabCounterToggle.checked = settings.tab_counter_enabled !== false;
 
     // Restore inventory filters from settings
     if (settings.inventory_filters) {
@@ -2432,6 +2436,7 @@ async function saveSettings() {
         scheduler_stop: document.getElementById('scheduler-stop')?.value || '08:00',
         auto_prioritize: document.getElementById('auto-prioritize-toggle')?.checked || false,
         auto_add_linked: document.getElementById('auto-add-linked-toggle')?.checked || false,
+        tab_counter_enabled: document.getElementById('tab-counter-toggle')?.checked ?? true,
     };
 
     try {
@@ -3278,14 +3283,11 @@ document.addEventListener('DOMContentLoaded', () => {
         saveSettings();
         if (this.checked) autoAddLinkedGames();
     });
-    const tabCounterToggle = document.getElementById('tab-counter-toggle');
-    if (tabCounterToggle) {
-        tabCounterToggle.checked = localStorage.getItem('tab_counter') !== 'false';
-        tabCounterToggle.addEventListener('change', function() {
-            localStorage.setItem('tab_counter', this.checked ? 'true' : 'false');
-            updateTitleBadge(_lastActiveCampaignCount || 0);
-        });
-    }
+    document.getElementById('tab-counter-toggle')?.addEventListener('change', function() {
+        state.settings.tab_counter_enabled = this.checked;
+        saveSettings();
+        updateTitleBadge(_lastActiveCampaignCount || 0);
+    });
 
     // Inventory filters
     document.getElementById('filter-active').addEventListener('change', onInventoryFilterChange);

@@ -60,6 +60,7 @@ default_settings = {
     "drop_name_blacklist": [],
     "auto_prioritize": False,
     "auto_add_linked": False,
+    "tab_counter_enabled": True,
 }
 
 
@@ -84,6 +85,7 @@ class Settings:
     drop_name_blacklist: list[str]
     auto_prioritize: bool
     auto_add_linked: bool
+    tab_counter_enabled: bool
 
     def __init__(self):
         self.load()
