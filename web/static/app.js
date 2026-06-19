@@ -732,9 +732,12 @@ function renderChannelPointsTab() {
 }
 
 const _BASE_TITLE = document.title;
+let _lastActiveCampaignCount = 0;
 
 function updateTitleBadge(count) {
-    document.title = count > 0 ? `(${count}) ${_BASE_TITLE}` : _BASE_TITLE;
+    _lastActiveCampaignCount = count;
+    const enabled = localStorage.getItem('tab_counter') !== 'false';
+    document.title = (enabled && count > 0) ? `(${count}) ${_BASE_TITLE}` : _BASE_TITLE;
 }
 
 function updateStatus(status) {
@@ -2427,6 +2430,8 @@ async function saveSettings() {
         scheduler_enabled: document.getElementById('scheduler-enabled')?.checked || false,
         scheduler_start: document.getElementById('scheduler-start')?.value || '22:00',
         scheduler_stop: document.getElementById('scheduler-stop')?.value || '08:00',
+        auto_prioritize: document.getElementById('auto-prioritize-toggle')?.checked || false,
+        auto_add_linked: document.getElementById('auto-add-linked-toggle')?.checked || false,
     };
 
     try {
@@ -3273,6 +3278,14 @@ document.addEventListener('DOMContentLoaded', () => {
         saveSettings();
         if (this.checked) autoAddLinkedGames();
     });
+    const tabCounterToggle = document.getElementById('tab-counter-toggle');
+    if (tabCounterToggle) {
+        tabCounterToggle.checked = localStorage.getItem('tab_counter') !== 'false';
+        tabCounterToggle.addEventListener('change', function() {
+            localStorage.setItem('tab_counter', this.checked ? 'true' : 'false');
+            updateTitleBadge(_lastActiveCampaignCount || 0);
+        });
+    }
 
     // Inventory filters
     document.getElementById('filter-active').addEventListener('change', onInventoryFilterChange);
