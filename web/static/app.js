@@ -747,10 +747,10 @@ function updateStatus(status) {
         if (gameEl) { gameEl.textContent = ''; gameEl.style.display = 'none'; }
     }
     updateQCButtons(status);
-    // Count remaining unclaimed drops across all active campaigns
+    // Count remaining unclaimed drops for linked campaigns only
     const remainingDrops = Object.values(state.campaigns).reduce((sum, c) => {
         const { active } = getCampaignStatus(c);
-        if (!active) return sum;
+        if (!active || !c.linked) return sum;
         return sum + Math.max(0, (c.total_drops || 0) - (c.claimed_drops || 0));
     }, 0);
     updateTitleBadge(remainingDrops);
