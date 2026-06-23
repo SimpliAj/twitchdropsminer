@@ -1814,6 +1814,11 @@ function updateSettingsUI(settings) {
     const idleFollowedEl = document.getElementById('idle-use-followed');
     if (idleFollowedEl) idleFollowedEl.checked = settings.idle_use_followed === true;
 
+    const idleParallelEl = document.getElementById('idle-parallel');
+    if (idleParallelEl) idleParallelEl.checked = settings.idle_parallel !== false;
+
+    renderPreferredGames(settings.preferred_games || []);
+
     const schedulerEnabled = document.getElementById('scheduler-enabled');
     if (schedulerEnabled) schedulerEnabled.checked = settings.scheduler_enabled || false;
     const schedulerStart = document.getElementById('scheduler-start');
@@ -1957,6 +1962,30 @@ function renderIdleChannels(channels) {
         btn.addEventListener('click', () => {
             state.settings.idle_channels.splice(idx, 1);
             renderIdleChannels([...state.settings.idle_channels]);
+            saveSettings();
+        });
+        item.appendChild(label);
+        item.appendChild(btn);
+        container.appendChild(item);
+    });
+}
+
+function renderPreferredGames(games) {
+    state.settings.preferred_games = games;
+    const container = document.getElementById('preferred-games-list');
+    if (!container) return;
+    container.replaceChildren();
+    games.forEach((g, idx) => {
+        const item = document.createElement('div');
+        item.className = 'sortable-item';
+        const label = document.createElement('span');
+        label.textContent = g;
+        const btn = document.createElement('button');
+        btn.className = 'remove-btn';
+        btn.textContent = '✕';
+        btn.addEventListener('click', () => {
+            state.settings.preferred_games.splice(idx, 1);
+            renderPreferredGames([...state.settings.preferred_games]);
             saveSettings();
         });
         item.appendChild(label);
@@ -2366,6 +2395,8 @@ async function saveSettings() {
         claim_channel_points: document.getElementById('claim-channel-points')?.checked ?? true,
         idle_channels: state.settings.idle_channels || [],
         idle_use_followed: document.getElementById('idle-use-followed')?.checked ?? false,
+        idle_parallel: document.getElementById('idle-parallel')?.checked ?? true,
+        preferred_games: state.settings.preferred_games || [],
         drop_name_blacklist: (document.getElementById('drop-blacklist-input')?.value || '')
             .split(',').map(s => s.trim()).filter(Boolean),
         scheduler_enabled: document.getElementById('scheduler-enabled')?.checked || false,
@@ -3309,6 +3340,22 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.getElementById('idle-channel-input')?.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') document.getElementById('idle-channel-add-btn').click();
+    });
+
+    document.getElementById('preferred-game-add-btn')?.addEventListener('click', () => {
+        const input = document.getElementById('preferred-game-input');
+        const val = input.value.trim();
+        if (!val) return;
+        const games = state.settings.preferred_games || [];
+        if (!games.map(g => g.toLowerCase()).includes(val.toLowerCase())) {
+            games.push(val);
+            renderPreferredGames([...games]);
+            saveSettings();
+        }
+        input.value = '';
+    });
+    document.getElementById('preferred-game-input')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') document.getElementById('preferred-game-add-btn').click();
     });
 
     // Inventory game search dropdown

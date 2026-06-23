@@ -77,6 +77,7 @@ class Twitch:
         self.channels: OrderedDict[int, Channel] = OrderedDict()
         self.watching_channel: AwaitableValue[Channel] = AwaitableValue()
         self._idle_topic_ids: list[str] = []
+        self._idle_channels_set: set = set()  # all channels currently watched in idle mode
         self._watching_cp_topic_id: str = ""  # CommunityPoints topic for current watching channel
         self._watching_task: asyncio.Task[None] | None = None
         self._watching_restart = asyncio.Event()
@@ -287,26 +288,47 @@ class Twitch:
                     self.websocket.remove_topics(self._idle_topic_ids)
                     self._idle_topic_ids = []
                 # Try idle watch if channels are configured or followed auto-mode is on
+                self._idle_channels_set = set()
                 if self.settings.idle_channels or self.settings.idle_use_followed:
                     logger.info(f"Idle watch: trying channels {self.settings.idle_channels}")
-                    # Also refresh if already watching an idle channel (broadcast_id may have changed)
-                    current = self.watching_channel.get_with_default(None)
-                    idle_ch = await self._fetch_idle_channel()
-                    if idle_ch is not None:
-                        logger.info(f"Idle watch: watching {idle_ch.name} (id={idle_ch.id})")
-                        self.gui.status.update(f"💤 Idle watching: {idle_ch.name}")
-                        self.watch(idle_ch, update_status=False)
+                    idle_parallel = getattr(self.settings, "idle_parallel", True)
+                    if idle_parallel:
+                        idle_chs = await self._fetch_all_idle_channels()
+                    else:
+                        single = await self._fetch_idle_channel()
+                        idle_chs = [single] if single else []
+                    if idle_chs:
+                        self._idle_channels_set = set(idle_chs)
+                        names = ", ".join(ch.name for ch in idle_chs)
+                        logger.info(f"Idle watch: watching {len(idle_chs)} channel(s): {names}")
+                        self.gui.status.update(f"💤 Idle: {names}")
+                        # Use first channel as primary for display/watch_loop
+                        self.watch(idle_chs[0], update_status=False)
                         idle_topics: list[WebsocketTopic] = [
                             WebsocketTopic(
                                 "Channel",
                                 "StreamState",
-                                idle_ch.id,
+                                ch.id,
                                 self._message_handler_service.process_idle_stream_state,
                             )
+                            for ch in idle_chs
                         ]
                         self._idle_topic_ids = [str(t) for t in idle_topics]
                         self.websocket.add_topics(idle_topics)
-                        logger.info(f"Idle watch: subscribed StreamState for {idle_ch.name} (CommunityPoints via watch())")
+                        logger.info(f"Idle watch: subscribed StreamState for {names}")
+                        # Subscribe CommunityPoints for all additional idle channels
+                        if self.settings.claim_channel_points:
+                            for ch in idle_chs[1:]:
+                                cp_topic_id = WebsocketTopic.as_str("Channel", "CommunityPoints", ch.id)
+                                if cp_topic_id not in self._idle_topic_ids:
+                                    try:
+                                        self.websocket.add_topics([WebsocketTopic(
+                                            "Channel", "CommunityPoints", ch.id,
+                                            self._message_handler_service.process_community_points,
+                                        )])
+                                        self._idle_topic_ids.append(cp_topic_id)
+                                    except Exception:
+                                        logger.warning(f"CP topic limit — skipping {ch.name}")
                     else:
                         logger.info("Idle watch: no idle channels online")
                 # clear the flag and wait until it's set again
@@ -753,6 +775,23 @@ class Twitch:
             if channel is not None:
                 return channel
         return None
+
+    async def _fetch_all_idle_channels(self) -> list:
+        """Return ALL online idle channels (for parallel idle watching)."""
+        logins: list[str] = list(self.settings.idle_channels)
+        if self.settings.idle_use_followed:
+            followed = await self._fetch_followed_live_logins()
+            seen = set(logins)
+            for login in followed:
+                if login not in seen:
+                    logins.append(login)
+                    seen.add(login)
+        results = []
+        for login in logins:
+            channel = await self._fetch_idle_channel_by_login(login)
+            if channel is not None:
+                results.append(channel)
+        return results
 
     def can_watch(self, channel: Channel) -> bool:
         """Delegate to WatchService."""

@@ -15,11 +15,20 @@ class StreamSelector:
         """
         wanted_games = []
         games_to_watch = settings.games_to_watch
+        preferred_games = getattr(settings, "preferred_games", [])
         mining_benefits = settings.mining_benefits
         blacklist = [kw.lower() for kw in getattr(settings, "drop_name_blacklist", []) if kw.strip()]
         next_hour = datetime.now(timezone.utc) + timedelta(hours=1)
 
-        for game_name in games_to_watch:
+        # Merge games_to_watch + preferred_games (deduplicated, preserving order)
+        all_game_names = list(games_to_watch)
+        seen = set(g.lower() for g in games_to_watch)
+        for g in preferred_games:
+            if g.lower() not in seen:
+                all_game_names.append(g)
+                seen.add(g.lower())
+
+        for game_name in all_game_names:
             wanted_campaigns = []
             game_obj = None
             game_name_lower = game_name.lower()
@@ -67,6 +76,7 @@ class StreamSelector:
                         }
                     )
 
+            is_preferred = game_name.lower() in {g.lower() for g in preferred_games}
             if len(wanted_campaigns) > 0:
                 wanted_games.append(
                     {
@@ -75,6 +85,19 @@ class StreamSelector:
                         "game_icon": game_obj.box_art_url if game_obj else None,
                         "game_obj": game_obj,
                         "campaigns": wanted_campaigns,
+                        "preferred": is_preferred,
+                    }
+                )
+            elif is_preferred:
+                # Preferred game with no active campaigns — keep in list so it auto-connects when one appears
+                wanted_games.append(
+                    {
+                        "game_id": game_obj.id if game_obj else None,
+                        "game_name": game_name,
+                        "game_icon": game_obj.box_art_url if game_obj else None,
+                        "game_obj": game_obj,
+                        "campaigns": [],
+                        "preferred": True,
                     }
                 )
 

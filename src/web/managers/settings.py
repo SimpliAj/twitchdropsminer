@@ -112,6 +112,12 @@ class SettingsManager:
         self.check_and_update_setting(
             "idle_use_followed", settings_data.get("idle_use_followed")
         )
+        self.check_and_update_setting(
+            "idle_parallel", settings_data.get("idle_parallel")
+        )
+        self.check_and_update_setting(
+            "preferred_games", settings_data.get("preferred_games")
+        )
         self.check_and_update_setting("scheduler_enabled", settings_data.get("scheduler_enabled"))
         self.check_and_update_setting("scheduler_start", settings_data.get("scheduler_start"))
         self.check_and_update_setting("scheduler_stop", settings_data.get("scheduler_stop"))
