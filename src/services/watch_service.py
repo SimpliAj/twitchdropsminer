@@ -224,6 +224,17 @@ class WatchService:
                 # Also send via Spade HTTP POST to credit channel points (GQL only credits drops)
                 asyncio.create_task(channel._send_watch_spade())
 
+            # Multi-channel idle: also send watch to all other idle channels
+            idle_set = self._twitch._idle_channels_set
+            if idle_set:
+                for idle_ch in list(idle_set):
+                    if idle_ch is channel:
+                        continue
+                    if not idle_ch.online:
+                        continue
+                    asyncio.create_task(idle_ch.send_watch())
+                    asyncio.create_task(idle_ch._send_watch_spade())
+
             # wait ~20 seconds for a progress update
             await asyncio.sleep(20)
 
