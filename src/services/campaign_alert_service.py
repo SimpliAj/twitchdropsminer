@@ -42,7 +42,7 @@ class CampaignAlertService:
         for c in campaigns:
             if c.id in self._alerted:
                 continue
-            if c.is_claimed:
+            if c.finished:
                 continue
             if c.ends_at <= threshold:
                 result.append(c)
