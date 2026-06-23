@@ -1861,6 +1861,11 @@ function updateSettingsUI(settings) {
     const idleFollowedEl = document.getElementById('idle-use-followed');
     if (idleFollowedEl) idleFollowedEl.checked = settings.idle_use_followed === true;
 
+    const idleParallelEl = document.getElementById('idle-parallel');
+    if (idleParallelEl) idleParallelEl.checked = settings.idle_parallel !== false;
+
+    renderPreferredGames(settings.preferred_games || []);
+
     const schedulerEnabled = document.getElementById('scheduler-enabled');
     if (schedulerEnabled) schedulerEnabled.checked = settings.scheduler_enabled || false;
     const schedulerStart = document.getElementById('scheduler-start');
@@ -2004,6 +2009,30 @@ function renderIdleChannels(channels) {
         btn.addEventListener('click', () => {
             state.settings.idle_channels.splice(idx, 1);
             renderIdleChannels([...state.settings.idle_channels]);
+            saveSettings();
+        });
+        item.appendChild(label);
+        item.appendChild(btn);
+        container.appendChild(item);
+    });
+}
+
+function renderPreferredGames(games) {
+    state.settings.preferred_games = games;
+    const container = document.getElementById('preferred-games-list');
+    if (!container) return;
+    container.replaceChildren();
+    games.forEach((g, idx) => {
+        const item = document.createElement('div');
+        item.className = 'sortable-item';
+        const label = document.createElement('span');
+        label.textContent = g;
+        const btn = document.createElement('button');
+        btn.className = 'remove-btn';
+        btn.textContent = '✕';
+        btn.addEventListener('click', () => {
+            state.settings.preferred_games.splice(idx, 1);
+            renderPreferredGames([...state.settings.preferred_games]);
             saveSettings();
         });
         item.appendChild(label);
@@ -2429,6 +2458,8 @@ async function saveSettings() {
         claim_channel_points: document.getElementById('claim-channel-points')?.checked ?? true,
         idle_channels: state.settings.idle_channels || [],
         idle_use_followed: document.getElementById('idle-use-followed')?.checked ?? false,
+        idle_parallel: document.getElementById('idle-parallel')?.checked ?? true,
+        preferred_games: state.settings.preferred_games || [],
         drop_name_blacklist: (document.getElementById('drop-blacklist-input')?.value || '')
             .split(',').map(s => s.trim()).filter(Boolean),
         scheduler_enabled: document.getElementById('scheduler-enabled')?.checked || false,
@@ -3391,6 +3422,92 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.getElementById('idle-channel-input')?.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') document.getElementById('idle-channel-add-btn').click();
+    });
+
+    let prefGameDropdownIndex = -1;
+
+    function addPreferredGame(val) {
+        if (!val) return;
+        const games = state.settings.preferred_games || [];
+        if (!games.map(g => g.toLowerCase()).includes(val.toLowerCase())) {
+            games.push(val);
+            renderPreferredGames([...games]);
+            saveSettings();
+        }
+        document.getElementById('preferred-game-input').value = '';
+        closePrefGameDropdown();
+    }
+
+    function renderPrefGameDropdown(search) {
+        const dropdown = document.getElementById('preferred-game-dropdown');
+        if (!dropdown) return;
+        const term = search.toLowerCase();
+        const existing = new Set((state.settings.preferred_games || []).map(g => g.toLowerCase()));
+        const matches = Array.from(availableGames)
+            .filter(g => g.toLowerCase().includes(term) && !existing.has(g.toLowerCase()))
+            .sort((a, b) => a.toLowerCase().startsWith(term) ? -1 : b.toLowerCase().startsWith(term) ? 1 : a.localeCompare(b))
+            .slice(0, 15);
+        dropdown.replaceChildren();
+        if (!matches.length) {
+            dropdown.style.display = 'none';
+            return;
+        }
+        matches.forEach((g, idx) => {
+            const item = document.createElement('div');
+            item.className = 'dropdown-item' + (idx === prefGameDropdownIndex ? ' focused' : '');
+            item.dataset.gameName = g;
+            item.textContent = g;
+            item.addEventListener('mousedown', (e) => { e.preventDefault(); addPreferredGame(g); });
+            dropdown.appendChild(item);
+        });
+        dropdown.style.display = 'block';
+    }
+
+    function closePrefGameDropdown() {
+        const dropdown = document.getElementById('preferred-game-dropdown');
+        if (dropdown) dropdown.style.display = 'none';
+        prefGameDropdownIndex = -1;
+    }
+
+    const prefInput = document.getElementById('preferred-game-input');
+    if (prefInput) {
+        prefInput.addEventListener('input', (e) => {
+            prefGameDropdownIndex = -1;
+            if (e.target.value.trim()) renderPrefGameDropdown(e.target.value.trim());
+            else closePrefGameDropdown();
+        });
+        prefInput.addEventListener('focus', (e) => {
+            if (e.target.value.trim()) renderPrefGameDropdown(e.target.value.trim());
+        });
+        prefInput.addEventListener('blur', () => setTimeout(closePrefGameDropdown, 150));
+        prefInput.addEventListener('keydown', (e) => {
+            const dropdown = document.getElementById('preferred-game-dropdown');
+            const items = dropdown?.querySelectorAll('.dropdown-item') || [];
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                prefGameDropdownIndex = Math.min(prefGameDropdownIndex + 1, items.length - 1);
+                renderPrefGameDropdown(prefInput.value.trim());
+                dropdown?.querySelector('.dropdown-item.focused')?.scrollIntoView({ block: 'nearest' });
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                prefGameDropdownIndex = Math.max(prefGameDropdownIndex - 1, 0);
+                renderPrefGameDropdown(prefInput.value.trim());
+                dropdown?.querySelector('.dropdown-item.focused')?.scrollIntoView({ block: 'nearest' });
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (prefGameDropdownIndex >= 0 && items[prefGameDropdownIndex]) {
+                    addPreferredGame(items[prefGameDropdownIndex].dataset.gameName);
+                } else {
+                    addPreferredGame(prefInput.value.trim());
+                }
+            } else if (e.key === 'Escape') {
+                closePrefGameDropdown();
+            }
+        });
+    }
+
+    document.getElementById('preferred-game-add-btn')?.addEventListener('click', () => {
+        addPreferredGame(document.getElementById('preferred-game-input')?.value.trim());
     });
 
     // Inventory game search dropdown
