@@ -531,16 +531,34 @@
                     <section class="settings-section">
                         <h2 id="settings-idle-header">Idle Watch</h2>
                         <p class="help-text" id="settings-idle-help">Channels to watch when no drops are available. Add in priority order.</p>
-                        <label class="toggle-label" style="margin-bottom:10px;">
+                        <label class="toggle-label" style="margin-bottom:6px;">
                             <input type="checkbox" id="idle-use-followed" onchange="saveSettings()">
                             <span id="settings-idle-auto-label">Auto: use followed channels</span>
                             <span id="settings-idle-auto-help" class="help-text" style="display:block;margin-top:2px;font-size:0.8em;">Automatically watches live channels you follow on Twitch when idle.</span>
+                        </label>
+                        <label class="toggle-label" style="margin-bottom:10px;">
+                            <input type="checkbox" id="idle-parallel" onchange="saveSettings()">
+                            <span>Parallel idle (watch all channels simultaneously)</span>
+                            <span class="help-text" style="display:block;margin-top:2px;font-size:0.8em;">Earn channel points from multiple channels at the same time when idle.</span>
                         </label>
                         <div style="display:flex;gap:8px;margin-bottom:8px;">
                             <input type="text" id="idle-channel-input" placeholder="Manual channel name..." style="flex:1;">
                             <button id="idle-channel-add-btn" class="secondary-btn">Add</button>
                         </div>
                         <div id="idle-channels-list" class="sortable-list"></div>
+                    </section>
+
+                    <section class="settings-section">
+                        <h2>⭐ Preferred Games</h2>
+                        <p class="help-text">Games that are always watched — even without active drop campaigns. Auto-connects when a campaign appears. Never auto-removed.</p>
+                        <div style="display:flex;gap:8px;margin-bottom:8px;position:relative;">
+                            <div style="position:relative;flex:1;">
+                                <input type="text" id="preferred-game-input" placeholder="Type to search games..." autocomplete="off" style="width:100%;box-sizing:border-box;">
+                                <div id="preferred-game-dropdown" class="game-dropdown-list" style="display:none;top:100%;left:0;right:0;"></div>
+                            </div>
+                            <button id="preferred-game-add-btn" class="secondary-btn">Add</button>
+                        </div>
+                        <div id="preferred-games-list" class="sortable-list"></div>
                     </section>
 
                     <section class="settings-section">
