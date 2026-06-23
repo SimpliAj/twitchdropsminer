@@ -370,6 +370,8 @@ class SettingsUpdate(BaseModel):
     claim_channel_points: bool | None = None
     idle_channels: list[str] | None = None
     idle_use_followed: bool | None = None
+    idle_parallel: bool | None = None
+    preferred_games: list[str] | None = None
     scheduler_enabled: bool | None = None
     scheduler_start: str | None = None
     scheduler_stop: str | None = None
