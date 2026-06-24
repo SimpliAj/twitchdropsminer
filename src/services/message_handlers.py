@@ -576,6 +576,19 @@ class MessageHandlerService:
                     _update_daily_points_server(points - old_balance, _pfile.parent)
                 history[_login_key] = points
                 json_save(_pfile, history)
+                # Append timestamped snapshot for analytics
+                from datetime import datetime, timezone
+                _ts_file = _pfile.parent / "channel_points_ts.json"
+                try:
+                    _ts_data = _json_mod.loads(_ts_file.read_text()) if _ts_file.exists() else {}
+                    _snapshots = _ts_data.get(_login_key, [])
+                    _snapshots.append({"ts": datetime.now(timezone.utc).isoformat(), "balance": points})
+                    if len(_snapshots) > 1000:
+                        _snapshots = _snapshots[-1000:]
+                    _ts_data[_login_key] = _snapshots
+                    _ts_file.write_text(_json_mod.dumps(_ts_data))
+                except Exception:
+                    pass
         except Exception as e:
             logger.warning(f"Could not fetch channel points balance for {channel_login}: {e}")
 

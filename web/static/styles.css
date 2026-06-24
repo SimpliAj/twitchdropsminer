@@ -3437,6 +3437,8 @@ header h1 {
 .analytics-stats-col { grid-column: 1; grid-row: 1; min-width: 0; }
 .analytics-history-col { grid-column: 2; grid-row: 1; min-width: 0; max-height: 80vh; overflow-y: auto; }
 .analytics-cp-full { grid-column: 1 / -1; grid-row: 2; min-width: 0; }
+.range-btn{background:#18181b;border:1px solid #3d3d4a;color:#adadb8;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:.82rem}
+.range-btn:hover,.active-range{background:#9147ff;color:#fff;border-color:#9147ff}
 @media (max-width: 768px) {
     .analytics-layout { grid-template-columns: 1fr; }
     .analytics-stats-col,
