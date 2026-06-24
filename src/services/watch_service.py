@@ -29,6 +29,18 @@ if TYPE_CHECKING:
 logger = logging.getLogger("TwitchDrops")
 
 
+async def _send_idle_watch(channel) -> None:
+    if not channel.online:
+        return
+    succeeded = await channel.send_watch()
+    if succeeded:
+        broadcast_id = channel._stream.broadcast_id if channel._stream else "none"
+        logger.info(f"Watch sent OK (idle): {channel.name} (broadcast_id={broadcast_id})")
+        await channel._send_watch_spade()
+    else:
+        logger.log(CALL, f"Watch requested failed for idle channel: {channel.name}")
+
+
 class WatchService:
     """
     Service responsible for watching channels and monitoring drop progress.
@@ -228,12 +240,9 @@ class WatchService:
             idle_set = self._twitch._idle_channels_set
             if idle_set:
                 for idle_ch in list(idle_set):
-                    if idle_ch is channel:
+                    if idle_ch is channel or not idle_ch.online:
                         continue
-                    if not idle_ch.online:
-                        continue
-                    asyncio.create_task(idle_ch.send_watch())
-                    asyncio.create_task(idle_ch._send_watch_spade())
+                    asyncio.create_task(_send_idle_watch(idle_ch))
 
             # wait ~20 seconds for a progress update
             await asyncio.sleep(20)
