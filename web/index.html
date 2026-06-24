@@ -17,16 +17,22 @@
 <body>
     <div class="container">
         <header>
-            <div class="header-top">
-                <h1><img src="/logo.png" style="width:44px;height:44px;vertical-align:middle;margin-right:10px;border-radius:8px"> Twitch Drops Miner</h1>
-                <div class="header-controls">
+            <div class="header-brand">
+                <h1>
+                    <img src="/logo.png" class="header-logo">
+                    <span>Twitch Drops Miner</span>
+                </h1>
+                <div class="header-brand-right">
+                    <span id="connection-indicator" class="connected"><span class="conn-dot">●</span><span class="conn-text"> Connected</span></span>
                     <label for="language" class="language-selector">
-                        <span>Language:</span>
                         <select id="language">
-                            <option value="en">English</option>
+                            <option value="en">🌐 EN</option>
                         </select>
                     </label>
                 </div>
+            </div>
+            <div class="header-meta">
+                <div id="account-tabs"></div>
             </div>
             <div class="status-bar">
                 <div class="status-left">
@@ -36,9 +42,6 @@
                 <div class="status-center">
                     <span id="status-text">Initializing...</span>
                     <span id="status-game" style="display:none;font-size:0.75rem;color:#adadb8;margin-top:2px;"></span>
-                </div>
-                <div class="status-right">
-                    <span id="connection-indicator" class="connected">● Connected</span>
                 </div>
             </div>
         </header>
@@ -59,15 +62,15 @@
                 <section class="panel stats-panel">
                     <h2>Stats</h2>
                     <div id="stats-content" style="display:flex;gap:0;flex-wrap:nowrap;">
-                        <div class="stat-item" style="flex:1;">
+                        <div class="stat-item" style="flex:1;text-align:center;">
                             <div class="stat-value" id="stat-drops-today">&#x2014;</div>
                             <div class="stat-label">Drops Today</div>
                         </div>
-                        <div class="stat-item" style="flex:1;border-left:1px solid var(--border-color);">
+                        <div class="stat-item" style="flex:1;border-left:1px solid var(--border-color);text-align:center;">
                             <div class="stat-value" id="stat-drops-total">&#x2014;</div>
                             <div class="stat-label">Drops Total</div>
                         </div>
-                        <div class="stat-item" style="flex:1;border-left:1px solid var(--border-color);">
+                        <div class="stat-item" style="flex:1;border-left:1px solid var(--border-color);text-align:center;">
                             <div class="stat-value" id="stat-points-session">&#x2014;</div>
                             <div class="stat-label">Points (Session)</div>
                         </div>
@@ -564,16 +567,29 @@
                         <h2 id="analytics-cp-header" style="margin:0;border:none;padding:0;">Channel Points</h2>
                         <div style="display:flex;gap:8px;align-items:center;">
                             <span id="cp-tab-summary" style="font-size:0.85rem;color:#adadb8;"></span>
-                            <div style="display:flex;gap:4px;">
-                                <button class="range-btn" data-days="1">1D</button>
-                                <button class="range-btn active-range" data-days="7">7D</button>
-                                <button class="range-btn" data-days="30">30D</button>
-                            </div>
                             <button id="cp-tab-refresh-btn" class="secondary-btn">↻ Refresh</button>
                         </div>
                     </div>
                     <div id="cp-tab-empty" style="color:#adadb8;font-size:0.9rem;padding:12px 0;">No channel points data yet. Points are recorded while watching channels.</div>
                     <div id="cp-tab-list" style="display:none;"></div>
+                </section>
+
+                <!-- Points Over Time Chart (full width) -->
+                <section class="settings-section analytics-cp-full">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                        <h2 style="margin:0;border:none;padding:0;">📈 Points Over Time</h2>
+                    </div>
+                    <div class="analytics-controls" style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+                        <select id="analytics-channel" style="background:#18181b;border:1px solid #3d3d4a;color:#efeff1;padding:6px 10px;border-radius:6px;font-size:.85rem"></select>
+                        <div style="display:flex;gap:4px">
+                            <button class="range-btn" data-days="1">1D</button>
+                            <button class="range-btn active-range" data-days="7">7D</button>
+                            <button class="range-btn" data-days="30">30D</button>
+                        </div>
+                    </div>
+                    <div style="position:relative;height:320px">
+                        <canvas id="analytics-chart"></canvas>
+                    </div>
                 </section>
 
                 <!-- Predictions History (full width) -->
@@ -720,7 +736,8 @@
         </footer>
     </div>
 
-    <script src="/static/app.js?v=1749558000"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" integrity="sha384-e6nUZLBkQ86NJ6TVVKAeSaK8jWa3NhkYWZFomE39AvDbQWeie9PlQqM3pmYW5d1g" crossorigin="anonymous"></script>
+    <script src="/static/app.js?v=1749558001"></script>
 </body>
 
 </html>
