@@ -3166,8 +3166,7 @@ function switchTab(tabName) {
     // Show selected tab
     document.getElementById(`${tabName}-tab`).classList.add('active');
     document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-    if (tabName === 'analytics') { loadStats(); loadDropHistory(); }
-    if (tabName === 'channel-points') { loadPredictions(); }
+    if (tabName === 'analytics') { loadStats(); loadDropHistory(); loadPredictions(); }
     if (tabName === 'inventory' || tabName === 'settings') {
         if (Object.keys(state.campaigns).length === 0) reloadCampaigns();
     }
@@ -3420,20 +3419,87 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'Enter') document.getElementById('idle-channel-add-btn').click();
     });
 
-    document.getElementById('preferred-game-add-btn')?.addEventListener('click', () => {
-        const input = document.getElementById('preferred-game-input');
-        const val = input.value.trim();
-        if (!val) return;
+    let prefGameDropdownIndex = -1;
+
+    function addPreferredGame(name) {
+        if (!name) return;
         const games = state.settings.preferred_games || [];
-        if (!games.map(g => g.toLowerCase()).includes(val.toLowerCase())) {
-            games.push(val);
+        if (!games.map(g => g.toLowerCase()).includes(name.toLowerCase())) {
+            games.push(name);
             renderPreferredGames([...games]);
             saveSettings();
         }
-        input.value = '';
-    });
-    document.getElementById('preferred-game-input')?.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') document.getElementById('preferred-game-add-btn').click();
+        document.getElementById('preferred-game-input').value = '';
+        closePrefGameDropdown();
+    }
+
+    function renderPrefGameDropdown(search) {
+        const dropdown = document.getElementById('preferred-game-dropdown');
+        if (!dropdown) return;
+        const term = search.toLowerCase();
+        const existing = new Set((state.settings.preferred_games || []).map(g => g.toLowerCase()));
+        const matches = Array.from(availableGames)
+            .filter(g => g.toLowerCase().includes(term) && !existing.has(g.toLowerCase()))
+            .sort((a, b) => a.toLowerCase().startsWith(term) ? -1 : b.toLowerCase().startsWith(term) ? 1 : a.localeCompare(b))
+            .slice(0, 15);
+        dropdown.replaceChildren();
+        if (!matches.length) { dropdown.style.display = 'none'; return; }
+        matches.forEach((g, idx) => {
+            const item = document.createElement('div');
+            item.className = 'dropdown-item' + (idx === prefGameDropdownIndex ? ' focused' : '');
+            item.dataset.gameName = g;
+            item.textContent = g;
+            item.addEventListener('mousedown', (e) => { e.preventDefault(); addPreferredGame(g); });
+            dropdown.appendChild(item);
+        });
+        dropdown.style.display = 'block';
+    }
+
+    function closePrefGameDropdown() {
+        const dropdown = document.getElementById('preferred-game-dropdown');
+        if (dropdown) dropdown.style.display = 'none';
+        prefGameDropdownIndex = -1;
+    }
+
+    const prefInput = document.getElementById('preferred-game-input');
+    if (prefInput) {
+        prefInput.addEventListener('input', (e) => {
+            prefGameDropdownIndex = -1;
+            if (e.target.value.trim()) renderPrefGameDropdown(e.target.value.trim());
+            else closePrefGameDropdown();
+        });
+        prefInput.addEventListener('focus', (e) => {
+            if (e.target.value.trim()) renderPrefGameDropdown(e.target.value.trim());
+        });
+        prefInput.addEventListener('blur', () => setTimeout(closePrefGameDropdown, 150));
+        prefInput.addEventListener('keydown', (e) => {
+            const dropdown = document.getElementById('preferred-game-dropdown');
+            const items = dropdown?.querySelectorAll('.dropdown-item') || [];
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                prefGameDropdownIndex = Math.min(prefGameDropdownIndex + 1, items.length - 1);
+                renderPrefGameDropdown(prefInput.value.trim());
+                dropdown?.querySelector('.dropdown-item.focused')?.scrollIntoView({ block: 'nearest' });
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                prefGameDropdownIndex = Math.max(prefGameDropdownIndex - 1, 0);
+                renderPrefGameDropdown(prefInput.value.trim());
+                dropdown?.querySelector('.dropdown-item.focused')?.scrollIntoView({ block: 'nearest' });
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (prefGameDropdownIndex >= 0 && items[prefGameDropdownIndex]) {
+                    addPreferredGame(items[prefGameDropdownIndex].dataset.gameName);
+                } else {
+                    addPreferredGame(prefInput.value.trim());
+                }
+            } else if (e.key === 'Escape') {
+                closePrefGameDropdown();
+            }
+        });
+    }
+
+    document.getElementById('preferred-game-add-btn')?.addEventListener('click', () => {
+        addPreferredGame(document.getElementById('preferred-game-input')?.value.trim());
     });
 
     // Inventory game search dropdown
