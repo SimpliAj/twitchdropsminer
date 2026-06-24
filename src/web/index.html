@@ -47,7 +47,6 @@
             <button class="tab-button" data-tab="inventory">Inventory</button>
             <button class="tab-button" data-tab="channel-points">Channel Points</button>
             <button class="tab-button" data-tab="history">History</button>
-            <button class="tab-button" data-tab="predictions">🎯 Predictions</button>
             <button class="tab-button" data-tab="settings">Settings</button>
             <button class="tab-button" data-tab="system" id="tab-btn-system">System</button>
             <button class="tab-button" data-tab="help">Help</button>
@@ -535,30 +534,7 @@
                     <div id="cp-tab-empty" style="color:#adadb8;font-size:0.9rem;padding:20px 0;">No channel points data yet. Points are recorded while watching channels.</div>
                     <div id="cp-tab-list" style="display:none;"></div>
                 </section>
-            </div>
-        </div>
-
-        <!-- History Tab -->
-        <div id="history-tab" class="tab-content">
-            <div style="padding:0;">
-                <section class="settings-section" style="margin-bottom:0;">
-                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-                        <h2 style="margin:0;border:none;padding:0;">Drop History</h2>
-                        <div style="display:flex;gap:8px;align-items:center;">
-                            <span id="history-summary" style="font-size:0.85rem;color:#adadb8;"></span>
-                            <button id="history-refresh-btn" class="secondary-btn">&#x21BB; Refresh</button>
-                        </div>
-                    </div>
-                    <div id="history-empty" style="color:#adadb8;font-size:0.9rem;padding:20px 0;">No drops claimed yet.</div>
-                    <div id="history-list" style="display:none;"></div>
-                </section>
-            </div>
-        </div>
-
-        <!-- Predictions Tab -->
-        <div id="predictions-tab" class="tab-content">
-            <div style="padding:0;">
-                <section class="settings-section" style="margin-bottom:0;">
+                <section class="settings-section" style="margin-top:16px;">
                     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
                         <h2 style="margin:0;border:none;padding:0;">Predictions History</h2>
                     </div>
@@ -579,6 +555,23 @@
                     <div style="margin-top:16px">
                         <button id="send-report-btn" style="background:#9147ff;border:none;color:#fff;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:.88rem">📋 Send Session Report to Discord</button>
                     </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- History Tab -->
+        <div id="history-tab" class="tab-content">
+            <div style="padding:0;">
+                <section class="settings-section" style="margin-bottom:0;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                        <h2 style="margin:0;border:none;padding:0;">Drop History</h2>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <span id="history-summary" style="font-size:0.85rem;color:#adadb8;"></span>
+                            <button id="history-refresh-btn" class="secondary-btn">&#x21BB; Refresh</button>
+                        </div>
+                    </div>
+                    <div id="history-empty" style="color:#adadb8;font-size:0.9rem;padding:20px 0;">No drops claimed yet.</div>
+                    <div id="history-list" style="display:none;"></div>
                 </section>
             </div>
         </div>
