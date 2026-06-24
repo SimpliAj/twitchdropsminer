@@ -162,6 +162,14 @@ class WatchService:
                 )])
             except MinerException:
                 logger.warning(f"Topic limit — Moments topic skipped for {channel.name}")
+        if self._twitch.settings.make_predictions:
+            try:
+                self._twitch.websocket.add_topics([WebsocketTopic(
+                    "Channel", "Predictions", channel.id,
+                    self._twitch._prediction_service.process_prediction,
+                )])
+            except MinerException:
+                logger.warning(f"Topic limit — Predictions topic skipped for {channel.name}")
 
         if update_status:
             # Check if manual mode is active for custom status message
