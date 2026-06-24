@@ -53,7 +53,7 @@ body {
 header {
     background: var(--bg-panel);
     border: 1px solid var(--border-color);
-    border-left: 3px solid var(--accent-color);
+    border-left: 3px solid #9147ff;
     border-radius: 10px;
     padding: 0;
     margin-bottom: 20px;
@@ -75,7 +75,7 @@ header h1 {
     margin: 0;
     font-size: 1.15rem;
     font-weight: 700;
-    color: var(--accent-color);
+    color: #9147ff;
     letter-spacing: -0.2px;
 }
 
@@ -119,13 +119,13 @@ header h1 {
 }
 
 .language-selector select:hover {
-    border-color: var(--accent-color);
+    border-color: #9147ff;
     color: var(--text-primary);
 }
 
 .language-selector select:focus {
     outline: none;
-    border-color: var(--accent-color);
+    border-color: #9147ff;
     box-shadow: 0 0 0 2px rgba(145, 70, 255, 0.2);
 }
 
@@ -291,7 +291,7 @@ header h1 {
 .panel h2 {
     margin-bottom: 15px;
     font-size: 18px;
-    border-bottom: 2px solid var(--accent-color);
+    border-bottom: 2px solid #9147ff;
     padding-bottom: 8px;
 }
 
@@ -413,8 +413,8 @@ header h1 {
 }
 
 .qc-btn:hover {
-    background: var(--accent-color);
-    border-color: var(--accent-color);
+    background: #9147ff;
+    border-color: #9147ff;
     color: #fff;
 }
 
@@ -451,8 +451,8 @@ header h1 {
 }
 
 .qc-btn--active {
-    background: var(--accent-color);
-    border-color: var(--accent-color);
+    background: #9147ff;
+    border-color: #9147ff;
     color: #fff;
 }
 
@@ -521,7 +521,7 @@ header h1 {
     border-radius: 8px;
     transition: background 0.15s;
 }
-.stat-card:hover { background: rgba(145, 70, 255, 0.06); border-color: var(--accent-color); }
+.stat-card:hover { background: rgba(145, 70, 255, 0.06); border-color: #9147ff; }
 
 .stat-icon {
     font-size: 1.4rem;
@@ -537,7 +537,7 @@ header h1 {
 .stat-value {
     font-size: 2rem;
     font-weight: 800;
-    color: var(--accent-color, #9147ff);
+    color: #9147ff;
     line-height: 1;
     letter-spacing: -0.02em;
     flex-shrink: 0;
@@ -573,7 +573,7 @@ header h1 {
 #oauth-confirm {
     width: 100%;
     padding: 12px;
-    background: var(--accent-color);
+    background: #9147ff;
     color: white;
     border: none;
     border-radius: 4px;
@@ -656,7 +656,7 @@ header h1 {
 
 .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--accent-color), var(--success-color));
+    background: linear-gradient(90deg, #9147ff, var(--success-color));
     transition: width 0.3s ease;
 }
 
@@ -691,7 +691,7 @@ header h1 {
 .progress-drops-left {
     text-align: center;
     font-size: 0.78rem;
-    color: var(--accent-color);
+    color: #9147ff;
     font-weight: 600;
     margin-top: 4px;
     transition: opacity 0.15s;
@@ -737,8 +737,8 @@ header h1 {
     line-height: 1;
 }
 .collapse-toggle:hover {
-    border-color: var(--accent-color);
-    color: var(--accent-color);
+    border-color: #9147ff;
+    color: #9147ff;
 }
 .collapse-toggle[aria-expanded="true"] {
     transform: rotate(180deg);
@@ -774,8 +774,8 @@ header h1 {
 }
 .ch-game-card.has-cover::before { opacity: 0.28; }
 .ch-game-card:hover { border-color: #6d6d7a; }
-.ch-game-card--open { border-color: var(--accent-color); }
-.ch-game-card--open:hover { border-color: var(--accent-color); }
+.ch-game-card--open { border-color: #9147ff; }
+.ch-game-card--open:hover { border-color: #9147ff; }
 
 .ch-game-header {
     position: relative;
@@ -841,7 +841,7 @@ header h1 {
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: var(--accent-color);
+    background: #9147ff;
     color: #fff;
     font-weight: 700;
     font-size: 0.9rem;
@@ -858,7 +858,7 @@ header h1 {
     border-radius: 50%;
 }
 .channel-item.watching .channel-avatar {
-    box-shadow: 0 0 0 2px var(--accent-color);
+    box-shadow: 0 0 0 2px #9147ff;
 }
 
 .channel-body { flex: 1; min-width: 0; }
@@ -887,7 +887,7 @@ header h1 {
 .ch-badge--watching {
     font-size: 0.65rem;
     font-weight: 700;
-    color: var(--accent-color);
+    color: #9147ff;
     background: rgba(145, 70, 255, 0.15);
     padding: 1px 5px;
     border-radius: 3px;
@@ -904,7 +904,7 @@ header h1 {
     white-space: nowrap;
 }
 .channel-item.watching .channel-viewers-pill {
-    background: var(--accent-color);
+    background: #9147ff;
 }
 
 .channel-badge {
@@ -919,7 +919,7 @@ header h1 {
     color: white;
 }
 .channel-badge.acl {
-    background: var(--accent-color);
+    background: #9147ff;
     color: white;
 }
 
@@ -989,7 +989,7 @@ header h1 {
     align-items: center;
     gap: 6px;
     padding: 4px 8px;
-    background: var(--accent-color);
+    background: #9147ff;
     color: white;
     border-radius: 16px;
     font-size: 13px;
@@ -1149,7 +1149,7 @@ header h1 {
 
 .campaign-name-link {
     font-size: 12px;
-    color: var(--accent-color);
+    color: #9147ff;
     text-decoration: none;
     transition: all 0.2s;
     cursor: pointer;
@@ -1289,7 +1289,7 @@ header h1 {
     font-size: 0.8rem;
 }
 .campaign-remaining-drops {
-    color: var(--accent-color);
+    color: #9147ff;
     font-weight: 600;
 }
 .campaign-time-est {
@@ -1349,13 +1349,13 @@ header h1 {
     z-index: 0;
 }
 .wq-row.has-cover::before { opacity: 0.18; }
-.wq-row:first-child { border-color: var(--accent-color); }
+.wq-row:first-child { border-color: #9147ff; }
 .wq-row.dragging { opacity: 0.4; }
 .wq-row:hover {
     border-color: #6d6d7a;
     transform: translateY(-1px);
 }
-.wq-row:first-child:hover { border-color: var(--accent-color); }
+.wq-row:first-child:hover { border-color: #9147ff; }
 
 .wq-header {
     display: flex;
@@ -1378,7 +1378,7 @@ header h1 {
 .wq-drag-handle:hover { color: #adadb8; }
 
 .wq-badge {
-    background: var(--accent-color);
+    background: #9147ff;
     color: #fff;
     font-size: 0.7rem;
     font-weight: 700;
@@ -1444,7 +1444,7 @@ header h1 {
     flex-shrink: 0;
     transition: color 0.15s;
 }
-.wq-move:hover:not(:disabled) { color: var(--accent-color); }
+.wq-move:hover:not(:disabled) { color: #9147ff; }
 .wq-move:disabled { opacity: 0.2; cursor: default; }
 
 .wq-remove {
@@ -1473,7 +1473,7 @@ header h1 {
 .wq-campaign-link {
     font-size: 0.8rem;
     font-weight: 600;
-    color: var(--accent-color);
+    color: #9147ff;
     text-decoration: none;
     display: block;
     margin-bottom: 6px;
@@ -1500,7 +1500,7 @@ header h1 {
 
 .wq-benefit {
     background: rgba(145,70,255,0.15);
-    color: var(--accent-color);
+    color: #9147ff;
     border-radius: 8px;
     padding: 1px 6px;
     font-size: 0.7rem;
@@ -1523,7 +1523,7 @@ header h1 {
 }
 
 .drop-item.active {
-    border-left-color: var(--accent-color);
+    border-left-color: #9147ff;
 }
 
 .drop-item-header {
@@ -1610,7 +1610,7 @@ header h1 {
     font-weight: 700;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--accent-color);
+    color: #9147ff;
     padding: 6px 2px 4px;
     margin-top: 8px;
     border-bottom: 1px solid var(--border-color);
@@ -1729,7 +1729,7 @@ header h1 {
     transition: border-color 0.15s;
 }
 .form-row .form-input:focus {
-    border-color: var(--accent-color, #9147ff);
+    border-color: #9147ff;
 }
 
 .list-manager {
@@ -1779,9 +1779,9 @@ header h1 {
 }
 
 .action-button.primary {
-    background: var(--accent-color);
+    background: #9147ff;
     color: white;
-    border-color: var(--accent-color);
+    border-color: #9147ff;
 }
 
 .action-button:hover {
@@ -1833,7 +1833,7 @@ header h1 {
 
 .help-toc-link:hover {
     background: var(--bg-secondary);
-    color: var(--accent-color);
+    color: #9147ff;
     text-decoration: none;
 }
 
@@ -1872,7 +1872,7 @@ header h1 {
 .help-section h2 {
     font-size: 1.2rem;
     font-weight: 700;
-    color: var(--accent-color);
+    color: #9147ff;
     margin: 0;
 }
 
@@ -1896,7 +1896,7 @@ header h1 {
 }
 
 .help-section a {
-    color: var(--accent-color);
+    color: #9147ff;
     text-decoration: none;
 }
 
@@ -1922,7 +1922,7 @@ header h1 {
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    background: var(--accent-color);
+    background: #9147ff;
     color: #fff;
     font-size: 0.8rem;
     font-weight: 700;
@@ -2021,7 +2021,7 @@ header h1 {
     padding: 1px 6px;
     font-family: monospace;
     font-size: 0.85em;
-    color: var(--accent-color);
+    color: #9147ff;
 }
 
 /* Inline list */
@@ -2040,7 +2040,7 @@ header h1 {
 .help-code {
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
-    border-left: 3px solid var(--accent-color);
+    border-left: 3px solid #9147ff;
     border-radius: 6px;
     padding: 10px 14px;
     font-family: monospace;
@@ -2063,7 +2063,7 @@ header h1 {
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: var(--accent-color);
+    color: #9147ff;
     margin-bottom: 8px;
 }
 .help-step-tabs {
@@ -2083,9 +2083,9 @@ header h1 {
     transition: all 0.15s;
 }
 .help-tab-btn.active, .help-tab-btn:hover {
-    background: var(--accent-color);
+    background: #9147ff;
     color: #fff;
-    border-color: var(--accent-color);
+    border-color: #9147ff;
 }
 
 /* Remote Access Accordion */
@@ -2140,7 +2140,7 @@ header h1 {
     align-items: flex-start;
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
-    border-left: 3px solid var(--accent-color);
+    border-left: 3px solid #9147ff;
     border-radius: 6px;
     padding: 12px 14px;
     margin: 14px 0 0;
@@ -2176,7 +2176,7 @@ header h1 {
 .help-links a {
     display: inline-block;
     padding: 8px 16px;
-    background: var(--accent-color);
+    background: #9147ff;
     color: white !important;
     border-radius: 6px;
     font-size: 0.88rem;
@@ -2255,9 +2255,9 @@ header h1 {
 }
 
 .small-btn:hover {
-    background: var(--accent-color);
+    background: #9147ff;
     color: white;
-    border-color: var(--accent-color);
+    border-color: #9147ff;
 }
 
 .games-container {
@@ -2304,7 +2304,7 @@ header h1 {
 }
 
 .sortable-item:hover {
-    border-color: var(--accent-color);
+    border-color: #9147ff;
     background: rgba(145, 70, 255, 0.1);
 }
 
@@ -2329,7 +2329,7 @@ header h1 {
     justify-content: center;
     width: 24px;
     height: 24px;
-    background: var(--accent-color);
+    background: #9147ff;
     color: white;
     border-radius: 50%;
     font-size: 12px;
@@ -2415,7 +2415,7 @@ header h1 {
     height: 50px;
     margin: 0 auto 20px;
     border: 4px solid var(--border-color);
-    border-top-color: var(--accent-color);
+    border-top-color: #9147ff;
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
@@ -2446,8 +2446,8 @@ header h1 {
 
 #auto-mode-badge {
     background: rgba(145, 70, 255, 0.15);
-    color: var(--accent-color);
-    border: 1px solid var(--accent-color);
+    color: #9147ff;
+    border: 1px solid #9147ff;
 }
 
 #manual-mode-badge {
@@ -2506,9 +2506,9 @@ header h1 {
 }
 
 .exit-manual-btn:hover {
-    background: var(--accent-color);
+    background: #9147ff;
     color: white;
-    border-color: var(--accent-color);
+    border-color: #9147ff;
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(145, 70, 255, 0.3);
 }
@@ -2630,7 +2630,7 @@ header h1 {
 }
 
 .footer-links a {
-    color: var(--accent-color);
+    color: #9147ff;
     text-decoration: none;
     transition: color 0.2s;
 }
@@ -2673,7 +2673,7 @@ header h1 {
 }
 
 .btn-primary {
-    background: var(--accent-color);
+    background: #9147ff;
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -2980,7 +2980,7 @@ header h1 {
     flex-shrink: 0;
 }
 .history-game {
-    color: var(--accent-color, #9147ff);
+    color: #9147ff;
     font-weight: 500;
     min-width: 100px;
     flex-shrink: 1;
@@ -3152,8 +3152,8 @@ header h1 {
 }
 
 .account-item.active {
-    border-color: var(--accent-color);
-    color: var(--accent-color);
+    border-color: #9147ff;
+    color: #9147ff;
     font-weight: 600;
 }
 
@@ -3171,9 +3171,9 @@ header h1 {
 }
 
 .account-action-btn:hover {
-    background: var(--accent-color);
+    background: #9147ff;
     color: white;
-    border-color: var(--accent-color);
+    border-color: #9147ff;
 }
 
 .account-action-btn.danger:hover {
@@ -3221,7 +3221,7 @@ header h1 {
 }
 
 .acc-tab-btn.active-acc {
-    background: var(--accent-color);
+    background: #9147ff;
     color: #fff;
     box-shadow: 0 2px 8px rgba(145, 70, 255, 0.35);
 }
@@ -3239,7 +3239,7 @@ header h1 {
 .stat-value {
     font-size: 2em;
     font-weight: 700;
-    color: var(--accent-color);
+    color: #9147ff;
     word-break: break-all;
 }
 .stat-label {
@@ -3288,7 +3288,7 @@ header h1 {
 }
 .stats-game-bar-fill {
     height: 100%;
-    background: var(--accent-color);
+    background: #9147ff;
     border-radius: 4px;
     transition: width 0.4s;
 }
@@ -3439,7 +3439,7 @@ header h1 {
 .inv-toggle-btn {
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
-    color: var(--accent-color);
+    color: #9147ff;
     border-radius: 6px;
     padding: 2px 10px;
     font-size: 0.75rem;
@@ -3451,7 +3451,7 @@ header h1 {
 }
 .inv-toggle-btn:hover {
     background: rgba(145,70,255,0.15);
-    border-color: var(--accent-color);
+    border-color: #9147ff;
 }
 .campaign-status {
     display: flex;
