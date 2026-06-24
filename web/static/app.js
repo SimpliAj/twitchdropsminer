@@ -1874,6 +1874,20 @@ function updateSettingsUI(settings) {
     const schedulerStop = document.getElementById('scheduler-stop');
     if (schedulerStop) schedulerStop.value = settings.scheduler_stop || '08:00';
 
+    // Predictions settings
+    const makePred = document.getElementById('set-make-predictions');
+    if (makePred) makePred.checked = settings.make_predictions || false;
+    const betStrategy = document.getElementById('set-bet-strategy');
+    if (betStrategy) betStrategy.value = settings.bet_strategy || 'SMART';
+    const betPct = document.getElementById('set-bet-pct');
+    if (betPct) betPct.value = settings.bet_percentage ?? 5;
+    const betMax = document.getElementById('set-bet-max');
+    if (betMax) betMax.value = settings.bet_max_points ?? 50000;
+    const betMin = document.getElementById('set-bet-min');
+    if (betMin) betMin.value = settings.bet_minimum_points ?? 1000;
+    const betDelay = document.getElementById('set-bet-delay');
+    if (betDelay) betDelay.value = settings.bet_delay_seconds ?? 30;
+
     // Re-render inventory to apply filters
     renderInventory();
 
@@ -2494,6 +2508,12 @@ async function saveSettings() {
         auto_prioritize: document.getElementById('auto-prioritize-toggle')?.checked || false,
         auto_add_linked: document.getElementById('auto-add-linked-toggle')?.checked || false,
         tab_counter_enabled: document.getElementById('tab-counter-toggle')?.checked ?? true,
+        make_predictions: document.getElementById('set-make-predictions')?.checked || false,
+        bet_strategy: document.getElementById('set-bet-strategy')?.value || 'SMART',
+        bet_percentage: parseInt(document.getElementById('set-bet-pct')?.value) || 5,
+        bet_max_points: parseInt(document.getElementById('set-bet-max')?.value) || 50000,
+        bet_minimum_points: parseInt(document.getElementById('set-bet-min')?.value) || 1000,
+        bet_delay_seconds: parseInt(document.getElementById('set-bet-delay')?.value) || 30,
     };
 
     try {
