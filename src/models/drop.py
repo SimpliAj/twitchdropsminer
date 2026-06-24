@@ -210,6 +210,14 @@ class TimedDrop(BaseDrop):
         if self.is_claimed:
             # claimed drops may report inconsistent current minutes, so we need to overwrite them
             self.real_current_minutes = self.required_minutes
+        elif (
+            not self.is_claimed
+            and self.real_current_minutes >= self.required_minutes > 0
+            and self._is_auto_granted()
+        ):
+            # badges/emotes are auto-granted by Twitch — no explicit claim needed
+            self.is_claimed = True
+            self.real_current_minutes = self.required_minutes
 
     def __repr__(self) -> str:
         if self.is_claimed:
@@ -281,6 +289,9 @@ class TimedDrop(BaseDrop):
     def _on_state_changed(self) -> None:
         self._twitch.gui.inv.update_drop(self)
 
+    def _is_auto_granted(self) -> bool:
+        return bool(self.benefits) and all(b.type.is_badge_or_emote() for b in self.benefits)
+
     def _update_real_minutes(self, delta: int) -> None:
         if delta == 0 or self.real_current_minutes + delta < 0 or not self.can_earn():
             return
@@ -288,6 +299,8 @@ class TimedDrop(BaseDrop):
             self.real_current_minutes += delta
         else:
             self.real_current_minutes = self.required_minutes
+            if self._is_auto_granted():
+                self.is_claimed = True
         self.extra_current_minutes = 0
         drop_minutes_cache.update(self.id, self.real_current_minutes)
         self._on_state_changed()
