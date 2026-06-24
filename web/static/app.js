@@ -86,21 +86,26 @@ async function fetchAndDisplayVersion() {
 
             if (updateIndicator && latestVersionSpan && updateLink) {
                 latestVersionSpan.textContent = data.latest_version;
-                updateLink.href = data.download_url;
+                updateLink.href = '#';
                 updateIndicator.style.display = 'inline-block';
 
                 // Translate update message
                 if (state.translations.gui?.footer) {
                     const updateLabel = state.translations.gui.footer.update_available || 'Update Available:';
                     const linkText = document.createTextNode(` ⚠ ${updateLabel} `);
-                    // Clear existing text nodes but keep the span
-                    const span = updateLink.querySelector('span'); // latest-version span
+                    const span = updateLink.querySelector('span');
                     updateLink.textContent = '';
                     updateLink.appendChild(linkText);
                     updateLink.appendChild(span);
                 }
 
-                // Log to console
+                // Self-update on click — show release notes first, then update
+                updateLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const notes = data.release_notes || '(no release notes)';
+                    showUpdateModal(`v${data.latest_version}\n\n${notes}`, true, data.latest_version);
+                });
+
                 console.log(`Update available: ${data.latest_version} (current: ${data.current_version})`);
             }
         }
@@ -726,6 +731,15 @@ function renderChannelPointsTab() {
     });
 }
 
+const _BASE_TITLE = document.title;
+let _lastActiveCampaignCount = 0;
+
+function updateTitleBadge(count) {
+    _lastActiveCampaignCount = count;
+    const enabled = state.settings?.tab_counter_enabled !== false;
+    document.title = (enabled && count > 0) ? `(${count}) ${_BASE_TITLE}` : _BASE_TITLE;
+}
+
 function updateStatus(status) {
     document.getElementById('status-text').textContent = status;
     if (!/watching/i.test(status)) {
@@ -733,6 +747,13 @@ function updateStatus(status) {
         if (gameEl) { gameEl.textContent = ''; gameEl.style.display = 'none'; }
     }
     updateQCButtons(status);
+    // Count remaining unclaimed drops for linked campaigns only
+    const remainingDrops = Object.values(state.campaigns).reduce((sum, c) => {
+        const { active } = getCampaignStatus(c);
+        if (!active || !c.linked) return sum;
+        return sum + Math.max(0, (c.total_drops || 0) - (c.claimed_drops || 0));
+    }, 0);
+    updateTitleBadge(remainingDrops);
 }
 
 function updateQCButtons(status) {
@@ -1159,10 +1180,30 @@ function clearDropProgress() {
     updateQCButtons(document.getElementById('status-text')?.textContent || '');
 }
 
+function autoAddLinkedGames() {
+    if (!state.settings?.auto_add_linked) return;
+    const watching = new Set(state.settings.games_to_watch || []);
+    let changed = false;
+    Object.values(state.campaigns).forEach(c => {
+        if (c.linked && c.game_name && !watching.has(c.game_name)) {
+            watching.add(c.game_name);
+            changed = true;
+        }
+    });
+    if (changed) {
+        state.settings.games_to_watch = Array.from(watching);
+        saveSettings();
+        renderGamesToWatch();
+        renderChannels();
+    }
+}
+
 function addCampaign(campaignData) {
     state.campaigns[campaignData.id] = campaignData;
     (campaignData.drops || []).forEach(d => updateLocalDropMinutes(d.id, d.current_minutes || 0));
     renderInventory();
+    autoAddLinkedGames();
+    if (state.settings?.auto_prioritize) sortGamesByEndDate();
 }
 
 function clearInventory() {
@@ -1673,13 +1714,12 @@ function autoCleanWantedQueue() {
         );
         if (gameCampaigns.length === 0) return true;
 
-        const hasActiveUnclaimed = gameCampaigns.some(c => {
-            const { active, upcoming } = getCampaignStatus(c);
-            if (!active && !upcoming) return false;
-            return !(c.total_drops > 0 && c.claimed_drops === c.total_drops);
-        });
+        // Only auto-remove when ALL campaigns for this game have all drops fully claimed
+        const allFullyClaimed = gameCampaigns.every(c =>
+            c.total_drops > 0 && c.claimed_drops === c.total_drops
+        );
 
-        if (!hasActiveUnclaimed) { changed = true; return false; }
+        if (allFullyClaimed) { changed = true; return false; }
         return true;
     });
 
@@ -1761,10 +1801,16 @@ function updateSettingsUI(settings) {
         availableGames = new Set(settings.games_available);
     }
 
+    const autoPrioritizeToggle = document.getElementById('auto-prioritize-toggle');
+    if (autoPrioritizeToggle) autoPrioritizeToggle.checked = !!settings.auto_prioritize;
+    const autoAddLinkedToggle = document.getElementById('auto-add-linked-toggle');
+    if (autoAddLinkedToggle) autoAddLinkedToggle.checked = !!settings.auto_add_linked;
+    const tabCounterToggle = document.getElementById('tab-counter-toggle');
+    if (tabCounterToggle) tabCounterToggle.checked = settings.tab_counter_enabled !== false;
+
     // Restore inventory filters from settings
     if (settings.inventory_filters) {
         document.getElementById('filter-active').checked = settings.inventory_filters.show_active || false;
-        if (document.getElementById('filter-linked')) document.getElementById('filter-linked').checked = settings.inventory_filters.show_linked || false;
         document.getElementById('filter-not-linked').checked = settings.inventory_filters.show_not_linked || false;
         document.getElementById('filter-upcoming').checked = settings.inventory_filters.show_upcoming || false;
         document.getElementById('filter-expired').checked = settings.inventory_filters.show_expired || false;
@@ -1819,6 +1865,7 @@ function updateSettingsUI(settings) {
     if (idleParallelEl) idleParallelEl.checked = settings.idle_parallel !== false;
 
     renderPreferredGames(settings.preferred_games || []);
+    renderPreferredWaiting();
 
     const schedulerEnabled = document.getElementById('scheduler-enabled');
     if (schedulerEnabled) schedulerEnabled.checked = settings.scheduler_enabled || false;
@@ -1826,20 +1873,6 @@ function updateSettingsUI(settings) {
     if (schedulerStart) schedulerStart.value = settings.scheduler_start || '22:00';
     const schedulerStop = document.getElementById('scheduler-stop');
     if (schedulerStop) schedulerStop.value = settings.scheduler_stop || '08:00';
-
-    // Populate prediction settings
-    const makePredEl = document.getElementById('set-make-predictions');
-    if (makePredEl) makePredEl.checked = settings.make_predictions === true;
-    const betStratEl = document.getElementById('set-bet-strategy');
-    if (betStratEl) betStratEl.value = settings.bet_strategy || 'SMART';
-    const betPctEl = document.getElementById('set-bet-pct');
-    if (betPctEl) betPctEl.value = settings.bet_percentage ?? 5;
-    const betMaxEl = document.getElementById('set-bet-max');
-    if (betMaxEl) betMaxEl.value = settings.bet_max_points ?? 50000;
-    const betMinEl = document.getElementById('set-bet-min');
-    if (betMinEl) betMinEl.value = settings.bet_minimum_points ?? 1000;
-    const betDelayEl = document.getElementById('set-bet-delay');
-    if (betDelayEl) betDelayEl.value = settings.bet_delay_seconds ?? 30;
 
     // Re-render inventory to apply filters
     renderInventory();
@@ -2023,6 +2056,31 @@ function renderGamesToWatch() {
         .sort();
 
     renderAvailableGames(unselectedGames, filterText);
+    renderPreferredWaiting();
+}
+
+function renderPreferredWaiting() {
+    const panel = document.getElementById('preferred-waiting-panel');
+    const list = document.getElementById('preferred-waiting-list');
+    if (!panel || !list) return;
+    const preferred = state.settings.preferred_games || [];
+    const inQueue = new Set((state.settings.games_to_watch || []).map(g => g.toLowerCase()));
+    const waiting = preferred.filter(g => !inQueue.has(g.toLowerCase()));
+    if (!waiting.length) { panel.style.display = 'none'; return; }
+    panel.style.display = '';
+    list.replaceChildren();
+    waiting.forEach(g => {
+        const item = document.createElement('div');
+        item.style.cssText = 'display:flex;align-items:center;gap:8px;padding:5px 2px;font-size:0.88em;';
+        const name = document.createElement('span');
+        name.textContent = g;
+        name.style.flex = '1';
+        const badge = document.createElement('span');
+        badge.textContent = 'No campaign';
+        badge.style.cssText = 'font-size:0.8em;color:var(--text-muted,#888);background:var(--bg-secondary,#222);padding:2px 6px;border-radius:4px;';
+        item.append(name, badge);
+        list.appendChild(item);
+    });
 }
 
 function renderSelectedGames(games) {
@@ -2183,6 +2241,22 @@ function removeGameFromWatch(gameName) {
         renderChannels();
         saveSettings();
     }
+}
+
+function sortGamesByEndDate() {
+    const games = state.settings.games_to_watch || [];
+    const campaigns = Object.values(state.campaigns);
+    const getEarliestEnd = (gameName) => {
+        const active = campaigns.filter(c =>
+            c.game_name?.toLowerCase() === gameName.toLowerCase() && c.ends_at
+        );
+        if (!active.length) return Infinity;
+        return Math.min(...active.map(c => new Date(c.ends_at).getTime()));
+    };
+    state.settings.games_to_watch = [...games].sort((a, b) => getEarliestEnd(a) - getEarliestEnd(b));
+    renderGamesToWatch();
+    renderChannels();
+    saveSettings();
 }
 
 function selectAllGames() {
@@ -2417,12 +2491,9 @@ async function saveSettings() {
         scheduler_enabled: document.getElementById('scheduler-enabled')?.checked || false,
         scheduler_start: document.getElementById('scheduler-start')?.value || '22:00',
         scheduler_stop: document.getElementById('scheduler-stop')?.value || '08:00',
-        make_predictions: document.getElementById('set-make-predictions')?.checked ?? false,
-        bet_strategy: document.getElementById('set-bet-strategy')?.value || 'SMART',
-        bet_percentage: parseInt(document.getElementById('set-bet-pct')?.value || '5'),
-        bet_max_points: parseInt(document.getElementById('set-bet-max')?.value || '50000'),
-        bet_minimum_points: parseInt(document.getElementById('set-bet-min')?.value || '1000'),
-        bet_delay_seconds: parseInt(document.getElementById('set-bet-delay')?.value || '30'),
+        auto_prioritize: document.getElementById('auto-prioritize-toggle')?.checked || false,
+        auto_add_linked: document.getElementById('auto-add-linked-toggle')?.checked || false,
+        tab_counter_enabled: document.getElementById('tab-counter-toggle')?.checked ?? true,
     };
 
     try {
@@ -3096,60 +3167,35 @@ async function reloadCampaigns() {
 }
 
 
-// ==================== Predictions Tab ====================
+// ==================== Predictions ====================
 
 async function loadPredictions() {
-    const resp = await fetch(API_BASE + "/api/predictions");
-    const data = await resp.json();
-    const preds = data.predictions || [];
-    // Summary
-    const wins = preds.filter(p => p.result === "WIN").length;
-    const losses = preds.filter(p => p.result === "LOSE").length;
-    const net = preds
-        .filter(p => ["WIN", "LOSE"].includes(p.result))
-        .reduce((s, p) => s + (p.points_won || 0) - (p.points_bet || 0), 0);
-    const winRate = wins + losses > 0 ? Math.round(wins / (wins + losses) * 100) : 0;
-    const summaryEl = document.getElementById("pred-summary");
-    if (summaryEl) {
-        summaryEl.replaceChildren();
-        const cards = [
-            { label: "Total", value: preds.length },
-            { label: "Win Rate", value: `${winRate}%` },
-            { label: "Net", value: `${net >= 0 ? "+" : ""}${net.toLocaleString()} pts`, color: net >= 0 ? "#00b368" : "#eb4a4a" },
-        ];
-        cards.forEach(c => {
-            const div = document.createElement("div");
-            div.className = "stat-card";
-            if (c.color) div.style.color = c.color;
-            div.textContent = `${c.label}: ${c.value}`;
-            summaryEl.appendChild(div);
+    try {
+        const resp = await fetch(API_BASE + "/api/predictions");
+        const data = await resp.json();
+        const preds = data.predictions || [];
+        const wins = preds.filter(p => p.result === "WIN").length;
+        const losses = preds.filter(p => p.result === "LOSE").length;
+        const net = preds.filter(p => ["WIN", "LOSE"].includes(p.result)).reduce((s, p) => s + (p.points_won || 0) - (p.points_bet || 0), 0);
+        const winRate = wins + losses > 0 ? Math.round(wins / (wins + losses) * 100) : 0;
+        const summaryEl = document.getElementById("pred-summary");
+        if (summaryEl) {
+            summaryEl.replaceChildren();
+            [{ label: "Total", value: preds.length }, { label: "Win Rate", value: `${winRate}%` }, { label: "Net", value: `${net >= 0 ? "+" : ""}${net.toLocaleString()} pts`, color: net >= 0 ? "#00b368" : "#eb4a4a" }]
+                .forEach(c => { const div = document.createElement("div"); div.className = "stat-card"; if (c.color) div.style.color = c.color; div.textContent = `${c.label}: ${c.value}`; summaryEl.appendChild(div); });
+        }
+        const tbody = document.getElementById("pred-tbody");
+        if (!tbody) return;
+        tbody.replaceChildren();
+        preds.slice(0, 100).forEach(p => {
+            const color = p.result === "WIN" ? "#00b368" : p.result === "LOSE" ? "#eb4a4a" : "#adadb8";
+            const tr = document.createElement("tr");
+            tr.style.borderTop = "1px solid #2d2d35";
+            [{ text: p.ts ? new Date(p.ts).toLocaleDateString() : "—", style: "color:#adadb8" }, { text: p.channel || "—" }, { text: p.title ? p.title.slice(0, 40) : "—" }, { text: (p.points_bet || 0).toLocaleString() }, { text: p.result || "PENDING", style: `color:${color};font-weight:600` }, { text: (p.points_won || 0).toLocaleString() }]
+                .forEach(c => { const td = document.createElement("td"); td.style.padding = "5px 8px"; if (c.style) td.style.cssText += c.style; td.textContent = c.text; tr.appendChild(td); });
+            tbody.appendChild(tr);
         });
-    }
-    // Table
-    const tbody = document.getElementById("pred-tbody");
-    if (!tbody) return;
-    tbody.replaceChildren();
-    preds.slice(0, 100).forEach(p => {
-        const color = p.result === "WIN" ? "#00b368" : p.result === "LOSE" ? "#eb4a4a" : "#adadb8";
-        const tr = document.createElement("tr");
-        tr.style.borderTop = "1px solid #2d2d35";
-        const cells = [
-            { text: p.ts ? new Date(p.ts).toLocaleDateString() : "—", style: "color:#adadb8" },
-            { text: p.channel || "—" },
-            { text: p.title ? p.title.slice(0, 40) : "—" },
-            { text: (p.points_bet || 0).toLocaleString() },
-            { text: p.result || "PENDING", style: `color:${color};font-weight:600` },
-            { text: (p.points_won || 0).toLocaleString() },
-        ];
-        cells.forEach(c => {
-            const td = document.createElement("td");
-            td.style.padding = "5px 8px";
-            if (c.style) td.style.cssText += c.style;
-            td.textContent = c.text;
-            tr.appendChild(td);
-        });
-        tbody.appendChild(tr);
-    });
+    } catch(e) {}
 }
 
 // ==================== Analytics Chart ====================
@@ -3172,38 +3218,12 @@ async function loadAnalytics(channel, days) {
         if (!canvas) return;
         const ctx = canvas.getContext("2d");
         if (analyticsChart) analyticsChart.destroy();
-        analyticsChart = new Chart(ctx, {
-            type: "line",
-            data: {
-                labels,
-                datasets: [{
-                    label: channel || "Points",
-                    data: values,
-                    borderColor: "#9147ff",
-                    backgroundColor: "rgba(145,71,255,0.1)",
-                    tension: 0.3,
-                    pointRadius: snapshots.length > 100 ? 0 : 3,
-                    fill: true,
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { labels: { color: "#efeff1" } } },
-                scales: {
-                    x: { ticks: { color: "#adadb8", maxTicksLimit: 8 }, grid: { color: "#2d2d35" } },
-                    y: { ticks: { color: "#adadb8" }, grid: { color: "#2d2d35" } }
-                }
-            }
-        });
+        analyticsChart = new Chart(ctx, { type: "line", data: { labels, datasets: [{ label: channel || "Points", data: values, borderColor: "#9147ff", backgroundColor: "rgba(145,71,255,0.1)", tension: 0.3, pointRadius: snapshots.length > 100 ? 0 : 3, fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: "#efeff1" } } }, scales: { x: { ticks: { color: "#adadb8", maxTicksLimit: 8 }, grid: { color: "#2d2d35" } }, y: { ticks: { color: "#adadb8" }, grid: { color: "#2d2d35" } } } } });
     } catch(e) {}
 }
 
 async function initAnalyticsTab() {
-    if (analyticsTabInited) {
-        loadAnalytics(analyticsCurrentChannel, analyticsCurrentDays);
-        return;
-    }
+    if (analyticsTabInited) { loadAnalytics(analyticsCurrentChannel, analyticsCurrentDays); return; }
     analyticsTabInited = true;
     try {
         const resp = await fetch(API_BASE + "/api/analytics/points?days=7");
@@ -3211,12 +3231,7 @@ async function initAnalyticsTab() {
         const channels = Object.keys(data.channels || {});
         const sel = document.getElementById("analytics-channel");
         if (!sel) return;
-        sel.replaceChildren(...channels.map(ch => {
-            const opt = document.createElement("option");
-            opt.value = ch;
-            opt.textContent = ch;
-            return opt;
-        }));
+        sel.replaceChildren(...channels.map(ch => { const opt = document.createElement("option"); opt.value = ch; opt.textContent = ch; return opt; }));
         if (channels.length > 0) loadAnalytics(channels[0], 7);
         sel.addEventListener("change", () => loadAnalytics(sel.value, analyticsCurrentDays));
         document.querySelectorAll(".range-btn").forEach(btn => {
@@ -3391,6 +3406,22 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('select-badge-emote-btn')?.addEventListener('click', selectBadgeEmoteGames);
     document.getElementById('add-game-btn').addEventListener('click', addGameFromSearch);
     document.getElementById('games-filter').addEventListener('input', renderGamesToWatch);
+    document.getElementById('sort-by-end-date-btn')?.addEventListener('click', sortGamesByEndDate);
+    document.getElementById('auto-prioritize-toggle')?.addEventListener('change', function() {
+        state.settings.auto_prioritize = this.checked;
+        saveSettings();
+        if (this.checked) sortGamesByEndDate();
+    });
+    document.getElementById('auto-add-linked-toggle')?.addEventListener('change', function() {
+        state.settings.auto_add_linked = this.checked;
+        saveSettings();
+        if (this.checked) autoAddLinkedGames();
+    });
+    document.getElementById('tab-counter-toggle')?.addEventListener('change', function() {
+        state.settings.tab_counter_enabled = this.checked;
+        saveSettings();
+        updateTitleBadge(_lastActiveCampaignCount || 0);
+    });
 
     // Inventory filters
     document.getElementById('filter-active').addEventListener('change', onInventoryFilterChange);
@@ -3498,11 +3529,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let prefGameDropdownIndex = -1;
 
-    function addPreferredGame(name) {
-        if (!name) return;
+    function addPreferredGame(val) {
+        if (!val) return;
         const games = state.settings.preferred_games || [];
-        if (!games.map(g => g.toLowerCase()).includes(name.toLowerCase())) {
-            games.push(name);
+        if (!games.map(g => g.toLowerCase()).includes(val.toLowerCase())) {
+            games.push(val);
             renderPreferredGames([...games]);
             saveSettings();
         }
@@ -3520,7 +3551,10 @@ document.addEventListener('DOMContentLoaded', () => {
             .sort((a, b) => a.toLowerCase().startsWith(term) ? -1 : b.toLowerCase().startsWith(term) ? 1 : a.localeCompare(b))
             .slice(0, 15);
         dropdown.replaceChildren();
-        if (!matches.length) { dropdown.style.display = 'none'; return; }
+        if (!matches.length) {
+            dropdown.style.display = 'none';
+            return;
+        }
         matches.forEach((g, idx) => {
             const item = document.createElement('div');
             item.className = 'dropdown-item' + (idx === prefGameDropdownIndex ? ' focused' : '');
@@ -3653,19 +3687,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch and apply translations for the current language
     fetchAndApplyTranslations();
 
-    // Send session report button
-    document.getElementById('send-report-btn')?.addEventListener('click', async () => {
-        const btn = document.getElementById('send-report-btn');
-        btn.disabled = true;
-        btn.textContent = 'Sending...';
-        try {
-            const r = await fetch(API_BASE + '/api/session-report', { method: 'POST' });
-            btn.textContent = r.ok ? '✅ Sent!' : '❌ Failed';
-        } catch {
-            btn.textContent = '❌ Failed';
-        }
-        setTimeout(() => { btn.disabled = false; btn.textContent = '📋 Send Session Report to Discord'; }, 3000);
-    });
 
     // Instance management
     async function loadInstances() {
@@ -4153,6 +4174,129 @@ function showCampaignDropsModal(campaignId, onlyRemaining) {
 
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
+}
+
+function renderInlineMarkdown(line, container) {
+    // Parse **bold** and `code` using DOM nodes only — no innerHTML
+    const parts = line.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
+    parts.forEach(part => {
+        if (/^\*\*(.+)\*\*$/.test(part)) {
+            const s = document.createElement('strong');
+            s.style.color = '#fff';
+            s.textContent = part.slice(2, -2);
+            container.appendChild(s);
+        } else if (/^`([^`]+)`$/.test(part)) {
+            const c = document.createElement('code');
+            c.style.cssText = 'background:#0d0d0d;padding:1px 5px;border-radius:4px;font-size:.8rem;';
+            c.textContent = part.slice(1, -1);
+            container.appendChild(c);
+        } else {
+            container.appendChild(document.createTextNode(part));
+        }
+    });
+}
+
+function renderMarkdown(md) {
+    const div = document.createElement('div');
+    div.style.cssText = 'font-size:.85rem;color:#ccc;line-height:1.6;';
+    // Replace fenced code blocks with a placeholder line
+    const lines = md.replace(/```[\s\S]*?```/g, '`…`').split('\n');
+    lines.forEach(line => {
+        const el = document.createElement('div');
+        if (/^### /.test(line)) {
+            const s = document.createElement('strong');
+            s.style.cssText = 'color:#fff;font-size:.9rem;';
+            s.textContent = line.slice(4);
+            el.style.marginTop = '10px';
+            el.appendChild(s);
+        } else if (/^## /.test(line)) {
+            const s = document.createElement('strong');
+            s.style.cssText = 'color:var(--twitch-purple,#9147ff);font-size:.95rem;';
+            s.textContent = line.slice(3);
+            el.style.marginTop = '12px';
+            el.appendChild(s);
+        } else if (/^# /.test(line)) {
+            const s = document.createElement('strong');
+            s.style.cssText = 'color:#fff;font-size:1rem;';
+            s.textContent = line.slice(2);
+            el.appendChild(s);
+        } else if (line.trim() === '') {
+            el.style.height = '4px';
+        } else {
+            renderInlineMarkdown(line, el);
+        }
+        div.appendChild(el);
+    });
+    return div;
+}
+
+function showUpdateModal(text, withInstallBtn, latestVersion) {
+    document.getElementById('update-log-modal')?.remove();
+    const overlay = document.createElement('div');
+    overlay.id = 'update-log-modal';
+    overlay.className = 'wq-modal-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center;overflow-y:auto;padding:24px;';
+    const box = document.createElement('div');
+    box.style.cssText = 'background:var(--card-bg,#1a1a2e);border:1px solid var(--border-color,#333);border-radius:12px;padding:24px;max-width:520px;width:90%;margin:auto;';
+    const title = document.createElement('div');
+    title.textContent = '🔄 Update Available';
+    title.style.cssText = 'font-size:1.1rem;font-weight:700;color:var(--twitch-purple,#9147ff);margin-bottom:12px;';
+    const pre = document.createElement('div');
+    pre.style.cssText = 'background:#111;padding:12px;border-radius:8px;margin:0;';
+    if (withInstallBtn) {
+        pre.appendChild(renderMarkdown(text));
+    } else {
+        pre.style.fontFamily = 'monospace';
+        pre.style.fontSize = '.8rem';
+        pre.style.whiteSpace = 'pre-wrap';
+        pre.style.color = '#ccc';
+        pre.textContent = text;
+    }
+    box.append(title, pre);
+    if (withInstallBtn) {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;gap:10px;margin-top:14px;justify-content:flex-end;';
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.style.cssText = 'padding:8px 16px;border-radius:8px;border:1px solid #444;background:transparent;color:#aaa;cursor:pointer;';
+        cancelBtn.addEventListener('click', () => overlay.remove());
+        const installBtn = document.createElement('button');
+        installBtn.textContent = `Install v${latestVersion}`;
+        installBtn.style.cssText = 'padding:8px 16px;border-radius:8px;border:none;background:var(--twitch-purple,#9147ff);color:#fff;font-weight:600;cursor:pointer;';
+        installBtn.addEventListener('click', async () => {
+            installBtn.textContent = '⏳ Updating...';
+            installBtn.disabled = true;
+            cancelBtn.disabled = true;
+            pre.innerHTML = '';
+            pre.style.fontFamily = 'monospace';
+            pre.style.whiteSpace = 'pre-wrap';
+            pre.style.fontSize = '.8rem';
+            pre.style.color = '#ccc';
+            pre.textContent = 'Pulling latest code from GitHub...\n';
+            try {
+                const res = await fetch(API_BASE + '/api/self-update', { method: 'POST' });
+                const json = await res.json();
+                if (json.docker) {
+                    pre.textContent = json.log;
+                    title.textContent = '🐳 Docker detected';
+                    installBtn.style.display = 'none';
+                    cancelBtn.textContent = 'Close';
+                    cancelBtn.disabled = false;
+                } else {
+                    pre.textContent = json.log + '\n\n⏳ Restarting... page will reconnect shortly.';
+                    title.textContent = '✅ Update Applied';
+                }
+            } catch (_) {
+                pre.textContent = 'Error contacting server.';
+            }
+        });
+        row.append(cancelBtn, installBtn);
+        box.appendChild(row);
+    }
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+    return pre;
 }
 
 function showRewardModal(drop) {
