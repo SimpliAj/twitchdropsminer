@@ -10,7 +10,7 @@
     <link rel="apple-touch-icon" href="/logo.png">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#9147ff">
-    <link rel="stylesheet" href="/static/styles.css?v=1749430000">
+    <link rel="stylesheet" href="/static/styles.css?v=e7314ae3">
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
 
@@ -32,7 +32,9 @@
                 </div>
             </div>
             <div class="header-meta">
-                <div id="account-tabs"></div>
+                <div id="account-tabs">
+                    <!-- dynamically populated by loadInstanceTabs() -->
+                </div>
             </div>
             <div class="status-bar">
                 <div class="status-left">
@@ -49,9 +51,8 @@
         <nav class="tabs">
             <button class="tab-button active" data-tab="main">Main</button>
             <button class="tab-button" data-tab="inventory">Inventory</button>
-            <button class="tab-button" data-tab="analytics">Analytics</button>
             <button class="tab-button" data-tab="settings">Settings</button>
-            <button class="tab-button" data-tab="system" id="tab-btn-system">System</button>
+            <button class="tab-button" data-tab="analytics">Analytics</button>
             <button class="tab-button" data-tab="help">Help</button>
         </nav>
 
@@ -60,19 +61,18 @@
             <div class="main-grid">
                 <!-- Stats Widget -->
                 <section class="panel stats-panel">
-                    <h2>Stats</h2>
-                    <div id="stats-content" style="display:flex;gap:0;flex-wrap:nowrap;">
-                        <div class="stat-item" style="flex:1;text-align:center;">
+                    <div id="stats-content" class="stats-grid">
+                        <div class="stat-card">
                             <div class="stat-value" id="stat-drops-today">&#x2014;</div>
                             <div class="stat-label">Drops Today</div>
                         </div>
-                        <div class="stat-item" style="flex:1;border-left:1px solid var(--border-color);text-align:center;">
+                        <div class="stat-card">
                             <div class="stat-value" id="stat-drops-total">&#x2014;</div>
                             <div class="stat-label">Drops Total</div>
                         </div>
-                        <div class="stat-item" style="flex:1;border-left:1px solid var(--border-color);text-align:center;">
+                        <div class="stat-card">
                             <div class="stat-value" id="stat-points-session">&#x2014;</div>
-                            <div class="stat-label">Points (Session)</div>
+                            <div class="stat-label">Points Today</div>
                         </div>
                     </div>
                 </section>
@@ -110,13 +110,22 @@
                     <div id="progress-container">
                         <div id="no-drop-message">No active drop</div>
                         <div id="drop-info" style="display: none;">
-                            <div class="drop-name" id="drop-name"></div>
-                            <div class="drop-game" id="drop-game"></div>
-                            <div class="progress-bar">
-                                <div class="progress-fill" id="progress-fill"></div>
+                            <div class="drop-info-layout">
+                                <img id="drop-game-thumb" class="drop-game-thumb" src="" alt="Game thumbnail" style="display:none;">
+                                <div class="drop-info-body">
+                                    <div class="drop-name" id="drop-name"></div>
+                                    <div class="drop-game" id="drop-game"></div>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" id="progress-fill"></div>
+                                        <span class="progress-percent" id="progress-percent"></span>
+                                    </div>
+                                    <div class="progress-meta" id="progress-meta">
+                                        <span class="progress-text" id="progress-text"></span>
+                                        <span class="progress-time" id="progress-time"></span>
+                                    </div>
+                                    <div class="progress-drops-left" id="progress-drops-left" style="display:none;"></div>
+                                </div>
                             </div>
-                            <div class="progress-text" id="progress-text"></div>
-                            <div class="progress-time" id="progress-time"></div>
                         </div>
                     </div>
                 </section>
@@ -140,14 +149,16 @@
 
                 <!-- Channel Points Display -->
                 <section class="panel channel-points-panel-main" id="channel-points-panel">
-                    <h2>Channel Points</h2>
-                    <div id="channel-points-info" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-                        <span id="channel-points-channel" style="font-weight:500;color:var(--accent-color,#9147ff)">—</span>
-                        <span id="channel-points-balance" style="font-size:1.1rem;font-weight:600;">not watching</span>
-                        <span id="channel-points-claimed" style="font-size:0.85rem;color:#0f9;opacity:0;transition:opacity 0.4s;"></span>
+                    <div class="cp-header-row">
+                        <h2>Channel Points</h2>
+                        <div id="channel-points-info" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                            <span id="channel-points-channel" style="font-weight:500;color:var(--accent-color,#9147ff)">—</span>
+                            <span id="channel-points-balance" style="font-size:1rem;font-weight:600;">not watching</span>
+                            <span id="channel-points-claimed" style="font-size:0.8rem;color:#0f9;opacity:0;transition:opacity 0.4s;"></span>
+                        </div>
                     </div>
-                    <div id="points-tracker-section" style="display:none;margin-top:12px;">
-                        <div style="font-size:0.8rem;color:#adadb8;margin-bottom:6px;">Recent channels:</div>
+                    <div id="points-tracker-section" style="display:none;">
+                        <div class="cp-divider"></div>
                         <div id="points-tracker-list"></div>
                     </div>
                 </section>
@@ -172,6 +183,11 @@
                     <h2 id="wanted-header">Wanted Drop Queue</h2>
                     <div id="wanted-items-list" class="wanted-items-list">
                         <p class="empty-message-small">No wanted drops queued...</p>
+                    </div>
+                    <!-- Preferred Games Waiting -->
+                    <div id="preferred-waiting-panel" style="display:none;margin-top:16px;border-top:1px solid var(--border-color,#333);padding-top:12px;">
+                        <h3 style="margin:0 0 8px 0;font-size:0.9em;color:var(--text-muted,#aaa);">⭐ Waiting for Campaign</h3>
+                        <div id="preferred-waiting-list"></div>
                     </div>
                 </section>
             </div>
@@ -250,224 +266,238 @@
         <!-- Settings Tab -->
         <div id="settings-tab" class="tab-content">
             <div class="settings-container">
-                <section class="settings-section">
-                    <h2 id="settings-general-header">General</h2>
-                    <label>
-                        <input type="checkbox" id="dark-mode"> Dark Mode
-                    </label>
-                    <label>
-                        Connection Quality:
-                        <input type="number" id="connection-quality" min="1" max="6" value="1">
-                    </label>
-                    <label>
-                        Minimum Refresh Interval (minutes):
-                        <input type="number" id="minimum-refresh-interval" min="1" max="1440" value="30">
-                    </label>
-                    <label>
-                        Proxy URL:
-                        <input type="text" id="proxy-url" placeholder="http://user:pass@host:port">
-                        <button id="set-proxy-btn" class="secondary-btn" title="Set and verify proxy">Set
-                            Proxy</button>
-                        <button id="verify-proxy-btn" class="secondary-btn"
-                            title="Test proxy connection">Verify</button>
-                    </label>
-                    <small class="help-text-inline" style="margin-top: 5px;">Leave empty to disable. Supports
-                        HTTP/HTTPS/SOCKS.</small>
-                    <div id="proxy-verify-result" class="verify-result" style="display: none;"></div>
-                </section>
 
+                <!-- ─── ⚙️ System ─── -->
+                <div class="settings-category-label">⚙️ System</div>
                 <div class="settings-grid">
-                <section class="settings-section">
-                    <h2>Channel Points</h2>
-                    <label>
-                        <input type="checkbox" id="claim-channel-points"> Auto-claim bonus channel points
-                    </label>
-                    <small class="help-text-inline">Automatically claims the bonus chest when it appears on watched channels.</small>
-                </section>
+                    <section class="settings-section">
+                        <h2 id="settings-general-header">General</h2>
+                        <label>
+                            <input type="checkbox" id="dark-mode"> Dark Mode
+                        </label>
+                        <label>
+                            <input type="checkbox" id="show-twitch-usernames" checked> Show Twitch Usernames in Header
+                        </label>
+                        <label>
+                            <input type="checkbox" id="tab-counter-toggle" checked> Show Remaining Drops (linked) in Tab Title
+                        </label>
+                        <label>
+                            Connection Quality:
+                            <input type="number" id="connection-quality" min="1" max="6" value="1">
+                        </label>
+                        <label>
+                            Minimum Refresh Interval (minutes):
+                            <input type="number" id="minimum-refresh-interval" min="1" max="1440" value="30">
+                        </label>
+                        <label>
+                            <span id="settings-proxy-label">Proxy URL:</span>
+                            <input type="text" id="proxy-url" placeholder="http://user:pass@host:port">
+                            <button id="set-proxy-btn" class="secondary-btn" title="Set and verify proxy">Set Proxy</button>
+                            <button id="verify-proxy-btn" class="secondary-btn" title="Test proxy connection">Verify</button>
+                        </label>
+                        <small class="help-text-inline" id="settings-proxy-help" style="margin-top: 5px;">Leave empty to disable. Supports HTTP/HTTPS/SOCKS.</small>
+                        <div id="proxy-verify-result" class="verify-result" style="display: none;"></div>
+                    </section>
 
-                <section class="settings-section">
-                    <h2>Discord Notifications</h2>
-                    <label>
-                        Drop Claimed Webhook:
-                        <div style="display:flex;gap:8px;">
-                            <input type="text" id="discord-webhook-drops" placeholder="https://discord.com/api/webhooks/..." style="flex:1;">
-                            <button class="secondary-btn" onclick="testWebhook('drops')" style="white-space:nowrap;">Test</button>
+                    <section class="settings-section">
+                        <h2 id="settings-password-header">Login & Password</h2>
+                        <div id="pw-status-badge" style="margin-bottom:10px;font-size:.82rem;color:#adadb8"></div>
+                        <div class="form-row">
+                            <label id="pw-current-label" class="form-label">Current</label>
+                            <input type="password" id="pw-current" class="form-input" placeholder="Leave empty if none">
                         </div>
-                    </label>
-                    <small class="help-text-inline" style="margin-bottom:10px;display:block;">Fires when a Twitch drop is successfully claimed.</small>
-                    <label>
-                        Channel Points Webhook:
-                        <div style="display:flex;gap:8px;">
-                            <input type="text" id="discord-webhook-points" placeholder="https://discord.com/api/webhooks/..." style="flex:1;">
-                            <button class="secondary-btn" onclick="testWebhook('points')" style="white-space:nowrap;">Test</button>
+                        <div class="form-row">
+                            <label id="pw-new-label" class="form-label">New</label>
+                            <input type="password" id="pw-new" class="form-input" placeholder="New password (empty = disable)">
                         </div>
-                    </label>
-                    <small class="help-text-inline">Fires when a bonus channel point chest is claimed.</small>
-                </section>
+                        <div class="form-row">
+                            <label id="pw-confirm-label" class="form-label">Confirm</label>
+                            <input type="password" id="pw-new2" class="form-input" placeholder="Repeat new password">
+                        </div>
+                        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+                            <button id="pw-save-btn" class="action-button" style="flex:1">Save</button>
+                            <button id="pw-disable-btn" class="action-button" style="flex:1;background:transparent;border:1px solid #3d3d4a;color:#adadb8">Disable Login</button>
+                        </div>
+                        <div id="pw-result" style="margin-top:8px;font-size:.82rem;display:none"></div>
+                    </section>
+                </div>
 
-                <section class="settings-section">
-                    <h2 id="settings-discord-bot-header">Discord Bot</h2>
-                    <p id="settings-discord-bot-desc" class="help-text">Pair a Discord bot to control TwitchDropsMiner via chat commands.</p>
-                    <div id="bot-status-badge" style="margin-bottom:12px;font-size:.85rem;"></div>
-                    <div id="bot-pair-code-box" style="display:none;background:#0e0e10;border:1px solid #3d3d4a;border-radius:8px;padding:12px;margin-bottom:12px;font-family:monospace;font-size:.85rem;line-height:1.8;">
-                        <div id="bot-pair-code-text"></div>
-                        <small id="settings-discord-bot-expires" style="color:#adadb8;font-size:.78rem;">(Expires in 10 min)</small>
+                <section class="settings-section" id="system-section">
+                    <h2 id="system-header">System</h2>
+                    <div class="system-card" id="instances-card" style="margin-bottom:16px">
+                        <h3>Instances</h3>
+                        <p style="font-size:.82rem;color:var(--text-secondary);margin:4px 0 10px">Each instance runs a separate TDM process with its own Twitch session.</p>
+                        <div id="instances-list" style="margin-bottom:10px"></div>
+                        <div id="instances-proxy-warning" style="display:none;background:rgba(255,165,0,0.12);border:1px solid rgba(255,165,0,0.4);border-radius:6px;padding:8px 12px;margin-bottom:10px;font-size:.82rem;color:#ffa500">
+                            ⚠️ <strong>Proxy recommended:</strong> Running 3+ accounts from one IP increases Twitch ban risk. Add one proxy per account in Settings → Proxy.
+                        </div>
+                        <button id="add-instance-btn" class="btn-primary" style="width:auto;padding:7px 14px;font-size:.85rem">+ Add Instance</button>
+                        <div id="instances-status" style="margin-top:8px;font-size:.82rem;display:none"></div>
                     </div>
-                    <div id="bot-channel-config" style="display:none;background:#0e0e10;border:1px solid #3d3d4a;border-radius:8px;padding:12px;margin-bottom:12px;">
-                        <div style="font-size:.8rem;font-weight:600;color:#adadb8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Notification Channels</div>
-                        <div style="display:flex;flex-direction:column;gap:6px;">
-                            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                                <div>
-                                    <span style="font-size:.82rem;color:#adadb8;">🎁 Drops: </span>
-                                    <span id="bot-drops-channel" style="font-family:monospace;font-size:.82rem;">—</span>
-                                </div>
-                                <button id="bot-drops-clear-btn" class="secondary-btn" style="display:none;font-size:.75rem;padding:2px 8px;color:#eb4a4a;border-color:#eb4a4a;" onclick="botClearChannel('drops')">Clear</button>
+                    <div class="system-card" id="accounts-card" style="margin-bottom:16px">
+                        <h3 id="system-accounts-header">Twitch Accounts</h3>
+                        <p style="font-size:.82rem;color:var(--text-secondary);margin:4px 0 10px">Switch between saved Twitch logins within this instance.</p>
+                        <div id="accounts-list" class="accounts-list" style="margin-top:10px"></div>
+                        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+                            <input type="text" id="new-account-label" placeholder="Label (e.g. Main, Alt)" style="flex:1;min-width:120px;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:6px;padding:7px 10px;color:var(--text-primary);font-size:.85rem;outline:none">
+                            <button id="add-account-btn" class="btn-primary" style="width:auto;padding:7px 14px;font-size:.85rem">+ Add Account</button>
+                        </div>
+                        <div id="accounts-status" style="margin-top:8px;font-size:.82rem;display:none"></div>
+                    </div>
+                    <div class="system-controls">
+                        <div class="system-card">
+                            <h3 id="system-miner-header">Miner</h3>
+                            <p id="system-miner-desc">Reload campaigns and restart the mining loop.</p>
+                            <button id="system-reload-btn" class="btn-primary">Reload Campaigns</button>
+                        </div>
+                        <div class="system-card danger">
+                            <h3 id="system-restart-header">Restart</h3>
+                            <p id="system-restart-desc">Stop the miner process. PM2 will restart it automatically.</p>
+                            <button id="system-restart-btn" class="btn-danger">Restart Miner</button>
+                        </div>
+                        <div class="system-card">
+                            <h3 id="system-session-header">Session</h3>
+                            <p id="system-session-desc">Log out of the web interface.</p>
+                            <button id="system-logout-btn" class="btn-secondary">Logout</button>
+                        </div>
+                    </div>
+                    <div id="system-status" class="system-status"></div>
+                </section>
+
+                <!-- ─── 🔔 Notifications ─── -->
+                <div class="settings-category-label">🔔 Notifications</div>
+                <div class="settings-grid">
+                    <section class="settings-section" id="settings-notifications">
+                        <h2 id="settings-notifications-header">Browser</h2>
+                        <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                            <input type="checkbox" id="push-sound-toggle">
+                            <span id="settings-push-sound-label">Notification Sound</span>
+                        </label>
+                        <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                            <input type="checkbox" id="campaign-alerts-toggle">
+                            <span id="settings-campaign-alerts-label">Campaign End Alerts (24h warning)</span>
+                        </label>
+                    </section>
+
+                    <section class="settings-section">
+                        <h2 id="settings-discord-notif-header">Discord Webhooks</h2>
+                        <label>
+                            <span id="settings-drops-webhook-label">Drop Claimed Webhook:</span>
+                            <div style="display:flex;gap:8px;">
+                                <input type="text" id="discord-webhook-drops" placeholder="https://discord.com/api/webhooks/..." style="flex:1;">
+                                <button id="test-drops-webhook-btn" class="secondary-btn" onclick="testWebhook('drops')" style="white-space:nowrap;">Test</button>
                             </div>
-                            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                                <div>
-                                    <span style="font-size:.82rem;color:#adadb8;">💰 Points: </span>
-                                    <span id="bot-points-channel" style="font-family:monospace;font-size:.82rem;">—</span>
-                                </div>
-                                <button id="bot-points-clear-btn" class="secondary-btn" style="display:none;font-size:.75rem;padding:2px 8px;color:#eb4a4a;border-color:#eb4a4a;" onclick="botClearChannel('points')">Clear</button>
+                        </label>
+                        <small class="help-text-inline" id="settings-drops-webhook-help" style="margin-bottom:10px;display:block;">Fires when a Twitch drop is successfully claimed.</small>
+                        <label>
+                            <span id="settings-points-webhook-label">Channel Points Webhook:</span>
+                            <div style="display:flex;gap:8px;">
+                                <input type="text" id="discord-webhook-points" placeholder="https://discord.com/api/webhooks/..." style="flex:1;">
+                                <button id="test-points-webhook-btn" class="secondary-btn" onclick="testWebhook('points')" style="white-space:nowrap;">Test</button>
                             </div>
+                        </label>
+                        <small class="help-text-inline" id="settings-points-webhook-help">Fires when a bonus channel point chest is claimed.</small>
+                    </section>
+
+                    <section class="settings-section">
+                        <h2 id="settings-discord-bot-header">Discord Bot</h2>
+                        <p id="settings-discord-bot-desc" class="help-text">Pair a Discord bot to control TwitchDropsMiner via chat commands.</p>
+                        <div id="bot-status-badge" style="margin-bottom:12px;font-size:.85rem;"></div>
+                        <div id="bot-pair-code-box" style="display:none;background:#0e0e10;border:1px solid #3d3d4a;border-radius:8px;padding:12px;margin-bottom:12px;font-family:monospace;font-size:.85rem;line-height:1.8;">
+                            <div id="bot-pair-code-text"></div>
+                            <small id="settings-discord-bot-expires" style="color:#adadb8;font-size:.78rem;">(Expires in 10 min)</small>
                         </div>
-                        <p style="font-size:.75rem;color:#6b6b7b;margin:8px 0 0;">Use <code>/setchannel</code> in Discord to set channels.</p>
-                    </div>
-                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                        <button id="bot-generate-btn" class="secondary-btn" onclick="botGenerateCode()">Generate code</button>
-                        <button id="bot-revoke-btn" class="secondary-btn" style="display:none;color:#eb4a4a;border-color:#eb4a4a;" onclick="botRevoke()">Disconnect</button>
-                        <a id="bot-invite-link" href="https://discord.com/oauth2/authorize?client_id=1513555081218359506&permissions=84992&integration_type=0&scope=bot" target="_blank" rel="noopener" class="secondary-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
-                            <span id="settings-discord-bot-invite-text">Invite bot</span>
-                        </a>
-                    </div>
-                </section>
-
-                <section class="settings-section">
-                    <h2>Idle Watch</h2>
-                    <p class="help-text">Channels to watch when no drops are available. Add in priority order.</p>
-                    <label class="toggle-label" style="margin-bottom:6px;">
-                        <input type="checkbox" id="idle-use-followed" onchange="saveSettings()">
-                        <span>Auto: use followed channels</span>
-                        <span class="help-text" style="display:block;margin-top:2px;font-size:0.8em;">Automatically watches live channels you follow on Twitch when idle.</span>
-                    </label>
-                    <label class="toggle-label" style="margin-bottom:10px;">
-                        <input type="checkbox" id="idle-parallel" onchange="saveSettings()">
-                        <span>Parallel idle (watch all channels simultaneously)</span>
-                        <span class="help-text" style="display:block;margin-top:2px;font-size:0.8em;">Earn channel points from multiple channels at the same time when idle.</span>
-                    </label>
-                    <div style="display:flex;gap:8px;margin-bottom:8px;">
-                        <input type="text" id="idle-channel-input" placeholder="Manual channel name..." style="flex:1;">
-                        <button id="idle-channel-add-btn" class="secondary-btn">Add</button>
-                    </div>
-                    <div id="idle-channels-list" class="sortable-list"></div>
-                </section>
-
-                <section class="settings-section">
-                    <h2>🎯 Predictions</h2>
-                    <p class="help-text">Automatically bet channel points on predictions.</p>
-                    <label class="toggle-label" style="margin-bottom:8px;">
-                        <input type="checkbox" id="set-make-predictions" onchange="saveSettings()">
-                        <span>Enable Auto-Bet</span>
-                    </label>
-                    <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                        <span style="min-width:160px;color:#adadb8;font-size:.88rem;">Strategy</span>
-                        <select id="set-bet-strategy" onchange="saveSettings()" style="flex:1;background:#0e0e10;border:1px solid #3d3d4a;border-radius:6px;padding:6px 10px;color:#efeff1;font-size:.88rem;">
-                            <option value="SMART">SMART (by odds gap)</option>
-                            <option value="PERCENTAGE">PERCENTAGE (always bet)</option>
-                            <option value="HIGH_ODDS">HIGH_ODDS (underdog)</option>
-                            <option value="MOST_VOTED">MOST_VOTED (crowd)</option>
-                        </select>
-                    </label>
-                    <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                        <span style="min-width:160px;color:#adadb8;font-size:.88rem;">Bet % of balance</span>
-                        <input type="number" id="set-bet-pct" onchange="saveSettings()" min="1" max="100" step="1" style="flex:1;background:#0e0e10;border:1px solid #3d3d4a;border-radius:6px;padding:6px 10px;color:#efeff1;font-size:.88rem;">
-                    </label>
-                    <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                        <span style="min-width:160px;color:#adadb8;font-size:.88rem;">Max points per bet</span>
-                        <input type="number" id="set-bet-max" onchange="saveSettings()" min="100" step="100" style="flex:1;background:#0e0e10;border:1px solid #3d3d4a;border-radius:6px;padding:6px 10px;color:#efeff1;font-size:.88rem;">
-                    </label>
-                    <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                        <span style="min-width:160px;color:#adadb8;font-size:.88rem;">Min balance to bet</span>
-                        <input type="number" id="set-bet-min" onchange="saveSettings()" min="0" step="100" style="flex:1;background:#0e0e10;border:1px solid #3d3d4a;border-radius:6px;padding:6px 10px;color:#efeff1;font-size:.88rem;">
-                    </label>
-                    <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                        <span style="min-width:160px;color:#adadb8;font-size:.88rem;">Delay before lock (sec)</span>
-                        <input type="number" id="set-bet-delay" onchange="saveSettings()" min="5" max="120" style="flex:1;background:#0e0e10;border:1px solid #3d3d4a;border-radius:6px;padding:6px 10px;color:#efeff1;font-size:.88rem;">
-                    </label>
-                </section>
-
-                <section class="settings-section">
-                    <h2>⭐ Preferred Games</h2>
-                    <p class="help-text">Games that are always watched — even without active drop campaigns. The miner auto-connects when a campaign appears. Unlike the Watch List, these are never auto-removed.</p>
-                    <div style="display:flex;gap:8px;margin-bottom:8px;position:relative;">
-                        <div style="position:relative;flex:1;">
-                            <input type="text" id="preferred-game-input" placeholder="Type to search games..." autocomplete="off" style="width:100%;box-sizing:border-box;">
-                            <div id="preferred-game-dropdown" class="game-dropdown-list" style="display:none;top:100%;left:0;right:0;"></div>
+                        <div id="bot-channel-config" style="display:none;background:#0e0e10;border:1px solid #3d3d4a;border-radius:8px;padding:12px;margin-bottom:12px;">
+                            <div id="settings-bot-notif-channels-label" style="font-size:.8rem;font-weight:600;color:#adadb8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Notification Channels</div>
+                            <div style="display:flex;flex-direction:column;gap:6px;">
+                                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                                    <div>
+                                        <span style="font-size:.82rem;color:#adadb8;">🎁 Drops: </span>
+                                        <span id="bot-drops-channel" style="font-family:monospace;font-size:.82rem;">—</span>
+                                    </div>
+                                    <button id="bot-drops-clear-btn" class="secondary-btn" style="display:none;font-size:.75rem;padding:2px 8px;color:#eb4a4a;border-color:#eb4a4a;" onclick="botClearChannel('drops')">Clear</button>
+                                </div>
+                                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                                    <div>
+                                        <span style="font-size:.82rem;color:#adadb8;">💰 Points: </span>
+                                        <span id="bot-points-channel" style="font-family:monospace;font-size:.82rem;">—</span>
+                                    </div>
+                                    <button id="bot-points-clear-btn" class="secondary-btn" style="display:none;font-size:.75rem;padding:2px 8px;color:#eb4a4a;border-color:#eb4a4a;" onclick="botClearChannel('points')">Clear</button>
+                                </div>
+                            </div>
+                            <p id="settings-bot-setchannel-hint" style="font-size:.75rem;color:#6b6b7b;margin:8px 0 0;">Use <code>/setchannel</code> in Discord to set channels.</p>
                         </div>
-                        <button id="preferred-game-add-btn" class="secondary-btn">Add</button>
-                    </div>
-                    <div id="preferred-games-list" class="sortable-list"></div>
-                </section>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <button id="bot-generate-btn" class="secondary-btn" onclick="botGenerateCode()">Generate code</button>
+                            <button id="bot-revoke-btn" class="secondary-btn" style="display:none;color:#eb4a4a;border-color:#eb4a4a;" onclick="botRevoke()">Disconnect</button>
+                            <a id="bot-invite-link" href="https://discord.com/oauth2/authorize?client_id=1513555081218359506&permissions=84992&integration_type=0&scope=bot" target="_blank" rel="noopener" class="secondary-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
+                                <span id="settings-discord-bot-invite-text">Invite bot</span>
+                            </a>
+                        </div>
+                    </section>
+                </div>
 
-                <section class="settings-section">
-                    <h2>Drop Name Blacklist</h2>
-                    <p class="help-text">Comma-separated keywords. Drops whose name contains any keyword are ignored. Useful for regional/exclusive drops (e.g. <code>JP, Korea, (KR)</code>).</p>
-                    <input type="text" id="drop-blacklist-input" class="settings-input"
-                        placeholder="JP, Korea, (KR), exclusive..." style="width:100%;box-sizing:border-box;">
-                </section>
+                <!-- ─── 🎮 Mining ─── -->
+                <div class="settings-category-label">🎮 Mining</div>
+                <div class="settings-grid">
+                    <section class="settings-section">
+                        <h2 id="settings-benefits-header">Mining Benefits</h2>
+                        <p id="settings-benefits-help" class="help-text">Select which types of drops you want to mine.</p>
+                        <div class="benefits-filter filter-checkboxes">
+                            <label class="filter-checkbox" title="Detailed description: Direct Entitlement (Game Item)">
+                                <input type="checkbox" id="mining-benefit-item" checked />
+                                <span>Item</span>
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" id="mining-benefit-badge" checked />
+                                <span>Badge</span>
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" id="mining-benefit-emote" checked />
+                                <span>Emote</span>
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" id="mining-benefit-unknown" checked />
+                                <span>Other</span>
+                            </label>
+                        </div>
+                    </section>
 
-                <section class="settings-section">
-                    <h2>Scheduler</h2>
-                    <p class="help-text">Automatically pause and resume mining based on time of day.</p>
-                    <label style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-                        <input type="checkbox" id="scheduler-enabled" onchange="saveSettings()">
-                        Enable time-based scheduler
-                    </label>
-                    <div class="scheduler-times" id="scheduler-times">
-                        <label style="display:flex;align-items:center;gap:8px;">
-                            <span style="min-width:90px;font-size:.9rem;">Active from</span>
-                            <input type="time" id="scheduler-start" class="settings-input" onchange="saveSettings()">
-                        </label>
-                        <label style="display:flex;align-items:center;gap:8px;margin-top:6px;">
-                            <span style="min-width:90px;font-size:.9rem;">Active until</span>
-                            <input type="time" id="scheduler-stop" class="settings-input" onchange="saveSettings()">
-                        </label>
-                        <p class="help-text" style="margin-top:6px;">Mining runs only within this window. Outside it, mining is automatically paused.</p>
-                    </div>
-                </section>
+                    <section class="settings-section">
+                        <h2 id="settings-blacklist-header">Drop Name Blacklist</h2>
+                        <p class="help-text" id="settings-blacklist-help">Comma-separated keywords. Drops whose name contains any keyword are ignored. Useful for regional/exclusive drops (e.g. <code>JP, Korea, (KR)</code>).</p>
+                        <input type="text" id="drop-blacklist-input" class="settings-input"
+                            placeholder="JP, Korea, (KR), exclusive..." style="width:100%;box-sizing:border-box;">
+                    </section>
 
-                <section class="settings-section">
-                    <h2 id="settings-benefits-header">Mining Benefits</h2>
-                    <p id="settings-benefits-help" class="help-text">Select which types of drops you want to
-                        mine.</p>
-                    <div class="benefits-filter filter-checkboxes">
-                        <label class="filter-checkbox" title="Detailed description: Direct Entitlement (Game Item)">
-                            <input type="checkbox" id="mining-benefit-item" checked />
-                            <span>Item</span>
+                    <section class="settings-section">
+                        <h2 id="settings-scheduler-header">Scheduler</h2>
+                        <p class="help-text" id="settings-scheduler-help">Automatically pause and resume mining based on time of day.</p>
+                        <label style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                            <input type="checkbox" id="scheduler-enabled" onchange="saveSettings()">
+                            <span id="settings-scheduler-enable-label">Enable time-based scheduler</span>
                         </label>
-                        <label class="filter-checkbox">
-                            <input type="checkbox" id="mining-benefit-badge" checked />
-                            <span>Badge</span>
-                        </label>
-                        <label class="filter-checkbox">
-                            <input type="checkbox" id="mining-benefit-emote" checked />
-                            <span>Emote</span>
-                        </label>
-                        <label class="filter-checkbox">
-                            <input type="checkbox" id="mining-benefit-unknown" checked />
-                            <span>Other</span>
-                        </label>
-                    </div>
-                </section>
+                        <div class="scheduler-times" id="scheduler-times">
+                            <label style="display:flex;align-items:center;gap:8px;">
+                                <span id="settings-scheduler-from" style="min-width:90px;font-size:.9rem;">Active from</span>
+                                <input type="time" id="scheduler-start" class="settings-input" onchange="saveSettings()">
+                            </label>
+                            <label style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+                                <span id="settings-scheduler-until" style="min-width:90px;font-size:.9rem;">Active until</span>
+                                <input type="time" id="scheduler-stop" class="settings-input" onchange="saveSettings()">
+                            </label>
+                            <p class="help-text" id="settings-scheduler-times-help" style="margin-top:6px;">Mining runs only within this window. Outside it, mining is automatically paused.</p>
+                        </div>
+                    </section>
                 </div>
 
                 <section class="settings-section">
-                    <h2 id="settings-games-header">Games to Watch</h2>
-                    <p id="settings-games-help" class="help-text">Select games to watch. Order matters - drag to
-                        reorder
-                        priority (top = highest
-                        priority).</p>
+                    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px;">
+                        <h2 id="settings-games-header" style="margin:0;border:none;padding:0;">Games to Watch</h2>
+                        <button id="reload-btn" class="secondary-btn" style="display:flex;align-items:center;gap:6px;">↻ Reload Campaigns</button>
+                    </div>
+                    <p id="settings-games-help" class="help-text">Select games to watch. Order matters - drag to reorder priority (top = highest priority).</p>
 
                     <div class="games-filter">
                         <input type="text" id="games-filter" placeholder="Search games..." />
@@ -479,13 +509,20 @@
                             <button id="add-game-btn" class="small-btn">Add Game</button>
                         </div>
                     </div>
+                    <label style="display:flex;align-items:center;gap:8px;margin:6px 0 4px;font-size:.85rem;color:var(--text-muted,#aaa);cursor:pointer;">
+                        <input type="checkbox" id="auto-prioritize-toggle">
+                        <span id="auto-prioritize-label">Auto-prioritize by campaign end date</span>
+                    </label>
+                    <label style="display:flex;align-items:center;gap:8px;margin:0 0 8px;font-size:.85rem;color:var(--text-muted,#aaa);cursor:pointer;">
+                        <input type="checkbox" id="auto-add-linked-toggle">
+                        <span id="auto-add-linked-label">Auto-add linked games to watch list</span>
+                    </label>
 
                     <div class="games-container">
                         <div class="selected-games">
                             <h3>Selected Games (drag to reorder)</h3>
                             <div id="selected-games-list" class="sortable-list"></div>
                         </div>
-
                         <div class="available-games">
                             <h3>Available Games</h3>
                             <div id="available-games-list" class="checkbox-list"></div>
@@ -493,40 +530,96 @@
                     </div>
                 </section>
 
+                <!-- ─── 💤 Idle & Points ─── -->
+                <div class="settings-category-label">💤 Idle &amp; Points</div>
                 <div class="settings-grid">
-                <section class="settings-section">
-                    <h2 id="settings-actions-header">Actions</h2>
-                    <button id="reload-btn" class="action-button" style="width:100%">↻ Reload Campaigns</button>
-                </section>
+                    <section class="settings-section">
+                        <h2 id="settings-idle-header">Idle Watch</h2>
+                        <p class="help-text" id="settings-idle-help">Channels to watch when no drops are available. Add in priority order.</p>
+                        <label class="toggle-label" style="margin-bottom:6px;">
+                            <input type="checkbox" id="idle-use-followed" onchange="saveSettings()">
+                            <span id="settings-idle-auto-label">Auto: use followed channels</span>
+                            <span id="settings-idle-auto-help" class="help-text" style="display:block;margin-top:2px;font-size:0.8em;">Automatically watches live channels you follow on Twitch when idle.</span>
+                        </label>
+                        <label class="toggle-label" style="margin-bottom:10px;">
+                            <input type="checkbox" id="idle-parallel" onchange="saveSettings()">
+                            <span>Parallel idle (watch all channels simultaneously)</span>
+                            <span class="help-text" style="display:block;margin-top:2px;font-size:0.8em;">Earn channel points from multiple channels at the same time when idle.</span>
+                        </label>
+                        <div style="display:flex;gap:8px;margin-bottom:8px;">
+                            <input type="text" id="idle-channel-input" placeholder="Manual channel name..." style="flex:1;">
+                            <button id="idle-channel-add-btn" class="secondary-btn">Add</button>
+                        </div>
+                        <div id="idle-channels-list" class="sortable-list"></div>
+                    </section>
 
-                <section class="settings-section">
-                    <h2 id="settings-password-header">Login & Password</h2>
-                    <div id="pw-status-badge" style="margin-bottom:10px;font-size:.82rem;color:#adadb8"></div>
-                    <div class="form-row">
-                        <label id="pw-current-label" class="form-label">Current</label>
-                        <input type="password" id="pw-current" class="form-input" placeholder="Leave empty if none">
-                    </div>
-                    <div class="form-row">
-                        <label id="pw-new-label" class="form-label">New</label>
-                        <input type="password" id="pw-new" class="form-input" placeholder="New password (empty = disable)">
-                    </div>
-                    <div class="form-row">
-                        <label id="pw-confirm-label" class="form-label">Confirm</label>
-                        <input type="password" id="pw-new2" class="form-input" placeholder="Repeat new password">
-                    </div>
-                    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-                        <button id="pw-save-btn" class="action-button" style="flex:1">Save</button>
-                        <button id="pw-disable-btn" class="action-button" style="flex:1;background:transparent;border:1px solid #3d3d4a;color:#adadb8">Disable Login</button>
-                    </div>
-                    <div id="pw-result" style="margin-top:8px;font-size:.82rem;display:none"></div>
-                </section>
+                    <section class="settings-section">
+                        <h2>⭐ Preferred Games</h2>
+                        <p class="help-text">Games that are always watched — even without active drop campaigns. Auto-connects when a campaign appears. Never auto-removed.</p>
+                        <div style="display:flex;gap:8px;margin-bottom:8px;position:relative;">
+                            <div style="position:relative;flex:1;">
+                                <input type="text" id="preferred-game-input" placeholder="Type to search games..." autocomplete="off" style="width:100%;box-sizing:border-box;">
+                                <div id="preferred-game-dropdown" class="game-dropdown-list" style="display:none;top:100%;left:0;right:0;"></div>
+                            </div>
+                            <button id="preferred-game-add-btn" class="secondary-btn">Add</button>
+                        </div>
+                        <div id="preferred-games-list" class="sortable-list"></div>
+                    </section>
+
+                    <section class="settings-section">
+                        <h2 id="settings-cp-header">Channel Points</h2>
+                        <label>
+                            <input type="checkbox" id="claim-channel-points"> <span id="settings-cp-autoclaim-label">Auto-claim bonus channel points</span>
+                        </label>
+                        <small class="help-text-inline" id="settings-cp-autoclaim-help">Automatically claims the bonus chest when it appears on watched channels.</small>
+                    </section>
                 </div>
+
+                <!-- ─── 🎯 Predictions ─── -->
+                <div class="settings-category-label">🎯 Predictions</div>
+                <div class="settings-grid">
+                    <section class="settings-section">
+                        <h2>🎯 Auto-Bet</h2>
+                        <p class="help-text">Automatically bet channel points on predictions.</p>
+                        <label class="toggle-label" style="margin-bottom:8px;">
+                            <input type="checkbox" id="set-make-predictions" onchange="saveSettings()">
+                            <span>Enable Auto-Bet</span>
+                        </label>
+                        <label class="settings-row">
+                            <span class="settings-row-label">Strategy</span>
+                            <select id="set-bet-strategy" onchange="saveSettings()" class="settings-select">
+                                <option value="SMART">SMART (by odds gap)</option>
+                                <option value="PERCENTAGE">PERCENTAGE (always bet)</option>
+                                <option value="HIGH_ODDS">HIGH_ODDS (underdog)</option>
+                                <option value="MOST_VOTED">MOST_VOTED (crowd)</option>
+                            </select>
+                        </label>
+                        <label class="settings-row">
+                            <span class="settings-row-label">Bet % of balance</span>
+                            <input type="number" id="set-bet-pct" onchange="saveSettings()" min="1" max="100" step="1" class="settings-input" style="max-width:100px;">
+                        </label>
+                        <label class="settings-row">
+                            <span class="settings-row-label">Max points per bet</span>
+                            <input type="number" id="set-bet-max" onchange="saveSettings()" min="100" step="100" class="settings-input" style="max-width:100px;">
+                        </label>
+                        <label class="settings-row">
+                            <span class="settings-row-label">Min balance to bet</span>
+                            <input type="number" id="set-bet-min" onchange="saveSettings()" min="0" step="100" class="settings-input" style="max-width:100px;">
+                        </label>
+                        <label class="settings-row">
+                            <span class="settings-row-label">Delay before lock (s)</span>
+                            <input type="number" id="set-bet-delay" onchange="saveSettings()" min="5" max="120" class="settings-input" style="max-width:100px;">
+                        </label>
+                    </section>
+                </div>
+
             </div>
         </div>
 
         <!-- Analytics Tab (Stats + Channel Points + History) -->
         <div id="analytics-tab" class="tab-content">
             <div class="analytics-layout">
+
                 <!-- TOP LEFT: Statistics -->
                 <section class="settings-section analytics-stats-col">
                     <h2 id="analytics-stats-header" style="margin-bottom:16px;">Drop Statistics</h2>
@@ -574,12 +667,12 @@
                     <div id="cp-tab-list" style="display:none;"></div>
                 </section>
 
-                <!-- Points Over Time Chart (full width) -->
+                <!-- Points Over Time Chart -->
                 <section class="settings-section analytics-cp-full">
                     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
                         <h2 style="margin:0;border:none;padding:0;">📈 Points Over Time</h2>
                     </div>
-                    <div class="analytics-controls" style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+                    <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
                         <select id="analytics-channel" style="background:#18181b;border:1px solid #3d3d4a;color:#efeff1;padding:6px 10px;border-radius:6px;font-size:.85rem"></select>
                         <div style="display:flex;gap:4px">
                             <button class="range-btn" data-days="1">1D</button>
@@ -592,8 +685,8 @@
                     </div>
                 </section>
 
-                <!-- Predictions History (full width) -->
-                <section class="settings-section analytics-cp-full">
+                <!-- Predictions History -->
+                <section class="settings-section analytics-pred-full">
                     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
                         <h2 style="margin:0;border:none;padding:0;">Predictions History</h2>
                     </div>
@@ -615,108 +708,516 @@
                         <button id="send-report-btn" style="background:#9147ff;border:none;color:#fff;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:.88rem">📋 Send Session Report to Discord</button>
                     </div>
                 </section>
-            </div>
-        </div>
 
-        <!-- Help Tab -->
-        <div id="system-tab" class="tab-content">
-            <div class="settings-section">
-                <h2 id="system-header">System</h2>
-                <div class="system-card" id="accounts-card" style="margin-bottom:16px">
-                    <h3 id="system-accounts-header">Accounts</h3>
-                    <div id="accounts-list" class="accounts-list" style="margin-top:10px"></div>
-                    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-                        <input type="text" id="new-account-label" placeholder="Label (z.B. Main, Alt)" style="flex:1;min-width:120px;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:6px;padding:7px 10px;color:var(--text-primary);font-size:.85rem;outline:none">
-                        <button id="add-account-btn" class="btn-primary" style="width:auto;padding:7px 14px;font-size:.85rem">+ Add Account</button>
-                    </div>
-                    <div id="accounts-status" style="margin-top:8px;font-size:.82rem;display:none"></div>
-                </div>
-
-                <div class="system-controls">
-                    <div class="system-card">
-                        <h3 id="system-miner-header">Miner</h3>
-                        <p id="system-miner-desc">Reload campaigns and restart the mining loop.</p>
-                        <button id="system-reload-btn" class="btn-primary">Reload Campaigns</button>
-                    </div>
-                    <div class="system-card danger">
-                        <h3 id="system-restart-header">Restart</h3>
-                        <p id="system-restart-desc">Stop the miner process. PM2 will restart it automatically.</p>
-                        <button id="system-restart-btn" class="btn-danger">Restart Miner</button>
-                    </div>
-                    <div class="system-card">
-                        <h3 id="system-session-header">Session</h3>
-                        <p id="system-session-desc">Log out of the web interface.</p>
-                        <button id="system-logout-btn" class="btn-secondary">Logout</button>
-                    </div>
-                </div>
-                <div id="system-status" class="system-status"></div>
             </div>
         </div>
 
         <div id="help-tab" class="tab-content">
-            <div class="help-content">
-                <h2 id="help-about-header">About Twitch Drops Miner</h2>
-                <p>This application automatically mines timed Twitch drops without downloading stream data.</p>
+            <div class="help-wiki">
 
-                <h3 id="help-howto-header">How to Use</h3>
-                <ol>
-                    <li>Login using your Twitch account (OAuth device code flow)</li>
-                    <li>Link your accounts at <a href="https://www.twitch.tv/drops/campaigns"
-                            target="_blank">twitch.tv/drops/campaigns</a></li>
-                    <li>The miner will automatically discover campaigns and start mining</li>
-                    <li>Configure priority games in Settings to focus on what you want</li>
-                    <li>Monitor progress in the Main and Inventory tabs</li>
-                </ol>
+                <!-- TOC Sidebar + Content layout -->
+                <div class="help-layout">
 
-                <h3 id="help-features-header">Features</h3>
-                <ul>
-                    <li>Stream-less drop mining - saves bandwidth</li>
-                    <li>Game priority and exclusion lists</li>
-                    <li>Tracks up to 199 channels simultaneously</li>
-                    <li>Automatic channel switching</li>
-                    <li>Real-time progress tracking</li>
-                </ul>
+                    <!-- Sidebar TOC -->
+                    <nav class="help-toc">
+                        <div class="help-toc-title">Contents</div>
+                        <a href="#help-section-start" class="help-toc-link">🚀 Getting Started</a>
+                        <a href="#help-section-mining" class="help-toc-link">⛏️ Drop Mining</a>
+                        <a href="#help-section-multi" class="help-toc-link">👥 Multi-Account</a>
+                        <a href="#help-section-points" class="help-toc-link">💰 Channel Points</a>
+                        <a href="#help-section-idle" class="help-toc-link">📺 Idle Watch</a>
+                        <a href="#help-section-discord-bot" class="help-toc-link">🤖 Discord Bot</a>
+                        <a href="#help-section-webhook" class="help-toc-link">🔔 Discord Webhook</a>
+                        <a href="#help-section-remote" class="help-toc-link">🌐 Remote Access</a>
+                        <a href="#help-section-tips" class="help-toc-link">💡 Tips &amp; Tricks</a>
+                        <a href="#help-section-notifications" class="help-toc-link">🔔 Notifications</a>
+                        <a href="#help-section-stats" class="help-toc-link">📊 Stats Tab</a>
+                    </nav>
 
-                <h3 id="help-notes-header">Important Notes</h3>
-                <ul>
-                    <li>Do not watch streams on the same account while mining</li>
-                    <li>Keep your cookies.jar file secure</li>
-                    <li>Requires linked game accounts for drops</li>
-                </ul>
+                    <!-- Main content -->
+                    <div class="help-body">
 
-                <h3 id="help-discord-webhook-header">Discord Webhook</h3>
-                <p>Get notified in Discord when drops are claimed or channel points are earned.</p>
-                <ol>
-                    <li>Go to your Discord server → Channel Settings → Integrations → Webhooks → New Webhook</li>
-                    <li>Copy the webhook URL</li>
-                    <li>Paste it into <strong>Settings → Discord Notifications</strong> (separate URLs for drops and points)</li>
-                    <li>Use <strong>Test Webhook</strong> to verify it works</li>
-                </ol>
+                        <!-- Getting Started -->
+                        <section class="help-section" id="help-section-start">
+                            <div class="help-section-header" id="help-about-header">
+                                <span class="help-section-icon">🚀</span>
+                                <h2>Getting Started</h2>
+                            </div>
+                            <p class="help-intro">Twitch Drops Miner automatically earns timed Twitch drops <strong>without downloading any stream video</strong> — saving bandwidth while collecting rewards 24/7.</p>
 
-                <h3 id="help-discord-bot-header">Discord Bot</h3>
-                <p>Control your miner directly from Discord using slash commands. The bot syncs live stats and can post automatic drop notifications.</p>
-                <h4>Setup</h4>
-                <ol>
-                    <li>Go to <strong>Settings → Discord Bot</strong> and click <strong>Generate code</strong></li>
-                    <li>Note your dashboard URL (e.g. <code>http://your-server:8081</code>) and the code (e.g. <code>DROPS-A1B2C3D4</code>)</li>
-                    <li>In Discord, run: <code>/link http://your-server:8081 DROPS-A1B2C3D4</code></li>
-                    <li>The bot confirms: ✅ Connected</li>
-                </ol>
-                <h4>Commands</h4>
-                <ul>
-                    <li><code>/link &lt;url&gt; &lt;code&gt;</code> — connect to your dashboard</li>
-                    <li><code>/dashboard</code> — post a live-updating embed with control buttons (pause, campaigns, drops)</li>
-                    <li><code>/setchannel drops</code> — send drop notifications to this channel</li>
-                    <li><code>/setchannel points</code> — send channel points notifications to this channel</li>
-                    <li><code>/unlink</code> — disconnect the bot</li>
-                </ul>
-                <p><strong>Note:</strong> The pairing code expires in 10 minutes. Generate a new one if it expires. To rename your profile (shown in bot footer), go to <strong>System → Accounts</strong> and use the ✏️ button.</p>
+                            <div class="help-steps">
+                                <div class="help-step">
+                                    <div class="help-step-num">1</div>
+                                    <div class="help-step-body">
+                                        <strong>Log in with Twitch</strong>
+                                        <p>Click <strong>Login</strong> in the Main tab. A device code appears — open the link, enter the code on Twitch, then return here. Uses OAuth device flow; your password is never stored.</p>
+                                    </div>
+                                </div>
+                                <div class="help-step">
+                                    <div class="help-step-num">2</div>
+                                    <div class="help-step-body">
+                                        <strong>Link game accounts</strong>
+                                        <p>Visit <a href="https://www.twitch.tv/drops/campaigns" target="_blank">twitch.tv/drops/campaigns</a> and connect each game's account (Steam, Epic, etc.) to your Twitch profile. Drops won't be delivered without this step.</p>
+                                    </div>
+                                </div>
+                                <div class="help-step">
+                                    <div class="help-step-num">3</div>
+                                    <div class="help-step-body">
+                                        <strong>Configure priority games (optional)</strong>
+                                        <p>Open <strong>Settings → Priority Games</strong> and add games you want to target first. The miner works all campaigns by default if no priority list is set.</p>
+                                    </div>
+                                </div>
+                                <div class="help-step">
+                                    <div class="help-step-num">4</div>
+                                    <div class="help-step-body">
+                                        <strong>Watch it run</strong>
+                                        <p>The <strong>Main</strong> tab shows the active channel, current drop progress, and live channel points balance. The <strong>Inventory</strong> tab tracks all claimed drops.</p>
+                                    </div>
+                                </div>
+                            </div>
 
-                <div class="help-links">
-                    <a href="https://github.com/SimpliAj/twitchdropsminer" target="_blank">GitHub
-                        Repository</a>
-                </div>
-            </div>
+                            <div class="help-note">
+                                <span class="help-note-icon">ℹ️</span>
+                                <div><strong>No stream video is downloaded.</strong> The miner sends only the minimal Twitch API heartbeats needed to accumulate watch time — bandwidth usage is negligible.</div>
+                            </div>
+                        </section>
+
+                        <!-- Drop Mining -->
+                        <section class="help-section" id="help-section-mining">
+                            <div class="help-section-header" id="help-howto-header">
+                                <span class="help-section-icon">⛏️</span>
+                                <h2>Drop Mining</h2>
+                            </div>
+
+                            <div class="help-cards">
+                                <div class="help-card">
+                                    <div class="help-card-title">How It Works</div>
+                                    <p>The miner discovers all active drop campaigns via the Twitch API, picks a live channel that qualifies for each drop, and sends periodic watch-time signals. No video is ever buffered or downloaded.</p>
+                                </div>
+                                <div class="help-card">
+                                    <div class="help-card-title">Auto Channel Switching</div>
+                                    <p>If the current channel goes offline, ends the drop window, or loses drop eligibility, the miner automatically switches to the next best channel — no intervention needed.</p>
+                                </div>
+                                <div class="help-card">
+                                    <div class="help-card-title">Game Priority Queue</div>
+                                    <p>Add games to <strong>Settings → Priority Games</strong>. Games appear in order — the miner finishes the first game's drops before moving to the next. Unlisted games are queued after all priority games.</p>
+                                </div>
+                                <div class="help-card">
+                                    <div class="help-card-title">Drop Name Blacklist</div>
+                                    <p>In <strong>Settings → Blacklist</strong> you can exclude specific drop names (e.g. duplicates you already own). The miner skips any drop whose name matches an entry in the list.</p>
+                                </div>
+                            </div>
+
+                            <h3 id="help-features-header">Manual Controls</h3>
+                            <table class="help-table">
+                                <thead><tr><th>Control</th><th>Where</th><th>Effect</th></tr></thead>
+                                <tbody>
+                                    <tr><td><strong>Manual Mode</strong></td><td>Main tab toggle</td><td>Pause automatic game selection; you choose which campaign to watch</td></tr>
+                                    <tr><td><strong>Skip Game</strong></td><td>Main tab button</td><td>Skip all remaining drops for the current game and move to the next in queue</td></tr>
+                                    <tr><td><strong>Check for Drops</strong></td><td>Main tab button</td><td>Manually refresh campaign list (equivalent to page reload)</td></tr>
+                                    <tr><td><strong>Reload Campaigns</strong></td><td>System tab</td><td>Force a full campaign reload and restart the mining loop</td></tr>
+                                </tbody>
+                            </table>
+
+                            <h3>Inventory &amp; Campaign Drops</h3>
+                            <p>The <strong>Inventory</strong> tab shows all campaigns as cards in a 3-column grid.</p>
+                            <ul class="help-list">
+                                <li><strong>Click a campaign name</strong> → popup showing all drops with images, progress bars, and status</li>
+                                <li><strong>Click ▸ N drops left</strong> → same popup filtered to unclaimed drops only (only shown for linked campaigns)</li>
+                                <li><strong>⛏ Farming / ⊘ Skip toggle</strong> → add or remove the game from your watch list without going to Settings</li>
+                                <li>Expired or fully-claimed games are <strong>automatically removed</strong> from the Wanted Queue</li>
+                            </ul>
+
+                            <div class="help-note help-note-warn" id="help-notes-header">
+                                <span class="help-note-icon">⚠️</span>
+                                <div>Do <strong>not</strong> watch streams on the same Twitch account while mining. Twitch only counts watch time from one source at a time.</div>
+                            </div>
+                        </section>
+
+                        <!-- Multi-Account -->
+                        <section class="help-section" id="help-section-multi">
+                            <div class="help-section-header">
+                                <span class="help-section-icon">👥</span>
+                                <h2>Multi-Account</h2>
+                            </div>
+                            <p>Run unlimited Twitch accounts simultaneously, each with fully isolated data, settings, and sessions.</p>
+
+                            <div class="help-note">
+                                <span class="help-note-icon">➕</span>
+                                <div>Go to <strong>System → Instances</strong> to add or remove accounts from the dashboard — no config files needed. Nginx updates automatically.</div>
+                            </div>
+
+                            <table class="help-table">
+                                <thead><tr><th>Instance</th><th>Port</th><th>URL</th></tr></thead>
+                                <tbody>
+                                    <tr><td>Account 1</td><td><code>8080</code></td><td><code>/</code></td></tr>
+                                    <tr><td>Account 2</td><td><code>8082</code></td><td><code>/acc2/</code></td></tr>
+                                    <tr><td>Account N</td><td><code>8080+(N-1)×2</code></td><td><code>/accN/</code></td></tr>
+                                </tbody>
+                            </table>
+
+                            <p>The account buttons in the top header show the actual <strong>Twitch username</strong> once logged in. Each instance has its own:</p>
+                            <ul class="help-list">
+                                <li>Cookie/session storage</li>
+                                <li>Priority games and blacklist</li>
+                                <li>Discord bot/webhook settings</li>
+                                <li>Channel Points history</li>
+                                <li>Idle watch channel list</li>
+                            </ul>
+
+                            <div class="help-note">
+                                <span class="help-note-icon">⚠️</span>
+                                <div>Running 3+ instances on one IP may cause Twitch to flag the accounts. Use proxies if you run more than 2 accounts.</div>
+                            </div>
+
+                            <div class="help-note">
+                                <span class="help-note-icon">💡</span>
+                                <div>To rename an account label shown in the header and Discord bot footer, go to <strong>System → Accounts</strong> and click the ✏️ edit button next to the account.</div>
+                            </div>
+                        </section>
+
+                        <!-- Channel Points -->
+                        <section class="help-section" id="help-section-points">
+                            <div class="help-section-header">
+                                <span class="help-section-icon">💰</span>
+                                <h2>Channel Points</h2>
+                            </div>
+                            <p>While the miner watches a channel, it also earns and tracks Channel Points automatically.</p>
+
+                            <div class="help-cards">
+                                <div class="help-card">
+                                    <div class="help-card-title">Auto-Claim Bonus Chests</div>
+                                    <p>When a bonus chest appears on a watched channel, the miner claims it immediately. No manual interaction required.</p>
+                                </div>
+                                <div class="help-card">
+                                    <div class="help-card-title">Live Balance</div>
+                                    <p>Your current point balance for the active channel is shown in real time at the top of the <strong>Main</strong> tab.</p>
+                                </div>
+                                <div class="help-card">
+                                    <div class="help-card-title">Full History</div>
+                                    <p>The <strong>Channel Points</strong> tab lists every earn/spend event across all watched channels with timestamps and amounts.</p>
+                                </div>
+                                <div class="help-card">
+                                    <div class="help-card-title">Idle Watch Points</div>
+                                    <p>Points are also earned while Idle Watch is active (even when no drops are available), so watching keeps accumulating value.</p>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Idle Watch -->
+                        <section class="help-section" id="help-section-idle">
+                            <div class="help-section-header">
+                                <span class="help-section-icon">📺</span>
+                                <h2>Idle Watch</h2>
+                            </div>
+                            <p>When no active drop campaigns are running, Idle Watch keeps the miner watching channels so you continue earning Channel Points.</p>
+
+                            <h3>Configuration</h3>
+                            <table class="help-table">
+                                <thead><tr><th>Setting</th><th>Description</th></tr></thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Manual channel list</strong></td>
+                                        <td>Add specific channel names in <strong>Settings → Idle Watch</strong>. The miner rotates through these when idle.</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Auto: use followed channels</strong></td>
+                                        <td>Enable this toggle to automatically fetch your live followed channels from Twitch and watch whichever are currently streaming.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <h3>Quick Controls</h3>
+                            <p>The <strong>Quick Controls</strong> panel in the Main tab shows <strong>Start Idle</strong> and <strong>Switch Channel</strong> buttons when Idle Watch is active, letting you manage it without navigating to Settings.</p>
+
+                            <div class="help-note">
+                                <span class="help-note-icon">💡</span>
+                                <div>Idle Watch is automatically paused when a drop campaign becomes available and resumes when mining finishes.</div>
+                            </div>
+                        </section>
+
+                        <!-- Discord Bot -->
+                        <section class="help-section" id="help-section-discord-bot">
+                            <div class="help-section-header" id="help-discord-bot-header">
+                                <span class="help-section-icon">🤖</span>
+                                <h2>Discord Bot</h2>
+                            </div>
+                            <p>Control your miner and receive live notifications directly from Discord. Supports multiple servers simultaneously.</p>
+
+                            <h3>Setup</h3>
+                            <div class="help-steps">
+                                <div class="help-step">
+                                    <div class="help-step-num">1</div>
+                                    <div class="help-step-body">
+                                        <strong>Generate a pairing code</strong>
+                                        <p>Go to <strong>Settings → Discord Bot</strong> and click <strong>Generate code</strong>. A code like <code>DROPS-A1B2C3D4</code> is shown (valid for 10 minutes).</p>
+                                    </div>
+                                </div>
+                                <div class="help-step">
+                                    <div class="help-step-num">2</div>
+                                    <div class="help-step-body">
+                                        <strong>Link from Discord</strong>
+                                        <p>In any Discord server or DM where the bot is present, run:</p>
+                                        <div class="help-code">/link http://your-server:8080 DROPS-A1B2C3D4</div>
+                                        <p>The bot replies with ✅ Connected when the link is established.</p>
+                                    </div>
+                                </div>
+                                <div class="help-step">
+                                    <div class="help-step-num">3</div>
+                                    <div class="help-step-body">
+                                        <strong>Set notification channels (optional)</strong>
+                                        <p>Run <code>/setchannel drops</code> and/or <code>/setchannel points</code> in the channels where you want alerts sent.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h3>Commands</h3>
+                            <table class="help-table">
+                                <thead><tr><th>Command</th><th>Description</th></tr></thead>
+                                <tbody>
+                                    <tr><td><code>/link &lt;url&gt; &lt;code&gt;</code></td><td>Connect this Discord server to your dashboard instance</td></tr>
+                                    <tr><td><code>/unlink</code></td><td>Disconnect the bot from this server</td></tr>
+                                    <tr><td><code>/setchannel drops</code></td><td>Send drop claim notifications to the current channel</td></tr>
+                                    <tr><td><code>/setchannel points</code></td><td>Send Channel Points notifications to the current channel</td></tr>
+                                    <tr><td><code>/dashboard</code></td><td>Post a live embed showing miner status (auto-updates every 30 s)</td></tr>
+                                </tbody>
+                            </table>
+
+                            <div class="help-note">
+                                <span class="help-note-icon">ℹ️</span>
+                                <div>The account name shown in the bot embed footer comes from <strong>System → Accounts</strong>. Use the ✏️ button to rename it. The pairing code expires in 10 minutes — generate a new one if it times out.</div>
+                            </div>
+                        </section>
+
+                        <!-- Discord Webhook -->
+                        <section class="help-section" id="help-section-webhook">
+                            <div class="help-section-header" id="help-discord-webhook-header">
+                                <span class="help-section-icon">🔔</span>
+                                <h2>Discord Webhook</h2>
+                            </div>
+                            <p>A simpler alternative to the bot — paste a webhook URL and get push notifications for drops and/or channel points without any bot setup.</p>
+
+                            <div class="help-steps">
+                                <div class="help-step">
+                                    <div class="help-step-num">1</div>
+                                    <div class="help-step-body">
+                                        <strong>Create a webhook in Discord</strong>
+                                        <p>Server Settings → Integrations → Webhooks → <strong>New Webhook</strong>. Copy the URL.</p>
+                                    </div>
+                                </div>
+                                <div class="help-step">
+                                    <div class="help-step-num">2</div>
+                                    <div class="help-step-body">
+                                        <strong>Paste the URL in Settings</strong>
+                                        <p>Go to <strong>Settings → Discord Notifications</strong>. There are separate URL fields for <em>Drop notifications</em> and <em>Channel Points notifications</em> — you can use the same or different webhooks.</p>
+                                    </div>
+                                </div>
+                                <div class="help-step">
+                                    <div class="help-step-num">3</div>
+                                    <div class="help-step-body">
+                                        <strong>Test it</strong>
+                                        <p>Click <strong>Test Webhook</strong> to send a sample message and confirm delivery.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="help-note">
+                                <span class="help-note-icon">ℹ️</span>
+                                <div>Webhook notifications include the account name in the footer so you can tell which instance claimed a drop when running multiple accounts.</div>
+                            </div>
+                        </section>
+
+                        <!-- Remote Access -->
+                        <section class="help-section" id="help-section-remote">
+                            <div class="help-section-header">
+                                <span class="help-section-icon">🌐</span>
+                                <h2>Remote Access</h2>
+                            </div>
+                            <p>To use the Discord Bot or access the dashboard from outside your network, your TDM instance needs a public URL. Choose the method that fits your setup.</p>
+
+                            <h3>Ports</h3>
+                            <table class="help-table">
+                                <thead><tr><th>Instance</th><th>Port</th></tr></thead>
+                                <tbody>
+                                    <tr><td>Account 1</td><td><code>8080</code></td></tr>
+                                    <tr><td>Account 2</td><td><code>8082</code></td></tr>
+                                </tbody>
+                            </table>
+
+                            <!-- Option 1: Cloudflare Tunnel -->
+                            <div class="help-accordion">
+                                <button class="help-accordion-btn open" onclick="toggleAccordion(this)">
+                                    <span>⭐ Option 1: Cloudflare Tunnel</span>
+                                    <span class="help-accordion-badge">Recommended — no port forwarding</span>
+                                    <span class="help-accordion-arrow">▾</span>
+                                </button>
+                                <div class="help-accordion-body">
+                                    <p style="margin-bottom:12px;">Works on any machine — home PC, VPS, laptop. No router config, no open ports. Cloudflare gives you a free HTTPS URL instantly.</p>
+
+                                    <div class="help-step-block">
+                                        <div class="help-step-label">1 — Install cloudflared</div>
+                                        <div class="help-step-tabs">
+                                            <button class="help-tab-btn active" onclick="showRemoteTab(this,'cf-linux')">Linux / VPS</button>
+                                            <button class="help-tab-btn" onclick="showRemoteTab(this,'cf-mac')">macOS</button>
+                                            <button class="help-tab-btn" onclick="showRemoteTab(this,'cf-win')">Windows</button>
+                                        </div>
+                                        <div id="cf-linux" class="help-step-content">
+                                            <div class="help-code">curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb -o cloudflared.deb &amp;&amp; sudo dpkg -i cloudflared.deb</div>
+                                        </div>
+                                        <div id="cf-mac" class="help-step-content" style="display:none">
+                                            <div class="help-code">brew install cloudflared</div>
+                                        </div>
+                                        <div id="cf-win" class="help-step-content" style="display:none">
+                                            <div class="help-code">winget install Cloudflare.cloudflared</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="help-step-block">
+                                        <div class="help-step-label">2 — Start tunnel (Account 1)</div>
+                                        <div class="help-code">cloudflared tunnel --url http://localhost:8080</div>
+                                        <p style="margin-top:8px;font-size:.85rem;color:var(--text-secondary);">Cloudflare prints a URL like <code>https://random-name.trycloudflare.com</code> — use that as your public URL.</p>
+                                    </div>
+
+                                    <div class="help-step-block">
+                                        <div class="help-step-label">3 — Link Discord Bot</div>
+                                        <p style="font-size:.85rem;">In your Discord server, run:<br><code>/link https://random-name.trycloudflare.com YOUR_CODE</code></p>
+                                        <p style="font-size:.82rem;color:var(--text-secondary);">⚠ Free Cloudflare URLs change every restart. For a permanent URL, create a free Cloudflare account and set up a named tunnel.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Option 2: VPS / Ubuntu -->
+                            <div class="help-accordion">
+                                <button class="help-accordion-btn" onclick="toggleAccordion(this)">
+                                    <span>Option 2: VPS / Ubuntu — Open Firewall Port</span>
+                                    <span class="help-accordion-arrow">▸</span>
+                                </button>
+                                <div class="help-accordion-body" style="display:none">
+                                    <p style="margin-bottom:12px;">If you're running on a VPS (Hetzner, DigitalOcean, etc.), open the port in UFW and access via your server IP.</p>
+                                    <div class="help-code"># Allow port 8080 (TCP only)
+sudo ufw allow 8080/tcp
+sudo ufw reload
+
+# Check it's open
+sudo ufw status</div>
+                                    <p style="margin-top:8px;font-size:.85rem;color:var(--text-secondary);">Access via <code>http://YOUR-SERVER-IP:8080</code>. Set a password (see below) — never expose without one.</p>
+                                </div>
+                            </div>
+
+                            <!-- Option 3: nginx -->
+                            <div class="help-accordion">
+                                <button class="help-accordion-btn" onclick="toggleAccordion(this)">
+                                    <span>Option 3: nginx Reverse Proxy</span>
+                                    <span class="help-accordion-arrow">▸</span>
+                                </button>
+                                <div class="help-accordion-body" style="display:none">
+                                    <p style="margin-bottom:12px;">For a clean domain + HTTPS on a VPS. Install nginx, then add a site config:</p>
+                                    <div class="help-code">server {
+    listen 80;
+    server_name drops.yourdomain.com;
+
+    location / {
+        proxy_pass         http://127.0.0.1:8080;
+        proxy_http_version 1.1;
+        proxy_set_header   Upgrade $http_upgrade;
+        proxy_set_header   Connection "upgrade";
+        proxy_set_header   Host $host;
+    }
+}</div>
+                                    <p style="margin-top:8px;font-size:.85rem;color:var(--text-secondary);">Then run <code>sudo certbot --nginx -d drops.yourdomain.com</code> for free HTTPS.</p>
+                                </div>
+                            </div>
+
+                            <!-- Password Protection -->
+                            <div class="help-accordion">
+                                <button class="help-accordion-btn" onclick="toggleAccordion(this)">
+                                    <span>🔒 Password Protection</span>
+                                    <span class="help-accordion-arrow">▸</span>
+                                </button>
+                                <div class="help-accordion-body" style="display:none">
+                                    <p style="margin-bottom:8px;">Always set a password when exposing publicly. Set <code>WEB_PASSWORD</code> before starting:</p>
+                                    <div class="help-code">WEB_PASSWORD=mysecretpassword python main.py
+# or with PM2:
+TDM_PORT=8080 WEB_PASSWORD=mysecretpassword pm2 start main.py --name twitchdrops --interpreter python3</div>
+                                    <p style="margin-top:8px;font-size:.85rem;color:var(--text-secondary);">Sessions last 30 days via secure cookie. Change the password anytime in <strong>Settings → System → Login &amp; Password</strong>.</p>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Tips -->
+                        <section class="help-section" id="help-section-tips">
+                            <div class="help-section-header" id="help-features-header2">
+                                <span class="help-section-icon">💡</span>
+                                <h2>Tips &amp; Tricks</h2>
+                            </div>
+
+                            <div class="help-cards">
+                                <div class="help-card">
+                                    <div class="help-card-title">Force a campaign refresh</div>
+                                    <p>Click <strong>Check for Drops</strong> in the Main tab to immediately re-fetch campaigns from Twitch without restarting the process.</p>
+                                </div>
+                                <div class="help-card">
+                                    <div class="help-card-title">Restart safely</div>
+                                    <p>Use <strong>System → Restart Miner</strong>. If you're using PM2, it will restart automatically and resume mining within seconds.</p>
+                                </div>
+                                <div class="help-card">
+                                    <div class="help-card-title">Linked accounts required</div>
+                                    <p>Drops are only delivered if your game account is linked at <a href="https://www.twitch.tv/drops/campaigns" target="_blank">twitch.tv/drops/campaigns</a>. Check this first if drops aren't appearing in-game.</p>
+                                </div>
+                                <div class="help-card">
+                                    <div class="help-card-title">Account management</div>
+                                    <p>Add, remove, or rename accounts in <strong>System → Accounts</strong>. Labels appear in the header buttons, Discord bot footer, and webhook notifications.</p>
+                                </div>
+                            </div>
+
+                            <div class="help-links">
+                                <a href="https://github.com/SimpliAj/twitchdropsminer" target="_blank">📁 GitHub Repository</a>
+                                <a href="https://www.twitch.tv/drops/campaigns" target="_blank">🔗 Twitch Campaigns</a>
+                            </div>
+                        </section>
+
+                        <!-- Notifications -->
+                        <section class="help-section" id="help-section-notifications">
+                            <div class="help-section-header">
+                                <span class="help-section-icon">🔔</span>
+                                <h2>Notifications</h2>
+                            </div>
+                            <p>Configure notification settings in <strong>Settings → Notifications</strong>.</p>
+                            <table class="help-table">
+                                <thead><tr><th>Setting</th><th>Description</th></tr></thead>
+                                <tbody>
+                                    <tr><td><strong>Notification Sound</strong></td><td>Play a sound when a drop is claimed.</td></tr>
+                                    <tr><td><strong>Campaign End Alerts</strong></td><td>Get notified via Discord webhook when a campaign ends in less than 24 hours and you still have unclaimed drops.</td></tr>
+                                </tbody>
+                            </table>
+                        </section>
+
+                        <!-- Stats Tab -->
+                        <section class="help-section" id="help-section-stats">
+                            <div class="help-section-header">
+                                <span class="help-section-icon">📊</span>
+                                <h2>Stats Tab</h2>
+                            </div>
+                            <p>The <strong>Stats</strong> tab shows an overview of all your claimed drops across both accounts.</p>
+                            <div class="help-cards">
+                                <div class="help-card">
+                                    <div class="help-card-title">Summary</div>
+                                    <p>Total claims, number of different games, and date of your last claim.</p>
+                                </div>
+                                <div class="help-card">
+                                    <div class="help-card-title">Claims by Game</div>
+                                    <p>Horizontal bar chart showing your top 10 games ranked by total claims.</p>
+                                </div>
+                                <div class="help-card">
+                                    <div class="help-card-title">Recent Claims</div>
+                                    <p>Your 10 most recent drop claims with reward images where available.</p>
+                                </div>
+                            </div>
+                        </section>
+
+                    </div><!-- end help-body -->
+                </div><!-- end help-layout -->
+            </div><!-- end help-wiki -->
         </div>
         <!-- Footer -->
         <footer class="footer">
@@ -731,13 +1232,17 @@
                 </div>
                 <div class="footer-links">
                     <a href="https://github.com/SimpliAj/twitchdropsminer" target="_blank">GitHub</a>
+                    <a href="https://discord.gg/X5YKZBh9xV" target="_blank" style="display:inline-flex;align-items:center;gap:4px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057.1 18.079.11 18.1.128 18.115a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
+                        Support
+                    </a>
                 </div>
             </div>
         </footer>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" integrity="sha384-e6nUZLBkQ86NJ6TVVKAeSaK8jWa3NhkYWZFomE39AvDbQWeie9PlQqM3pmYW5d1g" crossorigin="anonymous"></script>
-    <script src="/static/app.js?v=1749558001"></script>
+    <script src="/static/app.js?v=461780de"></script>
 </body>
 
 </html>
