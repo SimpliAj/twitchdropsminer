@@ -76,7 +76,7 @@ class PredictionService:
         elif strategy == "HIGH_ODDS":
             return max(outcomes, key=lambda o: odds(o))
         elif strategy == "PERCENTAGE":
-            return max(outcomes, key=lambda o: total_users(o))
+            return max(outcomes, key=lambda o: total_points(o))
         else:  # SMART
             sorted_by_users = sorted(outcomes, key=lambda o: total_users(o), reverse=True)
             top, second = sorted_by_users[0], sorted_by_users[1]
@@ -89,7 +89,8 @@ class PredictionService:
 
     def _calc_amount(self, balance: int, cfg: dict) -> int:
         amount = int(balance * cfg["bet_percentage"] / 100)
-        return min(amount, cfg["bet_max_points"])
+        amount = min(amount, cfg["bet_max_points"])
+        return max(amount, 10)  # Twitch minimum is 10 channel points
 
     async def process_prediction(self, channel_id: int, message: dict) -> None:
         if not self._twitch.settings.make_predictions:
@@ -123,9 +124,9 @@ class PredictionService:
             if event_id in self._pending:
                 self._pending[event_id].cancel()
                 del self._pending[event_id]
+            self._active_events.pop(event_id, None)
             if msg_type == "event-ended":
                 await self._record_result(event_id, event, channel.name)
-                self._active_events.pop(event_id, None)
 
     async def _delayed_bet(self, event_id: str, channel, cfg: dict, delay: int) -> None:
         await asyncio.sleep(delay)
@@ -205,11 +206,17 @@ class PredictionService:
             hist = _json.loads(p.read_text()) if p.exists() else []
         except Exception:
             return
-        winning_outcome_id = ""
-        for o in event.get("outcomes", []):
-            if o.get("badge", {}).get("version") == "1" or o.get("top_predictors"):
-                winning_outcome_id = o.get("id", "")
-                break
+        winning_outcome_id = (
+            event.get("winning_outcome_id")
+            or event.get("data", {}).get("winning_outcome_id")
+            or ""
+        )
+        if not winning_outcome_id:
+            # fallback: look for badge version "1"
+            for o in event.get("outcomes", []):
+                if o.get("badge", {}).get("version") == "1":
+                    winning_outcome_id = o.get("id", "")
+                    break
         for entry in reversed(hist):
             if entry.get("event_id") == event_id and entry.get("result") == "PENDING":
                 if winning_outcome_id and entry.get("outcome_id") == winning_outcome_id:
