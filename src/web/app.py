@@ -381,6 +381,12 @@ class SettingsUpdate(BaseModel):
     auto_prioritize: bool | None = None
     auto_add_linked: bool | None = None
     tab_counter_enabled: bool | None = None
+    make_predictions: bool | None = None
+    bet_strategy: str | None = None
+    bet_percentage: int | None = None
+    bet_max_points: int | None = None
+    bet_minimum_points: int | None = None
+    bet_delay_seconds: int | None = None
 
 
 class ProxyVerifyRequest(BaseModel):
@@ -1435,6 +1441,89 @@ async def remove_instance(n: int):
     if result.returncode != 0:
         raise HTTPException(status_code=500, detail=result.stderr)
     return {"success": True, "instances": _load_instances_registry()["instances"]}
+
+
+@app.get("/api/predictions")
+async def get_predictions():
+    """Return predictions history."""
+    from src.services.prediction_service import _get_predictions_file
+    import json as _j
+    p = _get_predictions_file()
+    try:
+        hist = _j.loads(p.read_text()) if p.exists() else []
+    except Exception:
+        hist = []
+    return {"predictions": list(reversed(hist[-200:]))}
+
+
+@app.get("/api/streamer-overrides")
+async def get_streamer_overrides():
+    from src.services.prediction_service import _load_overrides
+    return {"overrides": _load_overrides()}
+
+
+class StreamerOverrideRequest(BaseModel):
+    channel: str
+    overrides: dict
+
+
+@app.post("/api/streamer-overrides")
+async def set_streamer_override(req: StreamerOverrideRequest):
+    from src.services.prediction_service import _get_overrides_file
+    import json as _j
+    p = _get_overrides_file()
+    try:
+        data = _j.loads(p.read_text()) if p.exists() else {}
+    except Exception:
+        data = {}
+    if req.overrides:
+        data[req.channel.lower()] = req.overrides
+    else:
+        data.pop(req.channel.lower(), None)
+    p.write_text(_j.dumps(data, indent=2))
+    return {"ok": True}
+
+
+@app.post("/api/session-report")
+async def send_session_report():
+    """Build and send session report to Discord."""
+    import json as _j
+    from datetime import datetime, timezone
+    from src.services.prediction_service import _get_predictions_file
+    webhook = twitch_client.settings.discord_webhook_points if twitch_client else ""
+    if not webhook:
+        raise HTTPException(status_code=400, detail="No webhook configured")
+    # Points delta
+    cp_file = _get_account_data_dir() / "channel_points.json"
+    try:
+        cp = _j.loads(cp_file.read_text()) if cp_file.exists() else {}
+    except Exception:
+        cp = {}
+    # Drops
+    hist_file = _get_account_data_dir() / "drops_history.json"
+    try:
+        drops = _j.loads(hist_file.read_text()) if hist_file.exists() else []
+    except Exception:
+        drops = []
+    # Predictions
+    ph = _get_predictions_file()
+    try:
+        preds = _j.loads(ph.read_text()) if ph.exists() else []
+    except Exception:
+        preds = []
+    wins = sum(1 for p in preds if p.get("result") == "WIN")
+    losses = sum(1 for p in preds if p.get("result") == "LOSE")
+    net = sum(p.get("points_won", 0) - p.get("points_bet", 0) for p in preds if p.get("result") in ("WIN", "LOSE"))
+    fields = [
+        {"name": "📊 Channel Points", "value": "\n".join(f"{ch}: {bal:,}" for ch, bal in list(cp.items())[:10]) or "—", "inline": False},
+        {"name": "🎁 Drops Claimed", "value": str(len(drops)), "inline": True},
+        {"name": "🎯 Predictions", "value": f"W:{wins} L:{losses} Net:{net:+,}", "inline": True},
+    ]
+    embed = {"title": "📋 Session Report", "color": 0x9147FF, "fields": fields, "timestamp": datetime.now(timezone.utc).isoformat()}
+    import aiohttp
+    async with aiohttp.ClientSession() as session:
+        await session.post(webhook, json={"embeds": [embed]}, timeout=aiohttp.ClientTimeout(total=10))
+    return {"ok": True}
 
 
 # ==================== Socket.IO Events ====================
