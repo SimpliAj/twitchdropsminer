@@ -32,6 +32,7 @@ from src.services.inventory_service import InventoryService
 from src.services.irc_service import IRCService
 from src.services.maintenance import MaintenanceService
 from src.services.message_handlers import MessageHandlerService
+from src.services.prediction_service import PredictionService
 from src.services.scheduler_service import SchedulerService
 from src.services.stream_selector import StreamSelector
 from src.services.watch_service import WatchService
@@ -105,6 +106,7 @@ class Twitch:
         from src.services.campaign_alert_service import CampaignAlertService
         self._campaign_alert_service: CampaignAlertService = CampaignAlertService(self)
         self._irc_service: IRCService = IRCService(self)
+        self._prediction_service: PredictionService = PredictionService(self)
         # Skip game tracking (set grows until all games tried, then resets)
         self._skipped_games: set[Game] = set()
 

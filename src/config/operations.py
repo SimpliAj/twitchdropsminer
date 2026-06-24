@@ -171,4 +171,16 @@ GQL_OPERATIONS: dict[str, GQLOperation] = {
             },
         },
     ),
+    "MakePrediction": GQLOperation(
+        "MakePrediction",
+        "b44682ecc88358817009f20e69d75081b1e58825bb40aa53d5dbadcc17c881d8",
+        variables={
+            "input": {
+                "eventID": ...,
+                "outcomeID": ...,
+                "points": ...,
+                "transactionID": ...,
+            },
+        },
+    ),
 }
