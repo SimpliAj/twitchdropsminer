@@ -270,6 +270,14 @@ class Twitch:
                 ),
             ]
         )
+        if self.settings.idle_use_followed:
+            followed = await self._fetch_followed_channels()
+            existing = {ch.lower() for ch in self.settings.idle_channels}
+            for login in followed:
+                if login not in existing:
+                    self.settings.idle_channels.append(login)
+                    existing.add(login)
+            logger.info(f"Follower import: added {len(followed)} channels to idle pool")
         full_cleanup: bool = False
         channels: Final[OrderedDict[int, Channel]] = self.channels
         self.change_state(State.INVENTORY_FETCH)
@@ -709,6 +717,20 @@ class Twitch:
                     self.change_state(State.INVENTORY_FETCH)
             else:
                 await self._state_change.wait()
+
+    async def _fetch_followed_channels(self) -> list[str]:
+        try:
+            resp = await self.gql_request(GQL_OPERATIONS["FollowedChannels"])
+            edges = (
+                resp.get("data", {})
+                .get("currentUser", {})
+                .get("follows", {})
+                .get("edges", [])
+            )
+            return [e["node"]["login"].lower() for e in edges if e.get("node", {}).get("login")]
+        except Exception as e:
+            logger.warning(f"Failed to fetch followed channels: {e}")
+            return []
 
     async def _fetch_followed_live_logins(self) -> list[str]:
         """Fetch logins of live channels the current user follows via Helix REST API."""

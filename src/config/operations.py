@@ -154,4 +154,12 @@ GQL_OPERATIONS: dict[str, GQLOperation] = {
             }
         },
     ),
+    "FollowedChannels": GQLOperation(
+        "ChannelFollows",
+        "eecf815273d3d949e5cf0085cc5084cd8a1b5b7b6f7990cf43cb0beadf546907",
+        variables={
+            "limit": 100,
+            "order": "DESC",
+        },
+    ),
 }
