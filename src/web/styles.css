@@ -262,9 +262,9 @@ header h1 {
 }
 
 .tab-button.active {
-    background: var(--accent-color);
+    background: #9147ff;
     color: white;
-    border-color: var(--accent-color);
+    border-color: #9147ff;
 }
 
 /* Tab Content */
@@ -3282,7 +3282,7 @@ header h1 {
 .stats-game-bar-track {
     flex: 1;
     height: 18px;
-    background: var(--border-color);
+    background: #2a2a2a;
     border-radius: 4px;
     overflow: hidden;
 }
