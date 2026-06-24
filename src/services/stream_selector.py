@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from src.config.settings import Settings
 from src.models.campaign import DropsCampaign
@@ -6,6 +6,14 @@ from src.models.game import Game
 
 
 class StreamSelector:
+    def _has_unclaimed_streak_today(self, channel_login: str) -> bool:
+        from src.services.message_handlers import get_streak_state
+        state = get_streak_state(channel_login)
+        if not state.get("active"):
+            return False
+        last = state.get("last_claimed_date", "")
+        return last != date.today().isoformat()
+
     def _get_wanted_game_tree(
         self, settings: Settings, campaigns: list[DropsCampaign]
     ) -> list[dict]:
