@@ -64,6 +64,9 @@ default_settings = {
     "auto_add_linked": False,
     "tab_counter_enabled": True,
     "claim_moments": True,
+    "irc_chat_presence": True,
+    "discord_webhook_mentions": "",
+    "irc_mention_notify": True,
 }
 
 
@@ -92,6 +95,9 @@ class Settings:
     auto_add_linked: bool
     tab_counter_enabled: bool
     claim_moments: bool
+    irc_chat_presence: bool
+    discord_webhook_mentions: str
+    irc_mention_notify: bool
 
     def __init__(self):
         self.load()
