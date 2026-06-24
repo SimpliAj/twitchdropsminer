@@ -657,27 +657,37 @@ class Twitch:
                 # Auto-select best channel based on priority
                 else:
                     skipped = self._skipped_games
+
+                    def _streak_key(ch: Channel) -> int:
+                        return 0 if self._stream_selector._has_unclaimed_streak_today(ch.name) else 1
+
                     if skipped:
                         # Skip mode: find channel from a game not yet skipped
-                        for channel in sorted(
+                        watchable = sorted(
                             channels.values(), key=self._channel_service.get_priority
-                        ):
+                        )
+                        watchable = sorted(watchable, key=_streak_key)
+                        for channel in watchable:
                             if self.can_watch(channel) and channel.game not in skipped:
                                 new_watching = channel
                                 break
                         # All games skipped → reset and pick best available
                         if new_watching is None:
                             self._skipped_games.clear()
-                            for channel in sorted(
+                            watchable = sorted(
                                 channels.values(), key=self._channel_service.get_priority
-                            ):
+                            )
+                            watchable = sorted(watchable, key=_streak_key)
+                            for channel in watchable:
                                 if self.can_watch(channel):
                                     new_watching = channel
                                     break
                     else:
-                        for channel in sorted(
+                        watchable = sorted(
                             channels.values(), key=self._channel_service.get_priority
-                        ):
+                        )
+                        watchable = sorted(watchable, key=_streak_key)
+                        for channel in watchable:
                             if self.can_watch(channel) and self.should_switch(channel):
                                 new_watching = channel
                                 break

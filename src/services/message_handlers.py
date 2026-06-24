@@ -82,6 +82,35 @@ def _set_last_webhook_notified(channel_login: str, balance: int) -> None:
         pass
 
 
+def _get_streaks_file() -> "Path":
+    return _get_points_file().parent / "watch_streaks.json"
+
+
+def _mark_streak_claimed(channel_login: str) -> None:
+    from datetime import date
+    channel_login = channel_login.lower()
+    p = _get_streaks_file()
+    try:
+        data = _json_mod.loads(p.read_text()) if p.exists() else {}
+    except Exception:
+        data = {}
+    data[channel_login] = {"active": True, "last_claimed_date": date.today().isoformat()}
+    try:
+        p.write_text(_json_mod.dumps(data, indent=2))
+    except Exception:
+        pass
+
+
+def get_streak_state(channel_login: str) -> dict:
+    channel_login = channel_login.lower()
+    p = _get_streaks_file()
+    try:
+        data = _json_mod.loads(p.read_text()) if p.exists() else {}
+        return data.get(channel_login, {})
+    except Exception:
+        return {}
+
+
 def _update_daily_points_server(delta: int, data_dir: "Path") -> None:
     from datetime import datetime
     from zoneinfo import ZoneInfo
@@ -413,6 +442,15 @@ class MessageHandlerService:
             logger.info(f"Claimed channel points on {channel_login} (+{claimed_amount})")
             if claimed_amount:
                 _save_last_chest(channel_login, claimed_amount)
+            # Detect watch streak reward
+            reward_type = (
+                message.get("data", {}).get("claim", {}).get("point_earn_reason")
+                or message.get("data", {}).get("type", "")
+            )
+            if reward_type in ("WATCH_STREAK", "watch-streak"):
+                if channel:
+                    _mark_streak_claimed(channel.name)
+                    logger.info(f"Watch streak claimed on {channel.name}")
             # Send Discord webhook for WebSocket-path claim
             webhook_url = self._twitch.settings.discord_webhook_points
             if webhook_url and claimed_amount:
