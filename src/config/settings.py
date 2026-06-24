@@ -63,6 +63,7 @@ default_settings = {
     "auto_prioritize": False,
     "auto_add_linked": False,
     "tab_counter_enabled": True,
+    "claim_moments": True,
 }
 
 
@@ -90,6 +91,7 @@ class Settings:
     auto_prioritize: bool
     auto_add_linked: bool
     tab_counter_enabled: bool
+    claim_moments: bool
 
     def __init__(self):
         self.load()
