@@ -1865,6 +1865,7 @@ function updateSettingsUI(settings) {
     if (idleParallelEl) idleParallelEl.checked = settings.idle_parallel !== false;
 
     renderPreferredGames(settings.preferred_games || []);
+    renderPreferredWaiting();
 
     const schedulerEnabled = document.getElementById('scheduler-enabled');
     if (schedulerEnabled) schedulerEnabled.checked = settings.scheduler_enabled || false;
@@ -2055,6 +2056,31 @@ function renderGamesToWatch() {
         .sort();
 
     renderAvailableGames(unselectedGames, filterText);
+    renderPreferredWaiting();
+}
+
+function renderPreferredWaiting() {
+    const panel = document.getElementById('preferred-waiting-panel');
+    const list = document.getElementById('preferred-waiting-list');
+    if (!panel || !list) return;
+    const preferred = state.settings.preferred_games || [];
+    const inQueue = new Set((state.settings.games_to_watch || []).map(g => g.toLowerCase()));
+    const waiting = preferred.filter(g => !inQueue.has(g.toLowerCase()));
+    if (!waiting.length) { panel.style.display = 'none'; return; }
+    panel.style.display = '';
+    list.replaceChildren();
+    waiting.forEach(g => {
+        const item = document.createElement('div');
+        item.style.cssText = 'display:flex;align-items:center;gap:8px;padding:5px 2px;font-size:0.88em;';
+        const name = document.createElement('span');
+        name.textContent = g;
+        name.style.flex = '1';
+        const badge = document.createElement('span');
+        badge.textContent = 'No campaign';
+        badge.style.cssText = 'font-size:0.8em;color:var(--text-muted,#888);background:var(--bg-secondary,#222);padding:2px 6px;border-radius:4px;';
+        item.append(name, badge);
+        list.appendChild(item);
+    });
 }
 
 function renderSelectedGames(games) {

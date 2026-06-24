@@ -88,18 +88,6 @@ class StreamSelector:
                         "preferred": is_preferred,
                     }
                 )
-            elif is_preferred:
-                # Preferred game with no active campaigns — keep in list so it auto-connects when one appears
-                wanted_games.append(
-                    {
-                        "game_id": game_obj.id if game_obj else None,
-                        "game_name": game_name,
-                        "game_icon": game_obj.box_art_url if game_obj else None,
-                        "game_obj": game_obj,
-                        "campaigns": [],
-                        "preferred": True,
-                    }
-                )
 
         return wanted_games
 
