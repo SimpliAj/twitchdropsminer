@@ -621,6 +621,7 @@ async def get_channel_points(channel_login: str):
 @app.get("/api/analytics/points")
 async def get_analytics_points(channel: str = "", days: int = 7):
     """Return timestamped channel points history for analytics chart."""
+    days = max(1, min(days, 365))
     from datetime import datetime, timezone, timedelta
     ts_file = _get_account_data_dir() / "channel_points_ts.json"
     try:

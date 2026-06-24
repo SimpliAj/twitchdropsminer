@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 import aiohttp
@@ -577,7 +578,6 @@ class MessageHandlerService:
                 history[_login_key] = points
                 json_save(_pfile, history)
                 # Append timestamped snapshot for analytics
-                from datetime import datetime, timezone
                 _ts_file = _pfile.parent / "channel_points_ts.json"
                 try:
                     _ts_data = _json_mod.loads(_ts_file.read_text()) if _ts_file.exists() else {}
