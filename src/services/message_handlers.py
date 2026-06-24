@@ -45,6 +45,7 @@ def _get_points_file() -> "Path":
 
 def _save_last_chest(channel_login: str, bonus: int) -> None:
     from datetime import datetime, timezone
+    channel_login = channel_login.lower()
     p = _get_points_file().parent / "last_chest.json"
     try:
         data = _json_mod.loads(p.read_text()) if p.exists() else {}
@@ -58,6 +59,7 @@ def _save_last_chest(channel_login: str, bonus: int) -> None:
 
 
 def _get_last_webhook_notified(channel_login: str) -> int:
+    channel_login = channel_login.lower()
     p = _get_points_file().parent / "last_webhook_notify.json"
     try:
         data = _json_mod.loads(p.read_text()) if p.exists() else {}
@@ -67,6 +69,7 @@ def _get_last_webhook_notified(channel_login: str) -> int:
 
 
 def _set_last_webhook_notified(channel_login: str, balance: int) -> None:
+    channel_login = channel_login.lower()
     p = _get_points_file().parent / "last_webhook_notify.json"
     try:
         data = _json_mod.loads(p.read_text()) if p.exists() else {}
@@ -529,10 +532,11 @@ class MessageHandlerService:
             if points:
                 _pfile = _get_points_file()
                 history = json_load(_pfile, {}, merge=False)
-                old_balance = history.get(channel_login, 0)
+                _login_key = channel_login.lower()
+                old_balance = history.get(_login_key, 0)
                 if old_balance > 0 and points > old_balance:
                     _update_daily_points_server(points - old_balance, _pfile.parent)
-                history[channel_login] = points
+                history[_login_key] = points
                 json_save(_pfile, history)
         except Exception as e:
             logger.warning(f"Could not fetch channel points balance for {channel_login}: {e}")
