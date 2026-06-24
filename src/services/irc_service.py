@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import ssl
+import time
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -71,6 +72,9 @@ class IRCService:
                 await self._connect()
             except Exception as e:
                 logger.warning(f"IRC disconnected: {e}")
+            finally:
+                self._writer = None
+                self._reader = None
             if self._running:
                 await asyncio.sleep(30)
 
@@ -122,7 +126,6 @@ class IRCService:
             return
         if username not in text.lower():
             return
-        import time
         now = time.monotonic()
         last = self._mention_cooldowns.get(channel, 0)
         if now - last < 60:
