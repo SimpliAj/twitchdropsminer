@@ -29,6 +29,7 @@ from src.models.campaign import DropsCampaign
 from src.models.channel import Channel
 from src.services.channel_service import ChannelService
 from src.services.inventory_service import InventoryService
+from src.services.irc_service import IRCService
 from src.services.maintenance import MaintenanceService
 from src.services.message_handlers import MessageHandlerService
 from src.services.scheduler_service import SchedulerService
@@ -103,6 +104,7 @@ class Twitch:
         self._scheduler_service: SchedulerService = SchedulerService(self)
         from src.services.campaign_alert_service import CampaignAlertService
         self._campaign_alert_service: CampaignAlertService = CampaignAlertService(self)
+        self._irc_service: IRCService = IRCService(self)
         # Skip game tracking (set grows until all games tried, then resets)
         self._skipped_games: set[Game] = set()
 
@@ -147,6 +149,7 @@ class Twitch:
             self._scheduler_task = None
         # stop websocket and close HTTP session
         await self.websocket.stop(clear_topics=True)
+        await self._irc_service.stop()
         if self._http_client is not None:
             await self._http_client.close()
         self._drops.clear()
@@ -248,6 +251,7 @@ class Twitch:
         self._ensure_api_clients()
         auth_state = await self.get_auth()
         await self.websocket.start()
+        await self._irc_service.start()
         # NOTE: watch task is explicitly restarted on each new run
         if self._watching_task is not None:
             self._watching_task.cancel()
@@ -695,6 +699,7 @@ class Twitch:
                 if new_watching is not None:
                     # Switch to new channel
                     self.watch(new_watching)
+                    asyncio.create_task(self._irc_service.join(new_watching.name))
                     # Display the active drop for the new channel
                     if (active_campaign := self.get_active_campaign(new_watching)) is not None and (
                         active_drop := active_campaign.first_drop
@@ -839,6 +844,9 @@ class Twitch:
 
     def stop_watching(self) -> None:
         """Delegate to WatchService."""
+        _ch = self.watching_channel.get_with_default(None)
+        if _ch is not None:
+            asyncio.create_task(self._irc_service.part(_ch.name))
         self._watch_service.stop_watching()
 
     def restart_watching(self) -> None:
