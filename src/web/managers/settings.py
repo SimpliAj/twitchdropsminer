@@ -142,6 +142,24 @@ class SettingsManager:
         self.check_and_update_setting(
             "tab_counter_enabled", settings_data.get("tab_counter_enabled")
         )
+        self.check_and_update_setting(
+            "make_predictions", settings_data.get("make_predictions")
+        )
+        self.check_and_update_setting(
+            "bet_strategy", settings_data.get("bet_strategy")
+        )
+        self.check_and_update_setting(
+            "bet_percentage", settings_data.get("bet_percentage")
+        )
+        self.check_and_update_setting(
+            "bet_max_points", settings_data.get("bet_max_points")
+        )
+        self.check_and_update_setting(
+            "bet_minimum_points", settings_data.get("bet_minimum_points")
+        )
+        self.check_and_update_setting(
+            "bet_delay_seconds", settings_data.get("bet_delay_seconds")
+        )
 
         self._settings.save()
         asyncio.create_task(self._broadcaster.emit("settings_updated", self.get_settings()))

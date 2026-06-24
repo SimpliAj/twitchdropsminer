@@ -47,6 +47,7 @@
             <button class="tab-button" data-tab="inventory">Inventory</button>
             <button class="tab-button" data-tab="channel-points">Channel Points</button>
             <button class="tab-button" data-tab="history">History</button>
+            <button class="tab-button" data-tab="predictions">🎯 Predictions</button>
             <button class="tab-button" data-tab="settings">Settings</button>
             <button class="tab-button" data-tab="system" id="tab-btn-system">System</button>
             <button class="tab-button" data-tab="help">Help</button>
@@ -358,6 +359,40 @@
                 </section>
 
                 <section class="settings-section">
+                    <h2>🎯 Predictions</h2>
+                    <p class="help-text">Automatically bet channel points on predictions.</p>
+                    <label class="toggle-label" style="margin-bottom:8px;">
+                        <input type="checkbox" id="set-make-predictions" onchange="saveSettings()">
+                        <span>Enable Auto-Bet</span>
+                    </label>
+                    <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                        <span style="min-width:160px;color:#adadb8;font-size:.88rem;">Strategy</span>
+                        <select id="set-bet-strategy" onchange="saveSettings()" style="flex:1;background:#0e0e10;border:1px solid #3d3d4a;border-radius:6px;padding:6px 10px;color:#efeff1;font-size:.88rem;">
+                            <option value="SMART">SMART (by odds gap)</option>
+                            <option value="PERCENTAGE">PERCENTAGE (always bet)</option>
+                            <option value="HIGH_ODDS">HIGH_ODDS (underdog)</option>
+                            <option value="MOST_VOTED">MOST_VOTED (crowd)</option>
+                        </select>
+                    </label>
+                    <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                        <span style="min-width:160px;color:#adadb8;font-size:.88rem;">Bet % of balance</span>
+                        <input type="number" id="set-bet-pct" onchange="saveSettings()" min="1" max="100" step="1" style="flex:1;background:#0e0e10;border:1px solid #3d3d4a;border-radius:6px;padding:6px 10px;color:#efeff1;font-size:.88rem;">
+                    </label>
+                    <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                        <span style="min-width:160px;color:#adadb8;font-size:.88rem;">Max points per bet</span>
+                        <input type="number" id="set-bet-max" onchange="saveSettings()" min="100" step="100" style="flex:1;background:#0e0e10;border:1px solid #3d3d4a;border-radius:6px;padding:6px 10px;color:#efeff1;font-size:.88rem;">
+                    </label>
+                    <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                        <span style="min-width:160px;color:#adadb8;font-size:.88rem;">Min balance to bet</span>
+                        <input type="number" id="set-bet-min" onchange="saveSettings()" min="0" step="100" style="flex:1;background:#0e0e10;border:1px solid #3d3d4a;border-radius:6px;padding:6px 10px;color:#efeff1;font-size:.88rem;">
+                    </label>
+                    <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                        <span style="min-width:160px;color:#adadb8;font-size:.88rem;">Delay before lock (sec)</span>
+                        <input type="number" id="set-bet-delay" onchange="saveSettings()" min="5" max="120" style="flex:1;background:#0e0e10;border:1px solid #3d3d4a;border-radius:6px;padding:6px 10px;color:#efeff1;font-size:.88rem;">
+                    </label>
+                </section>
+
+                <section class="settings-section">
                     <h2>⭐ Preferred Games</h2>
                     <p class="help-text">Games that are always watched — even without active drop campaigns. The miner auto-connects when a campaign appears. Unlike the Watch List, these are never auto-removed.</p>
                     <div style="display:flex;gap:8px;margin-bottom:8px;">
@@ -516,6 +551,34 @@
                     </div>
                     <div id="history-empty" style="color:#adadb8;font-size:0.9rem;padding:20px 0;">No drops claimed yet.</div>
                     <div id="history-list" style="display:none;"></div>
+                </section>
+            </div>
+        </div>
+
+        <!-- Predictions Tab -->
+        <div id="predictions-tab" class="tab-content">
+            <div style="padding:0;">
+                <section class="settings-section" style="margin-bottom:0;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                        <h2 style="margin:0;border:none;padding:0;">Predictions History</h2>
+                    </div>
+                    <div id="pred-summary" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap"></div>
+                    <table style="width:100%;border-collapse:collapse;font-size:.85rem">
+                        <thead>
+                            <tr style="color:#adadb8;text-align:left">
+                                <th style="padding:6px 8px">Time</th>
+                                <th style="padding:6px 8px">Channel</th>
+                                <th style="padding:6px 8px">Prediction</th>
+                                <th style="padding:6px 8px">Bet</th>
+                                <th style="padding:6px 8px">Result</th>
+                                <th style="padding:6px 8px">Won</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pred-tbody"></tbody>
+                    </table>
+                    <div style="margin-top:16px">
+                        <button id="send-report-btn" style="background:#9147ff;border:none;color:#fff;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:.88rem">📋 Send Session Report to Discord</button>
+                    </div>
                 </section>
             </div>
         </div>

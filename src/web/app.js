@@ -1826,6 +1826,20 @@ function updateSettingsUI(settings) {
     const schedulerStop = document.getElementById('scheduler-stop');
     if (schedulerStop) schedulerStop.value = settings.scheduler_stop || '08:00';
 
+    // Populate prediction settings
+    const makePredEl = document.getElementById('set-make-predictions');
+    if (makePredEl) makePredEl.checked = settings.make_predictions === true;
+    const betStratEl = document.getElementById('set-bet-strategy');
+    if (betStratEl) betStratEl.value = settings.bet_strategy || 'SMART';
+    const betPctEl = document.getElementById('set-bet-pct');
+    if (betPctEl) betPctEl.value = settings.bet_percentage ?? 5;
+    const betMaxEl = document.getElementById('set-bet-max');
+    if (betMaxEl) betMaxEl.value = settings.bet_max_points ?? 50000;
+    const betMinEl = document.getElementById('set-bet-min');
+    if (betMinEl) betMinEl.value = settings.bet_minimum_points ?? 1000;
+    const betDelayEl = document.getElementById('set-bet-delay');
+    if (betDelayEl) betDelayEl.value = settings.bet_delay_seconds ?? 30;
+
     // Re-render inventory to apply filters
     renderInventory();
 
@@ -2402,6 +2416,12 @@ async function saveSettings() {
         scheduler_enabled: document.getElementById('scheduler-enabled')?.checked || false,
         scheduler_start: document.getElementById('scheduler-start')?.value || '22:00',
         scheduler_stop: document.getElementById('scheduler-stop')?.value || '08:00',
+        make_predictions: document.getElementById('set-make-predictions')?.checked ?? false,
+        bet_strategy: document.getElementById('set-bet-strategy')?.value || 'SMART',
+        bet_percentage: parseInt(document.getElementById('set-bet-pct')?.value || '5'),
+        bet_max_points: parseInt(document.getElementById('set-bet-max')?.value || '50000'),
+        bet_minimum_points: parseInt(document.getElementById('set-bet-min')?.value || '1000'),
+        bet_delay_seconds: parseInt(document.getElementById('set-bet-delay')?.value || '30'),
     };
 
     try {
@@ -3075,6 +3095,62 @@ async function reloadCampaigns() {
 }
 
 
+// ==================== Predictions Tab ====================
+
+async function loadPredictions() {
+    const resp = await fetch(API_BASE + "/api/predictions");
+    const data = await resp.json();
+    const preds = data.predictions || [];
+    // Summary
+    const wins = preds.filter(p => p.result === "WIN").length;
+    const losses = preds.filter(p => p.result === "LOSE").length;
+    const net = preds
+        .filter(p => ["WIN", "LOSE"].includes(p.result))
+        .reduce((s, p) => s + (p.points_won || 0) - (p.points_bet || 0), 0);
+    const winRate = wins + losses > 0 ? Math.round(wins / (wins + losses) * 100) : 0;
+    const summaryEl = document.getElementById("pred-summary");
+    if (summaryEl) {
+        summaryEl.replaceChildren();
+        const cards = [
+            { label: "Total", value: preds.length },
+            { label: "Win Rate", value: `${winRate}%` },
+            { label: "Net", value: `${net >= 0 ? "+" : ""}${net.toLocaleString()} pts`, color: net >= 0 ? "#00b368" : "#eb4a4a" },
+        ];
+        cards.forEach(c => {
+            const div = document.createElement("div");
+            div.className = "stat-card";
+            if (c.color) div.style.color = c.color;
+            div.textContent = `${c.label}: ${c.value}`;
+            summaryEl.appendChild(div);
+        });
+    }
+    // Table
+    const tbody = document.getElementById("pred-tbody");
+    if (!tbody) return;
+    tbody.replaceChildren();
+    preds.slice(0, 100).forEach(p => {
+        const color = p.result === "WIN" ? "#00b368" : p.result === "LOSE" ? "#eb4a4a" : "#adadb8";
+        const tr = document.createElement("tr");
+        tr.style.borderTop = "1px solid #2d2d35";
+        const cells = [
+            { text: p.ts ? new Date(p.ts).toLocaleDateString() : "—", style: "color:#adadb8" },
+            { text: p.channel || "—" },
+            { text: p.title ? p.title.slice(0, 40) : "—" },
+            { text: (p.points_bet || 0).toLocaleString() },
+            { text: p.result || "PENDING", style: `color:${color};font-weight:600` },
+            { text: (p.points_won || 0).toLocaleString() },
+        ];
+        cells.forEach(c => {
+            const td = document.createElement("td");
+            td.style.padding = "5px 8px";
+            if (c.style) td.style.cssText += c.style;
+            td.textContent = c.text;
+            tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+    });
+}
+
 // ==================== Tab Management ====================
 
 function switchTab(tabName) {
@@ -3090,6 +3166,7 @@ function switchTab(tabName) {
     document.getElementById(`${tabName}-tab`).classList.add('active');
     document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
     if (tabName === 'analytics') { loadStats(); loadDropHistory(); }
+    if (tabName === 'predictions') { loadPredictions(); }
     if (tabName === 'inventory' || tabName === 'settings') {
         if (Object.keys(state.campaigns).length === 0) reloadCampaigns();
     }
@@ -3432,6 +3509,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch and apply translations for the current language
     fetchAndApplyTranslations();
 
+    // Send session report button
+    document.getElementById('send-report-btn')?.addEventListener('click', async () => {
+        const btn = document.getElementById('send-report-btn');
+        btn.disabled = true;
+        btn.textContent = 'Sending...';
+        try {
+            const r = await fetch(API_BASE + '/api/session-report', { method: 'POST' });
+            btn.textContent = r.ok ? '✅ Sent!' : '❌ Failed';
+        } catch {
+            btn.textContent = '❌ Failed';
+        }
+        setTimeout(() => { btn.disabled = false; btn.textContent = '📋 Send Session Report to Discord'; }, 3000);
+    });
 
     // Instance management
     async function loadInstances() {
