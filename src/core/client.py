@@ -750,7 +750,7 @@ class Twitch:
             return []
 
     async def _fetch_followed_live_logins(self) -> list[str]:
-        """Fetch logins of live channels the current user follows via Helix REST API."""
+        """Fetch logins of live followed channels via Helix; falls back to GQL on 401."""
         try:
             auth = await self.get_auth()
             user_id = auth.user_id
@@ -762,11 +762,15 @@ class Twitch:
             }
             logins: list[str] = []
             cursor: str | None = None
-            for _ in range(5):  # max 5 pages = 500 channels
+            helix_ok = True
+            for _ in range(5):
                 url = f"https://api.twitch.tv/helix/streams/followed?user_id={user_id}&first=100"
                 if cursor:
                     url += f"&after={cursor}"
                 async with self._http_client.request("GET", url, headers=headers) as resp:
+                    if resp.status == 401:
+                        helix_ok = False
+                        break
                     if resp.status != 200:
                         body = await resp.text()
                         logger.warning(f"Idle (followed): Helix returned {resp.status}: {body[:200]}")
@@ -776,8 +780,12 @@ class Twitch:
                 cursor = data.get("pagination", {}).get("cursor")
                 if not cursor:
                     break
-            logger.info(f"Idle (followed): {len(logins)} live followed channels")
-            return logins
+            if helix_ok:
+                logger.info(f"Idle (followed): {len(logins)} live followed channels")
+                return logins
+            # Helix 401 — token lacks user:read:follows scope, fall back to GQL
+            logger.info("Idle (followed): Helix 401, falling back to GQL followed list")
+            return await self._fetch_followed_channels()
         except Exception as exc:
             logger.warning(f"Could not fetch followed live channels: {exc}")
             return []
