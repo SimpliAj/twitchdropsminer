@@ -483,7 +483,7 @@ function renderPointsTracker() {
             nameEl.style.display = 'flex';nameEl.style.alignItems = 'center';nameEl.style.gap = '5px';
             const nameTxt = document.createElement('span');
             nameTxt.textContent = login;
-            nameTxt.style.color = 'var(--accent-color,#9147ff)';
+            nameTxt.style.color = '#9147ff';
             nameEl.appendChild(nameTxt);
             if (data.cpEnabled === false) {
                 const badge = document.createElement('span');
@@ -626,7 +626,7 @@ function renderDropHistory(drops) {
             // Game tag
             const gameEl = document.createElement('span');
             gameEl.textContent = drop.game;
-            gameEl.style.cssText = 'font-size:0.72rem;color:var(--accent-color);white-space:nowrap;flex-shrink:0;max-width:120px;overflow:hidden;text-overflow:ellipsis;';
+            gameEl.style.cssText = 'font-size:0.72rem;color:#9147ff;white-space:nowrap;flex-shrink:0;max-width:120px;overflow:hidden;text-overflow:ellipsis;';
             row.appendChild(gameEl);
 
             // Drop name (fills space)
@@ -712,7 +712,7 @@ function renderChannelPointsTab() {
 
         const nameEl = document.createElement('span');
         nameEl.textContent = login;
-        nameEl.style.cssText = `flex:1;font-size:0.88rem;font-weight:${isTop ? '600' : '400'};color:${isTop ? 'var(--accent-color)' : 'var(--text-primary)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;`;
+        nameEl.style.cssText = `flex:1;font-size:0.88rem;font-weight:${isTop ? '600' : '400'};color:${isTop ? '#9147ff' : 'var(--text-primary)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;`;
         row.appendChild(nameEl);
 
         if (data.claimed > 0) {
@@ -724,7 +724,7 @@ function renderChannelPointsTab() {
 
         const ptsEl = document.createElement('span');
         ptsEl.textContent = `${(data.balance || 0).toLocaleString()} pts`;
-        ptsEl.style.cssText = `font-size:0.85rem;font-weight:600;color:${isTop ? 'var(--accent-color)' : 'var(--text-primary)'};white-space:nowrap;flex-shrink:0;`;
+        ptsEl.style.cssText = `font-size:0.85rem;font-weight:600;color:${isTop ? '#9147ff' : 'var(--text-primary)'};white-space:nowrap;flex-shrink:0;`;
         row.appendChild(ptsEl);
 
         listEl.appendChild(row);
@@ -3821,7 +3821,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     input.type = 'text';
                     input.value = acc.label;
                     input.maxLength = 40;
-                    input.style.cssText = 'flex:1;background:#18181b;border:1px solid var(--accent-color);border-radius:4px;padding:2px 8px;color:var(--text-primary);font-size:0.85rem;outline:none;';
+                    input.style.cssText = 'flex:1;background:#18181b;border:1px solid #9147ff;border-radius:4px;padding:2px 8px;color:var(--text-primary);font-size:0.85rem;outline:none;';
                     row.replaceChild(input, nameEl);
                     editBtn.style.display = 'none';
                     input.focus();
@@ -3851,7 +3851,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (acc.active) {
                     const badge = document.createElement('span');
                     badge.textContent = 'Active';
-                    badge.style.cssText = 'font-size:0.72rem;font-weight:600;color:var(--accent-color);background:rgba(145,71,255,0.12);padding:2px 8px;border-radius:20px;';
+                    badge.style.cssText = 'font-size:0.72rem;font-weight:600;color:#9147ff;background:rgba(145,71,255,0.12);padding:2px 8px;border-radius:20px;';
                     row.appendChild(badge);
                 }
 
@@ -4150,7 +4150,7 @@ function showCampaignDropsModal(campaignId, onlyRemaining) {
                 const pct = drop.required_minutes > 0 ? Math.round((effectiveMinutes / drop.required_minutes) * 100) : 0;
                 const minsLeft = Math.max(0, drop.required_minutes - effectiveMinutes);
                 badge.style.background = 'rgba(145,70,255,0.15)';
-                badge.style.color = 'var(--accent-color)';
+                badge.style.color = '#9147ff';
                 badge.textContent = `${pct}% · ${minsLeft}min left`;
             }
             header.appendChild(badge);
@@ -4161,7 +4161,7 @@ function showCampaignDropsModal(campaignId, onlyRemaining) {
                 const bar = document.createElement('div');
                 bar.style.cssText = 'width:100%;height:3px;background:var(--bg-secondary);border-radius:2px;overflow:hidden;margin-bottom:6px';
                 const fill = document.createElement('div');
-                fill.style.cssText = `height:100%;width:${pct}%;background:var(--accent-color);border-radius:2px`;
+                fill.style.cssText = `height:100%;width:${pct}%;background:#9147ff;border-radius:2px`;
                 bar.appendChild(fill);
                 item.appendChild(bar);
             }
