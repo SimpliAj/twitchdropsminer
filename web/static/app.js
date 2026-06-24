@@ -3167,7 +3167,7 @@ function switchTab(tabName) {
     document.getElementById(`${tabName}-tab`).classList.add('active');
     document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
     if (tabName === 'analytics') { loadStats(); loadDropHistory(); }
-    if (tabName === 'predictions') { loadPredictions(); }
+    if (tabName === 'channel-points') { loadPredictions(); }
     if (tabName === 'inventory' || tabName === 'settings') {
         if (Object.keys(state.campaigns).length === 0) reloadCampaigns();
     }
