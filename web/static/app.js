@@ -3238,7 +3238,7 @@ async function loadAnalytics(channel, days) {
         if (!canvas) return;
         const ctx = canvas.getContext("2d");
         if (analyticsChart) analyticsChart.destroy();
-        analyticsChart = new Chart(ctx, { type: "line", data: { labels, datasets: [{ label: channel || "Points", data: values, borderColor: "#9147ff", backgroundColor: "rgba(145,71,255,0.1)", tension: 0.3, pointRadius: snapshots.length > 100 ? 0 : 3, fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: "#efeff1" } } }, scales: { x: { ticks: { color: "#adadb8", maxTicksLimit: 8 }, grid: { color: "#2d2d35" } }, y: { ticks: { color: "#adadb8" }, grid: { color: "#2d2d35" } } } } });
+        analyticsChart = new Chart(ctx, { type: "line", data: { labels, datasets: [{ label: channel || "Points", data: values, borderColor: "#9147ff", backgroundColor: "rgba(145,71,255,0.1)", tension: 0.3, pointRadius: snapshots.length > 100 ? 0 : 3, fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: "#adadb8", maxTicksLimit: 8 }, grid: { color: "#2d2d35" } }, y: { ticks: { color: "#adadb8" }, grid: { color: "#2d2d35" } } } } });
     } catch(e) {}
 }
 
