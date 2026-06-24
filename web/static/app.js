@@ -3169,6 +3169,78 @@ async function reloadCampaigns() {
 
 // ==================== Tab Management ====================
 
+// ==================== Analytics Chart ====================
+
+let analyticsChart = null;
+let analyticsCurrentChannel = "";
+let analyticsCurrentDays = 7;
+let analyticsTabInited = false;
+
+async function loadAnalytics(channel, days) {
+  analyticsCurrentChannel = channel;
+  analyticsCurrentDays = days;
+  const resp = await fetch(API_BASE + `/api/analytics/points?channel=${encodeURIComponent(channel)}&days=${days}`);
+  const data = await resp.json();
+  const snapshots = (data.channels || {})[channel] || [];
+  const labels = snapshots.map(p => new Date(p.ts).toLocaleString());
+  const values = snapshots.map(p => p.balance);
+  const ctx = document.getElementById("analytics-chart").getContext("2d");
+  if (analyticsChart) analyticsChart.destroy();
+  analyticsChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels,
+      datasets: [{
+        label: channel || "Points",
+        data: values,
+        borderColor: "#9147ff",
+        backgroundColor: "rgba(145,71,255,0.1)",
+        tension: 0.3,
+        pointRadius: snapshots.length > 100 ? 0 : 3,
+        fill: true,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: "#efeff1" } } },
+      scales: {
+        x: { ticks: { color: "#adadb8", maxTicksLimit: 8 }, grid: { color: "#2d2d35" } },
+        y: { ticks: { color: "#adadb8" }, grid: { color: "#2d2d35" } }
+      }
+    }
+  });
+}
+
+async function initAnalyticsTab() {
+  if (analyticsTabInited) {
+    loadAnalytics(analyticsCurrentChannel, analyticsCurrentDays);
+    return;
+  }
+  analyticsTabInited = true;
+  const resp = await fetch(API_BASE + "/api/analytics/points?days=7");
+  const data = await resp.json();
+  const channels = Object.keys(data.channels || {});
+  const sel = document.getElementById("analytics-channel");
+  sel.replaceChildren(...channels.map(ch => {
+    const opt = document.createElement("option");
+    opt.value = ch;
+    opt.textContent = ch;
+    return opt;
+  }));
+  if (channels.length > 0) {
+    loadAnalytics(channels[0], 7);
+  }
+  sel.addEventListener("change", () => loadAnalytics(sel.value, analyticsCurrentDays));
+  document.querySelectorAll(".range-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".range-btn").forEach(b => b.classList.remove("active-range"));
+      btn.classList.add("active-range");
+      loadAnalytics(analyticsCurrentChannel, parseInt(btn.dataset.days));
+    });
+  });
+}
+
 function switchTab(tabName) {
     // Hide all tabs
     document.querySelectorAll('.tab-content').forEach(tab => {
@@ -3181,7 +3253,7 @@ function switchTab(tabName) {
     // Show selected tab
     document.getElementById(`${tabName}-tab`).classList.add('active');
     document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-    if (tabName === 'analytics') { loadStats(); loadDropHistory(); }
+    if (tabName === 'analytics') { loadStats(); loadDropHistory(); initAnalyticsTab(); }
     if (tabName === 'inventory' || tabName === 'settings') {
         if (Object.keys(state.campaigns).length === 0) reloadCampaigns();
     }
