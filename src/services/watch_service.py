@@ -154,6 +154,14 @@ class WatchService:
                     self._twitch._watching_cp_topic_id = new_topic_id
                 except MinerException:
                     logger.warning(f"Topic limit reached — CommunityPoints not subscribed for {channel.name}")
+        if self._twitch.settings.claim_moments:
+            try:
+                self._twitch.websocket.add_topics([WebsocketTopic(
+                    "Channel", "Moments", channel.id,
+                    self._twitch._message_handler_service.process_moments,
+                )])
+            except MinerException:
+                logger.warning(f"Topic limit — Moments topic skipped for {channel.name}")
 
         if update_status:
             # Check if manual mode is active for custom status message

@@ -542,6 +542,39 @@ class MessageHandlerService:
             logger.warning(f"Could not fetch channel points balance for {channel_login}: {e}")
 
     @task_wrapper
+    async def process_moments(self, channel_id: int, message: JsonType) -> None:
+        if not self._twitch.settings.claim_moments:
+            return
+        msg_type = message.get("type", "")
+        if msg_type not in ("active", "COMMUNITY_MOMENT_CALLOUT_CREATED"):
+            return
+        moment_id = (
+            message.get("data", {}).get("moment_id")
+            or message.get("data", {}).get("momentID")
+        )
+        if not moment_id:
+            return
+        try:
+            await self._twitch.gql_request(
+                GQL_OPERATIONS["ClaimMoment"].with_variables(
+                    {"input": {"momentID": moment_id}}
+                )
+            )
+            logger.info(f"Claimed moment {moment_id} on channel {channel_id}")
+            channel = self._twitch.channels.get(channel_id)
+            channel_name = channel.name if channel else str(channel_id)
+            webhook_url = self._twitch.settings.discord_webhook_points
+            if webhook_url:
+                embed = {
+                    "title": "⭐ Moment Claimed!",
+                    "color": 0x9147FF,
+                    "fields": [{"name": "Channel", "value": channel_name, "inline": True}],
+                }
+                asyncio.create_task(self._send_discord_webhook(webhook_url, {"embeds": [embed]}))
+        except Exception as e:
+            logger.warning(f"Failed to claim moment {moment_id}: {e}")
+
+    @task_wrapper
     async def process_notifications(self, user_id: int, message: JsonType) -> None:
         """
         Process websocket notification updates.

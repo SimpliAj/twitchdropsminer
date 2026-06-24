@@ -169,5 +169,6 @@ WEBSOCKET_TOPICS: dict[str, dict[str, str]] = {
         "StreamState": "video-playback-by-id",
         "StreamUpdate": "broadcast-settings-update",
         "CommunityPoints": "community-points-channel-v1",  # unused
+        "Moments": "community-moments-channel-v1",
     },
 }
