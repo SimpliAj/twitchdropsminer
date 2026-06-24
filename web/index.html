@@ -53,7 +53,6 @@
             <button class="tab-button" data-tab="inventory">Inventory</button>
             <button class="tab-button" data-tab="settings">Settings</button>
             <button class="tab-button" data-tab="analytics">Analytics</button>
-            <button class="tab-button" data-tab="system" id="tab-btn-system">System</button>
             <button class="tab-button" data-tab="help">Help</button>
         </nav>
 
@@ -576,6 +575,43 @@
                     </section>
                 </div>
 
+                <!-- ─── 🎯 Predictions ─── -->
+                <div class="settings-category-label">🎯 Predictions</div>
+                <div class="settings-grid">
+                    <section class="settings-section">
+                        <h2>🎯 Auto-Bet</h2>
+                        <p class="help-text">Automatically bet channel points on predictions.</p>
+                        <label class="toggle-label" style="margin-bottom:8px;">
+                            <input type="checkbox" id="set-make-predictions" onchange="saveSettings()">
+                            <span>Enable Auto-Bet</span>
+                        </label>
+                        <label class="settings-row">
+                            <span class="settings-row-label">Strategy</span>
+                            <select id="set-bet-strategy" onchange="saveSettings()" class="settings-select">
+                                <option value="SMART">SMART (by odds gap)</option>
+                                <option value="PERCENTAGE">PERCENTAGE (always bet)</option>
+                                <option value="HIGH_ODDS">HIGH_ODDS (underdog)</option>
+                                <option value="MOST_VOTED">MOST_VOTED (crowd)</option>
+                            </select>
+                        </label>
+                        <label class="settings-row">
+                            <span class="settings-row-label">Bet % of balance</span>
+                            <input type="number" id="set-bet-pct" onchange="saveSettings()" min="1" max="100" step="1" class="settings-input" style="max-width:100px;">
+                        </label>
+                        <label class="settings-row">
+                            <span class="settings-row-label">Max points per bet</span>
+                            <input type="number" id="set-bet-max" onchange="saveSettings()" min="100" step="100" class="settings-input" style="max-width:100px;">
+                        </label>
+                        <label class="settings-row">
+                            <span class="settings-row-label">Min balance to bet</span>
+                            <input type="number" id="set-bet-min" onchange="saveSettings()" min="0" step="100" class="settings-input" style="max-width:100px;">
+                        </label>
+                        <label class="settings-row">
+                            <span class="settings-row-label">Delay before lock (s)</span>
+                            <input type="number" id="set-bet-delay" onchange="saveSettings()" min="5" max="120" class="settings-input" style="max-width:100px;">
+                        </label>
+                    </section>
+                </div>
 
             </div>
         </div>
@@ -673,40 +709,6 @@
                     </div>
                 </section>
 
-            </div>
-        </div>
-
-        <!-- System Tab -->
-        <div id="system-tab" class="tab-content">
-            <div class="settings-section">
-                <h2 id="system-header">System</h2>
-                <div class="system-card" id="accounts-card" style="margin-bottom:16px">
-                    <h3 id="system-accounts-header">Accounts</h3>
-                    <div id="accounts-list" class="accounts-list" style="margin-top:10px"></div>
-                    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-                        <input type="text" id="new-account-label" placeholder="Label (e.g. Main, Alt)" style="flex:1;min-width:120px;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:6px;padding:7px 10px;color:var(--text-primary);font-size:.85rem;outline:none">
-                        <button id="add-account-btn" class="btn-primary" style="width:auto;padding:7px 14px;font-size:.85rem">+ Add Account</button>
-                    </div>
-                    <div id="accounts-status" style="margin-top:8px;font-size:.82rem;display:none"></div>
-                </div>
-                <div class="system-controls">
-                    <div class="system-card">
-                        <h3 id="system-miner-header">Miner</h3>
-                        <p id="system-miner-desc">Reload campaigns and restart the mining loop.</p>
-                        <button id="system-reload-btn" class="btn-primary">Reload Campaigns</button>
-                    </div>
-                    <div class="system-card danger">
-                        <h3 id="system-restart-header">Restart</h3>
-                        <p id="system-restart-desc">Stop the miner process. PM2 will restart it automatically.</p>
-                        <button id="system-restart-btn" class="btn-danger">Restart Miner</button>
-                    </div>
-                    <div class="system-card">
-                        <h3 id="system-session-header">Session</h3>
-                        <p id="system-session-desc">Log out of the web interface.</p>
-                        <button id="system-logout-btn" class="btn-secondary">Logout</button>
-                    </div>
-                </div>
-                <div id="system-status" class="system-status"></div>
             </div>
         </div>
 

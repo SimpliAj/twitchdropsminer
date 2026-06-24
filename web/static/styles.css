@@ -1632,6 +1632,41 @@ header h1 {
     }
 }
 
+.settings-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.settings-row-label {
+    min-width: 160px;
+    color: #adadb8;
+    font-size: .88rem;
+    flex-shrink: 0;
+}
+.settings-select {
+    flex: 1;
+    background: #0e0e10;
+    border: 1px solid #3d3d4a;
+    border-radius: 6px;
+    padding: 6px 10px;
+    color: #efeff1;
+    font-size: .88rem;
+}
+@media (max-width: 600px) {
+    .settings-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .settings-row-label {
+        min-width: unset;
+    }
+    .settings-select, .settings-row input[type="number"] {
+        width: 100%;
+        max-width: 100% !important;
+    }
+}
+
 .form-row {
     display: flex;
     align-items: center;
