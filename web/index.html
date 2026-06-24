@@ -35,6 +35,7 @@
                 </div>
                 <div class="status-center">
                     <span id="status-text">Initializing...</span>
+                    <span id="status-game" style="display:none;font-size:0.75rem;color:#adadb8;margin-top:2px;"></span>
                 </div>
                 <div class="status-right">
                     <span id="connection-indicator" class="connected">● Connected</span>
@@ -45,8 +46,7 @@
         <nav class="tabs">
             <button class="tab-button active" data-tab="main">Main</button>
             <button class="tab-button" data-tab="inventory">Inventory</button>
-            <button class="tab-button" data-tab="channel-points">Channel Points</button>
-            <button class="tab-button" data-tab="history">History</button>
+            <button class="tab-button" data-tab="analytics">Analytics</button>
             <button class="tab-button" data-tab="settings">Settings</button>
             <button class="tab-button" data-tab="system" id="tab-btn-system">System</button>
             <button class="tab-button" data-tab="help">Help</button>
@@ -150,9 +150,12 @@
                 </section>
 
                 <!-- Console Output -->
-                <section class="panel console-panel">
-                    <h2 id="console-header">Logs</h2>
-                    <div id="console-output" class="console-output"></div>
+                <section class="panel console-panel" id="console-panel-section">
+                    <div class="panel-header-row">
+                        <h2 id="console-header">Logs</h2>
+                        <button class="collapse-toggle" id="console-toggle" onclick="toggleConsole()" title="Toggle log output" aria-expanded="false">▼</button>
+                    </div>
+                    <div id="console-output" class="console-output" style="display:none;"></div>
                 </section>
 
                 <!-- Channels List -->
@@ -394,8 +397,11 @@
                 <section class="settings-section">
                     <h2>⭐ Preferred Games</h2>
                     <p class="help-text">Games that are always watched — even without active drop campaigns. The miner auto-connects when a campaign appears. Unlike the Watch List, these are never auto-removed.</p>
-                    <div style="display:flex;gap:8px;margin-bottom:8px;">
-                        <input type="text" id="preferred-game-input" placeholder="Game name..." style="flex:1;">
+                    <div style="display:flex;gap:8px;margin-bottom:8px;position:relative;">
+                        <div style="position:relative;flex:1;">
+                            <input type="text" id="preferred-game-input" placeholder="Type to search games..." autocomplete="off" style="width:100%;box-sizing:border-box;">
+                            <div id="preferred-game-dropdown" class="game-dropdown-list" style="display:none;top:100%;left:0;right:0;"></div>
+                        </div>
                         <button id="preferred-game-add-btn" class="secondary-btn">Add</button>
                     </div>
                     <div id="preferred-games-list" class="sortable-list"></div>
@@ -515,12 +521,47 @@
             </div>
         </div>
 
-        <!-- Channel Points Tab -->
-        <div id="channel-points-tab" class="tab-content">
-            <div>
-                <section class="settings-section">
+        <!-- Analytics Tab (Stats + Channel Points + History) -->
+        <div id="analytics-tab" class="tab-content">
+            <div class="analytics-layout">
+                <!-- TOP LEFT: Statistics -->
+                <section class="settings-section analytics-stats-col">
+                    <h2 id="analytics-stats-header" style="margin-bottom:16px;">Drop Statistics</h2>
+                    <div id="stats-summary" style="display:flex;gap:8px;margin-bottom:24px;">
+                        <div class="stat-card">
+                            <div class="stat-value" id="stats-total">—</div>
+                            <div class="stat-label" id="analytics-total-label">Total Claims</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="stats-games">—</div>
+                            <div class="stat-label" id="analytics-games-label">Games</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="stats-last">—</div>
+                            <div class="stat-label" id="analytics-last-label">Channel Points</div>
+                        </div>
+                    </div>
+                    <h3 id="analytics-by-game-header" style="margin-bottom:10px;">Claims by Game</h3>
+                    <div id="stats-by-game"></div>
+                </section>
+
+                <!-- TOP RIGHT: Drop History -->
+                <section class="settings-section analytics-history-col">
                     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-                        <h2 style="margin:0;border:none;padding:0;">Channel Points</h2>
+                        <h2 id="analytics-history-header" style="margin:0;border:none;padding:0;">Drop History</h2>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <span id="history-summary" style="font-size:0.85rem;color:#adadb8;"></span>
+                            <button id="history-refresh-btn" class="secondary-btn">&#x21BB; Refresh</button>
+                        </div>
+                    </div>
+                    <div id="history-empty" style="color:#adadb8;font-size:0.9rem;padding:12px 0;">No drops claimed yet.</div>
+                    <div id="history-list" style="display:none;"></div>
+                </section>
+
+                <!-- BOTTOM: Channel Points (full width) -->
+                <section class="settings-section analytics-cp-full">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                        <h2 id="analytics-cp-header" style="margin:0;border:none;padding:0;">Channel Points</h2>
                         <div style="display:flex;gap:8px;align-items:center;">
                             <span id="cp-tab-summary" style="font-size:0.85rem;color:#adadb8;"></span>
                             <div style="display:flex;gap:4px;">
@@ -531,10 +572,12 @@
                             <button id="cp-tab-refresh-btn" class="secondary-btn">↻ Refresh</button>
                         </div>
                     </div>
-                    <div id="cp-tab-empty" style="color:#adadb8;font-size:0.9rem;padding:20px 0;">No channel points data yet. Points are recorded while watching channels.</div>
+                    <div id="cp-tab-empty" style="color:#adadb8;font-size:0.9rem;padding:12px 0;">No channel points data yet. Points are recorded while watching channels.</div>
                     <div id="cp-tab-list" style="display:none;"></div>
                 </section>
-                <section class="settings-section" style="margin-top:16px;">
+
+                <!-- Predictions History (full width) -->
+                <section class="settings-section analytics-cp-full">
                     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
                         <h2 style="margin:0;border:none;padding:0;">Predictions History</h2>
                     </div>
@@ -555,23 +598,6 @@
                     <div style="margin-top:16px">
                         <button id="send-report-btn" style="background:#9147ff;border:none;color:#fff;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:.88rem">📋 Send Session Report to Discord</button>
                     </div>
-                </section>
-            </div>
-        </div>
-
-        <!-- History Tab -->
-        <div id="history-tab" class="tab-content">
-            <div style="padding:0;">
-                <section class="settings-section" style="margin-bottom:0;">
-                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-                        <h2 style="margin:0;border:none;padding:0;">Drop History</h2>
-                        <div style="display:flex;gap:8px;align-items:center;">
-                            <span id="history-summary" style="font-size:0.85rem;color:#adadb8;"></span>
-                            <button id="history-refresh-btn" class="secondary-btn">&#x21BB; Refresh</button>
-                        </div>
-                    </div>
-                    <div id="history-empty" style="color:#adadb8;font-size:0.9rem;padding:20px 0;">No drops claimed yet.</div>
-                    <div id="history-list" style="display:none;"></div>
                 </section>
             </div>
         </div>
