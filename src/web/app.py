@@ -618,6 +618,26 @@ async def get_channel_points(channel_login: str):
 
 
 
+@app.get("/api/analytics/points")
+async def get_analytics_points(channel: str = "", days: int = 7):
+    """Return timestamped channel points history for analytics chart."""
+    from datetime import datetime, timezone, timedelta
+    ts_file = _get_account_data_dir() / "channel_points_ts.json"
+    try:
+        data = json.loads(ts_file.read_text()) if ts_file.exists() else {}
+    except Exception:
+        data = {}
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    if channel:
+        raw = data.get(channel.lower(), [])
+        filtered = [p for p in raw if p.get("ts", "") >= cutoff]
+        return {"channels": {channel.lower(): filtered}}
+    result = {}
+    for login, snapshots in data.items():
+        result[login] = [p for p in snapshots if p.get("ts", "") >= cutoff]
+    return {"channels": result}
+
+
 @app.get("/api/drops-history")
 async def get_drops_history():
     """Return all claimed drops history."""

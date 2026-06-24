@@ -630,6 +630,24 @@
                     <div id="cp-tab-list" style="display:none;"></div>
                 </section>
 
+                <!-- BOTTOM FULL: Points Over Time Chart -->
+                <section class="settings-section analytics-cp-full">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                        <h2 style="margin:0;border:none;padding:0;">📈 Points Over Time</h2>
+                    </div>
+                    <div class="analytics-controls" style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+                        <select id="analytics-channel" style="background:#18181b;border:1px solid #3d3d4a;color:#efeff1;padding:6px 10px;border-radius:6px;font-size:.85rem"></select>
+                        <div style="display:flex;gap:4px">
+                            <button class="range-btn active-range" data-days="1">1D</button>
+                            <button class="range-btn" data-days="7">7D</button>
+                            <button class="range-btn" data-days="30">30D</button>
+                        </div>
+                    </div>
+                    <div style="position:relative;height:320px">
+                        <canvas id="analytics-chart"></canvas>
+                    </div>
+                </section>
+
             </div>
         </div>
 
@@ -1162,6 +1180,7 @@ TDM_PORT=8080 WEB_PASSWORD=mysecretpassword pm2 start main.py --name twitchdrops
         </footer>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" integrity="sha384-e6nUZLBkQ86NJ6TVVKAeSaK8jWa3NhkYWZFomE39AvDbQWeie9PlQqM3pmYW5d1g" crossorigin="anonymous"></script>
     <script src="/static/app.js?v=461780dd"></script>
 </body>
 
