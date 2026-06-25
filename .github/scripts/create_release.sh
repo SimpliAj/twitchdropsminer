@@ -34,6 +34,11 @@ echo "Current branch: $CURRENT_BRANCH"
 git config user.name "github-actions[bot]"
 git config user.email "github-actions[bot]@users.noreply.github.com"
 
+# Use GITHUB_TOKEN for authenticated push in CI
+if [ -n "${GITHUB_TOKEN:-}" ] && [ -n "${GITHUB_REPOSITORY:-}" ]; then
+  git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+fi
+
 # Update version.py
 echo "Updating src/version.py..."
 echo "__version__ = \"$VERSION\"" > src/version.py

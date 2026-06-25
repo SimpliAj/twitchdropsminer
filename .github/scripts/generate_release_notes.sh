@@ -67,9 +67,8 @@ if [ "$NEEDS_GENERATION" = "false" ]; then
 fi
 
 if [ -z "$GEMINI_API_KEY" ]; then
-  echo "❌ Error: GEMINI_API_KEY argument required for generation"
-  echo "Usage: $0 -v <version> -k <gemini_api_key> [-p]"
-  exit 1
+  echo "⚠️ No GEMINI_API_KEY — skipping auto-generation. Add notes manually to RELEASE_NOTES.md."
+  exit 0
 fi
 
 echo "🤖 Generating release notes using Gemini AI..."
