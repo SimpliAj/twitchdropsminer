@@ -278,14 +278,38 @@ async def build_dashboard_embed(session: aiohttp.ClientSession, url: str, token:
     except Exception:
         pass
 
+    # Prediction stats
+    try:
+        from collections import Counter as _Counter
+        pred_data = await api_get(session, url, token, "/api/predictions")
+        preds = pred_data.get("predictions", []) if isinstance(pred_data, dict) else []
+        resolved = [p for p in preds if p.get("result") in ("WIN", "LOSE")]
+        if resolved:
+            wins = [p for p in resolved if p["result"] == "WIN"]
+            losses = [p for p in resolved if p["result"] == "LOSE"]
+            total_bet = sum(p.get("points_bet", 0) for p in resolved)
+            total_won = sum(p.get("points_won", 0) for p in wins)
+            total_lost = sum(p.get("points_bet", 0) for p in losses)
+            net = total_won - total_lost
+            win_rate = int(len(wins) / len(resolved) * 100) if resolved else 0
+            net_str = f"+{net:,}" if net >= 0 else f"{net:,}"
+            strategy_counts = _Counter(p.get("strategy", "") for p in resolved if p.get("strategy"))
+            top_strategy = strategy_counts.most_common(1)[0][0] if strategy_counts else None
+            pred_val = f"✅ {len(wins)}W / ❌ {len(losses)}L  ·  {win_rate}%\nNet: **{net_str} pts**  ·  Bet: {total_bet:,}"
+            if top_strategy:
+                pred_val += f"\nStrategy: **{top_strategy}**"
+            embed.add_field(name="🎲 Predictions", value=pred_val, inline=False)
+    except Exception:
+        pass
+
     # Notification channels
     if pairing:
         notif_lines = []
-        for type_key, emoji in [("drops", "🎁"), ("points", "💰")]:
+        for type_key, emoji, label in [("drops", "🎁", "Drops"), ("points", "💰", "Points"), ("bets", "🎲", "Bets"), ("campaigns", "⏰", "Campaigns")]:
             entries = _channel_entries(pairing, type_key)
             if entries:
                 ch_strs = [f"<#{e['id']}>" + (f" *({e['guild']})*" if e.get("guild") else "") for e in entries]
-                notif_lines.append(f"{emoji} {type_key.capitalize()}: {', '.join(ch_strs)}")
+                notif_lines.append(f"{emoji} {label}: {', '.join(ch_strs)}")
         if notif_lines:
             embed.add_field(name="📢 Notifications", value="\n".join(notif_lines), inline=False)
 
@@ -442,16 +466,24 @@ class TwitchDropsBot(discord.Client):
         self._live_stats_messages: dict[int, int] = load_live_stats()
         self._live_stats_last_update: float = 0.0
 
-    async def _build_global_stats(self, session: aiohttp.ClientSession) -> discord.Embed:
+    async def _build_global_stats(self, session: aiohttp.ClientSession, owner_uid: str | None = None) -> discord.Embed:
         GITHUB_URL = "https://github.com/SimpliAj/twitchdropsminer"
         total_drops = 0
         today_drops = 0
         from zoneinfo import ZoneInfo
+        from collections import Counter
         today_str = datetime.now(ZoneInfo("Europe/Vienna")).strftime("%Y-%m-%d")
         cp_today_total = 0
-
         total_cp = 0
-        for uid, pairings_dict in self.users_data.items():
+        pred_wins = 0
+        pred_losses = 0
+        pred_net = 0
+        pred_total_bet = 0
+        strategy_counter: Counter = Counter()
+
+        # Only iterate the requesting user's pairings (or all if no owner specified)
+        source = {owner_uid: self.users_data[owner_uid]} if owner_uid and owner_uid in self.users_data else self.users_data
+        for uid, pairings_dict in source.items():
             for name, pairing in pairings_dict.items():
                 try:
                     history = await api_get(session, pairing["url"], pairing["token"], "/api/drops-history")
@@ -463,6 +495,23 @@ class TwitchDropsBot(discord.Client):
                 total_cp += pairing.get("cp_total_earned", 0)
                 if pairing.get("cp_today_date") == today_str:
                     cp_today_total += pairing.get("cp_today", 0)
+                try:
+                    pred_data = await api_get(session, pairing["url"], pairing["token"], "/api/predictions")
+                    preds = pred_data.get("predictions", []) if isinstance(pred_data, dict) else []
+                    for p in preds:
+                        strategy = p.get("strategy", "")
+                        if strategy:
+                            strategy_counter[strategy] += 1
+                        if p.get("result") == "WIN":
+                            pred_wins += 1
+                            pred_net += p.get("points_won", 0) - p.get("points_bet", 0)
+                            pred_total_bet += p.get("points_bet", 0)
+                        elif p.get("result") == "LOSE":
+                            pred_losses += 1
+                            pred_net -= p.get("points_bet", 0)
+                            pred_total_bet += p.get("points_bet", 0)
+                except Exception:
+                    pass
 
         desc = (
             f"🎁  **{total_drops}** drops total  ·  **{today_drops}** today\n"
@@ -475,6 +524,15 @@ class TwitchDropsBot(discord.Client):
             description=desc,
             color=COLOR_TWITCH,
         )
+        if pred_wins + pred_losses > 0:
+            total_resolved = pred_wins + pred_losses
+            win_rate = int(pred_wins / total_resolved * 100)
+            net_str = f"+{pred_net:,}" if pred_net >= 0 else f"{pred_net:,}"
+            top_strategy = strategy_counter.most_common(1)[0][0] if strategy_counter else None
+            pred_val = f"✅ {pred_wins}W / ❌ {pred_losses}L  ·  {win_rate}%\nNet: **{net_str} pts**  ·  Bet: {pred_total_bet:,}"
+            if top_strategy:
+                pred_val += f"\nStrategy: **{top_strategy}**"
+            embed.add_field(name="🎲 Predictions", value=pred_val, inline=False)
         embed.set_footer(text="Auto-updates every 30 min")
         embed.timestamp = datetime.now(timezone.utc)
         return embed
@@ -651,6 +709,97 @@ class TwitchDropsBot(discord.Client):
                         except Exception as e:
                             log.debug("CP tracking error for %s/%s: %s", user_id, pairing_name, e)
 
+                        # Poll prediction results → send to "bets" channel
+                        try:
+                            pred_data = await api_get(session, pairing["url"], pairing["token"], "/api/predictions")
+                            preds = pred_data.get("predictions", []) if isinstance(pred_data, dict) else []
+                            seen_ids: set = set(pairing.get("seen_pred_ids", []))
+                            new_seen: list[str] = []
+                            for pred in preds:
+                                eid = pred.get("event_id", "")
+                                if not eid or eid in seen_ids:
+                                    continue
+                                result = pred.get("result", "PENDING")
+                                if result not in ("WIN", "LOSE"):
+                                    continue
+                                new_seen.append(eid)
+                                for bets_ch_id in _channel_ids(pairing, "bets"):
+                                    bets_ch = self.get_channel(bets_ch_id)
+                                    if bets_ch is None:
+                                        try:
+                                            bets_ch = await self.fetch_channel(bets_ch_id)
+                                        except Exception:
+                                            bets_ch = None
+                                    if bets_ch:
+                                        color = 0x00b368 if result == "WIN" else 0xeb4a4a
+                                        pts_won = pred.get("points_won", 0)
+                                        pts_bet = pred.get("points_bet", 0)
+                                        embed = discord.Embed(
+                                            title=f"{'✅ Win' if result == 'WIN' else '❌ Lose'} — Prediction",
+                                            color=color,
+                                        )
+                                        embed.add_field(name="Channel", value=pred.get("channel", "?"), inline=True)
+                                        embed.add_field(name="Prediction", value=pred.get("title", "?")[:100], inline=False)
+                                        embed.add_field(name="Bet", value=f"{pts_bet:,} pts on {pred.get('outcome_chosen','?')}", inline=True)
+                                        embed.add_field(name="Won", value=f"{pts_won:,} pts" if result == "WIN" else "0 pts", inline=True)
+                                        make_footer(embed, pairing)
+                                        await bets_ch.send(embed=embed)
+                            if new_seen:
+                                all_seen = list(seen_ids | set(new_seen))
+                                self.users_data[user_id][pairing_name]["seen_pred_ids"] = all_seen[-500:]
+                                save_pairings(self.users_data)
+                        except Exception as e:
+                            log.debug("Prediction poll error for %s/%s: %s", user_id, pairing_name, e)
+
+                        # Poll campaigns ending soon → send to "campaigns" channel
+                        try:
+                            camp_data = await api_get(session, pairing["url"], pairing["token"], "/api/campaigns")
+                            campaigns_list = camp_data.get("campaigns", []) if isinstance(camp_data, dict) else []
+                            alerted_camps: set = set(pairing.get("alerted_campaign_ids", []))
+                            new_alerted: list[str] = []
+                            now_ts = datetime.now(timezone.utc)
+                            for camp in campaigns_list:
+                                cid = camp.get("id", "")
+                                if not cid or cid in alerted_camps or camp.get("expired"):
+                                    continue
+                                ends_at_str = camp.get("ends_at", "")
+                                if not ends_at_str:
+                                    continue
+                                try:
+                                    ends_at = datetime.fromisoformat(ends_at_str.replace("Z", "+00:00"))
+                                    hours_left = (ends_at - now_ts).total_seconds() / 3600
+                                    if hours_left > 24 or hours_left < 0:
+                                        continue
+                                except Exception:
+                                    continue
+                                remaining_drops = sum(1 for d in camp.get("drops", []) if not d.get("is_claimed"))
+                                if remaining_drops == 0:
+                                    continue
+                                new_alerted.append(cid)
+                                for camp_ch_id in _channel_ids(pairing, "campaigns"):
+                                    camp_ch = self.get_channel(camp_ch_id)
+                                    if camp_ch is None:
+                                        try:
+                                            camp_ch = await self.fetch_channel(camp_ch_id)
+                                        except Exception:
+                                            camp_ch = None
+                                    if camp_ch:
+                                        embed = discord.Embed(
+                                            title="⏰ Campaign Ending Soon",
+                                            description=f"**{camp.get('name', '?')}** ends in ~{int(hours_left)}h",
+                                            color=0xFF4500,
+                                        )
+                                        embed.add_field(name="Game", value=camp.get("game_name") or camp.get("game", "?"), inline=True)
+                                        embed.add_field(name="Unclaimed Drops", value=str(remaining_drops), inline=True)
+                                        make_footer(embed, pairing)
+                                        await camp_ch.send(embed=embed)
+                            if new_alerted:
+                                all_alerted = list(alerted_camps | set(new_alerted))
+                                self.users_data[user_id][pairing_name]["alerted_campaign_ids"] = all_alerted[-200:]
+                                save_pairings(self.users_data)
+                        except Exception as e:
+                            log.debug("Campaign alert poll error for %s/%s: %s", user_id, pairing_name, e)
+
                         # Get paused state for state key
                         try:
                             status_data = await api_get(session, pairing["url"], pairing["token"], "/api/status")
@@ -661,7 +810,8 @@ class TwitchDropsBot(discord.Client):
                         # Update live dashboard embed only when state changed
                         dashboard = pairing.get("dashboard_embed")
                         if dashboard:
-                            state_key = f"{paused}|{watching_channel}|{cp_balance}|{drop_count}"
+                            pred_count = len(pairing.get("seen_pred_ids", []))
+                            state_key = f"{paused}|{watching_channel}|{cp_balance}|{drop_count}|{pred_count}"
                             last_state = pairing.get("last_embed_state", "")
                             if state_key != last_state:
                                 ch = self.get_channel(int(dashboard["channel_id"]))
@@ -730,6 +880,17 @@ def register_commands(bot: TwitchDropsBot):
             for n in names if current.lower() in n.lower()
         ][:25]
 
+    async def name_autocomplete_with_all(interaction: discord.Interaction, current: str):
+        uid = str(interaction.user.id)
+        names = list(bot.users_data.get(uid, {}).keys())
+        if not names:
+            names = ["default"]
+        options = (["all"] + names) if len(names) > 1 else names
+        return [
+            app_commands.Choice(name=n, value=n)
+            for n in options if current.lower() in n.lower()
+        ][:25]
+
     @bot.tree.command(name="link", description="Link your TwitchDropsMiner dashboard")
     @app_commands.describe(
         url="Dashboard URL (e.g. http://your-vps:8081)",
@@ -760,7 +921,7 @@ def register_commands(bot: TwitchDropsBot):
                 "url": url.rstrip("/"),
                 "token": token,
                 "last_drop_count": 0,
-                "channels": {"drops": None, "logs": None},
+                "channels": {"drops": None, "logs": None, "points": None, "bets": None, "campaigns": None},
             }
             save_pairings(bot.users_data)
             log.info("User %s linked instance '%s' to %s", uid, name, url)
@@ -809,47 +970,66 @@ def register_commands(bot: TwitchDropsBot):
         label = f"instance `{name}`" if name != "default" else "dashboard"
         await interaction.response.send_message(embed=success_embed(f"{label.capitalize()} unlinked."), ephemeral=True)
 
-    @bot.tree.command(name="setchannel", description="Set notification channel for drops or channel points")
+    @bot.tree.command(name="setchannel", description="Set notification channel for drops, points, bets or campaigns")
     @app_commands.describe(
-        type="What to post here: drops or points",
-        name="Instance name (default: 'default')",
+        type="What to post here",
+        name="Instance name — use 'all' to set for all linked accounts",
     )
     @app_commands.choices(type=[
         app_commands.Choice(name="drops", value="drops"),
         app_commands.Choice(name="points", value="points"),
+        app_commands.Choice(name="bets", value="bets"),
+        app_commands.Choice(name="campaigns", value="campaigns"),
     ])
-    @app_commands.autocomplete(name=name_autocomplete)
-    async def cmd_setchannel(interaction: discord.Interaction, type: str, name: str = "default"):
+    @app_commands.autocomplete(name=name_autocomplete_with_all)
+    async def cmd_setchannel(interaction: discord.Interaction, type: str, name: str = "all"):
         uid = str(interaction.user.id)
-        pairing = get_user_pairing(bot.users_data, interaction.user.id, name)
-        if not pairing:
-            await interaction.response.send_message(embed=not_linked_embed(), ephemeral=True)
-            return
         channel_id = interaction.channel_id
         channel_name = interaction.channel.name if interaction.channel else str(channel_id)
         guild_name = interaction.guild.name if interaction.guild else ""
         new_entry = {"id": channel_id, "name": channel_name, "guild": guild_name}
 
-        channels = bot.users_data[uid][name].setdefault("channels", {})
-        existing = channels.get(type)
-        # Normalize to list of dicts
-        if existing is None:
-            channel_list = []
-        elif isinstance(existing, list):
-            channel_list = existing
-        else:
-            channel_list = [existing]
+        labels = {
+            "drops": "Drop notifications",
+            "points": "Channel Points notifications",
+            "bets": "Prediction (bet) results",
+            "campaigns": "Campaign ending soon alerts",
+        }
+        label = labels.get(type, type.capitalize())
 
-        # Check if this channel is already in the list (by ID)
-        existing_ids = [int(e["id"]) if isinstance(e, dict) else int(e) for e in channel_list if e]
-        if channel_id not in existing_ids:
-            channel_list.append(new_entry)
-        channels[type] = channel_list
+        target_names = list(bot.users_data.get(uid, {}).keys()) if name == "all" else [name]
+        if not target_names:
+            await interaction.response.send_message(embed=not_linked_embed(), ephemeral=True)
+            return
+
+        updated = []
+        for inst_name in target_names:
+            pairing = get_user_pairing(bot.users_data, interaction.user.id, inst_name)
+            if not pairing:
+                continue
+            channels = bot.users_data[uid][inst_name].setdefault("channels", {})
+            existing = channels.get(type)
+            if existing is None:
+                channel_list = []
+            elif isinstance(existing, list):
+                channel_list = existing
+            else:
+                channel_list = [existing]
+            existing_ids = [int(e["id"]) if isinstance(e, dict) else int(e) for e in channel_list if e]
+            if channel_id not in existing_ids:
+                channel_list.append(new_entry)
+            channels[type] = channel_list
+            updated.append(inst_name)
+
+        if not updated:
+            await interaction.response.send_message(embed=not_linked_embed(), ephemeral=True)
+            return
+
         save_pairings(bot.users_data)
-        label = "Drop notifications" if type == "drops" else "Channel Points notifications"
-        if len(channel_list) > 1:
+        if len(updated) > 1:
+            instances_str = ", ".join(f"`{n}`" for n in updated)
             await interaction.response.send_message(
-                embed=success_embed(f"✅ {label} will now also be posted in <#{channel_id}>.\n({len(channel_list)} channels total)"),
+                embed=success_embed(f"✅ {label} will be posted in <#{channel_id}> for all instances: {instances_str}"),
                 ephemeral=True,
             )
         else:
@@ -857,6 +1037,50 @@ def register_commands(bot: TwitchDropsBot):
                 embed=success_embed(f"✅ {label} will now be posted in <#{channel_id}>."),
                 ephemeral=True,
             )
+
+    @bot.tree.command(name="unsetchannel", description="Remove notification channel (this channel or all channels for a type)")
+    @app_commands.describe(
+        type="Which notification type to remove",
+        name="Instance name — use 'all' for all linked accounts",
+    )
+    @app_commands.choices(type=[
+        app_commands.Choice(name="drops", value="drops"),
+        app_commands.Choice(name="points", value="points"),
+        app_commands.Choice(name="bets", value="bets"),
+        app_commands.Choice(name="campaigns", value="campaigns"),
+        app_commands.Choice(name="all types", value="all"),
+    ])
+    @app_commands.autocomplete(name=name_autocomplete_with_all)
+    async def cmd_unsetchannel(interaction: discord.Interaction, type: str, name: str = "all"):
+        uid = str(interaction.user.id)
+        target_names = list(bot.users_data.get(uid, {}).keys()) if name == "all" else [name]
+        if not target_names:
+            await interaction.response.send_message(embed=not_linked_embed(), ephemeral=True)
+            return
+
+        types_to_clear = ["drops", "points", "bets", "campaigns"] if type == "all" else [type]
+        cleared = []
+        for inst_name in target_names:
+            pairing = get_user_pairing(bot.users_data, interaction.user.id, inst_name)
+            if not pairing:
+                continue
+            channels = bot.users_data[uid][inst_name].setdefault("channels", {})
+            for t in types_to_clear:
+                if channels.get(t):
+                    channels[t] = None
+            cleared.append(inst_name)
+
+        if not cleared:
+            await interaction.response.send_message(embed=not_linked_embed(), ephemeral=True)
+            return
+
+        save_pairings(bot.users_data)
+        type_str = "all types" if type == "all" else type
+        inst_str = ", ".join(f"`{n}`" for n in cleared)
+        await interaction.response.send_message(
+            embed=success_embed(f"✅ Cleared **{type_str}** notification channels for {inst_str}."),
+            ephemeral=True,
+        )
 
     @bot.tree.command(name="dashboard", description="Post a live-updating stats embed with control buttons")
     @app_commands.describe(name="Instance name (default: 'default')")
@@ -900,7 +1124,7 @@ def register_commands(bot: TwitchDropsBot):
                 return
             await interaction.response.defer(ephemeral=True)
             async with aiohttp.ClientSession() as session:
-                embed = await bot._build_global_stats(session)
+                embed = await bot._build_global_stats(session, str(interaction.user.id))
             msg = await interaction.channel.send(embed=embed)
             bot._live_stats_messages[interaction.channel_id] = msg.id
             save_live_stats(bot._live_stats_messages)
@@ -913,7 +1137,7 @@ def register_commands(bot: TwitchDropsBot):
                 return
             await interaction.response.defer()
             async with aiohttp.ClientSession() as session:
-                embed = await bot._build_global_stats(session)
+                embed = await bot._build_global_stats(session, str(interaction.user.id))
             await interaction.message.edit(embed=embed, view=self)
 
     @bot.tree.command(name="devpanel", description="Developer panel — restricted")
@@ -923,7 +1147,7 @@ def register_commands(bot: TwitchDropsBot):
             return
         await interaction.response.defer(ephemeral=True)
         async with aiohttp.ClientSession() as session:
-            embed = await bot._build_global_stats(session)
+            embed = await bot._build_global_stats(session, str(interaction.user.id))
         view = DevPanelView()
         await interaction.followup.send(embed=embed, view=view, ephemeral=True)
 
