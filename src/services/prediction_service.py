@@ -123,6 +123,13 @@ class PredictionService:
         elif msg_type == "event-updated":
             if event_id in self._active_events:
                 self._active_events[event_id] = event
+            # Twitch resolves predictions via event-updated with status RESOLVED (no separate event-ended)
+            if event.get("status") == "RESOLVED":
+                if event_id in self._pending:
+                    self._pending[event_id].cancel()
+                    del self._pending[event_id]
+                self._active_events.pop(event_id, None)
+                await self._record_result(event_id, event, channel.name)
 
         elif msg_type in ("event-locked", "event-ended"):
             if event_id in self._pending:
