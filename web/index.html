@@ -611,6 +611,32 @@
                             <input type="number" id="set-bet-delay" onchange="saveSettings()" min="5" max="120" class="settings-input" style="max-width:100px;">
                         </label>
                     </section>
+
+                    <section class="settings-section">
+                        <h2>📋 Channel Whitelist</h2>
+                        <p class="help-text">Only bet on predictions in these channels. Leave empty to bet on all channels.</p>
+                        <div id="pred-channels-tags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;min-height:32px;"></div>
+                        <div style="display:flex;gap:8px;">
+                            <input type="text" id="pred-channel-input" class="settings-input" placeholder="Channel name..." style="flex:1;" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9_]/g,'')">
+                            <button class="secondary-btn" onclick="addPredChannel()">Add</button>
+                        </div>
+                    </section>
+
+                    <section class="settings-section">
+                        <h2>⚙️ Per-Channel Strategy</h2>
+                        <p class="help-text">Override the global strategy for specific channels.</p>
+                        <div id="channel-strategies-list" style="margin-bottom:10px;"></div>
+                        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                            <input type="text" id="cs-channel-input" class="settings-input" placeholder="Channel name..." style="flex:1;min-width:120px;" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9_]/g,'')">
+                            <select id="cs-strategy-input" class="settings-select">
+                                <option value="SMART">SMART</option>
+                                <option value="PERCENTAGE">PERCENTAGE</option>
+                                <option value="HIGH_ODDS">HIGH_ODDS</option>
+                                <option value="MOST_VOTED">MOST_VOTED</option>
+                            </select>
+                            <button class="secondary-btn" onclick="addChannelStrategy()">Add</button>
+                        </div>
+                    </section>
                 </div>
 
             </div>
