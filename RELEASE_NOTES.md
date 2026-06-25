@@ -1,25 +1,25 @@
 # Release Notes - v1.3.8
 
-Per-Channel Advanced Settings — vollständige Kontrolle über Betting-Parameter pro Kanal, plus Prediction-Statistiken im Dashboard und Discord-Bot Verbesserungen.
+Full per-channel control over betting parameters, prediction stats in the dashboard, and Discord bot improvements.
 
-### 🎯 Per-Channel Betting Parameters
-- **Granulare Einstellungen pro Kanal**: Strategy, Bet %, betMax, betMin und Delay lassen sich jetzt individuell pro Kanal konfigurieren
-- Verschiedene Streamer, verschiedene Dynamiken — jetzt komplett flexibel einstellbar
+### 🎯 Per-Channel Advanced Betting Settings
+- **Granular per-channel config**: Strategy, Bet %, betMax, betMin and Delay before lock can now be set individually per channel
+- Different streamers, different dynamics — now fully flexible
 
-### 📊 Prediction Stats im Dashboard
-- **Win/Loss Übersicht**: Wins, Losses, Win-Rate und Net-Punkte direkt im Dashboard
-- **Top Strategy** wird angezeigt
-- `/stats` Befehl zeigt jetzt nur die eigenen Daten an
+### 📊 Prediction Stats in Dashboard
+- **Win/Loss overview**: Wins, Losses, Win Rate and Net points shown directly in the dashboard embed
+- **Top Strategy** displayed automatically
+- `/stats` command now shows only your own data
 
-### 🔔 Discord Bot
-- **`/setchannel`** unterstützt jetzt `all` — alle Instanzen auf einmal konfigurieren
-- **`/unsetchannel`** neu: Notification-Channels entfernen (drops, points, bets, campaigns)
-- **`/setchannel`** unterstützt neue Typen: `bets` und `campaigns`
+### 🔔 Discord Bot Improvements
+- **`/setchannel`** now supports `all` — configure all instances at once
+- **`/unsetchannel`** new command: remove notification channels (drops, points, bets, campaigns)
+- New notification types: `bets` and `campaigns`
 
 ### 🐛 Bug Fixes
-- Prediction-Ergebnisse werden korrekt erkannt (RESOLVED status via event-updated)
-- Filter-linked Checkbox State wird beim Laden korrekt wiederhergestellt
-- Auto-Bet Einstellungen werden sofort übernommen wenn aktiviert
+- Prediction results now correctly detected via RESOLVED status in event-updated
+- Filter-linked checkbox state correctly restored on settings load
+- Auto-Bet settings apply immediately when enabled
 
 # Release Notes - v1.2.5
 
