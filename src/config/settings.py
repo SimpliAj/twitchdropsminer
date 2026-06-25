@@ -76,6 +76,7 @@ default_settings = {
     "bet_minimum_points": 1000,
     "bet_percentage_gap": 20,
     "bet_delay_seconds": 30,
+    "prediction_channels": [],
 }
 
 
@@ -114,6 +115,7 @@ class Settings:
     bet_minimum_points: int
     bet_percentage_gap: int
     bet_delay_seconds: int
+    prediction_channels: list[str]
 
     def __init__(self):
         self.load()
