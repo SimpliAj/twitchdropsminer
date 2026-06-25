@@ -2533,17 +2533,26 @@ function renderChannelStrategies(strategies) {
         row.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:6px;';
         const name = document.createElement('span');
         name.textContent = ch;
+        name.dataset.channel = ch;
         name.style.cssText = 'flex:1;font-size:0.9rem;color:#efeff1;';
-        const badge = document.createElement('span');
-        badge.textContent = strat;
-        badge.style.cssText = 'background:#3a3a4a;border-radius:4px;padding:2px 8px;font-size:0.8rem;color:#adadb8;';
+        const sel = document.createElement('select');
+        sel.className = 'settings-select';
+        sel.style.cssText = 'width:auto;';
+        ['SMART','PERCENTAGE','HIGH_ODDS','MOST_VOTED'].forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s;
+            opt.textContent = s;
+            if (s === strat) opt.selected = true;
+            sel.appendChild(opt);
+        });
+        sel.onchange = saveSettings;
         const btn = document.createElement('button');
         btn.textContent = 'Remove';
         btn.className = 'secondary-btn';
         btn.style.cssText = 'padding:2px 8px;font-size:0.8rem;';
         btn.onclick = () => { row.remove(); saveSettings(); };
         row.appendChild(name);
-        row.appendChild(badge);
+        row.appendChild(sel);
         row.appendChild(btn);
         container.appendChild(row);
     });
@@ -2554,8 +2563,9 @@ function getChannelStrategies() {
     if (!container) return {};
     const result = {};
     container.querySelectorAll('div').forEach(row => {
-        const spans = row.querySelectorAll('span');
-        if (spans.length >= 2) result[spans[0].textContent.trim()] = spans[1].textContent.trim();
+        const name = row.querySelector('span[data-channel]');
+        const sel = row.querySelector('select');
+        if (name && sel) result[name.dataset.channel] = sel.value;
     });
     return result;
 }
