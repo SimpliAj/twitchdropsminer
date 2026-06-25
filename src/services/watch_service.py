@@ -180,6 +180,19 @@ class WatchService:
             self._twitch.print(status_text)
             self._twitch.gui.status.update(status_text)
 
+    def subscribe_predictions_now(self) -> None:
+        channel = self._twitch.watching_channel.get_with_default(None)
+        if channel is None:
+            return
+        try:
+            self._twitch.websocket.add_topics([WebsocketTopic(
+                "Channel", "Predictions", channel.id,
+                self._twitch._prediction_service.process_prediction,
+            )])
+            logger.info(f"Predictions subscribed live for {channel.name}")
+        except MinerException:
+            logger.warning(f"Topic limit — Predictions skipped for {channel.name}")
+
     def stop_watching(self) -> None:
         """
         Stop watching the current channel.
