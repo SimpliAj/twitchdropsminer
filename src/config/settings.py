@@ -77,6 +77,7 @@ default_settings = {
     "bet_percentage_gap": 20,
     "bet_delay_seconds": 30,
     "prediction_channels": [],
+    "channel_strategies": {},
 }
 
 
@@ -116,6 +117,7 @@ class Settings:
     bet_percentage_gap: int
     bet_delay_seconds: int
     prediction_channels: list[str]
+    channel_strategies: dict[str, str]
 
     def __init__(self):
         self.load()

@@ -1887,6 +1887,8 @@ function updateSettingsUI(settings) {
     if (betMin) betMin.value = settings.bet_minimum_points ?? 1000;
     const betDelay = document.getElementById('set-bet-delay');
     if (betDelay) betDelay.value = settings.bet_delay_seconds ?? 30;
+    renderPredChannels(settings.prediction_channels || []);
+    renderChannelStrategies(settings.channel_strategies || {});
 
     // Re-render inventory to apply filters
     renderInventory();
@@ -2478,6 +2480,97 @@ async function verifyProxy() {
     }
 }
 
+function renderPredChannels(channels) {
+    const container = document.getElementById('pred-channels-tags');
+    if (!container) return;
+    container.innerHTML = '';
+    channels.forEach(ch => {
+        const tag = document.createElement('span');
+        tag.style.cssText = 'display:inline-flex;align-items:center;gap:4px;background:#3a3a4a;border-radius:12px;padding:3px 10px;font-size:0.85rem;';
+        const name = document.createElement('span');
+        name.textContent = ch;
+        const btn = document.createElement('button');
+        btn.textContent = '×';
+        btn.style.cssText = 'background:none;border:none;color:#adadb8;cursor:pointer;font-size:1rem;padding:0;line-height:1;';
+        btn.onclick = () => { tag.remove(); saveSettings(); };
+        tag.appendChild(name);
+        tag.appendChild(btn);
+        container.appendChild(tag);
+    });
+}
+
+function getPredChannels() {
+    const container = document.getElementById('pred-channels-tags');
+    if (!container) return [];
+    return Array.from(container.querySelectorAll('span > span')).map(el => el.textContent.trim()).filter(Boolean);
+}
+
+function addPredChannel() {
+    const input = document.getElementById('pred-channel-input');
+    if (!input) return;
+    const val = input.value.trim().toLowerCase();
+    if (!val || !/^[a-z0-9_]{1,25}$/.test(val)) return;
+    const existing = getPredChannels();
+    if (existing.includes(val)) { input.value = ''; return; }
+    renderPredChannels([...existing, val]);
+    input.value = '';
+    saveSettings();
+}
+
+document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && document.activeElement?.id === 'pred-channel-input') addPredChannel();
+    if (e.key === 'Enter' && document.activeElement?.id === 'cs-channel-input') addChannelStrategy();
+});
+
+function renderChannelStrategies(strategies) {
+    const container = document.getElementById('channel-strategies-list');
+    if (!container) return;
+    container.innerHTML = '';
+    Object.entries(strategies).forEach(([ch, strat]) => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:6px;';
+        const name = document.createElement('span');
+        name.textContent = ch;
+        name.style.cssText = 'flex:1;font-size:0.9rem;color:#efeff1;';
+        const badge = document.createElement('span');
+        badge.textContent = strat;
+        badge.style.cssText = 'background:#3a3a4a;border-radius:4px;padding:2px 8px;font-size:0.8rem;color:#adadb8;';
+        const btn = document.createElement('button');
+        btn.textContent = 'Remove';
+        btn.className = 'secondary-btn';
+        btn.style.cssText = 'padding:2px 8px;font-size:0.8rem;';
+        btn.onclick = () => { row.remove(); saveSettings(); };
+        row.appendChild(name);
+        row.appendChild(badge);
+        row.appendChild(btn);
+        container.appendChild(row);
+    });
+}
+
+function getChannelStrategies() {
+    const container = document.getElementById('channel-strategies-list');
+    if (!container) return {};
+    const result = {};
+    container.querySelectorAll('div').forEach(row => {
+        const spans = row.querySelectorAll('span');
+        if (spans.length >= 2) result[spans[0].textContent.trim()] = spans[1].textContent.trim();
+    });
+    return result;
+}
+
+function addChannelStrategy() {
+    const chInput = document.getElementById('cs-channel-input');
+    const stInput = document.getElementById('cs-strategy-input');
+    if (!chInput || !stInput) return;
+    const ch = chInput.value.trim().toLowerCase();
+    if (!ch || !/^[a-z0-9_]{1,25}$/.test(ch)) return;
+    const existing = getChannelStrategies();
+    existing[ch] = stInput.value;
+    renderChannelStrategies(existing);
+    chInput.value = '';
+    saveSettings();
+}
+
 async function saveSettings() {
     const settings = {
         dark_mode: document.getElementById('dark-mode').checked,
@@ -2514,6 +2607,8 @@ async function saveSettings() {
         bet_max_points: parseInt(document.getElementById('set-bet-max')?.value) || 50000,
         bet_minimum_points: parseInt(document.getElementById('set-bet-min')?.value) || 1000,
         bet_delay_seconds: parseInt(document.getElementById('set-bet-delay')?.value) || 30,
+        prediction_channels: getPredChannels(),
+        channel_strategies: getChannelStrategies(),
     };
 
     try {

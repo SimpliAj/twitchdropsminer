@@ -52,9 +52,11 @@ class PredictionService:
     def _get_channel_settings(self, channel_login: str) -> dict:
         overrides = _load_overrides().get(channel_login.lower(), {})
         s = self._twitch.settings
+        ch = channel_login.lower()
+        ui_strategy = s.channel_strategies.get(ch) if hasattr(s, "channel_strategies") else None
         return {
             "make_predictions": overrides.get("make_predictions", s.make_predictions),
-            "bet_strategy": overrides.get("bet_strategy", s.bet_strategy),
+            "bet_strategy": overrides.get("bet_strategy", ui_strategy or s.bet_strategy),
             "bet_percentage": overrides.get("bet_percentage", s.bet_percentage),
             "bet_max_points": overrides.get("bet_max_points", s.bet_max_points),
             "bet_minimum_points": overrides.get("bet_minimum_points", s.bet_minimum_points),
