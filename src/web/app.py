@@ -387,6 +387,7 @@ class SettingsUpdate(BaseModel):
     bet_max_points: int | None = None
     bet_minimum_points: int | None = None
     bet_delay_seconds: int | None = None
+    prediction_channels: list[str] | None = None
 
 
 class ProxyVerifyRequest(BaseModel):

@@ -102,6 +102,10 @@ class PredictionService:
         if not cfg["make_predictions"]:
             return
 
+        whitelist = [c.lower() for c in self._twitch.settings.prediction_channels]
+        if whitelist and channel.name.lower() not in whitelist:
+            return
+
         event = message.get("data", {}).get("event", {})
         event_id = event.get("id", "")
         msg_type = message.get("type", "")
