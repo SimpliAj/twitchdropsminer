@@ -1,3 +1,26 @@
+# Release Notes - v1.3.8
+
+Per-Channel Advanced Settings — vollständige Kontrolle über Betting-Parameter pro Kanal, plus Prediction-Statistiken im Dashboard und Discord-Bot Verbesserungen.
+
+### 🎯 Per-Channel Betting Parameters
+- **Granulare Einstellungen pro Kanal**: Strategy, Bet %, betMax, betMin und Delay lassen sich jetzt individuell pro Kanal konfigurieren
+- Verschiedene Streamer, verschiedene Dynamiken — jetzt komplett flexibel einstellbar
+
+### 📊 Prediction Stats im Dashboard
+- **Win/Loss Übersicht**: Wins, Losses, Win-Rate und Net-Punkte direkt im Dashboard
+- **Top Strategy** wird angezeigt
+- `/stats` Befehl zeigt jetzt nur die eigenen Daten an
+
+### 🔔 Discord Bot
+- **`/setchannel`** unterstützt jetzt `all` — alle Instanzen auf einmal konfigurieren
+- **`/unsetchannel`** neu: Notification-Channels entfernen (drops, points, bets, campaigns)
+- **`/setchannel`** unterstützt neue Typen: `bets` und `campaigns`
+
+### 🐛 Bug Fixes
+- Prediction-Ergebnisse werden korrekt erkannt (RESOLVED status via event-updated)
+- Filter-linked Checkbox State wird beim Laden korrekt wiederhergestellt
+- Auto-Bet Einstellungen werden sofort übernommen wenn aktiviert
+
 # Release Notes - v1.2.5
 
 ## 🤖 Discord Bot Integration
