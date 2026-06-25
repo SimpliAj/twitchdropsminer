@@ -305,6 +305,7 @@
                         <h2 id="settings-password-header">Login & Password</h2>
                         <div id="pw-status-badge" style="margin-bottom:10px;font-size:.82rem;color:#adadb8"></div>
                         <form onsubmit="return false;" autocomplete="off">
+                        <input type="text" name="username" autocomplete="username" style="display:none" aria-hidden="true">
                         <div class="form-row">
                             <label id="pw-current-label" class="form-label">Current</label>
                             <input type="password" id="pw-current" class="form-input" placeholder="Leave empty if none" autocomplete="current-password">
@@ -1272,7 +1273,7 @@ TDM_PORT=8080 WEB_PASSWORD=mysecretpassword pm2 start main.py --name twitchdrops
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" integrity="sha384-e6nUZLBkQ86NJ6TVVKAeSaK8jWa3NhkYWZFomE39AvDbQWeie9PlQqM3pmYW5d1g" crossorigin="anonymous"></script>
-    <script src="/static/app.js?v=461780de"></script>
+    <script src="/static/app.js?v=df8cc4e2"></script>
 </body>
 
 </html>
