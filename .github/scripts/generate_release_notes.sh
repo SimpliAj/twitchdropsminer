@@ -29,16 +29,9 @@ if [ -z "$VERSION" ]; then
   exit 1
 fi
 
-if [ -z "$GEMINI_API_KEY" ]; then
-  echo "❌ Error: GEMINI_API_KEY argument required"
-  echo "Usage: $0 -v <version> -k <gemini_api_key> [-p]"
-  exit 1
-fi
-
 # check if dry run
 if [ "$DRY_RUN" = "true" ]; then
   echo "🔍 Running in dry run mode. No files will be modified."
-# are we in CI? check CI env var
 elif [ "$CI" = "true" ]; then
   echo "⚠️ Running in CI production mode. RELEASE_NOTES.md will be updated if needed."
 else
@@ -46,7 +39,6 @@ else
   echo "Running in non-CI production mode. RELEASE_NOTES.md will be updated if needed."
   echo "Make sure you know what you're doing!"
   sleep 2
-  # need second confirmation
   read -r -p "Type 'CONFIRM' to proceed: " CONFIRMATION
   if [ "$CONFIRMATION" != "CONFIRM" ]; then
     echo "❌ Aborting."
@@ -56,14 +48,13 @@ else
   fi
 fi
 
-# Check if release notes exist for this version
+# Check if release notes exist for this version FIRST (before requiring API key)
 NEEDS_GENERATION=false
 
 if [ ! -f "RELEASE_NOTES.md" ]; then
   echo "RELEASE_NOTES.md not found, will generate"
   NEEDS_GENERATION=true
 else
-  # Check if version exists in the file
   if ! grep -q "# Release Notes - v$VERSION" RELEASE_NOTES.md; then
     echo "Version $VERSION not found in RELEASE_NOTES.md, will generate"
     NEEDS_GENERATION=true
@@ -73,6 +64,12 @@ fi
 if [ "$NEEDS_GENERATION" = "false" ]; then
   echo "✅ Release notes already exist for v$VERSION"
   exit 0
+fi
+
+if [ -z "$GEMINI_API_KEY" ]; then
+  echo "❌ Error: GEMINI_API_KEY argument required for generation"
+  echo "Usage: $0 -v <version> -k <gemini_api_key> [-p]"
+  exit 1
 fi
 
 echo "🤖 Generating release notes using Gemini AI..."
