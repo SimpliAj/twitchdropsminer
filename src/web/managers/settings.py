@@ -160,6 +160,12 @@ class SettingsManager:
         self.check_and_update_setting(
             "bet_delay_seconds", settings_data.get("bet_delay_seconds")
         )
+        self.check_and_update_setting(
+            "prediction_channels", settings_data.get("prediction_channels")
+        )
+        self.check_and_update_setting(
+            "channel_strategies", settings_data.get("channel_strategies")
+        )
 
         self._settings.save()
         asyncio.create_task(self._broadcaster.emit("settings_updated", self.get_settings()))
