@@ -63,6 +63,7 @@ class WebGUIManager:
             self._broadcaster, twitch.settings, self.output,
             on_change=on_settings_change,
             on_scheduler_change=twitch._scheduler_service.trigger_check,
+            on_predictions_enable=twitch._watch_service.subscribe_predictions_now,
         )
 
         # Selected channel tracking (set by web client)

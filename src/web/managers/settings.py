@@ -34,12 +34,14 @@ class SettingsManager:
         console: ConsoleOutputManager,
         on_change: Callable[[], None] | None = None,
         on_scheduler_change: Callable[[], None] | None = None,
+        on_predictions_enable: Callable[[], None] | None = None,
     ):
         self._broadcaster = broadcaster
         self._settings = settings
         self._console = console
         self._on_change = on_change
         self._on_scheduler_change = on_scheduler_change
+        self._on_predictions_enable = on_predictions_enable
         self._available_games: list[str] = []
 
     def get_settings(self) -> dict[str, Any]:
@@ -142,9 +144,12 @@ class SettingsManager:
         self.check_and_update_setting(
             "tab_counter_enabled", settings_data.get("tab_counter_enabled")
         )
+        prev_predictions = self._settings.make_predictions
         self.check_and_update_setting(
             "make_predictions", settings_data.get("make_predictions")
         )
+        if not prev_predictions and self._settings.make_predictions and self._on_predictions_enable:
+            self._on_predictions_enable()
         self.check_and_update_setting(
             "bet_strategy", settings_data.get("bet_strategy")
         )
