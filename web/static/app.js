@@ -1890,7 +1890,7 @@ function updateSettingsUI(settings) {
     const betDelay = document.getElementById('set-bet-delay');
     if (betDelay) betDelay.value = settings.bet_delay_seconds ?? 30;
     renderPredChannels(settings.prediction_channels || []);
-    renderChannelStrategies(settings.channel_strategies || {});
+    loadChannelOverrides(settings.channel_strategies || {});
 
     // Re-render inventory to apply filters
     renderInventory();
@@ -2521,66 +2521,185 @@ function addPredChannel() {
 
 document.addEventListener('keydown', e => {
     if (e.key === 'Enter' && document.activeElement?.id === 'pred-channel-input') addPredChannel();
-    if (e.key === 'Enter' && document.activeElement?.id === 'cs-channel-input') addChannelStrategy();
+    if (e.key === 'Enter' && document.activeElement?.id === 'co-channel-input') addChannelOverride();
 });
 
-function renderChannelStrategies(strategies) {
-    const container = document.getElementById('channel-strategies-list');
+async function loadChannelOverrides(legacyStrategies = {}) {
+    try {
+        const resp = await fetch(API_BASE + '/api/streamer-overrides');
+        const data = await resp.json();
+        let overrides = data.overrides || {};
+        if (Object.keys(overrides).length === 0 && Object.keys(legacyStrategies).length > 0) {
+            for (const [ch, strat] of Object.entries(legacyStrategies)) {
+                overrides[ch] = { bet_strategy: strat };
+            }
+        }
+        renderChannelOverrides(overrides);
+    } catch {}
+}
+
+function renderChannelOverrides(overrides) {
+    const container = document.getElementById('channel-overrides-table');
     if (!container) return;
     container.innerHTML = '';
-    Object.entries(strategies).forEach(([ch, strat]) => {
-        const row = document.createElement('div');
-        row.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:6px;';
-        const name = document.createElement('span');
-        name.textContent = ch;
-        name.dataset.channel = ch;
-        name.style.cssText = 'flex:1;font-size:0.9rem;color:#efeff1;';
-        const sel = document.createElement('select');
-        sel.className = 'settings-select';
-        sel.style.cssText = 'width:auto;';
-        ['SMART','PERCENTAGE','HIGH_ODDS','MOST_VOTED'].forEach(s => {
-            const opt = document.createElement('option');
-            opt.value = s;
-            opt.textContent = s;
-            if (s === strat) opt.selected = true;
-            sel.appendChild(opt);
-        });
-        sel.onchange = saveSettings;
-        const btn = document.createElement('button');
-        btn.textContent = 'Remove';
-        btn.className = 'secondary-btn';
-        btn.style.cssText = 'padding:2px 8px;font-size:0.8rem;';
-        btn.onclick = () => { row.remove(); saveSettings(); };
-        row.appendChild(name);
-        row.appendChild(sel);
-        row.appendChild(btn);
-        container.appendChild(row);
+    const entries = Object.entries(overrides);
+    if (entries.length === 0) {
+        const empty = document.createElement('div');
+        empty.style.cssText = 'color:#adadb8;font-size:0.85rem;padding:4px 0;';
+        empty.textContent = 'No per-channel overrides configured.';
+        container.appendChild(empty);
+        return;
+    }
+    const table = document.createElement('table');
+    table.style.cssText = 'width:100%;border-collapse:collapse;font-size:0.85rem;min-width:540px;';
+    const thead = document.createElement('thead');
+    const hrow = document.createElement('tr');
+    hrow.style.cssText = 'color:#adadb8;text-align:left;';
+    ['Channel','Strategy','Bet%','Max pts','Min bal','Delay(s)',''].forEach(label => {
+        const th = document.createElement('th');
+        th.style.cssText = 'padding:4px 8px;';
+        th.textContent = label;
+        hrow.appendChild(th);
     });
+    thead.appendChild(hrow);
+    table.appendChild(thead);
+    const tbody = document.createElement('tbody');
+    entries.forEach(([ch, ov]) => tbody.appendChild(_buildOverrideRow(ch, ov)));
+    table.appendChild(tbody);
+    container.appendChild(table);
+}
+
+function _buildOverrideRow(channel, ov) {
+    const tr = document.createElement('tr');
+    tr.dataset.channel = channel;
+    tr.style.cssText = 'border-top:1px solid #2a2a35;';
+
+    const tdCh = document.createElement('td');
+    tdCh.style.cssText = 'padding:6px 8px;color:#efeff1;font-weight:500;white-space:nowrap;';
+    tdCh.textContent = channel;
+    tr.appendChild(tdCh);
+
+    const tdStrat = document.createElement('td');
+    tdStrat.style.cssText = 'padding:4px 6px;';
+    const sel = document.createElement('select');
+    sel.className = 'settings-select';
+    sel.style.cssText = 'font-size:0.8rem;padding:2px 4px;';
+    ['SMART','PERCENTAGE','HIGH_ODDS','MOST_VOTED'].forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s; opt.textContent = s;
+        if ((ov.bet_strategy || 'SMART') === s) opt.selected = true;
+        sel.appendChild(opt);
+    });
+    sel.onchange = () => _commitOverrideRow(tr);
+    tdStrat.appendChild(sel);
+    tr.appendChild(tdStrat);
+
+    const numFields = [
+        { key: 'bet_percentage',    val: ov.bet_percentage,    min: 1,   max: 100, step: 1   },
+        { key: 'bet_max_points',    val: ov.bet_max_points,    min: 100, max: null, step: 100 },
+        { key: 'bet_minimum_points',val: ov.bet_minimum_points,min: 0,   max: null, step: 100 },
+        { key: 'bet_delay_seconds', val: ov.bet_delay_seconds, min: 5,   max: 120,  step: 5   },
+    ];
+    numFields.forEach(({ key, val, min, max, step }) => {
+        const td = document.createElement('td');
+        td.style.cssText = 'padding:4px 6px;';
+        const inp = document.createElement('input');
+        inp.type = 'number';
+        inp.className = 'settings-input';
+        inp.style.cssText = 'font-size:0.8rem;width:72px;padding:2px 4px;';
+        inp.dataset.key = key;
+        inp.placeholder = '(global)';
+        if (val !== undefined && val !== null) inp.value = val;
+        inp.min = min;
+        if (max !== null) inp.max = max;
+        inp.step = step;
+        inp.onchange = () => _commitOverrideRow(tr);
+        td.appendChild(inp);
+        tr.appendChild(td);
+    });
+
+    const tdRm = document.createElement('td');
+    tdRm.style.cssText = 'padding:4px 6px;';
+    const btn = document.createElement('button');
+    btn.textContent = 'Remove';
+    btn.className = 'secondary-btn';
+    btn.style.cssText = 'padding:2px 8px;font-size:0.8rem;color:#eb4a4a;border-color:#eb4a4a;white-space:nowrap;';
+    btn.onclick = () => _removeChannelOverride(channel, tr);
+    tdRm.appendChild(btn);
+    tr.appendChild(tdRm);
+
+    return tr;
+}
+
+async function _commitOverrideRow(tr) {
+    const channel = tr.dataset.channel;
+    const sel = tr.querySelector('select');
+    const overrides = { bet_strategy: sel.value };
+    tr.querySelectorAll('input[data-key]').forEach(inp => {
+        const v = inp.value.trim();
+        if (v !== '') {
+            const n = parseFloat(v);
+            if (!isNaN(n)) overrides[inp.dataset.key] = n;
+        }
+    });
+    try {
+        await fetch(API_BASE + '/api/streamer-overrides', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ channel, overrides })
+        });
+    } catch {}
+    saveSettings();
+}
+
+async function _removeChannelOverride(channel, tr) {
+    tr.remove();
+    const container = document.getElementById('channel-overrides-table');
+    if (container && !container.querySelector('tr[data-channel]')) {
+        const empty = document.createElement('div');
+        empty.style.cssText = 'color:#adadb8;font-size:0.85rem;padding:4px 0;';
+        empty.textContent = 'No per-channel overrides configured.';
+        container.replaceChildren(empty);
+    }
+    try {
+        await fetch(API_BASE + '/api/streamer-overrides', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ channel, overrides: {} })
+        });
+    } catch {}
+    saveSettings();
 }
 
 function getChannelStrategies() {
-    const container = document.getElementById('channel-strategies-list');
-    if (!container) return {};
     const result = {};
-    container.querySelectorAll('div').forEach(row => {
-        const name = row.querySelector('span[data-channel]');
-        const sel = row.querySelector('select');
-        if (name && sel) result[name.dataset.channel] = sel.value;
+    const container = document.getElementById('channel-overrides-table');
+    if (!container) return result;
+    container.querySelectorAll('tr[data-channel]').forEach(tr => {
+        const ch = tr.dataset.channel;
+        const sel = tr.querySelector('select');
+        if (ch && sel) result[ch] = sel.value;
     });
     return result;
 }
 
-function addChannelStrategy() {
-    const chInput = document.getElementById('cs-channel-input');
-    const stInput = document.getElementById('cs-strategy-input');
-    if (!chInput || !stInput) return;
-    const ch = chInput.value.trim().toLowerCase();
+function addChannelOverride() {
+    const input = document.getElementById('co-channel-input');
+    if (!input) return;
+    const ch = input.value.trim().toLowerCase();
     if (!ch || !/^[a-z0-9_]{1,25}$/.test(ch)) return;
-    const existing = getChannelStrategies();
-    existing[ch] = stInput.value;
-    renderChannelStrategies(existing);
-    chInput.value = '';
-    saveSettings();
+    const container = document.getElementById('channel-overrides-table');
+    if (container && container.querySelector(`tr[data-channel="${ch}"]`)) { input.value = ''; return; }
+
+    let tbody = container ? container.querySelector('tbody') : null;
+    if (!tbody) {
+        renderChannelOverrides({ [ch]: {} });
+    } else {
+        tbody.appendChild(_buildOverrideRow(ch, {}));
+    }
+    input.value = '';
+    const newRow = container ? container.querySelector(`tr[data-channel="${ch}"]`) : null;
+    if (newRow) _commitOverrideRow(newRow);
 }
 
 async function saveSettings() {
