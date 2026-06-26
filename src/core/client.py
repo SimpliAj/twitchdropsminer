@@ -343,6 +343,20 @@ class Twitch:
                                         self._idle_topic_ids.append(cp_topic_id)
                                     except Exception:
                                         logger.warning(f"CP topic limit — skipping {ch.name}")
+                        # Bug 3 fix: subscribe Predictions for ALL parallel idle channels
+                        # (not just the primary — ch[0] already gets Predictions via watch()).
+                        if self.settings.make_predictions:
+                            for ch in idle_chs[1:]:
+                                pred_topic_id = WebsocketTopic.as_str("Channel", "Predictions", ch.id)
+                                if pred_topic_id not in self._idle_topic_ids:
+                                    try:
+                                        self.websocket.add_topics([WebsocketTopic(
+                                            "Channel", "Predictions", ch.id,
+                                            self._message_handler_service.process_prediction,
+                                        )])
+                                        self._idle_topic_ids.append(pred_topic_id)
+                                    except Exception:
+                                        logger.warning(f"Predictions topic limit — skipping {ch.name}")
                     else:
                         logger.info("Idle watch: no idle channels online")
                 # clear the flag and wait until it's set again

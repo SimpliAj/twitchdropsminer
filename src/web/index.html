@@ -135,10 +135,12 @@
                     <h2>Login</h2>
                     <div id="login-status" class="login-status"></div>
                     <div id="login-form" style="display: none;">
-                        <input type="text" id="username" placeholder="Username" />
-                        <input type="password" id="password" placeholder="Password" />
+                        <form onsubmit="return false;">
+                        <input type="text" id="username" placeholder="Username" autocomplete="username" />
+                        <input type="password" id="password" placeholder="Password" autocomplete="current-password" />
                         <input type="text" id="2fa-token" placeholder="2FA Token (optional)" />
                         <button id="login-button">Login</button>
+                        </form>
                     </div>
                     <div id="oauth-code-display" style="display: none;">
                         <p>Enter this code at: <a id="oauth-url" href="#" target="_blank">Twitch Activate</a></p>
@@ -302,18 +304,21 @@
                     <section class="settings-section">
                         <h2 id="settings-password-header">Login & Password</h2>
                         <div id="pw-status-badge" style="margin-bottom:10px;font-size:.82rem;color:#adadb8"></div>
+                        <form onsubmit="return false;" autocomplete="off">
+                        <input type="text" name="username" autocomplete="username" style="display:none" aria-hidden="true">
                         <div class="form-row">
                             <label id="pw-current-label" class="form-label">Current</label>
-                            <input type="password" id="pw-current" class="form-input" placeholder="Leave empty if none">
+                            <input type="password" id="pw-current" class="form-input" placeholder="Leave empty if none" autocomplete="current-password">
                         </div>
                         <div class="form-row">
                             <label id="pw-new-label" class="form-label">New</label>
-                            <input type="password" id="pw-new" class="form-input" placeholder="New password (empty = disable)">
+                            <input type="password" id="pw-new" class="form-input" placeholder="New password (empty = disable)" autocomplete="new-password">
                         </div>
                         <div class="form-row">
                             <label id="pw-confirm-label" class="form-label">Confirm</label>
-                            <input type="password" id="pw-new2" class="form-input" placeholder="Repeat new password">
+                            <input type="password" id="pw-new2" class="form-input" placeholder="Repeat new password" autocomplete="new-password">
                         </div>
+                        </form>
                         <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
                             <button id="pw-save-btn" class="action-button" style="flex:1">Save</button>
                             <button id="pw-disable-btn" class="action-button" style="flex:1;background:transparent;border:1px solid #3d3d4a;color:#adadb8">Disable Login</button>
@@ -622,19 +627,13 @@
                         </div>
                     </section>
 
-                    <section class="settings-section">
-                        <h2>⚙️ Per-Channel Strategy</h2>
-                        <p class="help-text">Override the global strategy for specific channels.</p>
-                        <div id="channel-strategies-list" style="margin-bottom:10px;"></div>
+                    <section class="settings-section" style="grid-column: 1 / -1;">
+                        <h2>⚙️ Per-Channel Overrides</h2>
+                        <p class="help-text">Override global prediction settings per channel. Leave a field empty to use the global value.</p>
+                        <div id="channel-overrides-table" style="margin-bottom:12px;overflow-x:auto;"></div>
                         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                            <input type="text" id="cs-channel-input" class="settings-input" placeholder="Channel name..." style="flex:1;min-width:120px;" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9_]/g,'')">
-                            <select id="cs-strategy-input" class="settings-select">
-                                <option value="SMART">SMART</option>
-                                <option value="PERCENTAGE">PERCENTAGE</option>
-                                <option value="HIGH_ODDS">HIGH_ODDS</option>
-                                <option value="MOST_VOTED">MOST_VOTED</option>
-                            </select>
-                            <button class="secondary-btn" onclick="addChannelStrategy()">Add</button>
+                            <input type="text" id="co-channel-input" class="settings-input" placeholder="Channel name..." style="flex:1;min-width:140px;" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9_]/g,'')">
+                            <button class="secondary-btn" onclick="addChannelOverride()">Add Channel</button>
                         </div>
                     </section>
                 </div>
@@ -1268,7 +1267,7 @@ TDM_PORT=8080 WEB_PASSWORD=mysecretpassword pm2 start main.py --name twitchdrops
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" integrity="sha384-e6nUZLBkQ86NJ6TVVKAeSaK8jWa3NhkYWZFomE39AvDbQWeie9PlQqM3pmYW5d1g" crossorigin="anonymous"></script>
-    <script src="/static/app.js?v=461780de"></script>
+    <script src="/static/app.js?v=df8cc4e2"></script>
 </body>
 
 </html>
