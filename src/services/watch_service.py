@@ -181,17 +181,27 @@ class WatchService:
             self._twitch.gui.status.update(status_text)
 
     def subscribe_predictions_now(self) -> None:
-        channel = self._twitch.watching_channel.get_with_default(None)
-        if channel is None:
-            return
-        try:
-            self._twitch.websocket.add_topics([WebsocketTopic(
-                "Channel", "Predictions", channel.id,
-                self._twitch._prediction_service.process_prediction,
-            )])
-            logger.info(f"Predictions subscribed live for {channel.name}")
-        except MinerException:
-            logger.warning(f"Topic limit — Predictions skipped for {channel.name}")
+        # In parallel idle mode subscribe predictions for every idle channel;
+        # otherwise subscribe only for the single watching channel (Bug 2 fix —
+        # prevents subscribing to the wrong channel when idle_parallel is OFF).
+        idle_parallel = getattr(self._twitch.settings, "idle_parallel", True)
+        idle_set = self._twitch._idle_channels_set
+        if idle_parallel and idle_set:
+            channels = [ch for ch in idle_set if ch.online]
+        else:
+            ch = self._twitch.watching_channel.get_with_default(None)
+            channels = [ch] if ch is not None else []
+
+        for ch in channels:
+            try:
+                self._twitch.websocket.add_topics([WebsocketTopic(
+                    "Channel", "Predictions", ch.id,
+                    self._twitch._prediction_service.process_prediction,
+                )])
+                logger.info(f"Predictions subscribed live for {ch.name}")
+            except MinerException:
+                logger.warning(f"Topic limit — Predictions skipped for {ch.name}")
+                break
 
     def stop_watching(self) -> None:
         """
@@ -266,8 +276,11 @@ class WatchService:
                 asyncio.create_task(channel._send_watch_spade())
 
             # Multi-channel idle: also send watch to all other idle channels
+            # Only do this when parallel idle is explicitly enabled — avoids spurious
+            # "Watch sent OK" logs for a second channel when parallel is OFF (Bug 1).
+            idle_parallel = getattr(self._twitch.settings, "idle_parallel", True)
             idle_set = self._twitch._idle_channels_set
-            if idle_set:
+            if idle_parallel and idle_set:
                 for idle_ch in list(idle_set):
                     if idle_ch is channel or not idle_ch.online:
                         continue
