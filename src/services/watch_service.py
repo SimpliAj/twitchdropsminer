@@ -163,14 +163,16 @@ class WatchService:
             except MinerException:
                 logger.warning(f"Topic limit — Moments topic skipped for {channel.name}")
         if self._twitch.settings.make_predictions:
-            try:
-                self._twitch.websocket.add_topics([WebsocketTopic(
-                    "Channel", "Predictions", channel.id,
-                    self._twitch._prediction_service.process_prediction,
-                )])
-                logger.info(f"Predictions subscribed for {channel.name}")
-            except MinerException:
-                logger.warning(f"Topic limit — Predictions topic skipped for {channel.name}")
+            whitelist = [c.lower() for c in self._twitch.settings.prediction_channels]
+            if not whitelist or channel.name.lower() in whitelist:
+                try:
+                    self._twitch.websocket.add_topics([WebsocketTopic(
+                        "Channel", "Predictions", channel.id,
+                        self._twitch._prediction_service.process_prediction,
+                    )])
+                    logger.info(f"Predictions subscribed for {channel.name}")
+                except MinerException:
+                    logger.warning(f"Topic limit — Predictions topic skipped for {channel.name}")
 
         if update_status:
             # Check if manual mode is active for custom status message
@@ -182,9 +184,6 @@ class WatchService:
             self._twitch.gui.status.update(status_text)
 
     def subscribe_predictions_now(self) -> None:
-        # In parallel idle mode subscribe predictions for every idle channel;
-        # otherwise subscribe only for the single watching channel (Bug 2 fix —
-        # prevents subscribing to the wrong channel when idle_parallel is OFF).
         idle_parallel = getattr(self._twitch.settings, "idle_parallel", True)
         idle_set = self._twitch._idle_channels_set
         if idle_parallel and idle_set:
@@ -193,7 +192,10 @@ class WatchService:
             ch = self._twitch.watching_channel.get_with_default(None)
             channels = [ch] if ch is not None else []
 
+        whitelist = [c.lower() for c in self._twitch.settings.prediction_channels]
         for ch in channels:
+            if whitelist and ch.name.lower() not in whitelist:
+                continue
             try:
                 self._twitch.websocket.add_topics([WebsocketTopic(
                     "Channel", "Predictions", ch.id,
