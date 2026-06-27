@@ -38,11 +38,16 @@ class CampaignAlertService:
     def _get_campaigns_to_alert(self, campaigns: list[DropsCampaign]) -> list[DropsCampaign]:
         now = datetime.now(timezone.utc)
         threshold = now + timedelta(hours=_ALERT_THRESHOLD_HOURS)
+        wanted = self._twitch.wanted_games
         result = []
         for c in campaigns:
             if c.id in self._alerted:
                 continue
             if c.finished:
+                continue
+            if c.remaining_drops <= 0:
+                continue
+            if wanted and c.game not in wanted:
                 continue
             if c.ends_at <= threshold:
                 result.append(c)
