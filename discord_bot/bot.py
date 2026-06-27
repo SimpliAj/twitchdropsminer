@@ -740,8 +740,9 @@ class TwitchDropsBot(discord.Client):
                                         )
                                         embed.add_field(name="Channel", value=pred.get("channel", "?"), inline=True)
                                         embed.add_field(name="Prediction", value=pred.get("title", "?")[:100], inline=False)
+                                        profit = pts_won - pts_bet if result == "WIN" else -pts_bet
                                         embed.add_field(name="Bet", value=f"{pts_bet:,} pts on {pred.get('outcome_chosen','?')}", inline=True)
-                                        embed.add_field(name="Won", value=f"{pts_won:,} pts" if result == "WIN" else "0 pts", inline=True)
+                                        embed.add_field(name="Profit", value=f"+{profit:,} pts" if result == "WIN" else f"−{pts_bet:,} pts", inline=True)
                                         make_footer(embed, pairing)
                                         await bets_ch.send(embed=embed)
                             if new_seen:
@@ -755,6 +756,15 @@ class TwitchDropsBot(discord.Client):
                         try:
                             camp_data = await api_get(session, pairing["url"], pairing["token"], "/api/campaigns")
                             campaigns_list = camp_data.get("campaigns", []) if isinstance(camp_data, dict) else []
+                            # Only alert for user's wanted games
+                            try:
+                                wanted_resp = await api_get(session, pairing["url"], pairing["token"], "/api/wanted-items")
+                                wanted_names: set[str] = {
+                                    g.get("game_name", "").lower()
+                                    for g in (wanted_resp.get("wanted_items", []) if isinstance(wanted_resp, dict) else [])
+                                }
+                            except Exception:
+                                wanted_names = set()
                             alerted_camps: set = set(pairing.get("alerted_campaign_ids", []))
                             new_alerted: list[str] = []
                             now_ts = datetime.now(timezone.utc)
@@ -762,6 +772,11 @@ class TwitchDropsBot(discord.Client):
                                 cid = camp.get("id", "")
                                 if not cid or cid in alerted_camps or camp.get("expired"):
                                     continue
+                                # Skip campaigns for games not in the user's wanted list
+                                if wanted_names:
+                                    camp_game = (camp.get("game_name") or camp.get("game", "")).lower()
+                                    if camp_game not in wanted_names:
+                                        continue
                                 ends_at_str = camp.get("ends_at", "")
                                 if not ends_at_str:
                                     continue
