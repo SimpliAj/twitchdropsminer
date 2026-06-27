@@ -243,6 +243,14 @@ class PredictionService:
                 else:
                     entry["result"] = "LOSE"
                     entry["points_won"] = 0
+                # Notify frontend so daily-points counter can correct for bet refund on WIN
+                try:
+                    await self._twitch.gui._broadcaster.emit("prediction_result", {
+                        "result": entry["result"],
+                        "points_bet": entry["points_bet"],
+                    })
+                except Exception:
+                    pass
                 # Discord notification
                 webhook = self._twitch.settings.discord_webhook_points
                 if webhook:
@@ -254,7 +262,7 @@ class PredictionService:
                             {"name": "Channel", "value": entry["channel"], "inline": True},
                             {"name": "Prediction", "value": entry["title"][:100], "inline": False},
                             {"name": "Bet", "value": f"{entry['points_bet']:,} pts on {entry['outcome_chosen']}", "inline": True},
-                            {"name": "Won", "value": f"{entry['points_won']:,} pts" if entry["result"] == "WIN" else "0 pts", "inline": True},
+                            {"name": "Profit", "value": f"+{entry['points_won'] - entry['points_bet']:,} pts" if entry["result"] == "WIN" else f"−{entry['points_bet']:,} pts", "inline": True},
                         ],
                     }
                     import aiohttp

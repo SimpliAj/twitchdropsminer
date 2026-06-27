@@ -435,6 +435,11 @@ socket.on('wanted_items_update', (data) => {
     renderWantedItems(data);
 });
 
+socket.on('prediction_result', (data) => {
+    // On WIN: balance update adds full payout (bet+profit). Subtract bet so daily pts shows net profit only.
+    if (data.result === 'WIN') addDailyPoints(-(data.points_bet || 0));
+});
+
 socket.on('pause_state', function(data) {
     updatePauseState(data.paused);
 });
@@ -3437,7 +3442,9 @@ async function loadPredictions() {
             const color = p.result === "WIN" ? "#00b368" : p.result === "LOSE" ? "#eb4a4a" : "#adadb8";
             const tr = document.createElement("tr");
             tr.style.borderTop = "1px solid #2d2d35";
-            [{ text: p.ts ? new Date(p.ts).toLocaleDateString() : "—", style: "color:#adadb8" }, { text: p.channel || "—" }, { text: p.title ? p.title.slice(0, 40) : "—" }, { text: (p.points_bet || 0).toLocaleString() }, { text: p.result || "PENDING", style: `color:${color};font-weight:600` }, { text: (p.points_won || 0).toLocaleString() }]
+            const netWon = p.result === "WIN" ? (p.points_won || 0) - (p.points_bet || 0) : 0;
+            const wonText = p.result === "WIN" ? `+${netWon.toLocaleString()}` : p.result === "LOSE" ? `−${(p.points_bet || 0).toLocaleString()}` : "—";
+            [{ text: p.ts ? new Date(p.ts).toLocaleDateString() : "—", style: "color:#adadb8" }, { text: p.channel || "—" }, { text: p.title ? p.title.slice(0, 40) : "—" }, { text: (p.points_bet || 0).toLocaleString() }, { text: p.result || "PENDING", style: `color:${color};font-weight:600` }, { text: wonText, style: `color:${color}` }]
                 .forEach(c => { const td = document.createElement("td"); td.style.padding = "5px 8px"; if (c.style) td.style.cssText += c.style; td.textContent = c.text; tr.appendChild(td); });
             tbody.appendChild(tr);
         });
