@@ -168,7 +168,7 @@ class Websocket:
         )
         for delay in backoff:
             try:
-                async with session.ws_connect(ws_url, proxy=proxy) as websocket:
+                async with session.ws_connect(ws_url, proxy=proxy, heartbeat=30) as websocket:
                     yield websocket
                     backoff.reset()
             except (

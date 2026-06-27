@@ -168,6 +168,7 @@ class WatchService:
                     "Channel", "Predictions", channel.id,
                     self._twitch._prediction_service.process_prediction,
                 )])
+                logger.info(f"Predictions subscribed for {channel.name}")
             except MinerException:
                 logger.warning(f"Topic limit — Predictions topic skipped for {channel.name}")
 
