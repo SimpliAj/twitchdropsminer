@@ -28,13 +28,30 @@ class StreamSelector:
         blacklist = [kw.lower() for kw in getattr(settings, "drop_name_blacklist", []) if kw.strip()]
         next_hour = datetime.now(timezone.utc) + timedelta(hours=1)
 
-        # Merge games_to_watch + preferred_games (deduplicated, preserving order)
+        # Build games_to_watch first (preserving user order), then append preferred games
+        # sorted by soonest campaign end time so the most urgent game is watched first.
         all_game_names = list(games_to_watch)
         seen = set(g.lower() for g in games_to_watch)
+
+        # Map preferred game names (not already in games_to_watch) to their soonest ends_at
+        preferred_only: list[str] = []
+        preferred_end_time: dict[str, datetime] = {}
         for g in preferred_games:
             if g.lower() not in seen:
-                all_game_names.append(g)
+                preferred_only.append(g)
                 seen.add(g.lower())
+        if preferred_only:
+            preferred_lower = {g.lower(): g for g in preferred_only}
+            for campaign in campaigns:
+                name_lower = campaign.game.name.lower()
+                if name_lower in preferred_lower and campaign.can_earn_within(next_hour):
+                    g_key = preferred_lower[name_lower]
+                    if g_key not in preferred_end_time or campaign.ends_at < preferred_end_time[g_key]:
+                        preferred_end_time[g_key] = campaign.ends_at
+            # Sort by soonest end time; games without active campaigns go last
+            far_future = datetime.max.replace(tzinfo=timezone.utc)
+            preferred_only.sort(key=lambda g: preferred_end_time.get(g, far_future))
+            all_game_names.extend(preferred_only)
 
         for game_name in all_game_names:
             wanted_campaigns = []
