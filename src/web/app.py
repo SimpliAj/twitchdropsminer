@@ -186,6 +186,7 @@ _UNPROTECTED_PATHS = {
     "/api/pair/claim",  # Discord bot pairing — no auth needed to exchange code
     "/api/instance",   # Instance info for switcher — public
     "/api/instances",  # Instances registry — public
+    "/healthz",  # Docker/orchestrator liveness probe — must pass with no session
 }
 _UNPROTECTED_PREFIXES = ("/static/",)
 
@@ -496,6 +497,12 @@ async def serve_index():
         content=f"<h1>Twitch Drops Miner</h1><p>Web interface files not found. Please check installation.</p><p>Debug: Looking for {index_file}</p>",
         status_code=500,
     )
+
+
+@app.get("/healthz")
+async def healthz():
+    """Unauthenticated liveness probe for Docker/orchestrators — no session state exposed."""
+    return {"status": "ok"}
 
 
 @app.get("/api/status")
@@ -1621,6 +1628,11 @@ async def run_server(host: str = "0.0.0.0", port: int = 8080):
     """Run the web server (used for development/testing)"""
     global _server_instance
     import uvicorn
+
+    # uvicorn's legacy `websockets` protocol implementation logs a benign
+    # ConnectionClosedError from a shielded background task whenever a browser
+    # tab closes/reloads mid-connection. It's not an app error — silence it.
+    logging.getLogger("websockets").setLevel(logging.CRITICAL)
 
     config = uvicorn.Config(socket_app, host=host, port=port, log_level="info", access_log=False)
     server = uvicorn.Server(config)

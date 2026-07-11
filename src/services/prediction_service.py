@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 import json as _json
 
 from src.config import DATA_DIR, GQL_OPERATIONS
+from src.utils import task_wrapper
 
 if TYPE_CHECKING:
     from src.core.client import Twitch
@@ -94,6 +95,7 @@ class PredictionService:
         amount = min(amount, cfg["bet_max_points"])
         return max(amount, 10)  # Twitch minimum is 10 channel points
 
+    @task_wrapper
     async def process_prediction(self, channel_id: int, message: dict) -> None:
         if not self._twitch.settings.make_predictions:
             return
