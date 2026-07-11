@@ -341,7 +341,9 @@ class WatchService:
                     else:
                         logger.log(CALL, "No active drop could be determined")
 
-            # Periodic channel points poll (every ~60s)
+            # Periodic channel points poll (every ~60s) — covers the primary
+            # channel plus any other channels being watched in parallel idle mode,
+            # since the websocket push (process_community_points) can miss claims.
             _cp_poll_counter += 1
             if (
                 _cp_poll_counter >= _CP_POLL_EVERY
@@ -353,5 +355,15 @@ class WatchService:
                         channel._login, channel.id
                     )
                 )
+                idle_parallel = getattr(self._twitch.settings, "idle_parallel", True)
+                if idle_parallel:
+                    for idle_ch in list(self._twitch._idle_channels_set):
+                        if idle_ch is channel or not idle_ch.online:
+                            continue
+                        asyncio.create_task(
+                            self._twitch._message_handler_service._emit_channel_points(
+                                idle_ch._login, idle_ch.id
+                            )
+                        )
 
             await self.watch_sleep(interval - min(time() - last_sent, interval))
