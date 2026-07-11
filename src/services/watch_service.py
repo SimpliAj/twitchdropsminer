@@ -36,7 +36,6 @@ async def _send_idle_watch(channel) -> None:
     if succeeded:
         broadcast_id = channel._stream.broadcast_id if channel._stream else "none"
         logger.info(f"Watch sent OK (idle): {channel.name} (broadcast_id={broadcast_id})")
-        await channel._send_watch_spade()
     else:
         logger.log(CALL, f"Watch requested failed for idle channel: {channel.name}")
 
@@ -275,8 +274,6 @@ class WatchService:
                 logger.log(CALL, f"Watch requested failed for channel: {channel.name}")
             else:
                 logger.info(f"Watch sent OK: {channel.name} (broadcast_id={channel._stream.broadcast_id if channel._stream else 'none'})")
-                # Also send via Spade HTTP POST to credit channel points (GQL only credits drops)
-                asyncio.create_task(channel._send_watch_spade())
 
             # Multi-channel idle: also send watch to all other idle channels
             # Only do this when parallel idle is explicitly enabled — avoids spurious
