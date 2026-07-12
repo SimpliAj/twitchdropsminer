@@ -404,9 +404,16 @@ class MessageHandlerService:
             return
         try:
             async with aiohttp.ClientSession() as session:
-                await session.post(url, json=payload, timeout=aiohttp.ClientTimeout(total=10))
+                async with session.post(
+                    url, json=payload, timeout=aiohttp.ClientTimeout(total=10)
+                ) as response:
+                    if response.status >= 300:
+                        body = await response.text()
+                        logger.warning(
+                            f"Discord webhook rejected (status {response.status}): {body[:500]}"
+                        )
         except Exception as e:
-            logger.debug(f"Discord webhook failed: {e}")
+            logger.warning(f"Discord webhook failed: {e}")
 
     @task_wrapper
     async def process_idle_stream_state(self, channel_id: int, message: JsonType) -> None:
