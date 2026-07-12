@@ -133,6 +133,9 @@ class SettingsManager:
             "discord_webhook_points", settings_data.get("discord_webhook_points")
         )
         self.check_and_update_setting(
+            "discord_webhook_mentions", settings_data.get("discord_webhook_mentions")
+        )
+        self.check_and_update_setting(
             "drop_name_blacklist", settings_data.get("drop_name_blacklist")
         )
         self.check_and_update_setting(
@@ -163,6 +166,9 @@ class SettingsManager:
             "bet_minimum_points", settings_data.get("bet_minimum_points")
         )
         self.check_and_update_setting(
+            "bet_percentage_gap", settings_data.get("bet_percentage_gap")
+        )
+        self.check_and_update_setting(
             "bet_delay_seconds", settings_data.get("bet_delay_seconds")
         )
         self.check_and_update_setting(
@@ -170,6 +176,15 @@ class SettingsManager:
         )
         self.check_and_update_setting(
             "channel_strategies", settings_data.get("channel_strategies")
+        )
+        self.check_and_update_setting(
+            "claim_moments", settings_data.get("claim_moments")
+        )
+        self.check_and_update_setting(
+            "irc_chat_presence", settings_data.get("irc_chat_presence")
+        )
+        self.check_and_update_setting(
+            "irc_mention_notify", settings_data.get("irc_mention_notify")
         )
 
         self._settings.save()

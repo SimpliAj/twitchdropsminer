@@ -116,13 +116,13 @@ class PredictionService:
 
         if msg_type == "event-created":
             self._active_events[event_id] = event
-            delay = cfg["bet_delay_seconds"]
+            delay = self._effective_delay(event, cfg)
             if event_id not in self._pending:
                 task = asyncio.create_task(
                     self._delayed_bet(event_id, channel, cfg, delay)
                 )
                 self._pending[event_id] = task
-                logger.info(f"Prediction '{event.get('title')}' on {channel.name} — betting in {delay}s")
+                logger.info(f"Prediction '{event.get('title')}' on {channel.name} — betting in {delay:.1f}s")
 
         elif msg_type == "event-updated":
             if event_id in self._active_events:
@@ -143,10 +143,48 @@ class PredictionService:
             if msg_type == "event-ended":
                 await self._record_result(event_id, event, channel.name)
 
-    async def _delayed_bet(self, event_id: str, channel, cfg: dict, delay: int) -> None:
-        await asyncio.sleep(delay)
+    def _effective_delay(self, event: dict, cfg: dict) -> float:
+        """
+        Twitch predictions include a fixed window (`prediction_window_seconds`,
+        counted from `created_at`) after which the event locks and betting is
+        no longer possible. Fast-paced predictions (e.g. per-round esports)
+        can have windows well under the configured `bet_delay_seconds` —
+        using the fixed delay unconditionally meant the scheduled bet
+        routinely got cancelled by the lock before it ever fired, with no
+        bet placed and nothing logged (silent since 2026-07-08). Cap the
+        delay to whatever's actually left in the window (minus a small
+        safety buffer), falling back to the configured delay when the
+        window/created_at fields aren't present in the event payload.
+        """
+        from datetime import datetime, timezone
+        window = event.get("prediction_window_seconds")
+        created_at = event.get("created_at")
+        if not window or not created_at:
+            return float(cfg["bet_delay_seconds"])
+        try:
+            created = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+        except (ValueError, AttributeError):
+            return float(cfg["bet_delay_seconds"])
+        elapsed = (datetime.now(timezone.utc) - created).total_seconds()
+        remaining = window - elapsed
+        safety_buffer = 3  # leave a few seconds of margin before the lock
+        return max(min(cfg["bet_delay_seconds"], remaining - safety_buffer), 0.5)
+
+    async def _delayed_bet(self, event_id: str, channel, cfg: dict, delay: float) -> None:
+        try:
+            await asyncio.sleep(delay)
+        except asyncio.CancelledError:
+            logger.info(
+                f"Prediction {event_id} on {channel.name}: bet cancelled — "
+                f"event locked before the scheduled bet fired"
+            )
+            raise
         event = self._active_events.get(event_id)
         if not event:
+            logger.info(
+                f"Prediction {event_id} on {channel.name}: event already "
+                f"resolved/locked by bet time, skipping"
+            )
             return
         outcomes = event.get("outcomes", [])
         chosen = self._choose_outcome(outcomes, cfg)

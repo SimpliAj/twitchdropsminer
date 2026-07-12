@@ -1857,6 +1857,8 @@ function updateSettingsUI(settings) {
     if (webhookDropsEl) webhookDropsEl.value = settings.discord_webhook_drops || '';
     const webhookPointsEl = document.getElementById('discord-webhook-points');
     if (webhookPointsEl) webhookPointsEl.value = settings.discord_webhook_points || '';
+    const webhookMentionsEl = document.getElementById('discord-webhook-mentions');
+    if (webhookMentionsEl) webhookMentionsEl.value = settings.discord_webhook_mentions || '';
     const blacklistEl = document.getElementById('drop-blacklist-input');
     if (blacklistEl) blacklistEl.value = (settings.drop_name_blacklist || []).join(', ');
 
@@ -2724,6 +2726,7 @@ async function saveSettings() {
         },
         discord_webhook_drops: document.getElementById('discord-webhook-drops')?.value || '',
         discord_webhook_points: document.getElementById('discord-webhook-points')?.value || '',
+        discord_webhook_mentions: document.getElementById('discord-webhook-mentions')?.value || '',
         claim_channel_points: document.getElementById('claim-channel-points')?.checked ?? true,
         idle_channels: state.settings.idle_channels || [],
         idle_use_followed: document.getElementById('idle-use-followed')?.checked ?? false,
@@ -2826,7 +2829,7 @@ async function togglePause() {
 }
 
 async function testWebhook(type) {
-    const id = type === 'drops' ? 'discord-webhook-drops' : 'discord-webhook-points';
+    const id = type === 'drops' ? 'discord-webhook-drops' : type === 'mentions' ? 'discord-webhook-mentions' : 'discord-webhook-points';
     const url = document.getElementById(id)?.value.trim();
     if (!url) { alert('No webhook URL set.'); return; }
     try {
@@ -3699,6 +3702,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('discord-webhook-drops')?.addEventListener('blur', saveSettings);
     document.getElementById('drop-blacklist-input')?.addEventListener('change', saveSettings);
     document.getElementById('discord-webhook-points')?.addEventListener('blur', saveSettings);
+    document.getElementById('discord-webhook-mentions')?.addEventListener('blur', saveSettings);
     document.getElementById('claim-channel-points')?.addEventListener('change', saveSettings);
 
     document.getElementById('push-enabled-toggle')?.addEventListener('change', async function() {

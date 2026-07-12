@@ -378,6 +378,7 @@ class SettingsUpdate(BaseModel):
     scheduler_stop: str | None = None
     discord_webhook_drops: str | None = None
     discord_webhook_points: str | None = None
+    discord_webhook_mentions: str | None = None
     drop_name_blacklist: list[str] | None = None
     auto_prioritize: bool | None = None
     auto_add_linked: bool | None = None
@@ -387,9 +388,13 @@ class SettingsUpdate(BaseModel):
     bet_percentage: int | None = None
     bet_max_points: int | None = None
     bet_minimum_points: int | None = None
+    bet_percentage_gap: int | None = None
     bet_delay_seconds: int | None = None
     prediction_channels: list[str] | None = None
     channel_strategies: dict[str, str] | None = None
+    claim_moments: bool | None = None
+    irc_chat_presence: bool | None = None
+    irc_mention_notify: bool | None = None
 
 
 class ProxyVerifyRequest(BaseModel):

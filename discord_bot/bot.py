@@ -574,13 +574,25 @@ class TwitchDropsBot(discord.Client):
                         cp_balance = None
                         paused = False
 
-                        # Check for new drops
+                        # Check for new drops. Tracked by timestamp, not list length:
+                        # /api/drops-history is capped at 500 entries (oldest evicted
+                        # first), so once an account's lifetime total passes 500,
+                        # len(history) gets stuck at 500 forever and a length-based
+                        # diff never detects a new drop again — confirmed live, this
+                        # is exactly why drop notifications silently stopped once an
+                        # account crossed 500 total claimed drops.
                         history = await api_get(session, pairing["url"], pairing["token"], "/api/drops-history")
                         if isinstance(history, list):
                             drop_count = len(history)
-                            last_count = pairing.get("last_drop_count", 0)
-                            if drop_count > last_count:
-                                new_drops = history[:drop_count - last_count]  # newest-first list
+                            last_ts = pairing.get("last_drop_timestamp")
+                            if last_ts is None:
+                                # First poll after upgrading from count-based tracking
+                                # (or a brand new pairing) — start tracking from here
+                                # instead of retroactively announcing all of history.
+                                new_drops = []
+                            else:
+                                new_drops = [d for d in history if d.get("timestamp", "") > last_ts]
+                            if new_drops:
                                 for drops_ch_id in _channel_ids(pairing, "drops"):
                                     ch = self.get_channel(drops_ch_id)
                                     if ch is None:
@@ -608,7 +620,10 @@ class TwitchDropsBot(discord.Client):
                                         log.info("Drops notification sent to %s (%d new drops)", drops_ch_id, len(new_drops))
                                     else:
                                         log.warning("Drops channel %s not found for user %s/%s", drops_ch_id, user_id, pairing_name)
-                                self.users_data[user_id][pairing_name]["last_drop_count"] = drop_count
+                            if history:
+                                self.users_data[user_id][pairing_name]["last_drop_timestamp"] = history[0].get("timestamp", last_ts)
+                            self.users_data[user_id][pairing_name]["last_drop_count"] = drop_count
+                            if new_drops or last_ts is None:
                                 save_pairings(self.users_data)
 
                         # Channel points tracking
@@ -936,6 +951,7 @@ def register_commands(bot: TwitchDropsBot):
                 "url": url.rstrip("/"),
                 "token": token,
                 "last_drop_count": 0,
+                "last_drop_timestamp": None,
                 "channels": {"drops": None, "logs": None, "points": None, "bets": None, "campaigns": None},
             }
             save_pairings(bot.users_data)
