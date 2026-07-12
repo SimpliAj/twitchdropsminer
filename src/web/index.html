@@ -401,7 +401,15 @@
                                 <button id="test-points-webhook-btn" class="secondary-btn" onclick="testWebhook('points')" style="white-space:nowrap;">Test</button>
                             </div>
                         </label>
-                        <small class="help-text-inline" id="settings-points-webhook-help">Fires when a bonus channel point chest is claimed.</small>
+                        <small class="help-text-inline" id="settings-points-webhook-help" style="margin-bottom:10px;display:block;">Fires when a bonus channel point chest is claimed.</small>
+                        <label>
+                            <span id="settings-mentions-webhook-label">Chat Mention Webhook:</span>
+                            <div style="display:flex;gap:8px;">
+                                <input type="text" id="discord-webhook-mentions" placeholder="https://discord.com/api/webhooks/..." style="flex:1;">
+                                <button id="test-mentions-webhook-btn" class="secondary-btn" onclick="testWebhook('mentions')" style="white-space:nowrap;">Test</button>
+                            </div>
+                        </label>
+                        <small class="help-text-inline" id="settings-mentions-webhook-help">Fires when your username is mentioned in chat. Falls back to the Channel Points webhook above if left empty.</small>
                     </section>
 
                     <section class="settings-section">
