@@ -137,8 +137,10 @@ def _aggregate_stats() -> dict:
                 recent.append(e)
                 seen.add(e.get("reward"))
 
+    from src.services.drop_history import get_total_claims
+
     return {
-        "total_claims": len(history),
+        "total_claims": get_total_claims(_get_account_data_dir()),
         "by_game": [{"game": g, "count": c} for g, c in sorted_games[:10]],
         "by_day": [{"date": d, "count": c} for d, c in sorted_days[-365:]],
         "recent": recent[:10],
