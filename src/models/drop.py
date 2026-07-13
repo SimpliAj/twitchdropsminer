@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 import re
 from datetime import datetime, timedelta, timezone
@@ -292,6 +293,23 @@ class TimedDrop(BaseDrop):
     def _is_auto_granted(self) -> bool:
         return bool(self.benefits) and all(b.type.is_badge_or_emote() for b in self.benefits)
 
+    def _try_immediate_claim(self) -> None:
+        """
+        Claim as soon as we locally cross 100% progress, instead of waiting for the
+        next scheduled inventory fetch (up to an hour away) to notice via GAMES_UPDATE.
+        Without this, a drop that's actually done just sits there — still picked as
+        `first_drop`/blocking its precondition chain since `is_claimed` never flips —
+        while the watch loop keeps uselessly bumping it.
+        """
+        if self.is_claimed or self.claim_id is not None or self.progress < 1.0:
+            return
+
+        async def _do_claim() -> None:
+            await self.generate_claim()
+            await self.claim()
+
+        asyncio.create_task(_do_claim())
+
     def _update_real_minutes(self, delta: int) -> None:
         if delta == 0 or self.real_current_minutes + delta < 0 or not self.can_earn():
             return
@@ -304,11 +322,13 @@ class TimedDrop(BaseDrop):
         self.extra_current_minutes = 0
         drop_minutes_cache.update(self.id, self.real_current_minutes)
         self._on_state_changed()
+        self._try_immediate_claim()
 
     def _bump_minutes(self, channel: Channel | None) -> bool:
         if self.can_earn(channel):
             self.extra_current_minutes += 1
             self._on_state_changed()
+            self._try_immediate_claim()
             if self.extra_current_minutes >= MAX_EXTRA_MINUTES:
                 return True
         return False
