@@ -99,6 +99,20 @@ class InventoryService:
         5. Updates GUI with campaign information
         6. Sets up maintenance triggers for campaign timing changes
         """
+        try:
+            await self._fetch_inventory()
+        finally:
+            # Always reschedule the maintenance heartbeat, even if the fetch above
+            # raised partway through. It used to only be re-armed on a clean finish,
+            # so a single transient GQL/network error would silently kill the periodic
+            # reload for the rest of the session, with nothing left to ever retry it.
+            if self._twitch._mnt_task is not None and not self._twitch._mnt_task.done():
+                self._twitch._mnt_task.cancel()
+            self._twitch._mnt_task = asyncio.create_task(
+                self._twitch._maintenance_service.run_maintenance_task()
+            )
+
+    async def _fetch_inventory(self) -> None:
         status_update = self._twitch.gui.status.update
         status_update(_.t["gui"]["status"]["fetching_inventory"])
 
@@ -207,12 +221,8 @@ class InventoryService:
         while self._twitch._mnt_triggers and self._twitch._mnt_triggers[0] <= now:
             self._twitch._mnt_triggers.popleft()
 
-        # NOTE: maintenance task is restarted at the end of each inventory fetch
-        if self._twitch._mnt_task is not None and not self._twitch._mnt_task.done():
-            self._twitch._mnt_task.cancel()
-        self._twitch._mnt_task = asyncio.create_task(
-            self._twitch._maintenance_service.run_maintenance_task()
-        )
+        # NOTE: maintenance task is restarted by fetch_inventory's finally block,
+        # regardless of whether this method finishes cleanly or raises.
 
     def get_active_campaign(self, channel: Channel | None = None) -> DropsCampaign | None:
         """
