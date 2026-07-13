@@ -18,6 +18,7 @@ import json as _json_mod
 
 from src.config import CALL, DATA_DIR, GQL_OPERATIONS, State
 from src.i18n import _
+from src.services.drop_history import save_drop_claim
 from src.utils import json_load, json_save, task_wrapper
 
 _WEB_CONFIG_FILE = DATA_DIR / "web_config.json"
@@ -342,21 +343,12 @@ class MessageHandlerService:
                 asyncio.create_task(self._send_discord_webhook(webhook_url, {"embeds": [embed]}))
 
             # Save to drop history
-            import datetime as _dt, json as _json
-            _hist_file = _get_points_file().parent / "drops_history.json"
-            _entry = {
-                "timestamp": _dt.datetime.now(_dt.timezone.utc).isoformat(),
-                "game": campaign.game.name,
-                "drop": drop.name,
-                "reward": drop.rewards_text(),
-                "image_url": drop.benefits[0].image_url if drop.benefits else None,
-            }
-            try:
-                _hist = _json.loads(_hist_file.read_text()) if _hist_file.exists() else []
-                _hist.insert(0, _entry)
-                _hist_file.write_text(_json.dumps(_hist[:500], indent=2))
-            except Exception:
-                pass
+            save_drop_claim(
+                campaign.game.name,
+                drop.name,
+                drop.rewards_text(),
+                drop.benefits[0].image_url if drop.benefits else None,
+            )
 
             # About 4-20s after claiming the drop, next drop can be started
             # by re-sending the watch payload. We can test for it by fetching the current drop

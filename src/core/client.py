@@ -28,6 +28,7 @@ from src.i18n import _
 from src.models.campaign import DropsCampaign
 from src.models.channel import Channel
 from src.services.channel_service import ChannelService
+from src.services.drop_history import save_drop_claim
 from src.services.inventory_service import InventoryService
 from src.services.irc_service import IRCService
 from src.services.maintenance import MaintenanceService
@@ -425,30 +426,12 @@ class Twitch:
                                             )
                                         )
                                     # Save to drop history
-                                    import datetime as _dt, json as _json
-                                    from src.config import DATA_DIR as _DATA_DIR
-                                    _wcfg_file = _DATA_DIR / "web_config.json"
-                                    try:
-                                        _wcfg = _json.loads(_wcfg_file.read_text()) if _wcfg_file.exists() else {}
-                                        _acct = _wcfg.get("active_account")
-                                        _acct_dir = _DATA_DIR / "accounts" / _acct if _acct else _DATA_DIR
-                                        _acct_dir.mkdir(parents=True, exist_ok=True)
-                                    except Exception:
-                                        _acct_dir = _DATA_DIR
-                                    _hist_file = _acct_dir / "drops_history.json"
-                                    _entry = {
-                                        "timestamp": _dt.datetime.now(_dt.timezone.utc).isoformat(),
-                                        "game": campaign.game.name,
-                                        "drop": drop.name,
-                                        "reward": drop.rewards_text(),
-                                        "image_url": drop.benefits[0].image_url if drop.benefits else None,
-                                    }
-                                    try:
-                                        _hist = _json.loads(_hist_file.read_text()) if _hist_file.exists() else []
-                                        _hist.insert(0, _entry)
-                                        _hist_file.write_text(_json.dumps(_hist[:500], indent=2))
-                                    except Exception:
-                                        pass
+                                    save_drop_claim(
+                                        campaign.game.name,
+                                        drop.name,
+                                        drop.rewards_text(),
+                                        drop.benefits[0].image_url if drop.benefits else None,
+                                    )
                 # figure out which games we want based on games_to_watch whitelist
                 self.wanted_games.clear()
                 games_to_watch: list[str] = self.settings.games_to_watch
