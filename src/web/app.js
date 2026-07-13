@@ -26,6 +26,7 @@ const state = {
     channels: {},
     campaigns: {},
     settings: {},
+    settingsLoaded: false,  // guards saveSettings() from firing before real settings arrive
     currentDrop: null,
     countdownTimer: null,  // Track the active countdown timer
     translations: {},  // Store current translations
@@ -1776,6 +1777,7 @@ function updateLoginStatus(data) {
 
 function updateSettingsUI(settings) {
     state.settings = settings;
+    state.settingsLoaded = true;
     document.getElementById('dark-mode').checked = settings.dark_mode || false;
     document.getElementById('connection-quality').value = settings.connection_quality || 1;
     document.getElementById('minimum-refresh-interval').value = settings.minimum_refresh_interval_minutes || 30;
@@ -2714,6 +2716,15 @@ function addChannelOverride() {
 }
 
 async function saveSettings() {
+    if (!state.settingsLoaded) {
+        // A change event fired (e.g. browser restoring form state on reload) before the
+        // server's real settings arrived via initial_state — state.settings is still {}
+        // at this point, so saving now would overwrite games_to_watch and friends with
+        // empty defaults. Bail out; whatever triggered this will be reflected once
+        // updateSettingsUI() runs and the user interacts with the UI again.
+        console.warn('saveSettings() called before initial settings loaded — ignoring');
+        return;
+    }
     const settings = {
         dark_mode: document.getElementById('dark-mode').checked,
         language: document.getElementById('language').value,
