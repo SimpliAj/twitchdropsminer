@@ -661,9 +661,13 @@ async function updateStats() {
         const today = new Date().toDateString();
         const todayCount = drops.filter(d => new Date(d.timestamp).toDateString() === today).length;
         const todayEl = document.getElementById("stat-drops-today");
-        const totalEl = document.getElementById("stat-drops-total");
         if (todayEl) todayEl.textContent = todayCount;
-        if (totalEl) totalEl.textContent = drops.length;
+    } catch(e) {}
+    try {
+        const statsResp = await fetch(API_BASE + "/api/stats");
+        const stats = await statsResp.json();
+        const totalEl = document.getElementById("stat-drops-total");
+        if (totalEl) totalEl.textContent = stats.total_claims;
     } catch(e) {}
 }
 
