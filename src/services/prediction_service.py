@@ -179,51 +179,67 @@ class PredictionService:
                 f"event locked before the scheduled bet fired"
             )
             raise
-        event = self._active_events.get(event_id)
-        if not event:
-            logger.info(
-                f"Prediction {event_id} on {channel.name}: event already "
-                f"resolved/locked by bet time, skipping"
-            )
-            return
-        outcomes = event.get("outcomes", [])
-        chosen = self._choose_outcome(outcomes, cfg)
-        if not chosen:
-            logger.info(f"Prediction {event_id}: no suitable outcome, skipping")
-            return
-        # Get current balance
-        from src.services.message_handlers import _get_points_file
-        import json as _j
-        pfile = _get_points_file()
         try:
-            pts = _j.loads(pfile.read_text()) if pfile.exists() else {}
-            balance = pts.get(channel.name.lower(), 0)
-        except Exception:
-            balance = 0
-        if balance < cfg["bet_minimum_points"]:
-            logger.info(f"Prediction {event_id}: balance {balance} < minimum {cfg['bet_minimum_points']}, skipping")
-            return
-        amount = self._calc_amount(balance, cfg)
-        if amount <= 0:
-            return
-        transaction_id = str(uuid.uuid4())
-        try:
-            await self._twitch.gql_request(
-                GQL_OPERATIONS["MakePrediction"].with_variables({
-                    "input": {
-                        "eventID": event_id,
-                        "outcomeID": chosen["id"],
-                        "points": amount,
-                        "transactionID": transaction_id,
-                    }
-                })
-            )
-            logger.info(f"Bet {amount} pts on '{chosen.get('title')}' for prediction '{event.get('title')}' on {channel.name}")
-            # Record pending bet
-            self._save_pending_bet(event_id, channel.name, event, chosen, amount, cfg["bet_strategy"])
-        except Exception as e:
-            logger.warning(f"MakePrediction GQL failed: {e}")
-        self._pending.pop(event_id, None)
+            event = self._active_events.get(event_id)
+            if not event:
+                logger.info(
+                    f"Prediction {event_id} on {channel.name}: event already "
+                    f"resolved/locked by bet time, skipping"
+                )
+                return
+            outcomes = event.get("outcomes", [])
+            chosen = self._choose_outcome(outcomes, cfg)
+            if not chosen:
+                logger.info(f"Prediction {event_id}: no suitable outcome, skipping")
+                return
+            # Get current balance
+            from src.services.message_handlers import _get_points_file
+            import json as _j
+            pfile = _get_points_file()
+            try:
+                pts = _j.loads(pfile.read_text()) if pfile.exists() else {}
+                balance = pts.get(channel.name.lower(), 0)
+            except Exception:
+                balance = 0
+            if balance < cfg["bet_minimum_points"]:
+                logger.info(f"Prediction {event_id}: balance {balance} < minimum {cfg['bet_minimum_points']}, skipping")
+                return
+            amount = self._calc_amount(balance, cfg)
+            if amount <= 0:
+                return
+            transaction_id = str(uuid.uuid4())
+            try:
+                await self._twitch.gql_request(
+                    GQL_OPERATIONS["MakePrediction"].with_variables({
+                        "input": {
+                            "eventID": event_id,
+                            "outcomeID": chosen["id"],
+                            "points": amount,
+                            "transactionID": transaction_id,
+                        }
+                    })
+                )
+                logger.info(f"Bet {amount} pts on '{chosen.get('title')}' for prediction '{event.get('title')}' on {channel.name}")
+                # Record pending bet
+                self._save_pending_bet(event_id, channel.name, event, chosen, amount, cfg["bet_strategy"])
+            except Exception as e:
+                logger.warning(f"MakePrediction GQL failed: {e}")
+        finally:
+            # process_prediction only ever pops _active_events/_pending when a
+            # LATER event-updated/event-locked/event-ended message for this
+            # same event_id arrives — but the miner constantly switches away
+            # from channels to chase drops, dropping that channel's PubSub
+            # subscription before a still-open prediction resolves. Every
+            # early "skip" return above (and the resolved-bet path, previously
+            # only popped _pending) left its event permanently in
+            # _active_events with nothing left to ever clean it up — an
+            # unbounded per-prediction leak that grows with uptime and
+            # channel-hopping (reported as ~15GB after a day in Docker).
+            # This task's own lifetime is a hard upper bound on how long its
+            # entries should live, so clean up both here regardless of which
+            # branch returned.
+            self._pending.pop(event_id, None)
+            self._active_events.pop(event_id, None)
 
     def _save_pending_bet(self, event_id, channel, event, outcome, amount, strategy):
         from datetime import datetime, timezone
