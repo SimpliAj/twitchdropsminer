@@ -1717,6 +1717,12 @@ function autoCleanWantedQueue() {
     const allCampaigns = Object.values(state.campaigns);
     if (allCampaigns.length === 0) return;
 
+    // Runs silently on every page load/F5 (see the initial_state handler
+    // above) — reported on Discord as "game settings reset" for whichever
+    // games happen to be fully claimed, since removal here looks identical
+    // to a settings bug from the outside. Log what and why so it reads as
+    // intentional cleanup instead of a mystery reset.
+    const removedGames = [];
     let changed = false;
     const cleaned = watchList.filter(gameName => {
         const gameCampaigns = allCampaigns.filter(c =>
@@ -1729,7 +1735,7 @@ function autoCleanWantedQueue() {
             c.total_drops > 0 && c.claimed_drops === c.total_drops
         );
 
-        if (allFullyClaimed) { changed = true; return false; }
+        if (allFullyClaimed) { changed = true; removedGames.push(gameName); return false; }
         return true;
     });
 
@@ -1737,6 +1743,7 @@ function autoCleanWantedQueue() {
         state.settings.games_to_watch = cleaned;
         saveSettings();
         renderGamesToWatch();
+        addConsoleLine(`Auto-removed from watch list (all drops already claimed): ${removedGames.join(', ')}`);
     }
 }
 
