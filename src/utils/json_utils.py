@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from collections.abc import Callable, Mapping
 from datetime import datetime, timezone
 from enum import Enum
@@ -12,6 +13,8 @@ from typing import Any, TypeVar, cast
 from yarl import URL
 
 from src.config import JsonType
+
+logger = logging.getLogger("TwitchDrops")
 
 
 _JSON_T = TypeVar("_JSON_T", bound=Mapping[Any, Any])
@@ -142,10 +145,22 @@ def json_load(path: Path, defaults: _JSON_T, *, merge: bool = True) -> _JSON_T:
     """
     defaults_dict: JsonType = dict(defaults)
     if path.exists():
-        with open(path, encoding="utf8") as file:
-            combined: JsonType = _remove_missing(json.load(file, object_hook=_deserialize))
-        if merge:
-            merge_json(combined, defaults_dict)
+        try:
+            with open(path, encoding="utf8") as file:
+                combined: JsonType = _remove_missing(json.load(file, object_hook=_deserialize))
+        except json.JSONDecodeError as e:
+            # A truncated/corrupt file (e.g. a write interrupted mid-flush)
+            # used to raise here and propagate up to whatever caller's own
+            # try/except swallowed it — silently freezing that file's cached
+            # value forever, since every subsequent load attempt hit the same
+            # exception before ever reaching the code that would rewrite it.
+            # Falling back to defaults, same as the file-doesn't-exist path,
+            # lets the next successful save heal it instead.
+            logger.warning(f"Corrupt JSON in {path}, falling back to defaults: {e}")
+            combined = defaults_dict
+        else:
+            if merge:
+                merge_json(combined, defaults_dict)
     else:
         combined = defaults_dict
     return cast(_JSON_T, combined)
