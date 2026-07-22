@@ -99,7 +99,15 @@ class DropsCampaign:
     @property
     def finished(self) -> bool:
         return all(
-            d.is_claimed or d.required_minutes <= 0 or d.required_subs > 0 for d in self.drops
+            d.is_claimed
+            or d.required_minutes <= 0
+            or d.required_subs > 0
+            # Watch time is done (current_minutes maxes out at required_minutes) but
+            # Twitch hasn't flipped isClaimed yet — this can persist indefinitely for
+            # some campaign structures (e.g. milestone/reward-group drops), so don't
+            # keep treating the game as unfinished and re-watching it forever.
+            or d.current_minutes >= d.required_minutes
+            for d in self.drops
         )
 
     @property
@@ -108,7 +116,10 @@ class DropsCampaign:
 
     @property
     def remaining_drops(self) -> int:
-        return sum(not d.is_claimed and d.required_subs <= 0 for d in self.drops)
+        return sum(
+            not d.is_claimed and d.required_subs <= 0 and d.current_minutes < d.required_minutes
+            for d in self.drops
+        )
 
     @property
     def required_minutes(self) -> int:
