@@ -196,7 +196,7 @@ socket.on('initial_state', (data) => {
         }
     }
 
-    if (data.settings) { updateSettingsUI(data.settings); autoCleanWantedQueue(); }
+    if (data.settings) { updateSettingsUI(data.settings); autoCleanWantedQueue(); autoAddLinkedGames(); }
     if (data.login) updateLoginStatus(data.login);
     if (data.manual_mode) updateManualModeUI(data.manual_mode);
     if (data.paused !== undefined) updatePauseState(data.paused);
@@ -349,11 +349,13 @@ socket.on('inventory_batch_update', (data) => {
         state.campaigns[camp.id] = camp;
     });
     renderInventory();
+    autoAddLinkedGames();
 });
 
 socket.on('drop_update', (data) => {
     updateLocalDropMinutes(data.drop.id, data.drop.current_minutes || 0);
     updateDrop(data.campaign_id, data.drop);
+    autoAddLinkedGames();
 });
 
 socket.on('login_required', () => {
