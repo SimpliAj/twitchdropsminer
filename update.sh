@@ -43,6 +43,22 @@ for f in "${EXTRAS[@]}"; do
     fi
 done
 
+# One-time migration: instances.json used to be tracked in git at the repo
+# root, which meant every update/container-recreate reset manually-added
+# instances back to the two defaults (neither git-stash-safe nor part of the
+# Docker volume). It now lives in data/, which is both git-ignored and
+# volume-mounted. Copy any existing customizations over, then untrack the old
+# path ourselves so the upcoming pull/stash has nothing to conflict on.
+if [ -f "instances.json" ]; then
+    if [ ! -f "data/instances.json" ]; then
+        mkdir -p data
+        cp instances.json data/instances.json
+        echo "Migrated instances.json -> data/instances.json"
+    fi
+    git rm --cached --quiet instances.json 2>/dev/null || true
+    rm -f instances.json
+fi
+
 echo "Stashing custom modifications..."
 git stash push -m "custom-mods-$(date +%Y%m%d-%H%M%S)"
 

@@ -1418,7 +1418,23 @@ async def set_push_config(request: Request):
 
 # ==================== Instance Management ====================
 
-_INSTANCES_FILE = Path(__file__).parent.parent.parent / "instances.json"
+_INSTANCES_FILE = _DATA_DIR / "instances.json"
+_LEGACY_INSTANCES_FILE = Path(__file__).parent.parent.parent / "instances.json"
+
+
+def _migrate_legacy_instances_file() -> None:
+    # instances.json used to live at the repo root, which is neither a
+    # git-ignored path (update.sh's "stash custom mods, pull, pop" dance can
+    # conflict on it) nor a Docker volume (./data is the only one mounted) —
+    # so every update or container recreation silently reset manually
+    # registered instances back to the two defaults. Move it under data/,
+    # which is already both git-ignored and volume-mounted.
+    if _LEGACY_INSTANCES_FILE.exists() and not _INSTANCES_FILE.exists():
+        _DATA_DIR.mkdir(exist_ok=True)
+        _INSTANCES_FILE.write_text(_LEGACY_INSTANCES_FILE.read_text())
+
+
+_migrate_legacy_instances_file()
 
 
 def _autoprovision_enabled() -> bool:
