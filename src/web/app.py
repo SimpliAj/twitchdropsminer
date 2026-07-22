@@ -879,6 +879,7 @@ async def get_version():
     latest_version = None
     update_available = False
     download_url = None
+    release_notes = None
 
     try:
         # Check GitHub API for latest release
