@@ -21,6 +21,7 @@ logs/
 .claude/
 data/
 data2/
+/instances.json
 discord_bot/live_stats.json
 docs/superpowers/
 .ruff_cache/
