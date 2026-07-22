@@ -4421,8 +4421,14 @@ function showCampaignDropsModal(campaignId, onlyRemaining) {
     sub.textContent = `${campaign.game_name} · ${onlyRemaining ? 'Remaining drops' : 'All drops'}`;
     modal.appendChild(sub);
 
+    // Mirrors DropsCampaign.finished (campaign.py) / autoCleanWantedQueue: a drop
+    // counts as done if claimed, sub-gated (Twitch never lets required_subs > 0
+    // claim through without a real sub), or already hit 100% locally. Without this,
+    // sub-gated and locally-earned-but-unconfirmed drops kept showing up here forever.
     const drops = onlyRemaining
-        ? (campaign.drops || []).filter(d => !d.is_claimed)
+        ? (campaign.drops || []).filter(d => !d.is_claimed
+            && (d.required_subs || 0) <= 0
+            && getEffectiveMinutes(d) < (d.required_minutes || 0))
         : (campaign.drops || []);
 
     if (drops.length === 0) {
