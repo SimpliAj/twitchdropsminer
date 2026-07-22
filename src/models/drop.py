@@ -283,6 +283,10 @@ class TimedDrop(BaseDrop):
         return (
             super()._base_earn_conditions()
             and self.required_minutes > 0
+            # Watching can't unlock a sub-gated tier — Twitch only grants these to
+            # existing subscribers, so treat them as unearnable rather than mining
+            # minutes into a claim that will never happen.
+            and self.required_subs <= 0
             # NOTE: This may be a bad idea, as it invalidates the can_earn status
             # and provides no way to recover from this state until the next reload.
             and self.extra_current_minutes < MAX_EXTRA_MINUTES

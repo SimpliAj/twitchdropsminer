@@ -1128,7 +1128,9 @@ function updateDropProgress(data) {
         document.getElementById('progress-time').insertAdjacentElement('afterend', dropsLeftEl);
     }
     if (campData && campData.drops) {
-        const unclaimed = campData.drops.filter(d => !d.is_claimed);
+        // Sub-gated tiers can never be earned by watching — exclude them so a
+        // campaign with an unreachable sub-only tier doesn't show as stuck forever.
+        const unclaimed = campData.drops.filter(d => !d.is_claimed && (d.required_subs || 0) <= 0);
         const remainMins = unclaimed.reduce((s, d) => s + Math.max(0, (d.required_minutes || 0) - (d.current_minutes || 0)), 0);
         const h = Math.floor(remainMins / 60), m = Math.round(remainMins % 60);
         const timeStr = h > 0 ? `~${h}h ${m}m` : remainMins > 0 ? `~${m}m` : null;
