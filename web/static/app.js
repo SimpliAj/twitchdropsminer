@@ -3552,8 +3552,16 @@ function switchTab(tabName) {
 
 // ==================== Event Listeners ====================
 
-function switchAccount(num) {
+function switchAccount(inst) {
+    // Manually-registered instances (arbitrary host/port, no reverse-proxy path
+    // set up for them) are switched to by navigating straight to their own
+    // origin instead of the /accN/ proxy path the pm2+nginx instances use.
+    const num = typeof inst === 'object' ? inst.n : inst;
     if (num === ACC_NUM) return;
+    if (typeof inst === 'object' && inst.base_url) {
+        location.href = inst.base_url;
+        return;
+    }
     const url = new URL(location.href);
     if (num > 1) url.searchParams.set('acc', String(num));
     else url.searchParams.delete('acc');
@@ -3591,11 +3599,13 @@ async function loadInstanceTabs() {
             btn.dataset.accN = inst.n;
             btn.dataset.accLabel = inst.label;
             btn.textContent = inst.label;
-            btn.title = `Port ${inst.port}`;
-            btn.onclick = () => switchAccount(inst.n);
+            btn.title = inst.base_url ? inst.base_url : `Port ${inst.port}`;
+            btn.onclick = () => switchAccount(inst);
             container.appendChild(btn);
             // fetch login name for this instance
-            const apiPath = inst.n > 1 ? `/acc${inst.n}/api/instance` : '/api/instance';
+            const apiPath = inst.base_url
+                ? `${inst.base_url}/api/instance`
+                : (inst.n > 1 ? `/acc${inst.n}/api/instance` : '/api/instance');
             fetch(apiPath).then(r => r.json()).then(d => {
                 if (d.login) _accLogins[inst.n] = d.login;
                 applyUsernameVisibility();
@@ -3973,6 +3983,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const r = await fetch('/api/instances');
             const data = await r.json();
             if (warningEl) warningEl.style.display = data.proxy_warning ? 'block' : 'none';
+            // Auto-provisioning (pm2+nginx) only works on the maintainer's own VPS —
+            // hide it everywhere else so self-hosters only see the option that
+            // actually works for them (registering an already-running instance).
+            const addBtn = document.getElementById('add-instance-btn');
+            if (addBtn) addBtn.style.display = data.autoprovision_enabled ? '' : 'none';
             const instances = data.instances || [];
             listEl.innerHTML = '';
             instances.forEach(inst => {
@@ -3984,13 +3999,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 namePart.textContent = inst.label;
                 const portBadge = document.createElement('span');
                 portBadge.style.cssText = 'font-size:.75rem;color:var(--text-secondary);background:var(--bg-secondary);padding:2px 7px;border-radius:4px;';
-                portBadge.textContent = `:${inst.port}`;
+                portBadge.textContent = inst.base_url ? new URL(inst.base_url).host : `:${inst.port}`;
                 const switchBtn = document.createElement('button');
                 switchBtn.className = isActive ? 'btn-secondary' : 'btn-primary';
                 switchBtn.style.cssText = 'padding:4px 10px;font-size:.8rem;width:auto;';
                 switchBtn.textContent = isActive ? 'Active' : 'Switch';
                 switchBtn.disabled = isActive;
-                switchBtn.onclick = () => switchAccount(inst.n);
+                switchBtn.onclick = () => switchAccount(inst);
                 row.appendChild(namePart);
                 row.appendChild(portBadge);
                 row.appendChild(switchBtn);
@@ -4035,6 +4050,36 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             const err = await res.json().catch(() => ({}));
             if (statusEl) { statusEl.textContent = `Error: ${err.detail || 'Failed to create instance'}`; statusEl.style.display = 'block'; }
+        }
+        if (btn) btn.disabled = false;
+    });
+
+    document.getElementById('register-instance-btn')?.addEventListener('click', async () => {
+        const hostEl = document.getElementById('reg-instance-host');
+        const portEl = document.getElementById('reg-instance-port');
+        const labelEl = document.getElementById('reg-instance-label');
+        const btn = document.getElementById('register-instance-btn');
+        const statusEl = document.getElementById('instances-status');
+        const host = hostEl?.value.trim() || 'localhost';
+        const port = parseInt(portEl?.value, 10);
+        if (!port || port < 1 || port > 65535) {
+            if (statusEl) { statusEl.textContent = 'Enter a valid port.'; statusEl.style.display = 'block'; }
+            return;
+        }
+        if (btn) btn.disabled = true;
+        const res = await fetch('/api/instances/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ host, port, label: labelEl?.value.trim() || null }),
+        });
+        if (res.ok) {
+            if (portEl) portEl.value = '';
+            if (labelEl) labelEl.value = '';
+            if (statusEl) { statusEl.textContent = 'Instance registered! Reloading...'; statusEl.style.display = 'block'; }
+            setTimeout(() => { loadInstanceTabs(); loadInstances(); if (statusEl) statusEl.style.display = 'none'; }, 1000);
+        } else {
+            const err = await res.json().catch(() => ({}));
+            if (statusEl) { statusEl.textContent = `Error: ${err.detail || 'Failed to register instance'}`; statusEl.style.display = 'block'; }
         }
         if (btn) btn.disabled = false;
     });

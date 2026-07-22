@@ -1420,6 +1420,17 @@ async def set_push_config(request: Request):
 
 _INSTANCES_FILE = Path(__file__).parent.parent.parent / "instances.json"
 
+
+def _autoprovision_enabled() -> bool:
+    # pm2+nginx auto-provisioning (scripts/manage_instance.sh) is hardcoded to
+    # the maintainer's own VPS layout (absolute path, sudo nginx reload, a
+    # fixed domain) and isn't shipped in the Docker image. It's opt-in via env
+    # var so it only ever shows up on that one deployment — every other
+    # self-hoster only ever sees the host/port "register existing instance"
+    # path, which works anywhere.
+    return os.environ.get("ENABLE_AUTOPROVISION", "").lower() in ("1", "true", "yes")
+
+
 def _load_instances_registry() -> dict:
     if _INSTANCES_FILE.exists():
         return json.loads(_INSTANCES_FILE.read_text())
@@ -1434,23 +1445,77 @@ async def get_instances():
     registry = _load_instances_registry()
     if len(registry.get("instances", [])) >= 3:
         registry["proxy_warning"] = True
+    registry["autoprovision_enabled"] = _autoprovision_enabled()
     return registry
 
 
 @app.post("/api/instances")
 async def create_instance():
+    if not _autoprovision_enabled():
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "Auto-provisioning isn't available on this deployment — it only works on "
+                "the maintainer's own VPS layout (pm2+nginx, fixed paths). Use "
+                "'Register existing instance' instead to add one running on any host/port."
+            ),
+        )
     import subprocess
     script = str(Path(__file__).parent.parent.parent / "scripts" / "manage_instance.sh")
+    if not Path(script).exists():
+        raise HTTPException(
+            status_code=500,
+            detail="manage_instance.sh not found even though auto-provisioning is enabled.",
+        )
     result = subprocess.run(["bash", script, "create"], capture_output=True, text=True)
     if result.returncode != 0:
         raise HTTPException(status_code=500, detail=result.stderr)
     return {"success": True, "instances": _load_instances_registry()["instances"]}
 
 
+class RegisterInstanceRequest(BaseModel):
+    host: str
+    port: int
+    label: str | None = None
+
+
+@app.post("/api/instances/register")
+async def register_instance(req: RegisterInstanceRequest):
+    """Register an already-running instance (any host/port) for tab-switching only.
+
+    Unlike POST /api/instances, this never starts a process or touches nginx —
+    it just remembers where to send you. Switching to it navigates the browser
+    to that instance's own origin instead of relying on a reverse-proxy path,
+    so it works regardless of how or where that instance is actually hosted.
+    """
+    if not (1 <= req.port <= 65535):
+        raise HTTPException(status_code=400, detail="Port must be between 1 and 65535")
+    host = req.host.strip() or "localhost"
+    registry = _load_instances_registry()
+    instances = registry["instances"]
+    next_n = max((i["n"] for i in instances), default=0) + 1
+    instances.append({
+        "n": next_n,
+        "base_url": f"http://{host}:{req.port}",
+        "label": (req.label or "").strip() or f"Account {next_n}",
+    })
+    _INSTANCES_FILE.write_text(json.dumps(registry, indent=2) + "\n")
+    return {"success": True, "instances": instances}
+
+
 @app.delete("/api/instances/{n}")
 async def remove_instance(n: int):
     if n == 1:
         raise HTTPException(status_code=400, detail="Cannot remove main instance")
+    registry = _load_instances_registry()
+    target = next((i for i in registry["instances"] if i["n"] == n), None)
+    if target is None:
+        raise HTTPException(status_code=404, detail="Instance not found")
+    if "pm2_name" not in target:
+        # Manually registered — nothing was started, so there's nothing to stop.
+        registry["instances"] = [i for i in registry["instances"] if i["n"] != n]
+        _INSTANCES_FILE.write_text(json.dumps(registry, indent=2) + "\n")
+        return {"success": True, "instances": registry["instances"]}
     import subprocess
     script = str(Path(__file__).parent.parent.parent / "scripts" / "manage_instance.sh")
     result = subprocess.run(["bash", script, "remove", str(n)], capture_output=True, text=True)

@@ -349,7 +349,7 @@ class Twitch:
                         if self.settings.make_predictions:
                             pred_whitelist = [c.lower() for c in self.settings.prediction_channels]
                             for ch in idle_chs[1:]:
-                                if pred_whitelist and ch.name.lower() not in pred_whitelist:
+                                if pred_whitelist and ch._login.lower() not in pred_whitelist:
                                     continue
                                 pred_topic_id = WebsocketTopic.as_str("Channel", "Predictions", ch.id)
                                 if pred_topic_id not in self._idle_topic_ids:

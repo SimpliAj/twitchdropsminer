@@ -338,6 +338,15 @@
                         </div>
                         <button id="add-instance-btn" class="btn-primary" style="width:auto;padding:7px 14px;font-size:.85rem">+ Add Instance</button>
                         <div id="instances-status" style="margin-top:8px;font-size:.82rem;display:none"></div>
+                        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border-color);">
+                            <p style="font-size:.8rem;color:var(--text-secondary);margin:0 0 8px">Already running an instance yourself (custom port, another host/container)? Register it here — nothing is started, stopped, or reconfigured.</p>
+                            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+                                <input type="text" id="reg-instance-host" placeholder="host" value="localhost" style="width:120px;padding:5px 8px;font-size:.82rem;">
+                                <input type="number" id="reg-instance-port" placeholder="port" min="1" max="65535" style="width:80px;padding:5px 8px;font-size:.82rem;">
+                                <input type="text" id="reg-instance-label" placeholder="label (optional)" style="width:120px;padding:5px 8px;font-size:.82rem;">
+                                <button id="register-instance-btn" class="btn-secondary" style="width:auto;padding:6px 12px;font-size:.82rem;">Register</button>
+                            </div>
+                        </div>
                     </div>
                     <div class="system-card" id="accounts-card" style="margin-bottom:16px">
                         <h3 id="system-accounts-header">Twitch Accounts</h3>
