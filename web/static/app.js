@@ -1128,9 +1128,11 @@ function updateDropProgress(data) {
         document.getElementById('progress-time').insertAdjacentElement('afterend', dropsLeftEl);
     }
     if (campData && campData.drops) {
-        // Sub-gated tiers can never be earned by watching — exclude them so a
-        // campaign with an unreachable sub-only tier doesn't show as stuck forever.
-        const unclaimed = campData.drops.filter(d => !d.is_claimed && (d.required_subs || 0) <= 0);
+        // Sub-gated tiers can never be earned by watching, and a drop that already
+        // hit 100% locally isn't "left" even if Twitch hasn't confirmed the claim yet —
+        // exclude both so this doesn't show as stuck forever.
+        const unclaimed = campData.drops.filter(d => !d.is_claimed && (d.required_subs || 0) <= 0
+            && (d.current_minutes || 0) < (d.required_minutes || 0));
         const remainMins = unclaimed.reduce((s, d) => s + Math.max(0, (d.required_minutes || 0) - (d.current_minutes || 0)), 0);
         const h = Math.floor(remainMins / 60), m = Math.round(remainMins % 60);
         const timeStr = h > 0 ? `~${h}h ${m}m` : remainMins > 0 ? `~${m}m` : null;
@@ -1665,7 +1667,9 @@ function renderInventory() {
         const toggleBtn = makeElement('button', { class: 'inv-toggle-btn' }, `▸ ${dropCount} drop${dropCount !== 1 ? 's' : ''}`);
 
         // Remaining drops + time estimate — only show for linked campaigns
-        const unclaimedDrops = campaign.drops.filter(d => !d.is_claimed && (!filters.show_sub_drops ? (d.required_subs || 0) === 0 : true));
+        const unclaimedDrops = campaign.drops.filter(d => !d.is_claimed
+            && (!filters.show_sub_drops ? (d.required_subs || 0) === 0 : true)
+            && (d.current_minutes || 0) < (d.required_minutes || 0));
         const remainingMins = unclaimedDrops.reduce((sum, d) => sum + Math.max(0, (d.required_minutes || 0) - (d.current_minutes || 0)), 0);
         const formatTime = mins => {
             if (mins <= 0) return null;
