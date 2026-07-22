@@ -162,8 +162,9 @@ class WatchService:
             except MinerException:
                 logger.warning(f"Topic limit — Moments topic skipped for {channel.name}")
         if self._twitch.settings.make_predictions:
+            # whitelist entries are ASCII logins, not the (possibly Cyrillic) display name
             whitelist = [c.lower() for c in self._twitch.settings.prediction_channels]
-            if not whitelist or channel.name.lower() in whitelist:
+            if not whitelist or channel._login.lower() in whitelist:
                 try:
                     self._twitch.websocket.add_topics([WebsocketTopic(
                         "Channel", "Predictions", channel.id,
@@ -193,7 +194,7 @@ class WatchService:
 
         whitelist = [c.lower() for c in self._twitch.settings.prediction_channels]
         for ch in channels:
-            if whitelist and ch.name.lower() not in whitelist:
+            if whitelist and ch._login.lower() not in whitelist:
                 continue
             try:
                 self._twitch.websocket.add_topics([WebsocketTopic(

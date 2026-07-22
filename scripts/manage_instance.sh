@@ -98,7 +98,7 @@ print(max(ns) + 1 if ns else 1)
     mkdir -p "$abs_data_dir"
 
     cd "$WORK_DIR"
-    TDM_PORT="$port" TDM_DATA_DIR="$abs_data_dir" pm2 start main.py \
+    TDM_PORT="$port" TDM_DATA_DIR="$abs_data_dir" ENABLE_AUTOPROVISION=1 pm2 start main.py \
         --name "$pm2_name" \
         --interpreter "$PYTHON" \
         --cwd "$WORK_DIR"

@@ -102,12 +102,17 @@ class PredictionService:
         channel = self._twitch.channels.get(channel_id)
         if not channel:
             return
-        cfg = self._get_channel_settings(channel.name)
+        # Overrides/whitelist are keyed by the Twitch login (always ASCII,
+        # what users type in the UI), but channel.name prefers the display
+        # name — which for e.g. Cyrillic streamers differs entirely from the
+        # login. Matching against channel.name silently excluded every such
+        # channel from predictions (whitelist/override never matched).
+        cfg = self._get_channel_settings(channel._login)
         if not cfg["make_predictions"]:
             return
 
         whitelist = [c.lower() for c in self._twitch.settings.prediction_channels]
-        if whitelist and channel.name.lower() not in whitelist:
+        if whitelist and channel._login.lower() not in whitelist:
             return
 
         event = message.get("data", {}).get("event", {})

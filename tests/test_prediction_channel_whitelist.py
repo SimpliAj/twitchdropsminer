@@ -19,9 +19,10 @@ def _make_service(make_predictions=True, prediction_channels=None):
     return PredictionService(twitch)
 
 
-def _make_channel(name):
+def _make_channel(name, login=None):
     ch = MagicMock()
     ch.name = name
+    ch._login = login or name
     return ch
 
 
@@ -77,6 +78,20 @@ class TestPredictionChannelWhitelist(unittest.IsolatedAsyncioTestCase):
     async def test_whitelist_case_insensitive(self):
         svc = _make_service(prediction_channels=["STREAMER_A"])
         channel = _make_channel("Streamer_A")
+        svc._twitch.channels = {1: channel}
+
+        await svc.process_prediction(1, _EVENT_CREATED_MSG)
+        self.assertIn("evt-001", svc._pending)
+
+        for t in svc._pending.values():
+            t.cancel()
+
+    async def test_whitelist_matches_login_not_display_name(self):
+        # Streamers can have a display name (e.g. Cyrillic) that differs
+        # entirely from their (always-ASCII) login. The whitelist is keyed
+        # by login, so matching must ignore the display name.
+        svc = _make_service(prediction_channels=["streamer_a"])
+        channel = _make_channel(name="Стример_А", login="streamer_a")
         svc._twitch.channels = {1: channel}
 
         await svc.process_prediction(1, _EVENT_CREATED_MSG)
