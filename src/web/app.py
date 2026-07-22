@@ -1511,13 +1511,16 @@ async def remove_instance(n: int):
     target = next((i for i in registry["instances"] if i["n"] == n), None)
     if target is None:
         raise HTTPException(status_code=404, detail="Instance not found")
-    if "pm2_name" not in target:
-        # Manually registered — nothing was started, so there's nothing to stop.
+    import subprocess
+    script = str(Path(__file__).parent.parent.parent / "scripts" / "manage_instance.sh")
+    if "pm2_name" not in target or not _autoprovision_enabled() or not Path(script).exists():
+        # Manually registered, or auto-provisioning isn't available on this
+        # deployment (see _autoprovision_enabled) — there's no pm2/nginx setup
+        # to tear down here, so just forget about it instead of shelling out
+        # to a script that's hardcoded to the maintainer's own VPS layout.
         registry["instances"] = [i for i in registry["instances"] if i["n"] != n]
         _INSTANCES_FILE.write_text(json.dumps(registry, indent=2) + "\n")
         return {"success": True, "instances": registry["instances"]}
-    import subprocess
-    script = str(Path(__file__).parent.parent.parent / "scripts" / "manage_instance.sh")
     result = subprocess.run(["bash", script, "remove", str(n)], capture_output=True, text=True)
     if result.returncode != 0:
         raise HTTPException(status_code=500, detail=result.stderr)
