@@ -287,6 +287,11 @@ class TimedDrop(BaseDrop):
             # existing subscribers, so treat them as unearnable rather than mining
             # minutes into a claim that will never happen.
             and self.required_subs <= 0
+            # Watch time is already maxed out — more watching won't do anything for
+            # this drop, whether or not Twitch has flipped isClaimed yet. Without this,
+            # a drop stuck waiting on server-side claim confirmation keeps getting
+            # picked as the active earn target (first_drop/channel selection) forever.
+            and self.current_minutes < self.required_minutes
             # NOTE: This may be a bad idea, as it invalidates the can_earn status
             # and provides no way to recover from this state until the next reload.
             and self.extra_current_minutes < MAX_EXTRA_MINUTES
