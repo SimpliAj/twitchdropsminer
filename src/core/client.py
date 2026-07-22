@@ -738,9 +738,16 @@ class Twitch:
     async def _fetch_followed_channels(self) -> list[str]:
         try:
             resp = await self.gql_request(GQL_OPERATIONS["FollowedChannels"])
+            # The ChannelFollows persisted query nests the requesting user's
+            # follows under "user" (the queried user), not "currentUser" —
+            # the old currentUser path is always None/missing, so this always
+            # returned zero followed channels. idle_use_followed therefore
+            # never had anything beyond the manually configured idle_channels
+            # to draw from, which starved idle-parallel Predictions of any
+            # channel to bet on outside of active drop-farming.
             edges = (
                 resp.get("data", {})
-                .get("currentUser", {})
+                .get("user", {})
                 .get("follows", {})
                 .get("edges", [])
             )
