@@ -53,5 +53,51 @@ class TestInstanceManagement(unittest.IsolatedAsyncioTestCase):
         self.assertIn("Register existing instance", ctx.exception.detail)
 
 
+class TestLegacyInstancesMigration(unittest.TestCase):
+    # instances.json used to live at the repo root, which was neither
+    # git-stash-safe (update.sh) nor part of the Docker volume (only ./data
+    # is mounted) — every update/container-recreate silently reset manually
+    # registered instances back to the two defaults. It now lives under
+    # data/, which is both git-ignored and volume-mounted.
+    def setUp(self):
+        self.legacy_file = Path("/tmp/test_legacy_instances.json")
+        self.new_file = Path("/tmp/test_new_instances.json")
+        self.legacy_file.unlink(missing_ok=True)
+        self.new_file.unlink(missing_ok=True)
+        self._legacy_patcher = patch.object(web_app, "_LEGACY_INSTANCES_FILE", self.legacy_file)
+        self._new_patcher = patch.object(web_app, "_INSTANCES_FILE", self.new_file)
+        self._data_dir_patcher = patch.object(web_app, "_DATA_DIR", self.new_file.parent)
+        self._legacy_patcher.start()
+        self._new_patcher.start()
+        self._data_dir_patcher.start()
+
+    def tearDown(self):
+        self._legacy_patcher.stop()
+        self._new_patcher.stop()
+        self._data_dir_patcher.stop()
+        self.legacy_file.unlink(missing_ok=True)
+        self.new_file.unlink(missing_ok=True)
+
+    def test_migrates_custom_instances_from_legacy_location(self):
+        custom = {"instances": [
+            {"n": 1, "port": 8080, "data_dir": "data", "pm2_name": "twitchdrops", "label": "Account 1"},
+            {"n": 2, "base_url": "http://localhost:8090", "label": "Manual Account 3"},
+        ]}
+        self.legacy_file.write_text(json.dumps(custom))
+        web_app._migrate_legacy_instances_file()
+        self.assertEqual(json.loads(self.new_file.read_text()), custom)
+
+    def test_does_not_overwrite_existing_new_file(self):
+        self.legacy_file.write_text(json.dumps({"instances": [{"n": 1, "label": "Legacy"}]}))
+        already_there = {"instances": [{"n": 1, "label": "Already migrated"}]}
+        self.new_file.write_text(json.dumps(already_there))
+        web_app._migrate_legacy_instances_file()
+        self.assertEqual(json.loads(self.new_file.read_text()), already_there)
+
+    def test_noop_when_no_legacy_file(self):
+        web_app._migrate_legacy_instances_file()
+        self.assertFalse(self.new_file.exists())
+
+
 if __name__ == "__main__":
     unittest.main()

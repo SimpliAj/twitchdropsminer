@@ -1738,9 +1738,19 @@ function autoCleanWantedQueue() {
         );
         if (gameCampaigns.length === 0) return true;
 
-        // Only auto-remove when ALL campaigns for this game have all drops fully claimed
+        // Only auto-remove when ALL campaigns for this game are effectively done. A
+        // literal claimed_drops === total_drops check never fires if any tier is
+        // sub-gated (required_subs > 0, e.g. an "UltraViolet"-style reward) — Twitch
+        // never lets that claim through without a real subscription, so the game sat
+        // in the watch queue forever, endlessly re-picked as an earn target. Mirror
+        // DropsCampaign.finished (campaign.py): a drop counts as done if it's claimed,
+        // sub-gated, or already hit 100% locally (even if Twitch hasn't confirmed yet).
         const allFullyClaimed = gameCampaigns.every(c =>
-            c.total_drops > 0 && c.claimed_drops === c.total_drops
+            c.total_drops > 0 && c.drops.every(d =>
+                d.is_claimed
+                || (d.required_subs || 0) > 0
+                || (d.current_minutes || 0) >= (d.required_minutes || 0)
+            )
         );
 
         if (allFullyClaimed) { changed = true; removedGames.push(gameName); return false; }
