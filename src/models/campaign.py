@@ -98,7 +98,9 @@ class DropsCampaign:
 
     @property
     def finished(self) -> bool:
-        return all(d.is_claimed or d.required_minutes <= 0 for d in self.drops)
+        return all(
+            d.is_claimed or d.required_minutes <= 0 or d.required_subs > 0 for d in self.drops
+        )
 
     @property
     def claimed_drops(self) -> int:
@@ -106,7 +108,7 @@ class DropsCampaign:
 
     @property
     def remaining_drops(self) -> int:
-        return sum(not d.is_claimed for d in self.drops)
+        return sum(not d.is_claimed and d.required_subs <= 0 for d in self.drops)
 
     @property
     def required_minutes(self) -> int:
