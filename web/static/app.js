@@ -1761,7 +1761,7 @@ function autoCleanWantedQueue() {
         state.settings.games_to_watch = cleaned;
         saveSettings();
         renderGamesToWatch();
-        addConsoleLine(`Auto-removed from watch list (all drops already claimed): ${removedGames.join(', ')}`);
+        addConsoleLine(`Auto-removed from watch list (nothing left to earn — claimed or sub-only): ${removedGames.join(', ')}. Use Preferred Games to keep a game tracked permanently.`);
     }
 }
 
