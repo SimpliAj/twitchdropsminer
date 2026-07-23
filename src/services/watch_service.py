@@ -134,6 +134,23 @@ class WatchService:
         """
         self._twitch.gui.channels.set_watching(channel)
         self._twitch.watching_channel.set(channel)
+        # Predictions before CommunityPoints before Moments: betting is the feature
+        # users actually rely on and report on, channel-points tracking and Moments
+        # are secondary — when the websocket topic pool is near its cap (large
+        # games_to_watch + idle_parallel routinely fills all 8 connections),
+        # whichever is requested last starves first.
+        if self._twitch.settings.make_predictions:
+            # whitelist entries are ASCII logins, not the (possibly Cyrillic) display name
+            whitelist = [c.lower() for c in self._twitch.settings.prediction_channels]
+            if not whitelist or channel._login.lower() in whitelist:
+                try:
+                    self._twitch.websocket.add_topics([WebsocketTopic(
+                        "Channel", "Predictions", channel.id,
+                        self._twitch._prediction_service.process_prediction,
+                    )])
+                    logger.info(f"Predictions subscribed for {channel.name}")
+                except MinerException:
+                    logger.warning(f"Topic limit — Predictions topic skipped for {channel.name}")
         # Subscribe CommunityPoints for this channel (only if enabled, 1 topic = safe)
         if self._twitch.settings.claim_channel_points:
             prev = self._twitch._watching_cp_topic_id
@@ -153,22 +170,6 @@ class WatchService:
                     self._twitch._watching_cp_topic_id = new_topic_id
                 except MinerException:
                     logger.warning(f"Topic limit reached — CommunityPoints not subscribed for {channel.name}")
-        # Predictions before Moments: betting is the feature users actually rely on
-        # and report on, Moments is a minor bonus-image claim — when the websocket
-        # topic pool is near its cap (large games_to_watch + idle_parallel routinely
-        # fills all 8 connections), whichever is requested last starves first.
-        if self._twitch.settings.make_predictions:
-            # whitelist entries are ASCII logins, not the (possibly Cyrillic) display name
-            whitelist = [c.lower() for c in self._twitch.settings.prediction_channels]
-            if not whitelist or channel._login.lower() in whitelist:
-                try:
-                    self._twitch.websocket.add_topics([WebsocketTopic(
-                        "Channel", "Predictions", channel.id,
-                        self._twitch._prediction_service.process_prediction,
-                    )])
-                    logger.info(f"Predictions subscribed for {channel.name}")
-                except MinerException:
-                    logger.warning(f"Topic limit — Predictions topic skipped for {channel.name}")
         if self._twitch.settings.claim_moments:
             try:
                 self._twitch.websocket.add_topics([WebsocketTopic(
