@@ -97,7 +97,18 @@ class PredictionService:
 
     @task_wrapper
     async def process_prediction(self, channel_id: int, message: dict) -> None:
+        # self._twitch.channels only ever holds drop-farming candidates (populated
+        # by State.CHANNELS_FETCH from campaign data) — idle-watched channels are
+        # fetched separately (_fetch_idle_channel_by_login) and never added there.
+        # Every real Prediction event for a pure idle channel looked up channel_id
+        # here, got None, and returned before any log line was ever written —
+        # betting only ever worked while a channel happened to also be actively
+        # drop-farmed. Root-caused from a user's Discord log report (2026-07-25).
         channel = self._twitch.channels.get(channel_id)
+        if not channel:
+            channel = next(
+                (ch for ch in self._twitch._idle_channels_set if ch.id == channel_id), None
+            )
         if not channel:
             return
         # Overrides/whitelist are keyed by the Twitch login (always ASCII,
