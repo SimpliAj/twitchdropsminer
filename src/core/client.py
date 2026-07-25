@@ -349,6 +349,11 @@ class Twitch:
                                             self._prediction_service.process_prediction,
                                         )])
                                         self._idle_topic_ids.append(pred_topic_id)
+                                        # Unlike watch()'s primary-channel subscribe, this path had no
+                                        # success log — made it impossible to tell from logs alone
+                                        # whether secondary idle channels ever got Predictions at all
+                                        # (silently working vs. silently broken looked identical).
+                                        logger.info(f"Predictions subscribed for {ch.name} (idle)")
                                     except Exception:
                                         logger.warning(f"Predictions topic limit — skipping {ch.name}")
                         # Subscribe CommunityPoints for all additional idle channels
