@@ -97,8 +97,6 @@ class PredictionService:
 
     @task_wrapper
     async def process_prediction(self, channel_id: int, message: dict) -> None:
-        if not self._twitch.settings.make_predictions:
-            return
         channel = self._twitch.channels.get(channel_id)
         if not channel:
             return
@@ -108,16 +106,37 @@ class PredictionService:
         # login. Matching against channel.name silently excluded every such
         # channel from predictions (whitelist/override never matched).
         cfg = self._get_channel_settings(channel._login)
+        whitelist = [c.lower() for c in self._twitch.settings.prediction_channels]
+
+        event = message.get("data", {}).get("event", {})
+        msg_type = message.get("type", "")
+
+        if msg_type == "event-created":
+            # Every early-return below used to produce zero log output, making
+            # "no real Prediction ever ran on this channel" indistinguishable
+            # from "one ran but got filtered out" when reading a user's log —
+            # surfaced diagnosing a Discord bug report (2026-07-25) where we
+            # couldn't tell which case we were looking at.
+            skip_reason = None
+            if not self._twitch.settings.make_predictions:
+                skip_reason = "Auto-Bet disabled globally"
+            elif not cfg["make_predictions"]:
+                skip_reason = "disabled via per-channel override"
+            elif whitelist and channel._login.lower() not in whitelist:
+                skip_reason = "channel not in prediction whitelist"
+            if skip_reason:
+                logger.info(
+                    f"Prediction '{event.get('title')}' seen on {channel.name} but skipped ({skip_reason})"
+                )
+
+        if not self._twitch.settings.make_predictions:
+            return
         if not cfg["make_predictions"]:
             return
-
-        whitelist = [c.lower() for c in self._twitch.settings.prediction_channels]
         if whitelist and channel._login.lower() not in whitelist:
             return
 
-        event = message.get("data", {}).get("event", {})
         event_id = event.get("id", "")
-        msg_type = message.get("type", "")
 
         if msg_type == "event-created":
             self._active_events[event_id] = event
