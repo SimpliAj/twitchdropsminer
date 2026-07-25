@@ -30,8 +30,10 @@ if __name__ == "__main__":
     console_handler.setFormatter(FILE_FORMATTER)
     logger.addHandler(console_handler)
 
-    # Create logs directory if it doesn't exist
-    logs_dir = Path("logs")
+    # Anchored to the project root, not the process's CWD at launch — PM2/systemd/
+    # Docker commonly start this with a different working directory, which silently
+    # scattered logs across unrelated locations depending on how it was launched.
+    logs_dir = Path(__file__).parent.parent / "logs"
     logs_dir.mkdir(exist_ok=True)
     log_file = logs_dir / "TDM.log"
 

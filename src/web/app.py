@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -908,6 +910,38 @@ async def get_version():
         "download_url": download_url or "https://github.com/SimpliAj/twitchdropsminer/releases",
         "release_notes": release_notes,
     }
+
+
+_SECRET_LINE_RE = re.compile(
+    r"(oauth:[a-zA-Z0-9]+|(?:access_token|refresh_token|client_secret|password)[\"']?\s*[:=]\s*[\"']?[^\s\"',}]+)",
+    re.IGNORECASE,
+)
+
+
+@app.get("/api/logs/download")
+async def download_logs():
+    """Bundle recent log output into one downloadable file users can attach to a bug report."""
+    logs_dir = Path(__file__).parent.parent.parent / "logs"
+    log_file = logs_dir / "TDM.log"
+    if not log_file.exists():
+        raise HTTPException(status_code=404, detail="No log file found yet")
+
+    MAX_LINES = 5000
+    try:
+        lines = log_file.read_text(encoding="utf-8", errors="replace").splitlines()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Could not read log file: {e}")
+    if len(lines) > MAX_LINES:
+        lines = [f"... ({len(lines) - MAX_LINES} earlier lines omitted) ..."] + lines[-MAX_LINES:]
+    content = "\n".join(_SECRET_LINE_RE.sub("[REDACTED]", line) for line in lines)
+
+    from src.version import __version__ as _tdm_version
+    filename = f"TDM-logs-v{_tdm_version}-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}.txt"
+    return Response(
+        content=content,
+        media_type="text/plain",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @app.get("/api/wanted-items")

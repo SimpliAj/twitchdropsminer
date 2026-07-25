@@ -3960,6 +3960,10 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = '/__auth_logout';
     });
 
+    document.getElementById('download-logs-btn')?.addEventListener('click', () => {
+        window.open(API_BASE + '/api/logs/download', '_blank');
+    });
+
     document.getElementById('qc-switch-btn')?.addEventListener('click', async () => {
         try {
             const r = await fetch(API_BASE + '/api/idle-watch/switch', { method: 'POST' });
