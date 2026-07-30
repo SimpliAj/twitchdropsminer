@@ -10,7 +10,7 @@
     <link rel="apple-touch-icon" href="/logo.png">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#9147ff">
-    <link rel="stylesheet" href="/static/styles.css?v=purple1">
+    <link rel="stylesheet" href="/static/styles.css?v=cbd9e48a">
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
 
@@ -691,6 +691,7 @@
                     </div>
                     <div id="history-empty" style="color:#adadb8;font-size:0.9rem;padding:12px 0;">No drops claimed yet.</div>
                     <div id="history-list" style="display:none;"></div>
+                    <div id="history-pager"></div>
                 </section>
 
                 <!-- BOTTOM: Channel Points (full width) -->
@@ -736,6 +737,7 @@
                                 <th style="padding:6px 8px">Time</th>
                                 <th style="padding:6px 8px">Channel</th>
                                 <th style="padding:6px 8px">Prediction</th>
+                                <th style="padding:6px 8px">Selection</th>
                                 <th style="padding:6px 8px">Bet</th>
                                 <th style="padding:6px 8px">Result</th>
                                 <th style="padding:6px 8px">Won</th>
@@ -743,6 +745,7 @@
                         </thead>
                         <tbody id="pred-tbody"></tbody>
                     </table>
+                    <div id="pred-pager"></div>
                 </section>
 
             </div>
@@ -1278,7 +1281,7 @@ TDM_PORT=8080 WEB_PASSWORD=mysecretpassword pm2 start main.py --name twitchdrops
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" integrity="sha384-e6nUZLBkQ86NJ6TVVKAeSaK8jWa3NhkYWZFomE39AvDbQWeie9PlQqM3pmYW5d1g" crossorigin="anonymous"></script>
-    <script src="/static/app.js?v=9ec1f3f5"></script>
+    <script src="/static/app.js?v=9b49a67a"></script>
 </body>
 
 </html>
