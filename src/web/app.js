@@ -670,6 +670,7 @@ const HISTORY_PAGE_SIZE = 50;
 function renderPager(containerEl, totalItems, pageSize, currentPage, onPageChange) {
     if (!containerEl) return;
     containerEl.replaceChildren();
+    containerEl.style.cssText = '';
     const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
     if (totalPages <= 1) return;
     containerEl.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 0;font-size:0.8rem;color:var(--text-secondary,#adadb8);';
@@ -3522,7 +3523,7 @@ function renderPredictions(preds) {
         const netWon = p.result === "WIN" ? (p.points_won || 0) - (p.points_bet || 0) : 0;
         const wonText = p.result === "WIN" ? `+${netWon.toLocaleString()}` : p.result === "LOSE" ? `−${(p.points_bet || 0).toLocaleString()}` : "—";
         const tsText = p.ts
-            ? `${new Date(p.ts).toLocaleDateString("de-AT")} ${new Date(p.ts).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })}`
+            ? `${new Date(p.ts).toLocaleDateString("de-AT", { day: "2-digit", month: "2-digit", year: "numeric" })} ${new Date(p.ts).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })}`
             : "—";
         [{ text: tsText, style: "color:#adadb8;white-space:nowrap" }, { text: p.channel || "—" }, { text: p.title ? p.title.slice(0, 40) : "—" }, { text: p.outcome_chosen || "—" }, { text: (p.points_bet || 0).toLocaleString() }, { text: p.result || "PENDING", style: `color:${color};font-weight:600` }, { text: wonText, style: `color:${color}` }]
             .forEach(c => { const td = document.createElement("td"); td.style.padding = "5px 8px"; if (c.style) td.style.cssText += c.style; td.textContent = c.text; tr.appendChild(td); });

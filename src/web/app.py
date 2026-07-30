@@ -1581,7 +1581,7 @@ async def remove_instance(n: int):
 @app.get("/api/predictions")
 async def get_predictions():
     """Return predictions history."""
-    from src.services.prediction_service import _get_predictions_file, sweep_stale_pending_by_age
+    from src.services.prediction_service import MAX_HISTORY, _get_predictions_file, sweep_stale_pending_by_age
     import json as _j
     p = _get_predictions_file()
     try:
@@ -1593,7 +1593,7 @@ async def get_predictions():
             p.write_text(_j.dumps(hist, indent=2))
         except Exception:
             pass
-    return {"predictions": list(reversed(hist[-200:]))}
+    return {"predictions": list(reversed(hist[-MAX_HISTORY:]))}
 
 
 @app.get("/api/streamer-overrides")
