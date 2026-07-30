@@ -18,7 +18,7 @@ import json as _json_mod
 
 from src.config import CALL, DATA_DIR, GQL_OPERATIONS, State
 from src.i18n import _
-from src.services.drop_history import save_drop_claim
+from src.services.drop_history import finalize_drop_claim
 from src.utils import json_load, json_save, task_wrapper
 
 _WEB_CONFIG_FILE = DATA_DIR / "web_config.json"
@@ -320,35 +320,10 @@ class MessageHandlerService:
 
             drop.update_claim(message["data"]["drop_instance_id"])
             campaign = drop.campaign
-            await drop.claim()
+            claimed = await drop.claim()
             drop.display()
-            # Discord webhook for drop claim
-            webhook_url = self._twitch.settings.discord_webhook_drops
-            if webhook_url and drop.is_claimed and drop.id not in self._twitch._webhook_sent_drops:
-                self._twitch._webhook_sent_drops.add(drop.id)
-                _acct = _get_active_account()
-                embed: dict = {
-                    "title": "🎁 Drop Claimed!",
-                    "color": 0x9147ff,
-                    "fields": [
-                        {"name": "Game", "value": campaign.game.name, "inline": True},
-                        {"name": "Drop", "value": drop.name, "inline": True},
-                        {"name": "Reward", "value": drop.rewards_text(), "inline": False},
-                    ],
-                }
-                if _acct:
-                    embed["footer"] = {"text": f"Account: {_acct}"}
-                if drop.benefits:
-                    embed["thumbnail"] = {"url": drop.benefits[0].image_url}
-                asyncio.create_task(self._send_discord_webhook(webhook_url, {"embeds": [embed]}))
-
-            # Save to drop history
-            save_drop_claim(
-                campaign.game.name,
-                drop.name,
-                drop.rewards_text(),
-                drop.benefits[0].image_url if drop.benefits else None,
-            )
+            if claimed:
+                finalize_drop_claim(self._twitch, campaign, drop)
 
             # About 4-20s after claiming the drop, next drop can be started
             # by re-sending the watch payload. We can test for it by fetching the current drop
