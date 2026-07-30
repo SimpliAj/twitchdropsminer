@@ -267,6 +267,7 @@ class MessageHandlerService:
                 self._twitch.change_state(State.CHANNEL_SWITCH)
             else:
                 logger.info(f"{channel.name} goes OFFLINE")
+            self._twitch._prediction_service.mark_channel_stale_pending(channel.name)
 
         # Channel staying ONLINE but with updates
         elif stream_before is not None and stream_after is not None:
