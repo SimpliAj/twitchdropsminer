@@ -216,8 +216,13 @@ header h1 {
     transition: background-color 0.2s;
 }
 
-.secondary-btn:hover {
+.secondary-btn:hover:not(:disabled) {
     background-color: var(--hover-bg);
+}
+
+.secondary-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
 }
 
 .verify-result {
