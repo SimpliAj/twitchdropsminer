@@ -10,7 +10,7 @@ from dateutil.parser import isoparse
 
 from src.config.constants import MAX_EXTRA_MINUTES
 from src.services import drop_minutes_cache
-from src.services.drop_history import save_drop_claim
+from src.services.drop_history import finalize_drop_claim
 from src.config.operations import GQL_OPERATIONS
 from src.exceptions import GQLException
 from src.i18n import _
@@ -318,12 +318,7 @@ class TimedDrop(BaseDrop):
             await self.generate_claim()
             claimed = await self.claim()
             if claimed:
-                save_drop_claim(
-                    self.campaign.game.name,
-                    self.name,
-                    self.rewards_text(),
-                    self.benefits[0].image_url if self.benefits else None,
-                )
+                finalize_drop_claim(self._twitch, self.campaign, self)
 
         asyncio.create_task(_do_claim())
 
