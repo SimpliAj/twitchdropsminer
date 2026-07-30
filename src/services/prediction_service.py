@@ -44,6 +44,33 @@ def _load_overrides() -> dict:
         return {}
 
 
+STALE_PENDING_HOURS = 24
+
+
+def _flip_pending_matching(hist: list, predicate) -> bool:
+    """Flips PENDING entries matching predicate to UNKNOWN in place. Returns True if any changed."""
+    changed = False
+    for entry in hist:
+        if entry.get("result") == "PENDING" and predicate(entry):
+            entry["result"] = "UNKNOWN"
+            changed = True
+    return changed
+
+
+def sweep_stale_pending_by_age(hist: list, max_age_hours: float = STALE_PENDING_HOURS) -> bool:
+    """Flips PENDING entries older than max_age_hours to UNKNOWN in place. Returns True if any changed."""
+    from datetime import datetime, timezone
+    cutoff = datetime.now(timezone.utc).timestamp() - max_age_hours * 3600
+
+    def _is_stale(entry: dict) -> bool:
+        try:
+            return datetime.fromisoformat(entry["ts"]).timestamp() < cutoff
+        except Exception:
+            return False
+
+    return _flip_pending_matching(hist, _is_stale)
+
+
 class PredictionService:
     def __init__(self, twitch: Twitch):
         self._twitch = twitch
@@ -322,7 +349,7 @@ class PredictionService:
                     winning_outcome_id = o.get("id", "")
                     break
         for entry in reversed(hist):
-            if entry.get("event_id") == event_id and entry.get("result") == "PENDING":
+            if entry.get("event_id") == event_id and entry.get("result") in ("PENDING", "UNKNOWN"):
                 if winning_outcome_id and entry.get("outcome_id") == winning_outcome_id:
                     entry["result"] = "WIN"
                     # Estimate winnings from odds
@@ -374,3 +401,21 @@ class PredictionService:
             return _json.loads(p.read_text()) if p.exists() else []
         except Exception:
             return []
+
+    def mark_channel_stale_pending(self, channel_name: str) -> None:
+        """Flips this channel's still-PENDING bets to UNKNOWN. Called when the
+        channel goes offline — Twitch predictions can resolve around stream end,
+        and the miner constantly channel-hops chasing drops, so the RESOLVED
+        websocket event that would normally flip PENDING -> WIN/LOSE is often
+        missed once we're no longer subscribed to this channel's PubSub topic."""
+        p = _get_predictions_file()
+        try:
+            hist = _json.loads(p.read_text()) if p.exists() else []
+        except Exception:
+            return
+        changed = _flip_pending_matching(hist, lambda e: e.get("channel") == channel_name.lower())
+        if changed:
+            try:
+                p.write_text(_json.dumps(hist, indent=2))
+            except Exception:
+                pass
