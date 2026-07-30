@@ -3469,7 +3469,10 @@ async function loadPredictions() {
             tr.style.borderTop = "1px solid #2d2d35";
             const netWon = p.result === "WIN" ? (p.points_won || 0) - (p.points_bet || 0) : 0;
             const wonText = p.result === "WIN" ? `+${netWon.toLocaleString()}` : p.result === "LOSE" ? `−${(p.points_bet || 0).toLocaleString()}` : "—";
-            [{ text: p.ts ? new Date(p.ts).toLocaleDateString() : "—", style: "color:#adadb8" }, { text: p.channel || "—" }, { text: p.title ? p.title.slice(0, 40) : "—" }, { text: (p.points_bet || 0).toLocaleString() }, { text: p.result || "PENDING", style: `color:${color};font-weight:600` }, { text: wonText, style: `color:${color}` }]
+            const tsText = p.ts
+                ? `${new Date(p.ts).toLocaleDateString("de-AT")} ${new Date(p.ts).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })}`
+                : "—";
+            [{ text: tsText, style: "color:#adadb8;white-space:nowrap" }, { text: p.channel || "—" }, { text: p.title ? p.title.slice(0, 40) : "—" }, { text: p.outcome_chosen || "—" }, { text: (p.points_bet || 0).toLocaleString() }, { text: p.result || "PENDING", style: `color:${color};font-weight:600` }, { text: wonText, style: `color:${color}` }]
                 .forEach(c => { const td = document.createElement("td"); td.style.padding = "5px 8px"; if (c.style) td.style.cssText += c.style; td.textContent = c.text; tr.appendChild(td); });
             tbody.appendChild(tr);
         });
