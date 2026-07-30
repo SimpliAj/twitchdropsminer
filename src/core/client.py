@@ -28,7 +28,7 @@ from src.i18n import _
 from src.models.campaign import DropsCampaign
 from src.models.channel import Channel
 from src.services.channel_service import ChannelService
-from src.services.drop_history import save_drop_claim
+from src.services.drop_history import finalize_drop_claim
 from src.services.inventory_service import InventoryService
 from src.services.irc_service import IRCService
 from src.services.maintenance import MaintenanceService
@@ -66,7 +66,7 @@ class Twitch:
         self.inventory: list[DropsCampaign] = []
         self._drops: dict[str, TimedDrop] = {}
         self._campaigns: dict[str, DropsCampaign] = {}
-        self._webhook_sent_drops: set[str] = set()
+        self._claim_finalized_drops: set[str] = set()
         self._mnt_triggers: deque[datetime] = deque()
         # Client type and auth
         self._client_type: ClientInfo = ClientType.ANDROID_APP
@@ -405,41 +405,7 @@ class Twitch:
                             if drop.can_claim:
                                 claimed = await drop.claim()
                                 if claimed:
-                                    webhook_url = self.settings.discord_webhook_drops
-                                    if webhook_url and drop.id not in self._webhook_sent_drops:
-                                        self._webhook_sent_drops.add(drop.id)
-                                        import json as _json_wh
-                                        from src.config import DATA_DIR as _DATA_DIR_WH
-                                        _wcfg_wh = _DATA_DIR_WH / "web_config.json"
-                                        try:
-                                            _acct_wh = _json_wh.loads(_wcfg_wh.read_text()).get("active_account", "") if _wcfg_wh.exists() else ""
-                                        except Exception:
-                                            _acct_wh = ""
-                                        embed: dict = {
-                                            "title": "🎁 Drop Claimed!",
-                                            "color": 0x9147ff,
-                                            "fields": [
-                                                {"name": "Game", "value": campaign.game.name, "inline": True},
-                                                {"name": "Drop", "value": drop.name, "inline": True},
-                                                {"name": "Reward", "value": drop.rewards_text(), "inline": False},
-                                            ],
-                                        }
-                                        if _acct_wh:
-                                            embed["footer"] = {"text": f"Account: {_acct_wh}"}
-                                        if drop.benefits:
-                                            embed["thumbnail"] = {"url": drop.benefits[0].image_url}
-                                        asyncio.create_task(
-                                            self._message_handler_service._send_discord_webhook(
-                                                webhook_url, {"embeds": [embed]}
-                                            )
-                                        )
-                                    # Save to drop history
-                                    save_drop_claim(
-                                        campaign.game.name,
-                                        drop.name,
-                                        drop.rewards_text(),
-                                        drop.benefits[0].image_url if drop.benefits else None,
-                                    )
+                                    finalize_drop_claim(self, campaign, drop)
                 # figure out which games we want based on games_to_watch whitelist
                 self.wanted_games.clear()
                 games_to_watch: list[str] = self.settings.games_to_watch
