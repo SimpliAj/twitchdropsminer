@@ -554,11 +554,16 @@ async function loadStats() {
     }
 }
 
+let dropHistoryFullList = [];
+let dropHistoryPage = 1;
+
 async function loadDropHistory() {
     try {
         const resp = await fetch(API_BASE + "/api/drops-history");
         const data = await resp.json();
-        renderDropHistory(data);
+        dropHistoryFullList = data || [];
+        dropHistoryPage = 1;
+        renderDropHistory(dropHistoryFullList);
     } catch (e) { console.error("Failed to load drop history", e); }
 }
 
@@ -571,6 +576,7 @@ function renderDropHistory(drops) {
         emptyEl.style.display = "block";
         listEl.style.display = "none";
         if (summaryEl) summaryEl.textContent = "";
+        renderPager(document.getElementById("history-pager"), 0, HISTORY_PAGE_SIZE, 1, () => {});
         return;
     }
     const today = new Date().toDateString();
@@ -582,9 +588,11 @@ function renderDropHistory(drops) {
 
     listEl.style.cssText = 'max-height:520px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border-color) transparent;';
 
-    // Group by date
+    // Group by date (current page only)
+    const pageStart = (dropHistoryPage - 1) * HISTORY_PAGE_SIZE;
+    const pageDrops = drops.slice(pageStart, pageStart + HISTORY_PAGE_SIZE);
     const groups = new Map();
-    drops.forEach(drop => {
+    pageDrops.forEach(drop => {
         const ts = new Date(drop.timestamp);
         const dateKey = ts.toLocaleDateString("de-AT", { day:"2-digit", month:"2-digit", year:"numeric" });
         if (!groups.has(dateKey)) groups.set(dateKey, []);
@@ -650,6 +658,40 @@ function renderDropHistory(drops) {
             listEl.appendChild(row);
         });
     });
+
+    renderPager(document.getElementById("history-pager"), drops.length, HISTORY_PAGE_SIZE, dropHistoryPage, (page) => {
+        dropHistoryPage = page;
+        renderDropHistory(dropHistoryFullList);
+    });
+}
+
+const HISTORY_PAGE_SIZE = 50;
+
+function renderPager(containerEl, totalItems, pageSize, currentPage, onPageChange) {
+    if (!containerEl) return;
+    containerEl.replaceChildren();
+    const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+    if (totalPages <= 1) return;
+    containerEl.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 0;font-size:0.8rem;color:var(--text-secondary,#adadb8);';
+
+    const prevBtn = document.createElement('button');
+    prevBtn.textContent = '‹ Prev';
+    prevBtn.className = 'secondary-btn';
+    prevBtn.disabled = currentPage <= 1;
+    prevBtn.addEventListener('click', () => onPageChange(currentPage - 1));
+
+    const label = document.createElement('span');
+    label.textContent = `Page ${currentPage} of ${totalPages}`;
+
+    const nextBtn = document.createElement('button');
+    nextBtn.textContent = 'Next ›';
+    nextBtn.className = 'secondary-btn';
+    nextBtn.disabled = currentPage >= totalPages;
+    nextBtn.addEventListener('click', () => onPageChange(currentPage + 1));
+
+    containerEl.appendChild(prevBtn);
+    containerEl.appendChild(label);
+    containerEl.appendChild(nextBtn);
 }
 
 // ==================== Stats Widget ====================
@@ -3445,38 +3487,52 @@ async function reloadCampaigns() {
 
 // ==================== Predictions ====================
 
+let predHistoryFullList = [];
+let predHistoryPage = 1;
+
 async function loadPredictions() {
     try {
         const resp = await fetch(API_BASE + "/api/predictions");
         const data = await resp.json();
-        const preds = data.predictions || [];
-        const wins = preds.filter(p => p.result === "WIN").length;
-        const losses = preds.filter(p => p.result === "LOSE").length;
-        const net = preds.filter(p => ["WIN", "LOSE"].includes(p.result)).reduce((s, p) => s + (p.points_won || 0) - (p.points_bet || 0), 0);
-        const winRate = wins + losses > 0 ? Math.round(wins / (wins + losses) * 100) : 0;
-        const summaryEl = document.getElementById("pred-summary");
-        if (summaryEl) {
-            summaryEl.replaceChildren();
-            [{ label: "Total", value: preds.length }, { label: "Win Rate", value: `${winRate}%` }, { label: "Net", value: `${net >= 0 ? "+" : ""}${net.toLocaleString()} pts`, color: net >= 0 ? "#00b368" : "#eb4a4a" }]
-                .forEach(c => { const div = document.createElement("div"); div.className = "stat-card"; if (c.color) div.style.color = c.color; div.textContent = `${c.label}: ${c.value}`; summaryEl.appendChild(div); });
-        }
-        const tbody = document.getElementById("pred-tbody");
-        if (!tbody) return;
-        tbody.replaceChildren();
-        preds.slice(0, 100).forEach(p => {
-            const color = p.result === "WIN" ? "#00b368" : p.result === "LOSE" ? "#eb4a4a" : "#adadb8";
-            const tr = document.createElement("tr");
-            tr.style.borderTop = "1px solid #2d2d35";
-            const netWon = p.result === "WIN" ? (p.points_won || 0) - (p.points_bet || 0) : 0;
-            const wonText = p.result === "WIN" ? `+${netWon.toLocaleString()}` : p.result === "LOSE" ? `−${(p.points_bet || 0).toLocaleString()}` : "—";
-            const tsText = p.ts
-                ? `${new Date(p.ts).toLocaleDateString("de-AT")} ${new Date(p.ts).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })}`
-                : "—";
-            [{ text: tsText, style: "color:#adadb8;white-space:nowrap" }, { text: p.channel || "—" }, { text: p.title ? p.title.slice(0, 40) : "—" }, { text: p.outcome_chosen || "—" }, { text: (p.points_bet || 0).toLocaleString() }, { text: p.result || "PENDING", style: `color:${color};font-weight:600` }, { text: wonText, style: `color:${color}` }]
-                .forEach(c => { const td = document.createElement("td"); td.style.padding = "5px 8px"; if (c.style) td.style.cssText += c.style; td.textContent = c.text; tr.appendChild(td); });
-            tbody.appendChild(tr);
-        });
+        predHistoryFullList = data.predictions || [];
+        predHistoryPage = 1;
+        renderPredictions(predHistoryFullList);
     } catch(e) {}
+}
+
+function renderPredictions(preds) {
+    const wins = preds.filter(p => p.result === "WIN").length;
+    const losses = preds.filter(p => p.result === "LOSE").length;
+    const net = preds.filter(p => ["WIN", "LOSE"].includes(p.result)).reduce((s, p) => s + (p.points_won || 0) - (p.points_bet || 0), 0);
+    const winRate = wins + losses > 0 ? Math.round(wins / (wins + losses) * 100) : 0;
+    const summaryEl = document.getElementById("pred-summary");
+    if (summaryEl) {
+        summaryEl.replaceChildren();
+        [{ label: "Total", value: preds.length }, { label: "Win Rate", value: `${winRate}%` }, { label: "Net", value: `${net >= 0 ? "+" : ""}${net.toLocaleString()} pts`, color: net >= 0 ? "#00b368" : "#eb4a4a" }]
+            .forEach(c => { const div = document.createElement("div"); div.className = "stat-card"; if (c.color) div.style.color = c.color; div.textContent = `${c.label}: ${c.value}`; summaryEl.appendChild(div); });
+    }
+    const tbody = document.getElementById("pred-tbody");
+    if (!tbody) return;
+    tbody.replaceChildren();
+    const pageStart = (predHistoryPage - 1) * HISTORY_PAGE_SIZE;
+    preds.slice(pageStart, pageStart + HISTORY_PAGE_SIZE).forEach(p => {
+        const color = p.result === "WIN" ? "#00b368" : p.result === "LOSE" ? "#eb4a4a" : "#adadb8";
+        const tr = document.createElement("tr");
+        tr.style.borderTop = "1px solid #2d2d35";
+        const netWon = p.result === "WIN" ? (p.points_won || 0) - (p.points_bet || 0) : 0;
+        const wonText = p.result === "WIN" ? `+${netWon.toLocaleString()}` : p.result === "LOSE" ? `−${(p.points_bet || 0).toLocaleString()}` : "—";
+        const tsText = p.ts
+            ? `${new Date(p.ts).toLocaleDateString("de-AT")} ${new Date(p.ts).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })}`
+            : "—";
+        [{ text: tsText, style: "color:#adadb8;white-space:nowrap" }, { text: p.channel || "—" }, { text: p.title ? p.title.slice(0, 40) : "—" }, { text: p.outcome_chosen || "—" }, { text: (p.points_bet || 0).toLocaleString() }, { text: p.result || "PENDING", style: `color:${color};font-weight:600` }, { text: wonText, style: `color:${color}` }]
+            .forEach(c => { const td = document.createElement("td"); td.style.padding = "5px 8px"; if (c.style) td.style.cssText += c.style; td.textContent = c.text; tr.appendChild(td); });
+        tbody.appendChild(tr);
+    });
+
+    renderPager(document.getElementById("pred-pager"), preds.length, HISTORY_PAGE_SIZE, predHistoryPage, (page) => {
+        predHistoryPage = page;
+        renderPredictions(predHistoryFullList);
+    });
 }
 
 // ==================== Analytics Chart ====================
