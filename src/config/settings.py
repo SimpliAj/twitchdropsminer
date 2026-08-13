@@ -29,6 +29,7 @@ default_settings = {
     "dark_mode": False,
     "games_to_watch": [],
     "language": DEFAULT_LANG,
+    "inventory_list_view": False,
     "inventory_filters": {
         "game_name_search": [],
         "show_active": False,
@@ -87,6 +88,7 @@ class Settings:
     dark_mode: bool
     games_to_watch: list[str]
     language: str
+    inventory_list_view: bool
     inventory_filters: InventoryFilters
     minimum_refresh_interval_minutes: int
     mining_benefits: dict[str, bool]

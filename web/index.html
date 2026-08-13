@@ -39,6 +39,7 @@
             <div class="status-bar">
                 <div class="status-left">
                     <span id="auto-mode-badge" class="mode-badge" title="Automatic mode - following game priority">🤖 AUTO</span>
+                    <span id="manual-mode-badge" class="mode-badge hidden" style="cursor:pointer" title="Manual mode active - click to cancel and return to automatic selection">🎯 MANUAL: <span id="manual-game-name"></span> (click to cancel)</span>
                     <span id="proxy-indicator" class="proxy-badge" style="display: none;" title="Proxy connection active">🔒 PROXY</span>
                 </div>
                 <div class="status-center">
@@ -84,7 +85,7 @@
                             <span class="qc-icon">⏭</span>
                             <span class="qc-labels"><strong>Skip Current Game</strong><small>Abandon drop, pick next game</small></span>
                         </button>
-                        <button id="qc-check-drops-btn" class="qc-btn" title="Stop idle watching and immediately search for active drop campaigns to mine">
+                        <button id="qc-check-drops-btn" class="qc-btn" title="Stop idle watching and immediately search for active drop campaigns to mine. Also un-skips any game skipped via Skip Current Game.">
                             <span class="qc-icon">🎮</span>
                             <span class="qc-labels"><strong>Start Drop Mining</strong><small>Stop idle, search for drops now</small></span>
                         </button>
@@ -256,6 +257,10 @@
                                 <!-- Dropdown options will appear here -->
                             </div>
                         </div>
+                        <label class="filter-checkbox" title="Show campaigns as compact horizontal rows instead of cards">
+                            <input type="checkbox" id="inventory-list-view" />
+                            <span>List View</span>
+                        </label>
                         <button id="clear-filters-btn" class="small-btn">Clear Filters</button>
                     </div>
                 </div>
