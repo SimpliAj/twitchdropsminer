@@ -371,6 +371,7 @@ class SettingsUpdate(BaseModel):
     connection_quality: int | None = None
     minimum_refresh_interval_minutes: int | None = None
     inventory_filters: dict | None = None
+    inventory_list_view: bool | None = None
     mining_benefits: dict[str, bool] | None = None
     claim_channel_points: bool | None = None
     idle_channels: list[str] | None = None
@@ -983,6 +984,7 @@ async def trigger_reload():
     cfg = _load_web_config()
     cfg["last_mode"] = "drop_mining"
     _save_web_config(cfg)
+    twitch_client.clear_skipped_games()
     twitch_client.change_state(State.INVENTORY_FETCH)
     return {"success": True}
 

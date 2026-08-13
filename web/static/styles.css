@@ -1310,6 +1310,67 @@ header h1 {
     padding: 15px;
 }
 
+/* Inventory - list view (compact horizontal rows). Drop tiers stay
+   modal-only (showCampaignDropsModal) in this fork, so unlike upstream
+   there's no right-hand drop grid — this just flattens the card's
+   stacked header/status/timing into one wrapping row. */
+.inventory-grid.list-view {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.inventory-grid.list-view .campaign-card {
+    flex-direction: row;
+}
+
+.inventory-grid.list-view .campaign-info {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    padding: 10px 16px;
+    width: 100%;
+}
+
+.inventory-grid.list-view .campaign-header,
+.inventory-grid.list-view .campaign-status,
+.inventory-grid.list-view .campaign-progress-info,
+.inventory-grid.list-view .campaign-timing {
+    padding: 0;
+    margin: 0;
+    background: none;
+    border: none;
+}
+
+.inventory-grid.list-view .campaign-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex: 1 1 260px;
+    min-width: 0;
+}
+
+.inventory-grid.list-view .campaign-name-link {
+    margin: 0;
+}
+
+.inventory-grid.list-view .campaign-status {
+    flex: 0 0 auto;
+}
+
+@media (max-width: 640px) {
+    .inventory-grid.list-view .campaign-info {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    .inventory-grid.list-view .campaign-header {
+        flex-wrap: wrap;
+    }
+}
+
 
 .empty-message-small {
     color: var(--text-secondary);

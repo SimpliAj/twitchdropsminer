@@ -11,10 +11,12 @@ class TestSettingsAPI(unittest.IsolatedAsyncioTestCase):
         # Verify model accepts new fields
         update_data = {
             "inventory_filters": {"show_upcoming": True},
+            "inventory_list_view": True,
             "mining_benefits": {"BADGE": True},
         }
         model = SettingsUpdate(**update_data)
         self.assertEqual(model.inventory_filters, update_data["inventory_filters"])
+        self.assertEqual(model.inventory_list_view, update_data["inventory_list_view"])
         self.assertEqual(model.mining_benefits, update_data["mining_benefits"])
 
     async def test_settings_manager_networking(self):

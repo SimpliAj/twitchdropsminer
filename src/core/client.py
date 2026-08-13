@@ -187,6 +187,18 @@ class Twitch:
             self._skipped_games.add(watching_channel.game)
         self.change_state(State.CHANNEL_SWITCH)
 
+    def clear_skipped_games(self) -> None:
+        """
+        Un-skip every game skipped via skip_current_game().
+
+        The skip set otherwise only clears once every watchable game has
+        been cycled through, which can take arbitrarily long (or never
+        happen) — leaving a skipped game excluded with no way to revert
+        (QFTFHT, Discord, 2026-08-13). Called from the "Start Drop Mining"
+        action, since that's the user's explicit "reconsider everything" signal.
+        """
+        self._skipped_games.clear()
+
     def close(self) -> None:
         """
         Called when the application is requested to close by the user,
@@ -329,8 +341,18 @@ class Twitch:
                             for ch in idle_chs
                         ]
                         self._idle_topic_ids = [str(t) for t in idle_topics]
-                        self.websocket.add_topics(idle_topics)
-                        logger.info(f"Idle watch: subscribed StreamState for {names}")
+                        try:
+                            self.websocket.add_topics(idle_topics)
+                            logger.info(f"Idle watch: subscribed StreamState for {names}")
+                        except MinerException:
+                            # Pool fills whatever fits before raising (see WebsocketPool.
+                            # add_topics), so this is a capacity cap, not data loss — but
+                            # left uncaught it was fatal and took the whole miner down
+                            # (Sparx419, Discord, 2026-08-12).
+                            logger.warning(
+                                f"Topic limit reached — some idle channels not subscribed "
+                                f"for StreamState ({names})"
+                            )
                         # Predictions before CommunityPoints for the same reason watch()
                         # prioritizes Predictions over Moments: betting is what users
                         # rely on and report on, channel-points tracking is secondary —
