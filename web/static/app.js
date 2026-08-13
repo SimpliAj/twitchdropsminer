@@ -1176,7 +1176,11 @@ function updateDropProgress(data) {
         // exclude both so this doesn't show as stuck forever.
         const unclaimed = campData.drops.filter(d => !d.is_claimed && (d.required_subs || 0) <= 0
             && (d.current_minutes || 0) < (d.required_minutes || 0));
-        const remainMins = unclaimed.reduce((s, d) => s + Math.max(0, (d.required_minutes || 0) - (d.current_minutes || 0)), 0);
+        // Drops in the same campaign share one watch-minutes clock and progress
+        // in parallel (current_minutes ticks up for all of them at once) — the
+        // campaign finishes when its slowest drop does, so remaining time is the
+        // max across unclaimed drops, not the sum (Bildschirmfoto, Discord, 2026-08-13).
+        const remainMins = unclaimed.reduce((m, d) => Math.max(m, (d.required_minutes || 0) - (d.current_minutes || 0)), 0);
         const h = Math.floor(remainMins / 60), m = Math.round(remainMins % 60);
         const timeStr = h > 0 ? `~${h}h ${m}m` : remainMins > 0 ? `~${m}m` : null;
         dropsLeftEl.textContent = unclaimed.length > 0
@@ -1600,9 +1604,14 @@ function handleGameSearchKeydown(event) {
     }
 }
 
+function applyInventoryViewMode(listView) {
+    document.getElementById('inventory-grid')?.classList.toggle('list-view', listView);
+}
+
 function renderInventory() {
     const container = document.getElementById('inventory-grid');
     container.innerHTML = '';
+    applyInventoryViewMode(state.settings.inventory_list_view || false);
 
     const t = state.translations;
     const allCampaigns = Object.values(state.campaigns);
@@ -1713,7 +1722,9 @@ function renderInventory() {
         const unclaimedDrops = campaign.drops.filter(d => !d.is_claimed
             && (!filters.show_sub_drops ? (d.required_subs || 0) === 0 : true)
             && (d.current_minutes || 0) < (d.required_minutes || 0));
-        const remainingMins = unclaimedDrops.reduce((sum, d) => sum + Math.max(0, (d.required_minutes || 0) - (d.current_minutes || 0)), 0);
+        // Same parallel-clock reasoning as the drop-progress panel above:
+        // max across unclaimed drops, not sum.
+        const remainingMins = unclaimedDrops.reduce((m, d) => Math.max(m, (d.required_minutes || 0) - (d.current_minutes || 0)), 0);
         const formatTime = mins => {
             if (mins <= 0) return null;
             const h = Math.floor(mins / 60), m = Math.round(mins % 60);
@@ -1743,21 +1754,26 @@ function renderInventory() {
             showCampaignDropsModal(campaign.id, false);
         });
 
-        card.replaceChildren(campaignHeader, campaignStatus);
-        if (progressInfo) card.appendChild(progressInfo);
+        // Wrapped so list-view can lay the whole summary out as one row —
+        // drops themselves stay modal-only (showCampaignDropsModal), unlike
+        // upstream's inline drop grid, so list-view has no right-hand column.
+        const campaignInfo = makeElement('div', { class: 'campaign-info' });
+        campaignInfo.append(campaignHeader, campaignStatus);
+        if (progressInfo) campaignInfo.appendChild(progressInfo);
 
         // Campaign timing
         if (liveStatus.active && campaign.ends_at) {
             const endsLabel = t.gui?.inventory?.ends || 'Ends: {time}';
-            card.appendChild(makeElement('div', { class: 'campaign-timing' }, endsLabel.replace('{time}', new Date(campaign.ends_at).toLocaleString())));
+            campaignInfo.appendChild(makeElement('div', { class: 'campaign-timing' }, endsLabel.replace('{time}', new Date(campaign.ends_at).toLocaleString())));
         } else if (liveStatus.upcoming && campaign.starts_at) {
             const startsLabel = t.gui?.inventory?.starts || 'Starts: {time}';
-            card.appendChild(makeElement('div', { class: 'campaign-timing' }, startsLabel.replace('{time}', new Date(campaign.starts_at).toLocaleString())));
+            campaignInfo.appendChild(makeElement('div', { class: 'campaign-timing' }, startsLabel.replace('{time}', new Date(campaign.starts_at).toLocaleString())));
         } else if (liveStatus.expired && campaign.ends_at) {
             const endsLabel = t.gui?.inventory?.ends || 'Ends: {time}';
-            card.appendChild(makeElement('div', { class: 'campaign-timing' }, endsLabel.replace('{time}', new Date(campaign.ends_at).toLocaleString())));
+            campaignInfo.appendChild(makeElement('div', { class: 'campaign-timing' }, endsLabel.replace('{time}', new Date(campaign.ends_at).toLocaleString())));
         }
 
+        card.replaceChildren(campaignInfo);
         container.appendChild(card);
     });
 }
@@ -1847,6 +1863,9 @@ function updateSettingsUI(settings) {
     state.settings = settings;
     state.settingsLoaded = true;
     document.getElementById('dark-mode').checked = settings.dark_mode || false;
+    const listViewToggle = document.getElementById('inventory-list-view');
+    if (listViewToggle) listViewToggle.checked = settings.inventory_list_view || false;
+    applyInventoryViewMode(settings.inventory_list_view || false);
     document.getElementById('connection-quality').value = settings.connection_quality || 1;
     document.getElementById('minimum-refresh-interval').value = settings.minimum_refresh_interval_minutes || 30;
 
@@ -2078,7 +2097,23 @@ async function botRevoke() {
 }
 
 function updateManualModeUI(manualModeInfo) {
-    // Manual mode UI removed — backend still sends events, ignore them
+    // Bug: clicking a channel enters manual mode server-side with no way
+    // to cancel — this stub used to swallow the event entirely, leaving
+    // no badge and no cancel affordance in the DOM at all
+    // (QFTFHT, Discord, 2026-08-13).
+    const manualBadge = document.getElementById('manual-mode-badge');
+    const autoBadge = document.getElementById('auto-mode-badge');
+    const manualGameName = document.getElementById('manual-game-name');
+    if (!manualBadge || !autoBadge) return;
+
+    if (manualModeInfo.active) {
+        manualBadge.classList.remove('hidden');
+        autoBadge.classList.add('hidden');
+        if (manualGameName) manualGameName.textContent = manualModeInfo.game_name || '';
+    } else {
+        manualBadge.classList.add('hidden');
+        autoBadge.classList.remove('hidden');
+    }
 }
 
 // ==================== Games to Watch Management ====================
@@ -2799,6 +2834,7 @@ async function saveSettings() {
         proxy: state.settings.proxy || '',
         games_to_watch: state.settings.games_to_watch || [],
         inventory_filters: getInventoryFilters(),
+        inventory_list_view: document.getElementById('inventory-list-view')?.checked || false,
         mining_benefits: {
             "DIRECT_ENTITLEMENT": document.getElementById('mining-benefit-item')?.checked,
             "BADGE": document.getElementById('mining-benefit-badge')?.checked,
@@ -3800,6 +3836,11 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('filter-benefit-other').addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-sub-drops')?.addEventListener('change', onInventoryFilterChange);
     document.getElementById('clear-filters-btn').addEventListener('click', clearInventoryFilters);
+    document.getElementById('inventory-list-view')?.addEventListener('change', (e) => {
+        state.settings.inventory_list_view = e.target.checked;
+        applyInventoryViewMode(e.target.checked);
+        saveSettings();
+    });
 
     // Mining benefit settings
     document.getElementById('mining-benefit-item').addEventListener('change', saveSettings);
@@ -3857,6 +3898,8 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) { addConsoleLine("Error: " + e.message); }
         setTimeout(() => { if (btn) { btn.disabled = false; btn.style.opacity = ""; } }, 3000);
     });
+
+    document.getElementById("manual-mode-badge")?.addEventListener("click", exitManualMode);
 
     document.getElementById("qc-skip-btn")?.addEventListener("click", async () => {
         const btn = document.getElementById("qc-skip-btn");
