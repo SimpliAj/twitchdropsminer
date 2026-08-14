@@ -486,9 +486,16 @@ class TwitchDropsBot(discord.Client):
         for uid, pairings_dict in source.items():
             for name, pairing in pairings_dict.items():
                 try:
+                    # /api/drops-history is capped at 500 entries, so it can't be
+                    # used for the lifetime total once an account passes that many
+                    # claims (see finalize_drop_claim comment) — use /api/stats'
+                    # uncapped counter instead, and only fall back to len(history)
+                    # for "today" since that stays well under the cap.
+                    stats = await api_get(session, pairing["url"], pairing["token"], "/api/stats")
+                    if isinstance(stats, dict):
+                        total_drops += stats.get("total_claims", 0)
                     history = await api_get(session, pairing["url"], pairing["token"], "/api/drops-history")
                     if isinstance(history, list):
-                        total_drops += len(history)
                         today_drops += sum(1 for d in history if d.get("timestamp", "").startswith(today_str))
                 except Exception:
                     pass
