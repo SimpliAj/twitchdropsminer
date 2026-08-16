@@ -10,6 +10,9 @@ from typing import TYPE_CHECKING
 import json
 import os
 import secrets
+import shutil
+import subprocess
+import sys
 
 import socketio
 from fastapi import FastAPI, HTTPException, Request
@@ -999,21 +1002,31 @@ async def trigger_close():
     return {"success": True}
 
 
+def _is_docker() -> bool:
+    return Path("/.dockerenv").exists() or _os.environ.get("DOCKER_CONTAINER") == "1"
+
+
+def _restart_self() -> None:
+    """Restart the current process. Uses PM2 if present (maintainer's own VPS
+    layout); otherwise re-execs the process in place, which works fine under
+    Docker (container keeps running, PID 1 re-execs) or bare systemd/manual runs."""
+    if shutil.which("pm2"):
+        subprocess.Popen(["pm2", "restart", "twitchdrops"])
+    else:
+        logging.getLogger(__name__).info("pm2 not found, re-exec'ing process in place to restart")
+        os.execv(sys.executable, [sys.executable] + sys.argv)
+
+
 @app.post("/api/restart")
 async def trigger_restart():
-    """Restart via PM2 (stop + auto-restart by PM2)"""
-    import subprocess
+    """Restart via PM2 if available, otherwise re-exec in place."""
 
     async def _restart():
         await asyncio.sleep(1)
-        subprocess.Popen(["pm2", "restart", "twitchdrops"])
+        _restart_self()
 
     asyncio.create_task(_restart())
     return {"success": True}
-
-
-def _is_docker() -> bool:
-    return Path("/.dockerenv").exists() or _os.environ.get("DOCKER_CONTAINER") == "1"
 
 
 @app.post("/api/self-update")
@@ -1057,7 +1070,12 @@ async def self_update():
 
     async def _restart():
         await asyncio.sleep(2)
-        subprocess.Popen(["pm2", "restart", "twitchdrops", "twitchdrops2"])
+        if shutil.which("pm2"):
+            subprocess.Popen(["pm2", "restart", "twitchdrops", "twitchdrops2"])
+        else:
+            logging.getLogger(__name__).warning(
+                "pm2 not found, cannot restart multi-instance setup automatically — restart manually"
+            )
 
     asyncio.create_task(_restart())
     return {"success": success, "log": "\n".join(logs)}
@@ -1354,8 +1372,7 @@ async def switch_account(data: AccountSwitchRequest):
         _save_pairing_field(pairing["discord_user_id"], "profile_name", data.label)
     async def _restart():
         await asyncio.sleep(1)
-        import subprocess
-        subprocess.Popen(["pm2", "restart", "twitchdrops"])
+        _restart_self()
     asyncio.create_task(_restart())
     return {"success": True}
 
@@ -1382,8 +1399,7 @@ async def add_account(data: AccountAddRequest):
         _save_pairing_field(pairing["discord_user_id"], "profile_name", label)
     async def _restart():
         await asyncio.sleep(1)
-        import subprocess
-        subprocess.Popen(["pm2", "restart", "twitchdrops"])
+        _restart_self()
     asyncio.create_task(_restart())
     return {"success": True}
 
