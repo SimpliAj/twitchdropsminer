@@ -211,7 +211,17 @@ class SettingsManager:
         return should_trigger_update
 
     def _set_language(self, language: str):
-        _.set_language(language)
+        # Frontend sends "" when its own /api/languages fetch failed (dropdown falls
+        # back to a "Failed to load languages" placeholder option, which then gets
+        # submitted verbatim on the next save) — `_.set_language` raises ValueError
+        # for anything not in the loaded language set, which used to propagate out
+        # of check_and_update_setting and abort the whole settings-update request
+        # (including any other, unrelated fields bundled in the same save).
+        try:
+            _.set_language(language)
+        except ValueError:
+            logger.warning(f"Ignoring unrecognized language setting: {language!r}")
+            return
         # Notify clients that translations need to be reloaded
         asyncio.create_task(self._broadcaster.emit("language_changed", {"language": language}))
 
