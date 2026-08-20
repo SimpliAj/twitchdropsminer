@@ -1808,7 +1808,12 @@ function autoCleanWantedQueue() {
             c.total_drops > 0 && c.drops.every(d =>
                 d.is_claimed
                 || (d.required_subs || 0) > 0
-                || (d.current_minutes || 0) >= (d.required_minutes || 0)
+                // Only trust the local-minutes fallback when required_minutes is
+                // actually known (>0). A drop object missing both fields used to
+                // read as "0 >= 0" → wrongly counted as done, which could mark an
+                // entire game's campaigns "fully claimed" and silently strip it
+                // (and potentially the whole watch list) via the save() below.
+                || ((d.required_minutes || 0) > 0 && (d.current_minutes || 0) >= d.required_minutes)
             )
         );
 
