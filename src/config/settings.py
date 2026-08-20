@@ -65,6 +65,7 @@ default_settings = {
     "drop_name_blacklist": [],
     "auto_prioritize": False,
     "auto_add_linked": False,
+    "auto_add_excluded_games": [],
     "tab_counter_enabled": True,
     "claim_moments": True,
     "irc_chat_presence": True,
@@ -106,6 +107,7 @@ class Settings:
     drop_name_blacklist: list[str]
     auto_prioritize: bool
     auto_add_linked: bool
+    auto_add_excluded_games: list[str]
     tab_counter_enabled: bool
     claim_moments: bool
     irc_chat_presence: bool
