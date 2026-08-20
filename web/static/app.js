@@ -1246,9 +1246,14 @@ function clearDropProgress() {
 function autoAddLinkedGames() {
     if (!state.settings?.auto_add_linked) return;
     const watching = new Set(state.settings.games_to_watch || []);
+    // Games the user explicitly removed from the queue while still linked —
+    // don't resurrect them on the next poll, or removal is impossible short
+    // of unlinking the whole Twitch/Epic account (which drops every game
+    // tied to that account, not just the unwanted one).
+    const excluded = new Set(state.settings.auto_add_excluded_games || []);
     let changed = false;
     Object.values(state.campaigns).forEach(c => {
-        if (c.linked && c.game_name && !watching.has(c.game_name)) {
+        if (c.linked && c.game_name && !watching.has(c.game_name) && !excluded.has(c.game_name)) {
             watching.add(c.game_name);
             changed = true;
         }
@@ -2350,16 +2355,31 @@ function handleDragEnd(e) {
     saveSettings();
 }
 
+// Marks a game as manually removed so autoAddLinkedGames() won't re-add it,
+// or un-marks it once the user asks for it back.
+function setAutoAddExcluded(gameName, excluded) {
+    const list = state.settings.auto_add_excluded_games || [];
+    const index = list.indexOf(gameName);
+    if (excluded && index === -1) {
+        list.push(gameName);
+    } else if (!excluded && index > -1) {
+        list.splice(index, 1);
+    }
+    state.settings.auto_add_excluded_games = list;
+}
+
 function toggleGameWatch(gameName, checked) {
     const games = state.settings.games_to_watch || [];
 
     if (checked && !games.includes(gameName)) {
         games.push(gameName);
+        setAutoAddExcluded(gameName, false);
     } else if (!checked) {
         const index = games.indexOf(gameName);
         if (index > -1) {
             games.splice(index, 1);
         }
+        setAutoAddExcluded(gameName, true);
     }
 
     state.settings.games_to_watch = games;
@@ -2373,6 +2393,7 @@ function removeGameFromWatch(gameName) {
     const index = games.indexOf(gameName);
     if (index > -1) {
         games.splice(index, 1);
+        setAutoAddExcluded(gameName, true);
         state.settings.games_to_watch = games;
         renderGamesToWatch();
         renderChannels();
@@ -2398,6 +2419,7 @@ function sortGamesByEndDate() {
 
 function selectAllGames() {
     state.settings.games_to_watch = Array.from(availableGames).sort();
+    state.settings.auto_add_excluded_games = [];
     renderGamesToWatch();
     renderChannels();
     saveSettings();
@@ -2417,7 +2439,7 @@ function selectLinkedGames() {
             .map(c => c.game_name)
     );
     const current = new Set(state.settings.games_to_watch || []);
-    linked.forEach(g => current.add(g));
+    linked.forEach(g => { current.add(g); setAutoAddExcluded(g, false); });
     state.settings.games_to_watch = Array.from(current).sort();
     renderGamesToWatch();
     renderChannels();
@@ -2439,7 +2461,7 @@ function selectBadgeEmoteGames() {
         if (hasFreeBadgeOrEmote) badgeEmoteGames.add(camp.game_name);
     }
     const current = new Set(state.settings.games_to_watch || []);
-    badgeEmoteGames.forEach(g => current.add(g));
+    badgeEmoteGames.forEach(g => { current.add(g); setAutoAddExcluded(g, false); });
     state.settings.games_to_watch = Array.from(current).sort();
     renderGamesToWatch();
     renderChannels();
@@ -2465,6 +2487,7 @@ function addGameFromSearch() {
 
     // Add to selected games
     games.push(gameName);
+    setAutoAddExcluded(gameName, false);
     state.settings.games_to_watch = games;
 
     // Add to available games set so it shows up in lists
@@ -2856,6 +2879,7 @@ async function saveSettings() {
         idle_use_followed: document.getElementById('idle-use-followed')?.checked ?? false,
         idle_parallel: document.getElementById('idle-parallel')?.checked ?? true,
         preferred_games: state.settings.preferred_games || [],
+        auto_add_excluded_games: state.settings.auto_add_excluded_games || [],
         drop_name_blacklist: (document.getElementById('drop-blacklist-input')?.value || '')
             .split(',').map(s => s.trim()).filter(Boolean),
         scheduler_enabled: document.getElementById('scheduler-enabled')?.checked || false,
