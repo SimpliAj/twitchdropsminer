@@ -390,6 +390,7 @@ class SettingsUpdate(BaseModel):
     drop_name_blacklist: list[str] | None = None
     auto_prioritize: bool | None = None
     auto_add_linked: bool | None = None
+    auto_add_excluded_games: list[str] | None = None
     tab_counter_enabled: bool | None = None
     make_predictions: bool | None = None
     bet_strategy: str | None = None

@@ -148,6 +148,9 @@ class SettingsManager:
             "auto_add_linked", settings_data.get("auto_add_linked")
         )
         self.check_and_update_setting(
+            "auto_add_excluded_games", settings_data.get("auto_add_excluded_games")
+        )
+        self.check_and_update_setting(
             "tab_counter_enabled", settings_data.get("tab_counter_enabled")
         )
         prev_predictions = self._settings.make_predictions
