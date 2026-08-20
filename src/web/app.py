@@ -197,44 +197,174 @@ _UNPROTECTED_PATHS = {
 }
 _UNPROTECTED_PREFIXES = ("/static/",)
 
-_LOGIN_HTML = """<!DOCTYPE html>
-<html lang="de"><head><meta charset="utf-8"><title>TwitchDropsMiner</title>
+# Password-gate strings, keyed by the same language_name used by src/i18n's lang/*.json
+# (self-contained instead of another lang/*.json section — this handful of short strings
+# doesn't need the full translator machinery, and avoids repeating the missing-key crash
+# class that hit lang/Indonesian.json). Falls back to English for any language not listed.
+_WEB_AUTH_STRINGS: dict[str, dict[str, str]] = {
+    "English": dict(html_lang="en", subtitle="Web Interface", password="Password", login_button="Login",
+        wrong_password="Wrong password", welcome="Welcome!", setup_subtitle="First-time setup",
+        setup_info="Do you want to protect access with a password?<br>You can change this later in settings.",
+        password_optional="Set password (optional)", password_repeat="Repeat password",
+        start_with_password="Start with password", start_without_password="Start without password",
+        error_password_required="Please enter a password.", error_password_mismatch="Passwords do not match."),
+    "Deutsch": dict(html_lang="de", subtitle="Web Interface", password="Passwort", login_button="Einloggen",
+        wrong_password="Falsches Passwort", welcome="Willkommen!", setup_subtitle="Erstmalige Einrichtung",
+        setup_info="Möchtest du den Zugang mit einem Passwort schützen?<br>Du kannst dies später in den Einstellungen ändern.",
+        password_optional="Passwort festlegen (optional)", password_repeat="Passwort wiederholen",
+        start_with_password="Mit Passwort starten", start_without_password="Ohne Passwort starten",
+        error_password_required="Bitte ein Passwort eingeben.", error_password_mismatch="Passwörter stimmen nicht überein."),
+    "Español": dict(html_lang="es", subtitle="Interfaz Web", password="Contraseña", login_button="Iniciar sesión",
+        wrong_password="Contraseña incorrecta", welcome="¡Bienvenido!", setup_subtitle="Configuración inicial",
+        setup_info="¿Quieres proteger el acceso con una contraseña?<br>Puedes cambiarlo más tarde en ajustes.",
+        password_optional="Establecer contraseña (opcional)", password_repeat="Repetir contraseña",
+        start_with_password="Iniciar con contraseña", start_without_password="Iniciar sin contraseña",
+        error_password_required="Introduce una contraseña.", error_password_mismatch="Las contraseñas no coinciden."),
+    "Français": dict(html_lang="fr", subtitle="Interface Web", password="Mot de passe", login_button="Connexion",
+        wrong_password="Mot de passe incorrect", welcome="Bienvenue !", setup_subtitle="Configuration initiale",
+        setup_info="Voulez-vous protéger l'accès par un mot de passe ?<br>Vous pourrez le modifier plus tard dans les paramètres.",
+        password_optional="Définir un mot de passe (optionnel)", password_repeat="Répéter le mot de passe",
+        start_with_password="Démarrer avec mot de passe", start_without_password="Démarrer sans mot de passe",
+        error_password_required="Veuillez saisir un mot de passe.", error_password_mismatch="Les mots de passe ne correspondent pas."),
+    "Italiano": dict(html_lang="it", subtitle="Interfaccia Web", password="Password", login_button="Accedi",
+        wrong_password="Password errata", welcome="Benvenuto!", setup_subtitle="Configurazione iniziale",
+        setup_info="Vuoi proteggere l'accesso con una password?<br>Puoi cambiarlo più tardi nelle impostazioni.",
+        password_optional="Imposta password (opzionale)", password_repeat="Ripeti password",
+        start_with_password="Avvia con password", start_without_password="Avvia senza password",
+        error_password_required="Inserisci una password.", error_password_mismatch="Le password non coincidono."),
+    "Português": dict(html_lang="pt", subtitle="Interface Web", password="Senha", login_button="Entrar",
+        wrong_password="Senha incorreta", welcome="Bem-vindo!", setup_subtitle="Configuração inicial",
+        setup_info="Deseja proteger o acesso com uma senha?<br>Você pode alterar isso depois nas configurações.",
+        password_optional="Definir senha (opcional)", password_repeat="Repetir senha",
+        start_with_password="Iniciar com senha", start_without_password="Iniciar sem senha",
+        error_password_required="Digite uma senha.", error_password_mismatch="As senhas não coincidem."),
+    "Polski": dict(html_lang="pl", subtitle="Interfejs WWW", password="Hasło", login_button="Zaloguj",
+        wrong_password="Nieprawidłowe hasło", welcome="Witaj!", setup_subtitle="Pierwsza konfiguracja",
+        setup_info="Czy chcesz zabezpieczyć dostęp hasłem?<br>Możesz to zmienić później w ustawieniach.",
+        password_optional="Ustaw hasło (opcjonalnie)", password_repeat="Powtórz hasło",
+        start_with_password="Uruchom z hasłem", start_without_password="Uruchom bez hasła",
+        error_password_required="Podaj hasło.", error_password_mismatch="Hasła nie są zgodne."),
+    "Nederlandse": dict(html_lang="nl", subtitle="Webinterface", password="Wachtwoord", login_button="Inloggen",
+        wrong_password="Onjuist wachtwoord", welcome="Welkom!", setup_subtitle="Eerste installatie",
+        setup_info="Wil je de toegang met een wachtwoord beveiligen?<br>Je kunt dit later wijzigen in de instellingen.",
+        password_optional="Wachtwoord instellen (optioneel)", password_repeat="Wachtwoord herhalen",
+        start_with_password="Starten met wachtwoord", start_without_password="Starten zonder wachtwoord",
+        error_password_required="Voer een wachtwoord in.", error_password_mismatch="Wachtwoorden komen niet overeen."),
+    "Dansk": dict(html_lang="da", subtitle="Webgrænseflade", password="Adgangskode", login_button="Log ind",
+        wrong_password="Forkert adgangskode", welcome="Velkommen!", setup_subtitle="Førstegangsopsætning",
+        setup_info="Vil du beskytte adgangen med en adgangskode?<br>Du kan ændre det senere i indstillingerne.",
+        password_optional="Angiv adgangskode (valgfrit)", password_repeat="Gentag adgangskode",
+        start_with_password="Start med adgangskode", start_without_password="Start uden adgangskode",
+        error_password_required="Indtast en adgangskode.", error_password_mismatch="Adgangskoderne stemmer ikke overens."),
+    "Čeština": dict(html_lang="cs", subtitle="Webové rozhraní", password="Heslo", login_button="Přihlásit",
+        wrong_password="Nesprávné heslo", welcome="Vítejte!", setup_subtitle="První nastavení",
+        setup_info="Chcete přístup chránit heslem?<br>Toto můžete později změnit v nastavení.",
+        password_optional="Nastavit heslo (volitelné)", password_repeat="Zopakovat heslo",
+        start_with_password="Spustit s heslem", start_without_password="Spustit bez hesla",
+        error_password_required="Zadejte heslo.", error_password_mismatch="Hesla se neshodují."),
+    "Türkçe": dict(html_lang="tr", subtitle="Web Arayüzü", password="Şifre", login_button="Giriş Yap",
+        wrong_password="Yanlış şifre", welcome="Hoş geldiniz!", setup_subtitle="İlk kurulum",
+        setup_info="Erişimi bir şifreyle korumak ister misiniz?<br>Bunu daha sonra ayarlardan değiştirebilirsiniz.",
+        password_optional="Şifre belirle (isteğe bağlı)", password_repeat="Şifreyi tekrarla",
+        start_with_password="Şifre ile başlat", start_without_password="Şifresiz başlat",
+        error_password_required="Lütfen bir şifre girin.", error_password_mismatch="Şifreler eşleşmiyor."),
+    "Română": dict(html_lang="ro", subtitle="Interfață Web", password="Parolă", login_button="Autentificare",
+        wrong_password="Parolă greșită", welcome="Bine ai venit!", setup_subtitle="Configurare inițială",
+        setup_info="Dorești să protejezi accesul cu o parolă?<br>Poți schimba asta mai târziu din setări.",
+        password_optional="Setează parolă (opțional)", password_repeat="Repetă parola",
+        start_with_password="Pornește cu parolă", start_without_password="Pornește fără parolă",
+        error_password_required="Introdu o parolă.", error_password_mismatch="Parolele nu coincid."),
+    "Русский": dict(html_lang="ru", subtitle="Веб-интерфейс", password="Пароль", login_button="Войти",
+        wrong_password="Неверный пароль", welcome="Добро пожаловать!", setup_subtitle="Первоначальная настройка",
+        setup_info="Хотите защитить доступ паролем?<br>Это можно изменить позже в настройках.",
+        password_optional="Задать пароль (необязательно)", password_repeat="Повторите пароль",
+        start_with_password="Начать с паролем", start_without_password="Начать без пароля",
+        error_password_required="Введите пароль.", error_password_mismatch="Пароли не совпадают."),
+    "Українська": dict(html_lang="uk", subtitle="Веб-інтерфейс", password="Пароль", login_button="Увійти",
+        wrong_password="Невірний пароль", welcome="Ласкаво просимо!", setup_subtitle="Початкове налаштування",
+        setup_info="Бажаєте захистити доступ паролем?<br>Це можна змінити пізніше в налаштуваннях.",
+        password_optional="Встановити пароль (необов'язково)", password_repeat="Повторіть пароль",
+        start_with_password="Почати з паролем", start_without_password="Почати без пароля",
+        error_password_required="Введіть пароль.", error_password_mismatch="Паролі не збігаються."),
+    "العربية": dict(html_lang="ar", subtitle="واجهة الويب", password="كلمة المرور", login_button="تسجيل الدخول",
+        wrong_password="كلمة مرور خاطئة", welcome="مرحبًا!", setup_subtitle="الإعداد الأول",
+        setup_info="هل تريد حماية الوصول بكلمة مرور؟<br>يمكنك تغيير ذلك لاحقًا في الإعدادات.",
+        password_optional="تعيين كلمة مرور (اختياري)", password_repeat="تكرار كلمة المرور",
+        start_with_password="البدء بكلمة مرور", start_without_password="البدء بدون كلمة مرور",
+        error_password_required="الرجاء إدخال كلمة مرور.", error_password_mismatch="كلمتا المرور غير متطابقتين."),
+    "Indonesian": dict(html_lang="id", subtitle="Antarmuka Web", password="Kata sandi", login_button="Masuk",
+        wrong_password="Kata sandi salah", welcome="Selamat datang!", setup_subtitle="Pengaturan awal",
+        setup_info="Ingin melindungi akses dengan kata sandi?<br>Anda dapat mengubahnya nanti di pengaturan.",
+        password_optional="Atur kata sandi (opsional)", password_repeat="Ulangi kata sandi",
+        start_with_password="Mulai dengan kata sandi", start_without_password="Mulai tanpa kata sandi",
+        error_password_required="Silakan masukkan kata sandi.", error_password_mismatch="Kata sandi tidak cocok."),
+    "日本語": dict(html_lang="ja", subtitle="ウェブインターフェース", password="パスワード", login_button="ログイン",
+        wrong_password="パスワードが違います", welcome="ようこそ!", setup_subtitle="初回セットアップ",
+        setup_info="パスワードでアクセスを保護しますか？<br>これは後で設定から変更できます。",
+        password_optional="パスワードを設定（任意）", password_repeat="パスワードを再入力",
+        start_with_password="パスワード付きで開始", start_without_password="パスワードなしで開始",
+        error_password_required="パスワードを入力してください。", error_password_mismatch="パスワードが一致しません。"),
+    "简体中文": dict(html_lang="zh-Hans", subtitle="网页界面", password="密码", login_button="登录",
+        wrong_password="密码错误", welcome="欢迎！", setup_subtitle="首次设置",
+        setup_info="是否要使用密码保护访问？<br>您可以稍后在设置中更改此项。",
+        password_optional="设置密码（可选）", password_repeat="重复密码",
+        start_with_password="使用密码启动", start_without_password="不使用密码启动",
+        error_password_required="请输入密码。", error_password_mismatch="两次输入的密码不一致。"),
+    "繁體中文": dict(html_lang="zh-Hant", subtitle="網頁介面", password="密碼", login_button="登入",
+        wrong_password="密碼錯誤", welcome="歡迎！", setup_subtitle="首次設定",
+        setup_info="是否要使用密碼保護存取？<br>您可以稍後在設定中變更此項。",
+        password_optional="設定密碼（選填）", password_repeat="重複密碼",
+        start_with_password="使用密碼啟動", start_without_password="不使用密碼啟動",
+        error_password_required="請輸入密碼。", error_password_mismatch="兩次輸入的密碼不一致。"),
+}
+
+
+def _web_auth_strings() -> dict[str, str]:
+    """Current account's language, mirroring the global i18n Translator (src/i18n/translator.py::_)
+    which src/__main__.py:61 and settings.py::_set_language keep in sync with settings.language —
+    same source of truth the rest of the app already uses, just applied to this pre-auth page too."""
+    from src.i18n.translator import _ as translator
+    return _WEB_AUTH_STRINGS.get(translator.current_language, _WEB_AUTH_STRINGS["English"])
+
+
+def _login_html(error: str = "") -> str:
+    s = _web_auth_strings()
+    return """<!DOCTYPE html>
+<html lang="{html_lang}"><head><meta charset="utf-8"><title>TwitchDropsMiner</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/x-icon" href="/favicon.ico">
 <style>{css}</style></head>
 <body><div class="card">
 <img class="logo" src="/logo.png" alt="TwitchDropsMiner">
 <h1>TwitchDropsMiner</h1>
-<p class="subtitle">Web Interface</p>
-{{error}}
+<p class="subtitle">{subtitle}</p>
+{error}
 <form method="POST" action="/__auth_login">
-<input type="password" name="password" placeholder="Passwort" autofocus autocomplete="current-password">
-<button class="btn btn-primary" type="submit">Einloggen</button>
-</form></div></body></html>""".format(css=_SHARED_CSS)
+<input type="password" name="password" placeholder="{password}" autofocus autocomplete="current-password">
+<button class="btn btn-primary" type="submit">{login_button}</button>
+</form></div></body></html>""".format(css=_SHARED_CSS, error=error, **s)
 
-_SETUP_HTML = """<!DOCTYPE html>
-<html lang="de"><head><meta charset="utf-8"><title>TwitchDropsMiner – Setup</title>
+
+def _setup_html(error: str = "") -> str:
+    s = _web_auth_strings()
+    return """<!DOCTYPE html>
+<html lang="{html_lang}"><head><meta charset="utf-8"><title>TwitchDropsMiner – Setup</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/x-icon" href="/favicon.ico">
 <style>{css}</style></head>
 <body><div class="card">
 <img class="logo" src="/logo.png" alt="TwitchDropsMiner">
-<h1>Willkommen!</h1>
-<p class="subtitle">Erstmalige Einrichtung</p>
-{{error}}
-<p class="info">Möchtest du den Zugang mit einem Passwort schützen?<br>
-Du kannst dies später in den Einstellungen ändern.</p>
+<h1>{welcome}</h1>
+<p class="subtitle">{setup_subtitle}</p>
+{error}
+<p class="info">{setup_info}</p>
 <form method="POST" action="/__setup_post">
-<input type="password" name="password" placeholder="Passwort festlegen (optional)" autocomplete="new-password">
-<input type="password" name="password2" placeholder="Passwort wiederholen" autocomplete="new-password">
-<button class="btn btn-primary" type="submit" name="action" value="set">Mit Passwort starten</button>
+<input type="password" name="password" placeholder="{password_optional}" autocomplete="new-password">
+<input type="password" name="password2" placeholder="{password_repeat}" autocomplete="new-password">
+<button class="btn btn-primary" type="submit" name="action" value="set">{start_with_password}</button>
 <hr>
-<button class="btn btn-ghost" type="submit" name="action" value="skip">Ohne Passwort starten</button>
-</form></div></body></html>""".format(css=_SHARED_CSS)
-
-
-def _render_template(template: str, error: str = "") -> str:
-    return template.replace("{error}", error)
+<button class="btn btn-ghost" type="submit" name="action" value="skip">{start_without_password}</button>
+</form></div></body></html>""".format(css=_SHARED_CSS, error=error, **s)
 
 
 class PasswordAuthMiddleware(BaseHTTPMiddleware):
@@ -261,7 +391,7 @@ class PasswordAuthMiddleware(BaseHTTPMiddleware):
         session = request.cookies.get("__tdm_session", "")
         if secrets.compare_digest(session, pw):
             return await call_next(request)
-        return HTMLResponse(_render_template(_LOGIN_HTML), status_code=401)
+        return HTMLResponse(_login_html(), status_code=401)
 
 
 if TYPE_CHECKING:
@@ -421,7 +551,7 @@ class PairClaimRequest(BaseModel):
 async def setup_page():
     if _is_setup_done():
         return RedirectResponse("/", status_code=302)
-    return HTMLResponse(_render_template(_SETUP_HTML))
+    return HTMLResponse(_setup_html())
 
 
 @app.post("/__setup_post")
@@ -434,9 +564,9 @@ async def setup_post(request: Request):
         pw = form.get("password", "")
         pw2 = form.get("password2", "")
         if not pw:
-            return HTMLResponse(_render_template(_SETUP_HTML, '<p class="err">Bitte ein Passwort eingeben.</p>'))
+            return HTMLResponse(_setup_html(f'<p class="err">{_web_auth_strings()["error_password_required"]}</p>'))
         if pw != pw2:
-            return HTMLResponse(_render_template(_SETUP_HTML, '<p class="err">Passwörter stimmen nicht überein.</p>'))
+            return HTMLResponse(_setup_html(f'<p class="err">{_web_auth_strings()["error_password_mismatch"]}</p>'))
         _save_web_config({"setup_done": True, "password": pw})
         resp = RedirectResponse("/", status_code=303)
         resp.set_cookie("__tdm_session", pw, httponly=True, samesite="lax", max_age=60*60*24*30)
@@ -455,7 +585,7 @@ async def auth_login_post(request: Request):
         resp = RedirectResponse("/", status_code=303)
         resp.set_cookie("__tdm_session", current_pw, httponly=True, samesite="lax", max_age=60*60*24*30)
         return resp
-    return HTMLResponse(_render_template(_LOGIN_HTML, '<p class="err">Falsches Passwort</p>'), status_code=401)
+    return HTMLResponse(_login_html(f'<p class="err">{_web_auth_strings()["wrong_password"]}</p>'), status_code=401)
 
 
 @app.get("/__auth_logout")
@@ -467,7 +597,7 @@ async def auth_logout():
 
 @app.get("/__auth_login_page", response_class=HTMLResponse)
 async def auth_login_page():
-    return HTMLResponse(_render_template(_LOGIN_HTML))
+    return HTMLResponse(_login_html())
 
 
 # ==================== Static Assets ====================
