@@ -2833,7 +2833,10 @@ async function saveSettings() {
     }
     const settings = {
         dark_mode: document.getElementById('dark-mode').checked,
-        language: document.getElementById('language').value,
+        // Falls back to the currently-applied language (not "") when the dropdown is
+        // stuck on the "Failed to load languages" placeholder from a failed
+        // /api/languages fetch — submitting "" here used to 500 the whole save.
+        language: document.getElementById('language').value || state.settings.language,
         connection_quality: parseInt(document.getElementById('connection-quality').value),
         minimum_refresh_interval_minutes: parseInt(document.getElementById('minimum-refresh-interval').value),
         proxy: state.settings.proxy || '',
@@ -3755,6 +3758,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch and display version information
     fetchAndDisplayVersion();
     updateStats();
+    // Stats widget otherwise only refreshes on specific socket events
+    // (channel_points_update, initial_state w/ daily_points) — during idle
+    // stretches with no such event it can sit stuck on a stale number
+    // indefinitely. Poll it too so it self-heals.
+    setInterval(updateStats, 60000);
     initAccountTabs();
     applyUsernameVisibility();
     document.getElementById("history-refresh-btn")?.addEventListener("click", loadDropHistory);
