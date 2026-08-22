@@ -114,7 +114,13 @@
                             <div class="drop-info-layout">
                                 <img id="drop-game-thumb" class="drop-game-thumb" src="" alt="Game thumbnail" style="display:none;">
                                 <div class="drop-info-body">
-                                    <div class="drop-name" id="drop-name"></div>
+                                    <div style="display:flex;align-items:center;gap:6px;">
+                                        <div class="drop-name" id="drop-name"></div>
+                                        <button id="blacklist-drop-btn" onclick="blacklistCurrentDrop()"
+                                            title="Blacklist this drop — exclude it permanently while still mining other drops for this game"
+                                            aria-label="Blacklist this drop"
+                                            style="display:none;background:none;border:none;color:var(--text-muted,#adadb8);cursor:pointer;font-size:13px;padding:2px 4px;line-height:1;flex-shrink:0;">🚫</button>
+                                    </div>
                                     <div class="drop-game" id="drop-game"></div>
                                     <div class="progress-bar">
                                         <div class="progress-fill" id="progress-fill"></div>
@@ -496,6 +502,16 @@
                     </section>
 
                     <section class="settings-section">
+                        <h2 id="settings-blacklist-ids-header">Blacklisted Drop IDs</h2>
+                        <p class="help-text" id="settings-blacklist-ids-help">Specific drops excluded by exact ID — added via the 🚫 button next to an active drop, or manually below. Unlike the keyword blacklist above, this matches one exact drop; other drops for the same game keep mining.</p>
+                        <div id="blacklisted-drop-ids-list" class="sortable-list"></div>
+                        <div style="display:flex;gap:8px;margin-top:8px;">
+                            <input type="text" id="blacklisted-drop-id-input" class="settings-input" placeholder="Drop ID..." style="flex:1;">
+                            <button id="blacklisted-drop-id-add-btn" class="secondary-btn">Add</button>
+                        </div>
+                    </section>
+
+                    <section class="settings-section">
                         <h2 id="settings-scheduler-header">Scheduler</h2>
                         <p class="help-text" id="settings-scheduler-help">Automatically pause and resume mining based on time of day.</p>
                         <label style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
@@ -617,6 +633,10 @@
                                 <option value="HIGH_ODDS">HIGH_ODDS (underdog)</option>
                                 <option value="MOST_VOTED">MOST_VOTED (crowd)</option>
                             </select>
+                        </label>
+                        <label class="settings-row" title="Minimum gap between the top two outcomes' vote share required to place a SMART bet — if the gap is smaller, the prediction is skipped as too uncertain. Only affects the SMART strategy.">
+                            <span class="settings-row-label" id="settings-bet-gap-label">Bet Gap % (SMART)</span>
+                            <input type="number" id="set-bet-gap" onchange="saveSettings()" min="0" max="100" step="1" class="settings-input" style="max-width:100px;">
                         </label>
                         <label class="settings-row">
                             <span class="settings-row-label">Bet % of balance</span>
