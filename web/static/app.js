@@ -1127,6 +1127,17 @@ function updateDropProgress(data) {
 
     document.getElementById('drop-name').textContent = data.drop_name;
 
+    const blacklistBtn = document.getElementById('blacklist-drop-btn');
+    if (blacklistBtn) {
+        const alreadyBlacklisted = (state.settings.blacklisted_drop_ids || []).includes(data.drop_id);
+        blacklistBtn.style.display = data.drop_id ? '' : 'none';
+        blacklistBtn.disabled = alreadyBlacklisted;
+        blacklistBtn.style.opacity = alreadyBlacklisted ? '0.4' : '';
+        blacklistBtn.title = alreadyBlacklisted
+            ? 'Already blacklisted'
+            : 'Blacklist this drop — exclude it permanently while still mining other drops for this game';
+    }
+
     const thumbEl = document.getElementById('drop-game-thumb');
     if (thumbEl) {
         if (data.game_icon) {
@@ -1962,6 +1973,7 @@ function updateSettingsUI(settings) {
     if (webhookPointsEl) webhookPointsEl.value = settings.discord_webhook_points || '';
     const blacklistEl = document.getElementById('drop-blacklist-input');
     if (blacklistEl) blacklistEl.value = (settings.drop_name_blacklist || []).join(', ');
+    renderBlacklistedDropIds(settings.blacklisted_drop_ids || []);
 
     const claimCpEl = document.getElementById('claim-channel-points');
     if (claimCpEl) claimCpEl.checked = settings.claim_channel_points !== false;
@@ -1989,6 +2001,8 @@ function updateSettingsUI(settings) {
     if (makePred) makePred.checked = settings.make_predictions || false;
     const betStrategy = document.getElementById('set-bet-strategy');
     if (betStrategy) betStrategy.value = settings.bet_strategy || 'SMART';
+    const betGap = document.getElementById('set-bet-gap');
+    if (betGap) betGap.value = settings.bet_percentage_gap ?? 20;
     const betPct = document.getElementById('set-bet-pct');
     if (betPct) betPct.value = settings.bet_percentage ?? 5;
     const betMax = document.getElementById('set-bet-max');
@@ -2135,6 +2149,46 @@ socket.on('games_available', (data) => {
     availableGames = new Set(data.games || []);
     renderGamesToWatch();
 });
+
+function renderBlacklistedDropIds(ids) {
+    state.settings.blacklisted_drop_ids = ids;
+    const container = document.getElementById('blacklisted-drop-ids-list');
+    if (!container) return;
+    container.replaceChildren();
+    ids.forEach((id, idx) => {
+        const item = document.createElement('div');
+        item.className = 'sortable-item';
+        const label = document.createElement('span');
+        label.textContent = id;
+        const btn = document.createElement('button');
+        btn.className = 'remove-btn';
+        btn.textContent = '✕';
+        btn.addEventListener('click', () => {
+            state.settings.blacklisted_drop_ids.splice(idx, 1);
+            renderBlacklistedDropIds([...state.settings.blacklisted_drop_ids]);
+            saveSettings();
+        });
+        item.appendChild(label);
+        item.appendChild(btn);
+        container.appendChild(item);
+    });
+}
+
+function blacklistCurrentDrop() {
+    const drop = state.currentDrop;
+    if (!drop || !drop.drop_id) return;
+    const ids = state.settings.blacklisted_drop_ids || [];
+    if (ids.includes(drop.drop_id)) return;
+    if (!confirm(`Permanently blacklist "${drop.drop_name}"? It will be excluded from mining from now on, but other drops for this game will keep being mined.`)) return;
+    renderBlacklistedDropIds([...ids, drop.drop_id]);
+    saveSettings();
+    const btn = document.getElementById('blacklist-drop-btn');
+    if (btn) {
+        btn.disabled = true;
+        btn.style.opacity = '0.4';
+        btn.title = 'Already blacklisted';
+    }
+}
 
 function renderIdleChannels(channels) {
     state.settings.idle_channels = channels;
@@ -2882,6 +2936,7 @@ async function saveSettings() {
         auto_add_excluded_games: state.settings.auto_add_excluded_games || [],
         drop_name_blacklist: (document.getElementById('drop-blacklist-input')?.value || '')
             .split(',').map(s => s.trim()).filter(Boolean),
+        blacklisted_drop_ids: state.settings.blacklisted_drop_ids || [],
         scheduler_enabled: document.getElementById('scheduler-enabled')?.checked || false,
         scheduler_start: document.getElementById('scheduler-start')?.value || '22:00',
         scheduler_stop: document.getElementById('scheduler-stop')?.value || '08:00',
@@ -2890,6 +2945,7 @@ async function saveSettings() {
         tab_counter_enabled: document.getElementById('tab-counter-toggle')?.checked ?? true,
         make_predictions: document.getElementById('set-make-predictions')?.checked || false,
         bet_strategy: document.getElementById('set-bet-strategy')?.value || 'SMART',
+        bet_percentage_gap: parseInt(document.getElementById('set-bet-gap')?.value) || 20,
         bet_percentage: parseInt(document.getElementById('set-bet-pct')?.value) || 5,
         bet_max_points: parseInt(document.getElementById('set-bet-max')?.value) || 50000,
         bet_minimum_points: parseInt(document.getElementById('set-bet-min')?.value) || 1000,
@@ -3282,6 +3338,16 @@ function applyTranslations(t) {
         const blacklistHelp = document.getElementById('settings-blacklist-help');
         if (blacklistHelp && s.blacklist_help) blacklistHelp.textContent = s.blacklist_help;
 
+        // Blacklisted Drop IDs section
+        const blacklistIdsHeader = document.getElementById('settings-blacklist-ids-header');
+        if (blacklistIdsHeader && s.blacklist_ids_header) blacklistIdsHeader.textContent = s.blacklist_ids_header;
+        const blacklistIdsHelp = document.getElementById('settings-blacklist-ids-help');
+        if (blacklistIdsHelp && s.blacklist_ids_help) blacklistIdsHelp.textContent = s.blacklist_ids_help;
+
+        // Bet Gap % label (Predictions settings)
+        const betGapLabel = document.getElementById('settings-bet-gap-label');
+        if (betGapLabel && s.bet_percentage_gap_label) betGapLabel.textContent = s.bet_percentage_gap_label;
+
         // Scheduler section
         const schedulerHeader = document.getElementById('settings-scheduler-header');
         if (schedulerHeader && s.scheduler) schedulerHeader.textContent = s.scheduler;
@@ -3608,8 +3674,13 @@ function renderPredictions(preds) {
         const tsText = p.ts
             ? `${new Date(p.ts).toLocaleDateString("de-AT", { day: "2-digit", month: "2-digit", year: "numeric" })} ${new Date(p.ts).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" })}`
             : "—";
-        [{ text: tsText, style: "color:#adadb8;white-space:nowrap" }, { text: p.channel || "—" }, { text: p.title ? p.title.slice(0, 40) : "—" }, { text: p.outcome_chosen || "—" }, { text: (p.points_bet || 0).toLocaleString() }, { text: p.result || "PENDING", style: `color:${color};font-weight:600` }, { text: wonText, style: `color:${color}` }]
-            .forEach(c => { const td = document.createElement("td"); td.style.padding = "5px 8px"; if (c.style) td.style.cssText += c.style; td.textContent = c.text; tr.appendChild(td); });
+        const resultText = p.result || "PENDING";
+        const resultTitle = resultText === "UNKNOWN"
+            ? (state.translations?.gui?.analytics?.unknown_result_tooltip
+                || "Result unknown — the app didn't see this prediction resolve (bot restart, disconnect, or channel went offline before it concluded).")
+            : "";
+        [{ text: tsText, style: "color:#adadb8;white-space:nowrap" }, { text: p.channel || "—" }, { text: p.title ? p.title.slice(0, 40) : "—" }, { text: p.outcome_chosen || "—" }, { text: (p.points_bet || 0).toLocaleString() }, { text: resultText, style: `color:${color};font-weight:600`, title: resultTitle }, { text: wonText, style: `color:${color}` }]
+            .forEach(c => { const td = document.createElement("td"); td.style.padding = "5px 8px"; if (c.style) td.style.cssText += c.style; td.textContent = c.text; if (c.title) td.title = c.title; tr.appendChild(td); });
         tbody.appendChild(tr);
     });
 
@@ -3968,6 +4039,22 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.getElementById('idle-channel-input')?.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') document.getElementById('idle-channel-add-btn').click();
+    });
+
+    document.getElementById('blacklisted-drop-id-add-btn')?.addEventListener('click', () => {
+        const input = document.getElementById('blacklisted-drop-id-input');
+        const val = input.value.trim();
+        if (!val) return;
+        const ids = state.settings.blacklisted_drop_ids || [];
+        if (!ids.includes(val)) {
+            ids.push(val);
+            renderBlacklistedDropIds([...ids]);
+            saveSettings();
+        }
+        input.value = '';
+    });
+    document.getElementById('blacklisted-drop-id-input')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') document.getElementById('blacklisted-drop-id-add-btn').click();
     });
 
     let prefGameDropdownIndex = -1;
