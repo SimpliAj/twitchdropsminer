@@ -4,8 +4,8 @@
   "status": {
     "terminated": "\nApplicazione Terminata.\nChiudi la finestra per uscire dall'applicazione.",
     "watching": "Guardando: {channel}",
-    "goes_online": "{channel} è ONLINE, cambiando...",
-    "goes_offline": "{channel} è OFFLINE, cambiando...",
+    "goes_online": "{channel} \u00e8 ONLINE, cambiando...",
+    "goes_offline": "{channel} \u00e8 OFFLINE, cambiando...",
     "claimed_drop": "Contenuti riscattati: {drop}",
     "no_channel": "Nessun canale disponibile da guardare. In attesa di un canale ONLINE...",
     "no_campaign": "Nessuna campagna attiva per ottenere i premi. In attesa di una campagna attiva..."
@@ -30,8 +30,8 @@
     "oauth_confirm": "Ho inserito il codice"
   },
   "error": {
-    "captcha": "Il tuo tentativo di login è stato negato da CAPTCHA.\nRiprova tra 12+ ore.",
-    "site_down": "Twitch è irraggiungibile, riprovo tra {seconds} secondi...",
+    "captcha": "Il tuo tentativo di login \u00e8 stato negato da CAPTCHA.\nRiprova tra 12+ ore.",
+    "site_down": "Twitch \u00e8 irraggiungibile, riprovo tra {seconds} secondi...",
     "no_connection": "Impossibile connettersi a Twitch, riprovo tra {seconds} secondi..."
   },
   "gui": {
@@ -88,14 +88,14 @@
       "drop_progress": "Progresso:",
       "campaign_progress": "Progresso:",
       "no_drop": "Nessun drop attivo",
-      "return_to_auto": "Torna alla modalità automatica",
-      "manual_mode_info": "Modalità manuale: Mining"
+      "return_to_auto": "Torna alla modalit\u00e0 automatica",
+      "manual_mode_info": "Modalit\u00e0 manuale: Mining"
     },
     "channels": {
       "name": "Canali",
-      "online": "ONLINE  ✔",
-      "pending": "OFFLINE ⏳",
-      "offline": "OFFLINE ❌",
+      "online": "ONLINE  \u2714",
+      "pending": "OFFLINE \u23f3",
+      "offline": "OFFLINE \u274c",
       "no_channels": "Nessun canale tracciato ancora...",
       "no_channels_for_games": "Nessun canale trovato per i giochi selezionati...",
       "channel_count": "canale",
@@ -104,10 +104,10 @@
     },
     "inventory": {
       "status": {
-        "active": "Attivo ✔",
-        "upcoming": "In arrivo ⏳",
-        "expired": "Scaduto ❌",
-        "claimed": "Riscattato ✔"
+        "active": "Attivo \u2714",
+        "upcoming": "In arrivo \u23f3",
+        "expired": "Scaduto \u274c",
+        "claimed": "Riscattato \u2714"
       },
       "starts": "Inizia: {time}",
       "ends": "Finisce: {time}",
@@ -131,11 +131,11 @@
     "settings": {
       "general": {
         "name": "Generale",
-        "dark_mode": "Modalità scura"
+        "dark_mode": "Modalit\u00e0 scura"
       },
       "reload": "Ricarica",
       "games_to_watch": "Giochi da guardare",
-      "games_help": "Seleziona i giochi da guardare. L'ordine è importante - trascina per riordinare la priorità (in alto = priorità massima).",
+      "games_help": "Seleziona i giochi da guardare. L'ordine \u00e8 importante - trascina per riordinare la priorit\u00e0 (in alto = priorit\u00e0 massima).",
       "search_games": "Cerca giochi...",
       "add_game": "Add Game",
       "add_game_hint": " Click \"Add Game\" to add it manually.",
@@ -147,7 +147,7 @@
       "no_games_match": "Nessun gioco corrisponde alla tua ricerca.",
       "all_games_selected": "Tutti i giochi sono selezionati o non ci sono giochi disponibili.",
       "actions": "Azioni",
-      "connection_quality": "Qualità della connessione:",
+      "connection_quality": "Qualit\u00e0 della connessione:",
       "minimum_refresh": "Intervallo minimo di aggiornamento (minuti):",
       "reload_campaigns": "Ricarica campagne",
       "mining_benefits": "Vantaggi Minatori",
@@ -165,13 +165,13 @@
       "password_saved": "Password saved.",
       "password_disabled_msg": "Login disabled.",
       "password_mismatch": "Passwords don't match.",
-      "password_status_active": "🔒 Login active — Password set",
-      "password_status_inactive": "🔓 No login — publicly accessible",
+      "password_status_active": "\ud83d\udd12 Login active \u2014 Password set",
+      "password_status_inactive": "\ud83d\udd13 No login \u2014 publicly accessible",
       "discord_bot": {
         "header": "Discord Bot",
         "description": "Collega un bot Discord per controllare TwitchDropsMiner via comandi chat.",
         "not_connected": "Non connesso",
-        "connected": "✅ Connesso",
+        "connected": "\u2705 Connesso",
         "generate_code": "Genera codice",
         "generating": "Generando...",
         "disconnect": "Disconnetti",
@@ -213,25 +213,28 @@
       "bot_notification_channels": "Notification Channels",
       "bot_setchannel_hint": "Use /setchannel in Discord to set channels.",
       "add_account": "+ Add Account",
-      "account_label_placeholder": "Label (e.g. Main, Alt)"
+      "account_label_placeholder": "Label (e.g. Main, Alt)",
+      "bet_percentage_gap_label": "Bet Gap % (SMART)",
+      "blacklist_ids_header": "Blacklisted Drop IDs",
+      "blacklist_ids_help": "Specific drops excluded by exact ID \u2014 added via the \ud83d\udeab button next to an active drop, or manually below. Unlike the keyword blacklist above, this matches one exact drop; other drops for the same game keep mining."
     },
     "help": {
       "about": "Informazioni su Twitch Drops Miner",
       "about_text": "Questa applicazione estrae automaticamente i drop Twitch temporizzati senza scaricare dati di streaming.",
       "how_to_use": "Come usare",
-      "features": "Funzionalità",
+      "features": "Funzionalit\u00e0",
       "important_notes": "Note importanti",
       "github_repo": "Repository GitHub",
       "how_to_use_items": [
         "Accedi utilizzando il tuo account Twitch (flusso del codice dispositivo OAuth)",
         "Collega i tuoi account su <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
-        "Il miner scoprirà automaticamente le campagne e inizierà il mining",
-        "Configura i giochi prioritari nelle Impostazioni per concentrarti su ciò che desideri",
+        "Il miner scoprir\u00e0 automaticamente le campagne e inizier\u00e0 il mining",
+        "Configura i giochi prioritari nelle Impostazioni per concentrarti su ci\u00f2 che desideri",
         "Monitora i progressi nelle schede Principale e Inventario"
       ],
       "features_items": [
         "Mining di drop senza streaming - risparmia larghezza di banda",
-        "Liste di priorità ed esclusione dei giochi",
+        "Liste di priorit\u00e0 ed esclusione dei giochi",
         "Traccia fino a 199 canali simultaneamente",
         "Cambio automatico di canale",
         "Tracciamento dei progressi in tempo reale"
@@ -258,10 +261,10 @@
     },
     "badges": {
       "manual": {
-        "title": "Modalità manuale attiva - guardando gioco specifico"
+        "title": "Modalit\u00e0 manuale attiva - guardando gioco specifico"
       },
       "auto": {
-        "title": "Modalità automatica - seguendo priorità giochi"
+        "title": "Modalit\u00e0 automatica - seguendo priorit\u00e0 giochi"
       },
       "proxy": {
         "title": "Connessione proxy attiva"
@@ -284,7 +287,7 @@
       "logout_btn": "Logout",
       "reload_ok": "Campaigns reload triggered.",
       "restart_confirm": "Restart the miner? PM2 will restart it automatically.",
-      "restart_ok": "Miner stopping — will restart via PM2 in a few seconds.",
+      "restart_ok": "Miner stopping \u2014 will restart via PM2 in a few seconds.",
       "accounts_header": "Accounts"
     },
     "analytics": {
@@ -295,10 +298,11 @@
       "claims_by_game": "Claims by Game",
       "claims_activity": "Claims Activity",
       "channel_points": "Channel Points",
-      "refresh": "↻ Refresh",
+      "refresh": "\u21bb Refresh",
       "no_channel_points": "No channel points data yet. Points are recorded while watching channels.",
       "drop_history": "Drop History",
-      "no_history": "No drops claimed yet."
+      "no_history": "No drops claimed yet.",
+      "unknown_result_tooltip": "Result unknown \u2014 the app didn't see this prediction resolve (bot restart, disconnect, or channel went offline before it concluded)."
     }
   }
 }

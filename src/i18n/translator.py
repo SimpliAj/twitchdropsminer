@@ -244,6 +244,9 @@ class GUISettings(TypedDict):
     bot_setchannel_hint: str
     add_account: str
     account_label_placeholder: str
+    bet_percentage_gap_label: str
+    blacklist_ids_header: str
+    blacklist_ids_help: str
 
 
 class GUISystem(TypedDict):
@@ -275,6 +278,7 @@ class GUIAnalytics(TypedDict):
     no_channel_points: str
     drop_history: str
     no_history: str
+    unknown_result_tooltip: str
 
 
 class GUIHelp(TypedDict):

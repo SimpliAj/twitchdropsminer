@@ -1,158 +1,158 @@
 {
-  "language_name": "Русский",
+  "language_name": "\u0420\u0443\u0441\u0441\u043a\u0438\u0439",
   "english_name": "Russian",
   "status": {
-    "terminated": "\nПриложение остановлено.\nЗакройте окно, чтобы выйти из приложения.",
-    "watching": "Просмотр канала: {channel}",
-    "goes_online": "Изменение: {channel} онлайн",
-    "goes_offline": "Изменение: {channel} онлайн",
-    "claimed_drop": "Drop получено: {drop}",
-    "no_channel": "Нет участвующих каналов онлайн. Ожидание каналов...",
-    "no_campaign": "Нет участвующих кампаний онлайн. Ожидание кампаний..."
+    "terminated": "\n\u041f\u0440\u0438\u043b\u043e\u0436\u0435\u043d\u0438\u0435 \u043e\u0441\u0442\u0430\u043d\u043e\u0432\u043b\u0435\u043d\u043e.\n\u0417\u0430\u043a\u0440\u043e\u0439\u0442\u0435 \u043e\u043a\u043d\u043e, \u0447\u0442\u043e\u0431\u044b \u0432\u044b\u0439\u0442\u0438 \u0438\u0437 \u043f\u0440\u0438\u043b\u043e\u0436\u0435\u043d\u0438\u044f.",
+    "watching": "\u041f\u0440\u043e\u0441\u043c\u043e\u0442\u0440 \u043a\u0430\u043d\u0430\u043b\u0430: {channel}",
+    "goes_online": "\u0418\u0437\u043c\u0435\u043d\u0435\u043d\u0438\u0435: {channel} \u043e\u043d\u043b\u0430\u0439\u043d",
+    "goes_offline": "\u0418\u0437\u043c\u0435\u043d\u0435\u043d\u0438\u0435: {channel} \u043e\u043d\u043b\u0430\u0439\u043d",
+    "claimed_drop": "Drop \u043f\u043e\u043b\u0443\u0447\u0435\u043d\u043e: {drop}",
+    "no_channel": "\u041d\u0435\u0442 \u0443\u0447\u0430\u0441\u0442\u0432\u0443\u044e\u0449\u0438\u0445 \u043a\u0430\u043d\u0430\u043b\u043e\u0432 \u043e\u043d\u043b\u0430\u0439\u043d. \u041e\u0436\u0438\u0434\u0430\u043d\u0438\u0435 \u043a\u0430\u043d\u0430\u043b\u043e\u0432...",
+    "no_campaign": "\u041d\u0435\u0442 \u0443\u0447\u0430\u0441\u0442\u0432\u0443\u044e\u0449\u0438\u0445 \u043a\u0430\u043c\u043f\u0430\u043d\u0438\u0439 \u043e\u043d\u043b\u0430\u0439\u043d. \u041e\u0436\u0438\u0434\u0430\u043d\u0438\u0435 \u043a\u0430\u043c\u043f\u0430\u043d\u0438\u0439..."
   },
   "login": {
-    "error_code": "Код ошибки входа в систему: {error_code}",
-    "unexpected_content": "Возвращен неожиданный тип содержимого, обычно из-за перенаправления. Требуется ли логин для доступа в Интернет?",
-    "incorrect_login_pass": "Неправильное имя пользователя или пароль.",
-    "incorrect_email_code": "Неправильный код электронной почты.",
-    "incorrect_twofa_code": "Неправильный код 2FA.",
-    "email_code_required": "Требуется код электронной почты. Пожалуйста, проверьте электронную почту.",
-    "twofa_code_required": "Требуется код 2FA.",
+    "error_code": "\u041a\u043e\u0434 \u043e\u0448\u0438\u0431\u043a\u0438 \u0432\u0445\u043e\u0434\u0430 \u0432 \u0441\u0438\u0441\u0442\u0435\u043c\u0443: {error_code}",
+    "unexpected_content": "\u0412\u043e\u0437\u0432\u0440\u0430\u0449\u0435\u043d \u043d\u0435\u043e\u0436\u0438\u0434\u0430\u043d\u043d\u044b\u0439 \u0442\u0438\u043f \u0441\u043e\u0434\u0435\u0440\u0436\u0438\u043c\u043e\u0433\u043e, \u043e\u0431\u044b\u0447\u043d\u043e \u0438\u0437-\u0437\u0430 \u043f\u0435\u0440\u0435\u043d\u0430\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u0438\u044f. \u0422\u0440\u0435\u0431\u0443\u0435\u0442\u0441\u044f \u043b\u0438 \u043b\u043e\u0433\u0438\u043d \u0434\u043b\u044f \u0434\u043e\u0441\u0442\u0443\u043f\u0430 \u0432 \u0418\u043d\u0442\u0435\u0440\u043d\u0435\u0442?",
+    "incorrect_login_pass": "\u041d\u0435\u043f\u0440\u0430\u0432\u0438\u043b\u044c\u043d\u043e\u0435 \u0438\u043c\u044f \u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u044f \u0438\u043b\u0438 \u043f\u0430\u0440\u043e\u043b\u044c.",
+    "incorrect_email_code": "\u041d\u0435\u043f\u0440\u0430\u0432\u0438\u043b\u044c\u043d\u044b\u0439 \u043a\u043e\u0434 \u044d\u043b\u0435\u043a\u0442\u0440\u043e\u043d\u043d\u043e\u0439 \u043f\u043e\u0447\u0442\u044b.",
+    "incorrect_twofa_code": "\u041d\u0435\u043f\u0440\u0430\u0432\u0438\u043b\u044c\u043d\u044b\u0439 \u043a\u043e\u0434 2FA.",
+    "email_code_required": "\u0422\u0440\u0435\u0431\u0443\u0435\u0442\u0441\u044f \u043a\u043e\u0434 \u044d\u043b\u0435\u043a\u0442\u0440\u043e\u043d\u043d\u043e\u0439 \u043f\u043e\u0447\u0442\u044b. \u041f\u043e\u0436\u0430\u043b\u0443\u0439\u0441\u0442\u0430, \u043f\u0440\u043e\u0432\u0435\u0440\u044c\u0442\u0435 \u044d\u043b\u0435\u043a\u0442\u0440\u043e\u043d\u043d\u0443\u044e \u043f\u043e\u0447\u0442\u0443.",
+    "twofa_code_required": "\u0422\u0440\u0435\u0431\u0443\u0435\u0442\u0441\u044f \u043a\u043e\u0434 2FA.",
     "status": {
-      "logged_in": "Авторизован",
-      "logged_out": "не авторизован",
-      "logging_in": "Авторизация...",
-      "required": "Требуется авторизация",
-      "waiting_auth": "Ожидание аутентификации..."
+      "logged_in": "\u0410\u0432\u0442\u043e\u0440\u0438\u0437\u043e\u0432\u0430\u043d",
+      "logged_out": "\u043d\u0435 \u0430\u0432\u0442\u043e\u0440\u0438\u0437\u043e\u0432\u0430\u043d",
+      "logging_in": "\u0410\u0432\u0442\u043e\u0440\u0438\u0437\u0430\u0446\u0438\u044f...",
+      "required": "\u0422\u0440\u0435\u0431\u0443\u0435\u0442\u0441\u044f \u0430\u0432\u0442\u043e\u0440\u0438\u0437\u0430\u0446\u0438\u044f",
+      "waiting_auth": "\u041e\u0436\u0438\u0434\u0430\u043d\u0438\u0435 \u0430\u0443\u0442\u0435\u043d\u0442\u0438\u0444\u0438\u043a\u0430\u0446\u0438\u0438..."
     },
-    "oauth_prompt": "Введите этот код на:",
-    "oauth_activate": "Активировать Twitch",
-    "oauth_confirm": "Я ввёл код"
+    "oauth_prompt": "\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u044d\u0442\u043e\u0442 \u043a\u043e\u0434 \u043d\u0430:",
+    "oauth_activate": "\u0410\u043a\u0442\u0438\u0432\u0438\u0440\u043e\u0432\u0430\u0442\u044c Twitch",
+    "oauth_confirm": "\u042f \u0432\u0432\u0451\u043b \u043a\u043e\u0434"
   },
   "error": {
-    "captcha": "Попытка входа в систему была отклонена CAPTCHA.\nПожалуйста, повторите попытку не менее чем через 12 часов.",
-    "site_down": "Twitch недоступен. Повторите попытку через {seconds} секунд...",
-    "no_connection": "Невозможно подключиться к Twitch. Повторите попытку через {seconds} секунд..."
+    "captcha": "\u041f\u043e\u043f\u044b\u0442\u043a\u0430 \u0432\u0445\u043e\u0434\u0430 \u0432 \u0441\u0438\u0441\u0442\u0435\u043c\u0443 \u0431\u044b\u043b\u0430 \u043e\u0442\u043a\u043b\u043e\u043d\u0435\u043d\u0430 CAPTCHA.\n\u041f\u043e\u0436\u0430\u043b\u0443\u0439\u0441\u0442\u0430, \u043f\u043e\u0432\u0442\u043e\u0440\u0438\u0442\u0435 \u043f\u043e\u043f\u044b\u0442\u043a\u0443 \u043d\u0435 \u043c\u0435\u043d\u0435\u0435 \u0447\u0435\u043c \u0447\u0435\u0440\u0435\u0437 12 \u0447\u0430\u0441\u043e\u0432.",
+    "site_down": "Twitch \u043d\u0435\u0434\u043e\u0441\u0442\u0443\u043f\u0435\u043d. \u041f\u043e\u0432\u0442\u043e\u0440\u0438\u0442\u0435 \u043f\u043e\u043f\u044b\u0442\u043a\u0443 \u0447\u0435\u0440\u0435\u0437 {seconds} \u0441\u0435\u043a\u0443\u043d\u0434...",
+    "no_connection": "\u041d\u0435\u0432\u043e\u0437\u043c\u043e\u0436\u043d\u043e \u043f\u043e\u0434\u043a\u043b\u044e\u0447\u0438\u0442\u044c\u0441\u044f \u043a Twitch. \u041f\u043e\u0432\u0442\u043e\u0440\u0438\u0442\u0435 \u043f\u043e\u043f\u044b\u0442\u043a\u0443 \u0447\u0435\u0440\u0435\u0437 {seconds} \u0441\u0435\u043a\u0443\u043d\u0434..."
   },
   "gui": {
-    "output": "Протокол",
+    "output": "\u041f\u0440\u043e\u0442\u043e\u043a\u043e\u043b",
     "status": {
-      "name": "Статус",
-      "idle": "Вхолостую",
-      "exiting": "Выход...",
-      "terminated": "Прекращено",
-      "cleanup": "Очистка каналов...",
-      "gathering": "Поиск каналов...",
-      "switching": "Переключение канала...",
-      "fetching_inventory": "Получение инвентаря...",
-      "fetching_campaigns": "Получение кампаний...",
-      "adding_campaigns": "Добавление кампаний в инвентарь... {counter}"
+      "name": "\u0421\u0442\u0430\u0442\u0443\u0441",
+      "idle": "\u0412\u0445\u043e\u043b\u043e\u0441\u0442\u0443\u044e",
+      "exiting": "\u0412\u044b\u0445\u043e\u0434...",
+      "terminated": "\u041f\u0440\u0435\u043a\u0440\u0430\u0449\u0435\u043d\u043e",
+      "cleanup": "\u041e\u0447\u0438\u0441\u0442\u043a\u0430 \u043a\u0430\u043d\u0430\u043b\u043e\u0432...",
+      "gathering": "\u041f\u043e\u0438\u0441\u043a \u043a\u0430\u043d\u0430\u043b\u043e\u0432...",
+      "switching": "\u041f\u0435\u0440\u0435\u043a\u043b\u044e\u0447\u0435\u043d\u0438\u0435 \u043a\u0430\u043d\u0430\u043b\u0430...",
+      "fetching_inventory": "\u041f\u043e\u043b\u0443\u0447\u0435\u043d\u0438\u0435 \u0438\u043d\u0432\u0435\u043d\u0442\u0430\u0440\u044f...",
+      "fetching_campaigns": "\u041f\u043e\u043b\u0443\u0447\u0435\u043d\u0438\u0435 \u043a\u0430\u043c\u043f\u0430\u043d\u0438\u0439...",
+      "adding_campaigns": "\u0414\u043e\u0431\u0430\u0432\u043b\u0435\u043d\u0438\u0435 \u043a\u0430\u043c\u043f\u0430\u043d\u0438\u0439 \u0432 \u0438\u043d\u0432\u0435\u043d\u0442\u0430\u0440\u044c... {counter}"
     },
     "tabs": {
-      "main": "Главная",
-      "inventory": "Инвентарь",
-      "settings": "Настройки",
-      "help": "Помощь",
+      "main": "\u0413\u043b\u0430\u0432\u043d\u0430\u044f",
+      "inventory": "\u0418\u043d\u0432\u0435\u043d\u0442\u0430\u0440\u044c",
+      "settings": "\u041d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0438",
+      "help": "\u041f\u043e\u043c\u043e\u0449\u044c",
       "system": "System",
       "stats": "Stats",
       "analytics": "Analytics"
     },
     "login": {
-      "name": "Авторизация",
-      "labels": "Статус:\nID пользователя:",
-      "request": "Пожалуйста, авторизуйтесь, чтобы продолжить.",
-      "username": "Имя пользователя",
-      "password": "Пароль",
-      "twofa_code": "2FA код (опционально)",
-      "button": "Войти",
+      "name": "\u0410\u0432\u0442\u043e\u0440\u0438\u0437\u0430\u0446\u0438\u044f",
+      "labels": "\u0421\u0442\u0430\u0442\u0443\u0441:\nID \u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u044f:",
+      "request": "\u041f\u043e\u0436\u0430\u043b\u0443\u0439\u0441\u0442\u0430, \u0430\u0432\u0442\u043e\u0440\u0438\u0437\u0443\u0439\u0442\u0435\u0441\u044c, \u0447\u0442\u043e\u0431\u044b \u043f\u0440\u043e\u0434\u043e\u043b\u0436\u0438\u0442\u044c.",
+      "username": "\u0418\u043c\u044f \u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u044f",
+      "password": "\u041f\u0430\u0440\u043e\u043b\u044c",
+      "twofa_code": "2FA \u043a\u043e\u0434 (\u043e\u043f\u0446\u0438\u043e\u043d\u0430\u043b\u044c\u043d\u043e)",
+      "button": "\u0412\u043e\u0439\u0442\u0438",
       "oauth_prompt": "Enter this code at:",
       "oauth_activate": "Twitch Activate",
       "oauth_confirm": "I've entered the code"
     },
     "websocket": {
-      "name": "Статус Websocket",
+      "name": "\u0421\u0442\u0430\u0442\u0443\u0441 Websocket",
       "websocket": "WebSocket #{id}:",
-      "initializing": "Инициализация...",
-      "connected": "Подключено",
-      "disconnected": "Отключено",
-      "connecting": "Подключение...",
-      "disconnecting": "Отключение...",
-      "reconnecting": "Переподключение..."
+      "initializing": "\u0418\u043d\u0438\u0446\u0438\u0430\u043b\u0438\u0437\u0430\u0446\u0438\u044f...",
+      "connected": "\u041f\u043e\u0434\u043a\u043b\u044e\u0447\u0435\u043d\u043e",
+      "disconnected": "\u041e\u0442\u043a\u043b\u044e\u0447\u0435\u043d\u043e",
+      "connecting": "\u041f\u043e\u0434\u043a\u043b\u044e\u0447\u0435\u043d\u0438\u0435...",
+      "disconnecting": "\u041e\u0442\u043a\u043b\u044e\u0447\u0435\u043d\u0438\u0435...",
+      "reconnecting": "\u041f\u0435\u0440\u0435\u043f\u043e\u0434\u043a\u043b\u044e\u0447\u0435\u043d\u0438\u0435..."
     },
     "progress": {
-      "name": "Ход кампании",
+      "name": "\u0425\u043e\u0434 \u043a\u0430\u043c\u043f\u0430\u043d\u0438\u0438",
       "drop": "Drop:",
-      "game": "Игра:",
-      "campaign": "Кампания:",
-      "remaining": "{time} осталось",
-      "drop_progress": "Прогресс:",
-      "campaign_progress": "Прогресс:",
-      "no_drop": "Нет активного дропа",
-      "return_to_auto": "Вернуться в автоматический режим",
-      "manual_mode_info": "Ручной режим: Майнинг"
+      "game": "\u0418\u0433\u0440\u0430:",
+      "campaign": "\u041a\u0430\u043c\u043f\u0430\u043d\u0438\u044f:",
+      "remaining": "{time} \u043e\u0441\u0442\u0430\u043b\u043e\u0441\u044c",
+      "drop_progress": "\u041f\u0440\u043e\u0433\u0440\u0435\u0441\u0441:",
+      "campaign_progress": "\u041f\u0440\u043e\u0433\u0440\u0435\u0441\u0441:",
+      "no_drop": "\u041d\u0435\u0442 \u0430\u043a\u0442\u0438\u0432\u043d\u043e\u0433\u043e \u0434\u0440\u043e\u043f\u0430",
+      "return_to_auto": "\u0412\u0435\u0440\u043d\u0443\u0442\u044c\u0441\u044f \u0432 \u0430\u0432\u0442\u043e\u043c\u0430\u0442\u0438\u0447\u0435\u0441\u043a\u0438\u0439 \u0440\u0435\u0436\u0438\u043c",
+      "manual_mode_info": "\u0420\u0443\u0447\u043d\u043e\u0439 \u0440\u0435\u0436\u0438\u043c: \u041c\u0430\u0439\u043d\u0438\u043d\u0433"
     },
     "channels": {
-      "name": "Каналы",
-      "online": "ОНЛАЙН ✔",
-      "pending": "ОЖИДАНИЕ ⏳",
-      "offline": "ОФЛАЙН ❌",
-      "no_channels": "Пока не отслеживаются каналы...",
-      "no_channels_for_games": "Не найдено каналов для выбранных игр...",
-      "channel_count": "канал",
-      "channel_count_plural": "каналы",
-      "viewers": "зрителей"
+      "name": "\u041a\u0430\u043d\u0430\u043b\u044b",
+      "online": "\u041e\u041d\u041b\u0410\u0419\u041d \u2714",
+      "pending": "\u041e\u0416\u0418\u0414\u0410\u041d\u0418\u0415 \u23f3",
+      "offline": "\u041e\u0424\u041b\u0410\u0419\u041d \u274c",
+      "no_channels": "\u041f\u043e\u043a\u0430 \u043d\u0435 \u043e\u0442\u0441\u043b\u0435\u0436\u0438\u0432\u0430\u044e\u0442\u0441\u044f \u043a\u0430\u043d\u0430\u043b\u044b...",
+      "no_channels_for_games": "\u041d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u043e \u043a\u0430\u043d\u0430\u043b\u043e\u0432 \u0434\u043b\u044f \u0432\u044b\u0431\u0440\u0430\u043d\u043d\u044b\u0445 \u0438\u0433\u0440...",
+      "channel_count": "\u043a\u0430\u043d\u0430\u043b",
+      "channel_count_plural": "\u043a\u0430\u043d\u0430\u043b\u044b",
+      "viewers": "\u0437\u0440\u0438\u0442\u0435\u043b\u0435\u0439"
     },
     "inventory": {
       "status": {
-        "active": "Активное ✔",
-        "upcoming": "Будущее ⏳",
-        "expired": "Прошедшее ❌",
-        "claimed": "Получено ✔"
+        "active": "\u0410\u043a\u0442\u0438\u0432\u043d\u043e\u0435 \u2714",
+        "upcoming": "\u0411\u0443\u0434\u0443\u0449\u0435\u0435 \u23f3",
+        "expired": "\u041f\u0440\u043e\u0448\u0435\u0434\u0448\u0435\u0435 \u274c",
+        "claimed": "\u041f\u043e\u043b\u0443\u0447\u0435\u043d\u043e \u2714"
       },
-      "starts": "Начало: {time}",
-      "ends": "Окончание: {time}",
-      "no_campaigns": "Кампании ещё не загружены...",
-      "claimed_drops": "получено",
+      "starts": "\u041d\u0430\u0447\u0430\u043b\u043e: {time}",
+      "ends": "\u041e\u043a\u043e\u043d\u0447\u0430\u043d\u0438\u0435: {time}",
+      "no_campaigns": "\u041a\u0430\u043c\u043f\u0430\u043d\u0438\u0438 \u0435\u0449\u0451 \u043d\u0435 \u0437\u0430\u0433\u0440\u0443\u0436\u0435\u043d\u044b...",
+      "claimed_drops": "\u043f\u043e\u043b\u0443\u0447\u0435\u043d\u043e",
       "filters": {
-        "active": "Активные",
-        "not_linked": "Не связаны",
-        "upcoming": "Предстоящие",
-        "expired": "Истекшие",
-        "finished": "Завершенные",
-        "item": "Предмет",
-        "badge": "Значок",
-        "emote": "Смайлик",
-        "other": "Другое",
-        "clear": "Очистить фильтры",
-        "search_placeholder": "Поиск игр..."
+        "active": "\u0410\u043a\u0442\u0438\u0432\u043d\u044b\u0435",
+        "not_linked": "\u041d\u0435 \u0441\u0432\u044f\u0437\u0430\u043d\u044b",
+        "upcoming": "\u041f\u0440\u0435\u0434\u0441\u0442\u043e\u044f\u0449\u0438\u0435",
+        "expired": "\u0418\u0441\u0442\u0435\u043a\u0448\u0438\u0435",
+        "finished": "\u0417\u0430\u0432\u0435\u0440\u0448\u0435\u043d\u043d\u044b\u0435",
+        "item": "\u041f\u0440\u0435\u0434\u043c\u0435\u0442",
+        "badge": "\u0417\u043d\u0430\u0447\u043e\u043a",
+        "emote": "\u0421\u043c\u0430\u0439\u043b\u0438\u043a",
+        "other": "\u0414\u0440\u0443\u0433\u043e\u0435",
+        "clear": "\u041e\u0447\u0438\u0441\u0442\u0438\u0442\u044c \u0444\u0438\u043b\u044c\u0442\u0440\u044b",
+        "search_placeholder": "\u041f\u043e\u0438\u0441\u043a \u0438\u0433\u0440..."
       },
       "filter_linked": "Linked"
     },
     "settings": {
       "general": {
-        "name": "Общие",
-        "dark_mode": "Тёмный режим"
+        "name": "\u041e\u0431\u0449\u0438\u0435",
+        "dark_mode": "\u0422\u0451\u043c\u043d\u044b\u0439 \u0440\u0435\u0436\u0438\u043c"
       },
-      "exclude": "Исключения",
-      "reload": "Перезагрузить",
-      "games_to_watch": "Игры для просмотра",
-      "games_help": "Выберите игры для просмотра. Порядок имеет значение - перетащите для изменения приоритета (вверху = наивысший приоритет).",
-      "search_games": "Поиск игр...",
+      "exclude": "\u0418\u0441\u043a\u043b\u044e\u0447\u0435\u043d\u0438\u044f",
+      "reload": "\u041f\u0435\u0440\u0435\u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044c",
+      "games_to_watch": "\u0418\u0433\u0440\u044b \u0434\u043b\u044f \u043f\u0440\u043e\u0441\u043c\u043e\u0442\u0440\u0430",
+      "games_help": "\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u0438\u0433\u0440\u044b \u0434\u043b\u044f \u043f\u0440\u043e\u0441\u043c\u043e\u0442\u0440\u0430. \u041f\u043e\u0440\u044f\u0434\u043e\u043a \u0438\u043c\u0435\u0435\u0442 \u0437\u043d\u0430\u0447\u0435\u043d\u0438\u0435 - \u043f\u0435\u0440\u0435\u0442\u0430\u0449\u0438\u0442\u0435 \u0434\u043b\u044f \u0438\u0437\u043c\u0435\u043d\u0435\u043d\u0438\u044f \u043f\u0440\u0438\u043e\u0440\u0438\u0442\u0435\u0442\u0430 (\u0432\u0432\u0435\u0440\u0445\u0443 = \u043d\u0430\u0438\u0432\u044b\u0441\u0448\u0438\u0439 \u043f\u0440\u0438\u043e\u0440\u0438\u0442\u0435\u0442).",
+      "search_games": "\u041f\u043e\u0438\u0441\u043a \u0438\u0433\u0440...",
       "add_game": "Add Game",
       "add_game_hint": " Click \"Add Game\" to add it manually.",
-      "select_all": "Выбрать все",
-      "deselect_all": "Снять выбор",
-      "selected_games": "Выбранные игры (перетащите для изменения порядка)",
-      "available_games": "Доступные игры",
-      "no_games_selected": "Игры не выбраны. Отметьте игры ниже, чтобы добавить их.",
-      "no_games_match": "Нет игр, соответствующих вашему запросу.",
-      "all_games_selected": "Все игры выбраны или нет доступных игр.",
-      "actions": "Действия",
-      "connection_quality": "Качество соединения:",
-      "minimum_refresh": "Минимальный интервал обновления (минуты):",
-      "reload_campaigns": "Перезагрузить кампании",
-      "mining_benefits": "Преимущества майнинга",
-      "mining_benefits_help": "Выберите типы drops, которые вы хотите майнить.",
+      "select_all": "\u0412\u044b\u0431\u0440\u0430\u0442\u044c \u0432\u0441\u0435",
+      "deselect_all": "\u0421\u043d\u044f\u0442\u044c \u0432\u044b\u0431\u043e\u0440",
+      "selected_games": "\u0412\u044b\u0431\u0440\u0430\u043d\u043d\u044b\u0435 \u0438\u0433\u0440\u044b (\u043f\u0435\u0440\u0435\u0442\u0430\u0449\u0438\u0442\u0435 \u0434\u043b\u044f \u0438\u0437\u043c\u0435\u043d\u0435\u043d\u0438\u044f \u043f\u043e\u0440\u044f\u0434\u043a\u0430)",
+      "available_games": "\u0414\u043e\u0441\u0442\u0443\u043f\u043d\u044b\u0435 \u0438\u0433\u0440\u044b",
+      "no_games_selected": "\u0418\u0433\u0440\u044b \u043d\u0435 \u0432\u044b\u0431\u0440\u0430\u043d\u044b. \u041e\u0442\u043c\u0435\u0442\u044c\u0442\u0435 \u0438\u0433\u0440\u044b \u043d\u0438\u0436\u0435, \u0447\u0442\u043e\u0431\u044b \u0434\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u0438\u0445.",
+      "no_games_match": "\u041d\u0435\u0442 \u0438\u0433\u0440, \u0441\u043e\u043e\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u0443\u044e\u0449\u0438\u0445 \u0432\u0430\u0448\u0435\u043c\u0443 \u0437\u0430\u043f\u0440\u043e\u0441\u0443.",
+      "all_games_selected": "\u0412\u0441\u0435 \u0438\u0433\u0440\u044b \u0432\u044b\u0431\u0440\u0430\u043d\u044b \u0438\u043b\u0438 \u043d\u0435\u0442 \u0434\u043e\u0441\u0442\u0443\u043f\u043d\u044b\u0445 \u0438\u0433\u0440.",
+      "actions": "\u0414\u0435\u0439\u0441\u0442\u0432\u0438\u044f",
+      "connection_quality": "\u041a\u0430\u0447\u0435\u0441\u0442\u0432\u043e \u0441\u043e\u0435\u0434\u0438\u043d\u0435\u043d\u0438\u044f:",
+      "minimum_refresh": "\u041c\u0438\u043d\u0438\u043c\u0430\u043b\u044c\u043d\u044b\u0439 \u0438\u043d\u0442\u0435\u0440\u0432\u0430\u043b \u043e\u0431\u043d\u043e\u0432\u043b\u0435\u043d\u0438\u044f (\u043c\u0438\u043d\u0443\u0442\u044b):",
+      "reload_campaigns": "\u041f\u0435\u0440\u0435\u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044c \u043a\u0430\u043c\u043f\u0430\u043d\u0438\u0438",
+      "mining_benefits": "\u041f\u0440\u0435\u0438\u043c\u0443\u0449\u0435\u0441\u0442\u0432\u0430 \u043c\u0430\u0439\u043d\u0438\u043d\u0433\u0430",
+      "mining_benefits_help": "\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u0442\u0438\u043f\u044b drops, \u043a\u043e\u0442\u043e\u0440\u044b\u0435 \u0432\u044b \u0445\u043e\u0442\u0438\u0442\u0435 \u043c\u0430\u0439\u043d\u0438\u0442\u044c.",
       "select_linked": "Select Linked",
       "password_header": "Login & Password",
       "password_current_label": "Current Password",
@@ -166,19 +166,19 @@
       "password_saved": "Password saved.",
       "password_disabled_msg": "Login disabled.",
       "password_mismatch": "Passwords don't match.",
-      "password_status_active": "🔒 Login active — Password set",
-      "password_status_inactive": "🔓 No login — publicly accessible",
+      "password_status_active": "\ud83d\udd12 Login active \u2014 Password set",
+      "password_status_inactive": "\ud83d\udd13 No login \u2014 publicly accessible",
       "discord_bot": {
         "header": "Discord Bot",
-        "description": "Подключите бота Discord для управления TwitchDropsMiner через команды.",
-        "not_connected": "Не подключен",
-        "connected": "✅ Подключен",
-        "generate_code": "Создать код",
-        "generating": "Создание...",
-        "disconnect": "Отключить",
-        "disconnect_confirm": "Отключить бота Discord?",
-        "invite_bot": "Пригласить бота",
-        "expires": "Истекает через 10 мин"
+        "description": "\u041f\u043e\u0434\u043a\u043b\u044e\u0447\u0438\u0442\u0435 \u0431\u043e\u0442\u0430 Discord \u0434\u043b\u044f \u0443\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u0438\u044f TwitchDropsMiner \u0447\u0435\u0440\u0435\u0437 \u043a\u043e\u043c\u0430\u043d\u0434\u044b.",
+        "not_connected": "\u041d\u0435 \u043f\u043e\u0434\u043a\u043b\u044e\u0447\u0435\u043d",
+        "connected": "\u2705 \u041f\u043e\u0434\u043a\u043b\u044e\u0447\u0435\u043d",
+        "generate_code": "\u0421\u043e\u0437\u0434\u0430\u0442\u044c \u043a\u043e\u0434",
+        "generating": "\u0421\u043e\u0437\u0434\u0430\u043d\u0438\u0435...",
+        "disconnect": "\u041e\u0442\u043a\u043b\u044e\u0447\u0438\u0442\u044c",
+        "disconnect_confirm": "\u041e\u0442\u043a\u043b\u044e\u0447\u0438\u0442\u044c \u0431\u043e\u0442\u0430 Discord?",
+        "invite_bot": "\u041f\u0440\u0438\u0433\u043b\u0430\u0441\u0438\u0442\u044c \u0431\u043e\u0442\u0430",
+        "expires": "\u0418\u0441\u0442\u0435\u043a\u0430\u0435\u0442 \u0447\u0435\u0440\u0435\u0437 10 \u043c\u0438\u043d"
       },
       "notifications_header": "Notifications",
       "push_enabled": "Browser Push Notifications",
@@ -214,63 +214,66 @@
       "bot_notification_channels": "Notification Channels",
       "bot_setchannel_hint": "Use /setchannel in Discord to set channels.",
       "add_account": "+ Add Account",
-      "account_label_placeholder": "Label (e.g. Main, Alt)"
+      "account_label_placeholder": "Label (e.g. Main, Alt)",
+      "bet_percentage_gap_label": "Bet Gap % (SMART)",
+      "blacklist_ids_header": "Blacklisted Drop IDs",
+      "blacklist_ids_help": "Specific drops excluded by exact ID \u2014 added via the \ud83d\udeab button next to an active drop, or manually below. Unlike the keyword blacklist above, this matches one exact drop; other drops for the same game keep mining."
     },
     "help": {
-      "about": "О Twitch Drops Miner",
-      "about_text": "Это приложение автоматически майнит временные дропы Twitch без загрузки данных стрима.",
-      "how_to_use": "Как использовать",
-      "features": "Возможности",
-      "important_notes": "Важные заметки",
-      "github_repo": "Репозиторий GitHub",
+      "about": "\u041e Twitch Drops Miner",
+      "about_text": "\u042d\u0442\u043e \u043f\u0440\u0438\u043b\u043e\u0436\u0435\u043d\u0438\u0435 \u0430\u0432\u0442\u043e\u043c\u0430\u0442\u0438\u0447\u0435\u0441\u043a\u0438 \u043c\u0430\u0439\u043d\u0438\u0442 \u0432\u0440\u0435\u043c\u0435\u043d\u043d\u044b\u0435 \u0434\u0440\u043e\u043f\u044b Twitch \u0431\u0435\u0437 \u0437\u0430\u0433\u0440\u0443\u0437\u043a\u0438 \u0434\u0430\u043d\u043d\u044b\u0445 \u0441\u0442\u0440\u0438\u043c\u0430.",
+      "how_to_use": "\u041a\u0430\u043a \u0438\u0441\u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u044c",
+      "features": "\u0412\u043e\u0437\u043c\u043e\u0436\u043d\u043e\u0441\u0442\u0438",
+      "important_notes": "\u0412\u0430\u0436\u043d\u044b\u0435 \u0437\u0430\u043c\u0435\u0442\u043a\u0438",
+      "github_repo": "\u0420\u0435\u043f\u043e\u0437\u0438\u0442\u043e\u0440\u0438\u0439 GitHub",
       "how_to_use_items": [
-        "Войдите, используя свой аккаунт Twitch (поток кода устройства OAuth)",
-        "Свяжите свои аккаунты на <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
-        "Майнер автоматически обнаружит кампании и начнёт майнинг",
-        "Настройте приоритетные игры в Настройках, чтобы сосредоточиться на том, что вы хотите",
-        "Отслеживайте прогресс во вкладках Главная и Инвентарь"
+        "\u0412\u043e\u0439\u0434\u0438\u0442\u0435, \u0438\u0441\u043f\u043e\u043b\u044c\u0437\u0443\u044f \u0441\u0432\u043e\u0439 \u0430\u043a\u043a\u0430\u0443\u043d\u0442 Twitch (\u043f\u043e\u0442\u043e\u043a \u043a\u043e\u0434\u0430 \u0443\u0441\u0442\u0440\u043e\u0439\u0441\u0442\u0432\u0430 OAuth)",
+        "\u0421\u0432\u044f\u0436\u0438\u0442\u0435 \u0441\u0432\u043e\u0438 \u0430\u043a\u043a\u0430\u0443\u043d\u0442\u044b \u043d\u0430 <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
+        "\u041c\u0430\u0439\u043d\u0435\u0440 \u0430\u0432\u0442\u043e\u043c\u0430\u0442\u0438\u0447\u0435\u0441\u043a\u0438 \u043e\u0431\u043d\u0430\u0440\u0443\u0436\u0438\u0442 \u043a\u0430\u043c\u043f\u0430\u043d\u0438\u0438 \u0438 \u043d\u0430\u0447\u043d\u0451\u0442 \u043c\u0430\u0439\u043d\u0438\u043d\u0433",
+        "\u041d\u0430\u0441\u0442\u0440\u043e\u0439\u0442\u0435 \u043f\u0440\u0438\u043e\u0440\u0438\u0442\u0435\u0442\u043d\u044b\u0435 \u0438\u0433\u0440\u044b \u0432 \u041d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0430\u0445, \u0447\u0442\u043e\u0431\u044b \u0441\u043e\u0441\u0440\u0435\u0434\u043e\u0442\u043e\u0447\u0438\u0442\u044c\u0441\u044f \u043d\u0430 \u0442\u043e\u043c, \u0447\u0442\u043e \u0432\u044b \u0445\u043e\u0442\u0438\u0442\u0435",
+        "\u041e\u0442\u0441\u043b\u0435\u0436\u0438\u0432\u0430\u0439\u0442\u0435 \u043f\u0440\u043e\u0433\u0440\u0435\u0441\u0441 \u0432\u043e \u0432\u043a\u043b\u0430\u0434\u043a\u0430\u0445 \u0413\u043b\u0430\u0432\u043d\u0430\u044f \u0438 \u0418\u043d\u0432\u0435\u043d\u0442\u0430\u0440\u044c"
       ],
       "features_items": [
-        "Майнинг дропов без стрима - экономит пропускную способность",
-        "Списки приоритетов и исключений игр",
-        "Отслеживает до 199 каналов одновременно",
-        "Автоматическое переключение каналов",
-        "Отслеживание прогресса в реальном времени"
+        "\u041c\u0430\u0439\u043d\u0438\u043d\u0433 \u0434\u0440\u043e\u043f\u043e\u0432 \u0431\u0435\u0437 \u0441\u0442\u0440\u0438\u043c\u0430 - \u044d\u043a\u043e\u043d\u043e\u043c\u0438\u0442 \u043f\u0440\u043e\u043f\u0443\u0441\u043a\u043d\u0443\u044e \u0441\u043f\u043e\u0441\u043e\u0431\u043d\u043e\u0441\u0442\u044c",
+        "\u0421\u043f\u0438\u0441\u043a\u0438 \u043f\u0440\u0438\u043e\u0440\u0438\u0442\u0435\u0442\u043e\u0432 \u0438 \u0438\u0441\u043a\u043b\u044e\u0447\u0435\u043d\u0438\u0439 \u0438\u0433\u0440",
+        "\u041e\u0442\u0441\u043b\u0435\u0436\u0438\u0432\u0430\u0435\u0442 \u0434\u043e 199 \u043a\u0430\u043d\u0430\u043b\u043e\u0432 \u043e\u0434\u043d\u043e\u0432\u0440\u0435\u043c\u0435\u043d\u043d\u043e",
+        "\u0410\u0432\u0442\u043e\u043c\u0430\u0442\u0438\u0447\u0435\u0441\u043a\u043e\u0435 \u043f\u0435\u0440\u0435\u043a\u043b\u044e\u0447\u0435\u043d\u0438\u0435 \u043a\u0430\u043d\u0430\u043b\u043e\u0432",
+        "\u041e\u0442\u0441\u043b\u0435\u0436\u0438\u0432\u0430\u043d\u0438\u0435 \u043f\u0440\u043e\u0433\u0440\u0435\u0441\u0441\u0430 \u0432 \u0440\u0435\u0430\u043b\u044c\u043d\u043e\u043c \u0432\u0440\u0435\u043c\u0435\u043d\u0438"
       ],
       "important_notes_items": [
-        "Не смотрите стримы на том же аккаунте во время майнинга",
-        "Храните файл cookies.jar в безопасности",
-        "Требуются связанные игровые аккаунты для дропов"
+        "\u041d\u0435 \u0441\u043c\u043e\u0442\u0440\u0438\u0442\u0435 \u0441\u0442\u0440\u0438\u043c\u044b \u043d\u0430 \u0442\u043e\u043c \u0436\u0435 \u0430\u043a\u043a\u0430\u0443\u043d\u0442\u0435 \u0432\u043e \u0432\u0440\u0435\u043c\u044f \u043c\u0430\u0439\u043d\u0438\u043d\u0433\u0430",
+        "\u0425\u0440\u0430\u043d\u0438\u0442\u0435 \u0444\u0430\u0439\u043b cookies.jar \u0432 \u0431\u0435\u0437\u043e\u043f\u0430\u0441\u043d\u043e\u0441\u0442\u0438",
+        "\u0422\u0440\u0435\u0431\u0443\u044e\u0442\u0441\u044f \u0441\u0432\u044f\u0437\u0430\u043d\u043d\u044b\u0435 \u0438\u0433\u0440\u043e\u0432\u044b\u0435 \u0430\u043a\u043a\u0430\u0443\u043d\u0442\u044b \u0434\u043b\u044f \u0434\u0440\u043e\u043f\u043e\u0432"
       ]
     },
     "header": {
       "title": "Twitch Drops Miner",
-      "language": "Язык:",
-      "initializing": "Инициализация...",
+      "language": "\u042f\u0437\u044b\u043a:",
+      "initializing": "\u0418\u043d\u0438\u0446\u0438\u0430\u043b\u0438\u0437\u0430\u0446\u0438\u044f...",
       "auto_mode": "AUTO",
-      "manual_mode": "РУЧНОЙ",
-      "connected": "Подключено",
-      "disconnected": "Отключено"
+      "manual_mode": "\u0420\u0423\u0427\u041d\u041e\u0419",
+      "connected": "\u041f\u043e\u0434\u043a\u043b\u044e\u0447\u0435\u043d\u043e",
+      "disconnected": "\u041e\u0442\u043a\u043b\u044e\u0447\u0435\u043d\u043e"
     },
     "footer": {
-      "version": "Версия:",
-      "loading": "Загрузка...",
-      "update_available": "Доступно обновление:"
+      "version": "\u0412\u0435\u0440\u0441\u0438\u044f:",
+      "loading": "\u0417\u0430\u0433\u0440\u0443\u0437\u043a\u0430...",
+      "update_available": "\u0414\u043e\u0441\u0442\u0443\u043f\u043d\u043e \u043e\u0431\u043d\u043e\u0432\u043b\u0435\u043d\u0438\u0435:"
     },
     "badges": {
       "manual": {
-        "title": "Ручной режим - просмотр конкретной игры"
+        "title": "\u0420\u0443\u0447\u043d\u043e\u0439 \u0440\u0435\u0436\u0438\u043c - \u043f\u0440\u043e\u0441\u043c\u043e\u0442\u0440 \u043a\u043e\u043d\u043a\u0440\u0435\u0442\u043d\u043e\u0439 \u0438\u0433\u0440\u044b"
       },
       "auto": {
-        "title": "Автоматический режим - по приоритету игр"
+        "title": "\u0410\u0432\u0442\u043e\u043c\u0430\u0442\u0438\u0447\u0435\u0441\u043a\u0438\u0439 \u0440\u0435\u0436\u0438\u043c - \u043f\u043e \u043f\u0440\u0438\u043e\u0440\u0438\u0442\u0435\u0442\u0443 \u0438\u0433\u0440"
       },
       "proxy": {
-        "title": "Прокси подключен"
+        "title": "\u041f\u0440\u043e\u043a\u0441\u0438 \u043f\u043e\u0434\u043a\u043b\u044e\u0447\u0435\u043d"
       }
     },
     "wanted": {
-      "name": "Очередь желаемых дропов",
-      "none": "Нет желаемых дропов в очереди..."
+      "name": "\u041e\u0447\u0435\u0440\u0435\u0434\u044c \u0436\u0435\u043b\u0430\u0435\u043c\u044b\u0445 \u0434\u0440\u043e\u043f\u043e\u0432",
+      "none": "\u041d\u0435\u0442 \u0436\u0435\u043b\u0430\u0435\u043c\u044b\u0445 \u0434\u0440\u043e\u043f\u043e\u0432 \u0432 \u043e\u0447\u0435\u0440\u0435\u0434\u0438..."
     },
     "system": {
       "header": "System",
@@ -285,7 +288,7 @@
       "logout_btn": "Logout",
       "reload_ok": "Campaigns reload triggered.",
       "restart_confirm": "Restart the miner? PM2 will restart it automatically.",
-      "restart_ok": "Miner stopping — will restart via PM2 in a few seconds.",
+      "restart_ok": "Miner stopping \u2014 will restart via PM2 in a few seconds.",
       "accounts_header": "Accounts"
     },
     "analytics": {
@@ -296,10 +299,11 @@
       "claims_by_game": "Claims by Game",
       "claims_activity": "Claims Activity",
       "channel_points": "Channel Points",
-      "refresh": "↻ Refresh",
+      "refresh": "\u21bb Refresh",
       "no_channel_points": "No channel points data yet. Points are recorded while watching channels.",
       "drop_history": "Drop History",
-      "no_history": "No drops claimed yet."
+      "no_history": "No drops claimed yet.",
+      "unknown_result_tooltip": "Result unknown \u2014 the app didn't see this prediction resolve (bot restart, disconnect, or channel went offline before it concluded)."
     }
   }
 }

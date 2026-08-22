@@ -1,69 +1,69 @@
 {
-  "language_name": "Čeština",
+  "language_name": "\u010ce\u0161tina",
   "english_name": "Czech",
   "status": {
-    "terminated": "\nAplikace byla ukončena.",
-    "watching": "Sledování kanálu: {channel}",
-    "goes_online": "Kanál {channel} je online, přepínám...",
-    "goes_offline": "Kanál {channel} je offline, přepínám na další...",
+    "terminated": "\nAplikace byla ukon\u010dena.",
+    "watching": "Sledov\u00e1n\u00ed kan\u00e1lu: {channel}",
+    "goes_online": "Kan\u00e1l {channel} je online, p\u0159ep\u00edn\u00e1m...",
+    "goes_offline": "Kan\u00e1l {channel} je offline, p\u0159ep\u00edn\u00e1m na dal\u0161\u00ed...",
     "claimed_drop": "Drop vyzvednut: {drop}",
-    "no_channel": "Žádný kanál není dostupný, čekání na další...",
-    "no_campaign": "Žádné dropy k dispozici, čekání na další dostupné dropy..."
+    "no_channel": "\u017d\u00e1dn\u00fd kan\u00e1l nen\u00ed dostupn\u00fd, \u010dek\u00e1n\u00ed na dal\u0161\u00ed...",
+    "no_campaign": "\u017d\u00e1dn\u00e9 dropy k dispozici, \u010dek\u00e1n\u00ed na dal\u0161\u00ed dostupn\u00e9 dropy..."
   },
   "login": {
-    "unexpected_content": "Chyba při přesměrování. Nepoužíváte VPN?",
-    "incorrect_login_pass": "Nesprávné přihlašení.",
-    "incorrect_email_code": "Nesprávný E-Mail kód.",
-    "incorrect_twofa_code": "Nesprávný dvoufaktorový token",
-    "email_code_required": "K přihlášení je vyžadován kód který byl zaslán na váš E-Mail.",
-    "twofa_code_required": "K přihlášení je vyžadován dvoufaktorový kód.",
+    "unexpected_content": "Chyba p\u0159i p\u0159esm\u011brov\u00e1n\u00ed. Nepou\u017e\u00edv\u00e1te VPN?",
+    "incorrect_login_pass": "Nespr\u00e1vn\u00e9 p\u0159ihla\u0161en\u00ed.",
+    "incorrect_email_code": "Nespr\u00e1vn\u00fd E-Mail k\u00f3d.",
+    "incorrect_twofa_code": "Nespr\u00e1vn\u00fd dvoufaktorov\u00fd token",
+    "email_code_required": "K p\u0159ihl\u00e1\u0161en\u00ed je vy\u017eadov\u00e1n k\u00f3d kter\u00fd byl zasl\u00e1n na v\u00e1\u0161 E-Mail.",
+    "twofa_code_required": "K p\u0159ihl\u00e1\u0161en\u00ed je vy\u017eadov\u00e1n dvoufaktorov\u00fd k\u00f3d.",
     "status": {
-      "logged_in": "Přihlášeno",
-      "logged_out": "Odhlášeno",
-      "logging_in": "Přihlašování...",
-      "required": "Potřebujete se nejdříve přihlásit",
-      "waiting_auth": "Čekání na ověření..."
+      "logged_in": "P\u0159ihl\u00e1\u0161eno",
+      "logged_out": "Odhl\u00e1\u0161eno",
+      "logging_in": "P\u0159ihla\u0161ov\u00e1n\u00ed...",
+      "required": "Pot\u0159ebujete se nejd\u0159\u00edve p\u0159ihl\u00e1sit",
+      "waiting_auth": "\u010cek\u00e1n\u00ed na ov\u011b\u0159en\u00ed..."
     },
-    "oauth_prompt": "Zadejte tento kód na:",
+    "oauth_prompt": "Zadejte tento k\u00f3d na:",
     "oauth_activate": "Aktivovat Twitch",
-    "oauth_confirm": "Zadal jsem kód"
+    "oauth_confirm": "Zadal jsem k\u00f3d"
   },
   "error": {
-    "captcha": "Vaše připojení bylo zamítnuto službou Twitch, zkuste to znovu za 12 hodin.",
-    "site_down": "Služba Twitch je nedostupná，zkuste to znovu za {seconds} sekund...",
-    "no_connection": "Nelze se připojit k službe Twitch, zkuste to znovu za {seconds}..."
+    "captcha": "Va\u0161e p\u0159ipojen\u00ed bylo zam\u00edtnuto slu\u017ebou Twitch, zkuste to znovu za 12 hodin.",
+    "site_down": "Slu\u017eba Twitch je nedostupn\u00e1\uff0czkuste to znovu za {seconds} sekund...",
+    "no_connection": "Nelze se p\u0159ipojit k slu\u017ebe Twitch, zkuste to znovu za {seconds}..."
   },
   "gui": {
-    "output": "Výstup",
+    "output": "V\u00fdstup",
     "status": {
       "name": "Status",
-      "idle": "Dokončeno načítání",
-      "exiting": "Ukončování...",
-      "terminated": "Aplikace ukončena",
-      "cleanup": "Čištění...",
-      "gathering": "Vyhledávání dostupného živého kanálu...",
-      "switching": "Přepínám mezi kanály...",
-      "fetching_inventory": "Načítání inventáře...",
-      "fetching_campaigns": "Načítání dropů...",
-      "adding_campaigns": "Přidávám dropy... {counter}"
+      "idle": "Dokon\u010deno na\u010d\u00edt\u00e1n\u00ed",
+      "exiting": "Ukon\u010dov\u00e1n\u00ed...",
+      "terminated": "Aplikace ukon\u010dena",
+      "cleanup": "\u010ci\u0161t\u011bn\u00ed...",
+      "gathering": "Vyhled\u00e1v\u00e1n\u00ed dostupn\u00e9ho \u017eiv\u00e9ho kan\u00e1lu...",
+      "switching": "P\u0159ep\u00edn\u00e1m mezi kan\u00e1ly...",
+      "fetching_inventory": "Na\u010d\u00edt\u00e1n\u00ed invent\u00e1\u0159e...",
+      "fetching_campaigns": "Na\u010d\u00edt\u00e1n\u00ed drop\u016f...",
+      "adding_campaigns": "P\u0159id\u00e1v\u00e1m dropy... {counter}"
     },
     "tabs": {
-      "main": "Hlavní",
-      "inventory": "Inventář",
-      "settings": "Nastavení",
-      "help": "Nápověda",
+      "main": "Hlavn\u00ed",
+      "inventory": "Invent\u00e1\u0159",
+      "settings": "Nastaven\u00ed",
+      "help": "N\u00e1pov\u011bda",
       "system": "System",
       "stats": "Stats",
       "analytics": "Analytics"
     },
     "login": {
-      "name": "Přihlášení k službě Twitch",
-      "labels": "Uživatelské ID:",
-      "request": "Pro přístup je potřeba přihlášení",
-      "username": "Uživatelské Jméno",
+      "name": "P\u0159ihl\u00e1\u0161en\u00ed k slu\u017eb\u011b Twitch",
+      "labels": "U\u017eivatelsk\u00e9 ID:",
+      "request": "Pro p\u0159\u00edstup je pot\u0159eba p\u0159ihl\u00e1\u0161en\u00ed",
+      "username": "U\u017eivatelsk\u00e9 Jm\u00e9no",
       "password": "Heslo",
-      "twofa_code": "2FA Kód",
-      "button": "Přihlásit se",
+      "twofa_code": "2FA K\u00f3d",
+      "button": "P\u0159ihl\u00e1sit se",
       "oauth_prompt": "Enter this code at:",
       "oauth_activate": "Twitch Activate",
       "oauth_confirm": "I've entered the code"
@@ -71,57 +71,57 @@
     "websocket": {
       "name": "Stav Websocketu",
       "websocket": "Websocket #{id}:",
-      "initializing": "Načítání",
-      "connected": "Připojeno",
+      "initializing": "Na\u010d\u00edt\u00e1n\u00ed",
+      "connected": "P\u0159ipojeno",
       "disconnected": "Odpojeno",
-      "connecting": "Připojování...",
-      "disconnecting": "Odpojování...",
-      "reconnecting": "Přepojování..."
+      "connecting": "P\u0159ipojov\u00e1n\u00ed...",
+      "disconnecting": "Odpojov\u00e1n\u00ed...",
+      "reconnecting": "P\u0159epojov\u00e1n\u00ed..."
     },
     "progress": {
-      "name": "Průběh Dropu",
-      "drop": "Drop Odměny:",
+      "name": "Pr\u016fb\u011bh Dropu",
+      "drop": "Drop Odm\u011bny:",
       "game": "Hra:",
-      "campaign": "Kampaň:",
-      "remaining": "Zbývá {time}",
-      "drop_progress": "Průběh dropu:",
-      "campaign_progress": "Průběh kampaňe:",
-      "no_drop": "Žádný aktivní drop",
-      "return_to_auto": "Návrat do automatického režimu",
-      "manual_mode_info": "Ruční režim: Těžba"
+      "campaign": "Kampa\u0148:",
+      "remaining": "Zb\u00fdv\u00e1 {time}",
+      "drop_progress": "Pr\u016fb\u011bh dropu:",
+      "campaign_progress": "Pr\u016fb\u011bh kampa\u0148e:",
+      "no_drop": "\u017d\u00e1dn\u00fd aktivn\u00ed drop",
+      "return_to_auto": "N\u00e1vrat do automatick\u00e9ho re\u017eimu",
+      "manual_mode_info": "Ru\u010dn\u00ed re\u017eim: T\u011b\u017eba"
     },
     "channels": {
-      "name": "Název",
-      "online": "ONLINE  ✔",
-      "pending": "PRŮBĚH ⏳",
-      "offline": "OFFLINE ❌",
-      "no_channels": "Zatím nejsou sledovány žádné kanály...",
-      "no_channels_for_games": "Pro vybrané hry nebyly nalezeny žádné kanály...",
-      "channel_count": "kanál",
-      "channel_count_plural": "kanály",
-      "viewers": "diváci"
+      "name": "N\u00e1zev",
+      "online": "ONLINE  \u2714",
+      "pending": "PR\u016eB\u011aH \u23f3",
+      "offline": "OFFLINE \u274c",
+      "no_channels": "Zat\u00edm nejsou sledov\u00e1ny \u017e\u00e1dn\u00e9 kan\u00e1ly...",
+      "no_channels_for_games": "Pro vybran\u00e9 hry nebyly nalezeny \u017e\u00e1dn\u00e9 kan\u00e1ly...",
+      "channel_count": "kan\u00e1l",
+      "channel_count_plural": "kan\u00e1ly",
+      "viewers": "div\u00e1ci"
     },
     "inventory": {
       "status": {
-        "active": "ŽIVĚ ✔",
-        "upcoming": "Nadcházející ⏳",
-        "expired": "Ukončeno ❌",
-        "claimed": "Vyzvednuto ✔"
+        "active": "\u017dIV\u011a \u2714",
+        "upcoming": "Nadch\u00e1zej\u00edc\u00ed \u23f3",
+        "expired": "Ukon\u010deno \u274c",
+        "claimed": "Vyzvednuto \u2714"
       },
-      "starts": "Začíná: {time}",
-      "ends": "Začíná: {time}",
-      "no_campaigns": "Zatím nejsou načteny žádné kampaně...",
-      "claimed_drops": "získáno",
+      "starts": "Za\u010d\u00edn\u00e1: {time}",
+      "ends": "Za\u010d\u00edn\u00e1: {time}",
+      "no_campaigns": "Zat\u00edm nejsou na\u010dteny \u017e\u00e1dn\u00e9 kampan\u011b...",
+      "claimed_drops": "z\u00edsk\u00e1no",
       "filters": {
-        "active": "Aktivní",
-        "not_linked": "Nepřipojeno",
-        "upcoming": "Nadcházející",
-        "expired": "Vypršelo",
-        "finished": "Dokončeno",
-        "item": "Předmět",
+        "active": "Aktivn\u00ed",
+        "not_linked": "Nep\u0159ipojeno",
+        "upcoming": "Nadch\u00e1zej\u00edc\u00ed",
+        "expired": "Vypr\u0161elo",
+        "finished": "Dokon\u010deno",
+        "item": "P\u0159edm\u011bt",
         "badge": "Odznak",
         "emote": "Emotikon",
-        "other": "Jiné",
+        "other": "Jin\u00e9",
         "clear": "Vymazat filtry",
         "search_placeholder": "Hledat hry..."
       },
@@ -129,29 +129,29 @@
     },
     "settings": {
       "general": {
-        "name": "Obecné",
-        "dark_mode": "Tmavý režim"
+        "name": "Obecn\u00e9",
+        "dark_mode": "Tmav\u00fd re\u017eim"
       },
       "exclude": "Vynechat",
       "reload": "Obnovit",
-      "games_to_watch": "Hry ke sledování",
-      "games_help": "Vyberte hry ke sledování. Záleží na pořadí - přetáhněte pro změnu priority (nahoře = nejvyšší priorita).",
+      "games_to_watch": "Hry ke sledov\u00e1n\u00ed",
+      "games_help": "Vyberte hry ke sledov\u00e1n\u00ed. Z\u00e1le\u017e\u00ed na po\u0159ad\u00ed - p\u0159et\u00e1hn\u011bte pro zm\u011bnu priority (naho\u0159e = nejvy\u0161\u0161\u00ed priorita).",
       "search_games": "Hledat hry...",
       "add_game": "Add Game",
       "add_game_hint": " Click \"Add Game\" to add it manually.",
-      "select_all": "Vybrat vše",
-      "deselect_all": "Zrušit výběr",
-      "selected_games": "Vybrané hry (přetáhněte pro změnu pořadí)",
-      "available_games": "Dostupné hry",
-      "no_games_selected": "Nejsou vybrány žádné hry. Zaškrtněte hry níže a přidejte je.",
-      "no_games_match": "Žádné hry neodpovídají vašemu hledání.",
-      "all_games_selected": "Všechny hry jsou vybrány nebo nejsou k dispozici žádné hry.",
+      "select_all": "Vybrat v\u0161e",
+      "deselect_all": "Zru\u0161it v\u00fdb\u011br",
+      "selected_games": "Vybran\u00e9 hry (p\u0159et\u00e1hn\u011bte pro zm\u011bnu po\u0159ad\u00ed)",
+      "available_games": "Dostupn\u00e9 hry",
+      "no_games_selected": "Nejsou vybr\u00e1ny \u017e\u00e1dn\u00e9 hry. Za\u0161krtn\u011bte hry n\u00ed\u017ee a p\u0159idejte je.",
+      "no_games_match": "\u017d\u00e1dn\u00e9 hry neodpov\u00eddaj\u00ed va\u0161emu hled\u00e1n\u00ed.",
+      "all_games_selected": "V\u0161echny hry jsou vybr\u00e1ny nebo nejsou k dispozici \u017e\u00e1dn\u00e9 hry.",
       "actions": "Akce",
-      "connection_quality": "Kvalita připojení:",
-      "minimum_refresh": "Minimální interval obnovení (minuty):",
-      "reload_campaigns": "Znovu načíst kampaně",
-      "mining_benefits": "Výhody Těžby",
-      "mining_benefits_help": "Vyberte typy dropů, které chcete těžit.",
+      "connection_quality": "Kvalita p\u0159ipojen\u00ed:",
+      "minimum_refresh": "Minim\u00e1ln\u00ed interval obnoven\u00ed (minuty):",
+      "reload_campaigns": "Znovu na\u010d\u00edst kampan\u011b",
+      "mining_benefits": "V\u00fdhody T\u011b\u017eby",
+      "mining_benefits_help": "Vyberte typy drop\u016f, kter\u00e9 chcete t\u011b\u017eit.",
       "select_linked": "Select Linked",
       "password_header": "Login & Password",
       "password_current_label": "Current Password",
@@ -165,13 +165,13 @@
       "password_saved": "Password saved.",
       "password_disabled_msg": "Login disabled.",
       "password_mismatch": "Passwords don't match.",
-      "password_status_active": "🔒 Login active — Password set",
-      "password_status_inactive": "🔓 No login — publicly accessible",
+      "password_status_active": "\ud83d\udd12 Login active \u2014 Password set",
+      "password_status_inactive": "\ud83d\udd13 No login \u2014 publicly accessible",
       "discord_bot": {
         "header": "Discord Bot",
         "description": "Pair a Discord bot to control TwitchDropsMiner via chat commands.",
         "not_connected": "Not connected",
-        "connected": "✅ Connected",
+        "connected": "\u2705 Connected",
         "generate_code": "Generate code",
         "generating": "Generating...",
         "disconnect": "Disconnect",
@@ -213,33 +213,36 @@
       "bot_notification_channels": "Notification Channels",
       "bot_setchannel_hint": "Use /setchannel in Discord to set channels.",
       "add_account": "+ Add Account",
-      "account_label_placeholder": "Label (e.g. Main, Alt)"
+      "account_label_placeholder": "Label (e.g. Main, Alt)",
+      "bet_percentage_gap_label": "Bet Gap % (SMART)",
+      "blacklist_ids_header": "Blacklisted Drop IDs",
+      "blacklist_ids_help": "Specific drops excluded by exact ID \u2014 added via the \ud83d\udeab button next to an active drop, or manually below. Unlike the keyword blacklist above, this matches one exact drop; other drops for the same game keep mining."
     },
     "help": {
       "about": "O Twitch Drops Miner",
-      "about_text": "Tato aplikace automaticky těží časované Twitch dropy bez stahování streamovacích dat.",
-      "how_to_use": "Jak používat",
+      "about_text": "Tato aplikace automaticky t\u011b\u017e\u00ed \u010dasovan\u00e9 Twitch dropy bez stahov\u00e1n\u00ed streamovac\u00edch dat.",
+      "how_to_use": "Jak pou\u017e\u00edvat",
       "features": "Funkce",
-      "important_notes": "Důležité poznámky",
-      "github_repo": "GitHub Repozitář",
+      "important_notes": "D\u016fle\u017eit\u00e9 pozn\u00e1mky",
+      "github_repo": "GitHub Repozit\u00e1\u0159",
       "how_to_use_items": [
-        "Přihlaste se pomocí účtu Twitch (OAuth tok kódu zařízení)",
-        "Propojte své účty na <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
-        "Těžař automaticky objeví kampaně a začne těžit",
-        "Nakonfigurujte prioritní hry v Nastaveních, abyste se zaměřili na to, co chcete",
-        "Sledujte postup v záložkách Hlavní a Inventář"
+        "P\u0159ihlaste se pomoc\u00ed \u00fa\u010dtu Twitch (OAuth tok k\u00f3du za\u0159\u00edzen\u00ed)",
+        "Propojte sv\u00e9 \u00fa\u010dty na <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
+        "T\u011b\u017ea\u0159 automaticky objev\u00ed kampan\u011b a za\u010dne t\u011b\u017eit",
+        "Nakonfigurujte prioritn\u00ed hry v Nastaven\u00edch, abyste se zam\u011b\u0159ili na to, co chcete",
+        "Sledujte postup v z\u00e1lo\u017ek\u00e1ch Hlavn\u00ed a Invent\u00e1\u0159"
       ],
       "features_items": [
-        "Těžba dropů bez streamu - šetří šířku pásma",
-        "Seznamy priorit a vyloučení her",
-        "Sleduje až 199 kanálů současně",
-        "Automatické přepínání kanálů",
-        "Sledování postupu v reálném čase"
+        "T\u011b\u017eba drop\u016f bez streamu - \u0161et\u0159\u00ed \u0161\u00ed\u0159ku p\u00e1sma",
+        "Seznamy priorit a vylou\u010den\u00ed her",
+        "Sleduje a\u017e 199 kan\u00e1l\u016f sou\u010dasn\u011b",
+        "Automatick\u00e9 p\u0159ep\u00edn\u00e1n\u00ed kan\u00e1l\u016f",
+        "Sledov\u00e1n\u00ed postupu v re\u00e1ln\u00e9m \u010dase"
       ],
       "important_notes_items": [
-        "Nesledujte streamy na stejném účtu během těžby",
-        "Udržujte svůj soubor cookies.jar v bezpečí",
-        "Vyžaduje propojené herní účty pro dropy"
+        "Nesledujte streamy na stejn\u00e9m \u00fa\u010dtu b\u011bhem t\u011b\u017eby",
+        "Udr\u017eujte sv\u016fj soubor cookies.jar v bezpe\u010d\u00ed",
+        "Vy\u017eaduje propojen\u00e9 hern\u00ed \u00fa\u010dty pro dropy"
       ]
     },
     "header": {
@@ -247,29 +250,29 @@
       "language": "Jazyk:",
       "initializing": "Inicializace...",
       "auto_mode": "AUTO",
-      "manual_mode": "MANUÁLNÍ",
-      "connected": "Připojeno",
+      "manual_mode": "MANU\u00c1LN\u00cd",
+      "connected": "P\u0159ipojeno",
       "disconnected": "Odpojeno"
     },
     "footer": {
       "version": "Verze:",
-      "loading": "Načítání...",
-      "update_available": "Dostupná aktualizace:"
+      "loading": "Na\u010d\u00edt\u00e1n\u00ed...",
+      "update_available": "Dostupn\u00e1 aktualizace:"
     },
     "badges": {
       "manual": {
-        "title": "Manuální režim aktivní - sledování konkrétní hry"
+        "title": "Manu\u00e1ln\u00ed re\u017eim aktivn\u00ed - sledov\u00e1n\u00ed konkr\u00e9tn\u00ed hry"
       },
       "auto": {
-        "title": "Automatický režim - podle priority her"
+        "title": "Automatick\u00fd re\u017eim - podle priority her"
       },
       "proxy": {
-        "title": "Proxy připojení aktivní"
+        "title": "Proxy p\u0159ipojen\u00ed aktivn\u00ed"
       }
     },
     "wanted": {
-      "name": "Fronta chtěných Dropů",
-      "none": "Žádné chtěné dropy ve frontě..."
+      "name": "Fronta cht\u011bn\u00fdch Drop\u016f",
+      "none": "\u017d\u00e1dn\u00e9 cht\u011bn\u00e9 dropy ve front\u011b..."
     },
     "system": {
       "header": "System",
@@ -284,7 +287,7 @@
       "logout_btn": "Logout",
       "reload_ok": "Campaigns reload triggered.",
       "restart_confirm": "Restart the miner? PM2 will restart it automatically.",
-      "restart_ok": "Miner stopping — will restart via PM2 in a few seconds.",
+      "restart_ok": "Miner stopping \u2014 will restart via PM2 in a few seconds.",
       "accounts_header": "Accounts"
     },
     "analytics": {
@@ -295,10 +298,11 @@
       "claims_by_game": "Claims by Game",
       "claims_activity": "Claims Activity",
       "channel_points": "Channel Points",
-      "refresh": "↻ Refresh",
+      "refresh": "\u21bb Refresh",
       "no_channel_points": "No channel points data yet. Points are recorded while watching channels.",
       "drop_history": "Drop History",
-      "no_history": "No drops claimed yet."
+      "no_history": "No drops claimed yet.",
+      "unknown_result_tooltip": "Result unknown \u2014 the app didn't see this prediction resolve (bot restart, disconnect, or channel went offline before it concluded)."
     }
   }
 }
