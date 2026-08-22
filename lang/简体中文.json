@@ -1,154 +1,154 @@
 {
-  "language_name": "简体中文",
+  "language_name": "\u7b80\u4f53\u4e2d\u6587",
   "english_name": "Simplified Chinese",
   "status": {
-    "terminated": "\n应用程序已终止，请关闭窗口以退出应用程序.",
-    "watching": "正在观看: {channel}",
-    "goes_online": "{channel} 该频道已上线, 正在切换...",
-    "goes_offline": "{channel} 该频道已离线, 正在切换...",
-    "claimed_drop": "已领取掉宝: {drop}",
-    "no_channel": "没有可观看的频道，等待一个在线直播频道...",
-    "no_campaign": "没有可用于掉宝的活动，等待一个有效的掉宝活动..."
+    "terminated": "\n\u5e94\u7528\u7a0b\u5e8f\u5df2\u7ec8\u6b62\uff0c\u8bf7\u5173\u95ed\u7a97\u53e3\u4ee5\u9000\u51fa\u5e94\u7528\u7a0b\u5e8f.",
+    "watching": "\u6b63\u5728\u89c2\u770b: {channel}",
+    "goes_online": "{channel} \u8be5\u9891\u9053\u5df2\u4e0a\u7ebf, \u6b63\u5728\u5207\u6362...",
+    "goes_offline": "{channel} \u8be5\u9891\u9053\u5df2\u79bb\u7ebf, \u6b63\u5728\u5207\u6362...",
+    "claimed_drop": "\u5df2\u9886\u53d6\u6389\u5b9d: {drop}",
+    "no_channel": "\u6ca1\u6709\u53ef\u89c2\u770b\u7684\u9891\u9053\uff0c\u7b49\u5f85\u4e00\u4e2a\u5728\u7ebf\u76f4\u64ad\u9891\u9053...",
+    "no_campaign": "\u6ca1\u6709\u53ef\u7528\u4e8e\u6389\u5b9d\u7684\u6d3b\u52a8\uff0c\u7b49\u5f85\u4e00\u4e2a\u6709\u6548\u7684\u6389\u5b9d\u6d3b\u52a8..."
   },
   "login": {
-    "unexpected_content": "返回的内容类型有误通常是由于被重定向.您需要VPN才能登录吗？ ",
-    "error_code": "登录出错: {error_code}",
-    "incorrect_login_pass": "用户名或密码错误.",
-    "incorrect_email_code": "电子邮箱验证码错误.",
-    "incorrect_twofa_code": "手机2FA令牌双重验证码错误.",
-    "email_code_required": "需要电子邮件验证码,查看你的邮箱.",
-    "twofa_code_required": "需要手机2FA令牌双重验证.",
+    "unexpected_content": "\u8fd4\u56de\u7684\u5185\u5bb9\u7c7b\u578b\u6709\u8bef\u901a\u5e38\u662f\u7531\u4e8e\u88ab\u91cd\u5b9a\u5411.\u60a8\u9700\u8981VPN\u624d\u80fd\u767b\u5f55\u5417\uff1f ",
+    "error_code": "\u767b\u5f55\u51fa\u9519: {error_code}",
+    "incorrect_login_pass": "\u7528\u6237\u540d\u6216\u5bc6\u7801\u9519\u8bef.",
+    "incorrect_email_code": "\u7535\u5b50\u90ae\u7bb1\u9a8c\u8bc1\u7801\u9519\u8bef.",
+    "incorrect_twofa_code": "\u624b\u673a2FA\u4ee4\u724c\u53cc\u91cd\u9a8c\u8bc1\u7801\u9519\u8bef.",
+    "email_code_required": "\u9700\u8981\u7535\u5b50\u90ae\u4ef6\u9a8c\u8bc1\u7801,\u67e5\u770b\u4f60\u7684\u90ae\u7bb1.",
+    "twofa_code_required": "\u9700\u8981\u624b\u673a2FA\u4ee4\u724c\u53cc\u91cd\u9a8c\u8bc1.",
     "status": {
-      "logged_in": "已登录",
-      "logged_out": "未登录",
-      "logging_in": "正在登录中...",
-      "required": "请先登录",
+      "logged_in": "\u5df2\u767b\u5f55",
+      "logged_out": "\u672a\u767b\u5f55",
+      "logging_in": "\u6b63\u5728\u767b\u5f55\u4e2d...",
+      "required": "\u8bf7\u5148\u767b\u5f55",
       "waiting_auth": "Waiting for authentication..."
     }
   },
   "error": {
-    "captcha": "您的登录存在异常,Twitch官方已进行限制,请在12小时后重试.",
-    "site_down": "Twitch无法连接，{seconds} 秒后重试...",
-    "no_connection": "无法连接到Twitch,{seconds} 秒后重试,请确保已经开启VPN添加了代理并查阅教程..."
+    "captcha": "\u60a8\u7684\u767b\u5f55\u5b58\u5728\u5f02\u5e38,Twitch\u5b98\u65b9\u5df2\u8fdb\u884c\u9650\u5236,\u8bf7\u572812\u5c0f\u65f6\u540e\u91cd\u8bd5.",
+    "site_down": "Twitch\u65e0\u6cd5\u8fde\u63a5\uff0c{seconds} \u79d2\u540e\u91cd\u8bd5...",
+    "no_connection": "\u65e0\u6cd5\u8fde\u63a5\u5230Twitch,{seconds} \u79d2\u540e\u91cd\u8bd5,\u8bf7\u786e\u4fdd\u5df2\u7ecf\u5f00\u542fVPN\u6dfb\u52a0\u4e86\u4ee3\u7406\u5e76\u67e5\u9605\u6559\u7a0b..."
   },
   "gui": {
-    "output": "输出日志",
+    "output": "\u8f93\u51fa\u65e5\u5fd7",
     "status": {
-      "name": "状态",
-      "idle": "已完成获取",
-      "exiting": "正在退出...",
-      "terminated": "应用已终止运行",
-      "cleanup": "清除频道中...",
-      "gathering": "搜索直播频道...",
-      "switching": "切换直播频道中...",
-      "fetching_inventory": "获取库存中...",
-      "fetching_campaigns": "获取掉宝活动...",
-      "adding_campaigns": "将掉宝活动列表添加至库存... {counter}"
+      "name": "\u72b6\u6001",
+      "idle": "\u5df2\u5b8c\u6210\u83b7\u53d6",
+      "exiting": "\u6b63\u5728\u9000\u51fa...",
+      "terminated": "\u5e94\u7528\u5df2\u7ec8\u6b62\u8fd0\u884c",
+      "cleanup": "\u6e05\u9664\u9891\u9053\u4e2d...",
+      "gathering": "\u641c\u7d22\u76f4\u64ad\u9891\u9053...",
+      "switching": "\u5207\u6362\u76f4\u64ad\u9891\u9053\u4e2d...",
+      "fetching_inventory": "\u83b7\u53d6\u5e93\u5b58\u4e2d...",
+      "fetching_campaigns": "\u83b7\u53d6\u6389\u5b9d\u6d3b\u52a8...",
+      "adding_campaigns": "\u5c06\u6389\u5b9d\u6d3b\u52a8\u5217\u8868\u6dfb\u52a0\u81f3\u5e93\u5b58... {counter}"
     },
     "tabs": {
-      "main": "主面板",
-      "inventory": "掉宝库存",
-      "settings": "设置",
-      "help": "帮助",
+      "main": "\u4e3b\u9762\u677f",
+      "inventory": "\u6389\u5b9d\u5e93\u5b58",
+      "settings": "\u8bbe\u7f6e",
+      "help": "\u5e2e\u52a9",
       "system": "System",
       "stats": "Stats",
       "analytics": "Analytics"
     },
     "login": {
-      "name": "登录Twitch账号",
-      "labels": "状态:\n用户ID:",
-      "request": "请先登录以访问更多内容.",
-      "username": "用户名",
-      "password": "密码",
-      "twofa_code": "令牌验证码",
-      "button": "登录",
-      "oauth_prompt": "在此网站输入代码：",
-      "oauth_activate": "Twitch 激活",
-      "oauth_confirm": "我已输入代码"
+      "name": "\u767b\u5f55Twitch\u8d26\u53f7",
+      "labels": "\u72b6\u6001:\n\u7528\u6237ID:",
+      "request": "\u8bf7\u5148\u767b\u5f55\u4ee5\u8bbf\u95ee\u66f4\u591a\u5185\u5bb9.",
+      "username": "\u7528\u6237\u540d",
+      "password": "\u5bc6\u7801",
+      "twofa_code": "\u4ee4\u724c\u9a8c\u8bc1\u7801",
+      "button": "\u767b\u5f55",
+      "oauth_prompt": "\u5728\u6b64\u7f51\u7ad9\u8f93\u5165\u4ee3\u7801\uff1a",
+      "oauth_activate": "Twitch \u6fc0\u6d3b",
+      "oauth_confirm": "\u6211\u5df2\u8f93\u5165\u4ee3\u7801"
     },
     "websocket": {
-      "name": "网络协议连接状态",
+      "name": "\u7f51\u7edc\u534f\u8bae\u8fde\u63a5\u72b6\u6001",
       "websocket": "Websocket #{id}:",
-      "initializing": "初始化...",
-      "connected": "已连接",
-      "disconnected": "断开连接",
-      "connecting": "连接中...",
-      "disconnecting": "断开连接中...",
-      "reconnecting": "重新连接中..."
+      "initializing": "\u521d\u59cb\u5316...",
+      "connected": "\u5df2\u8fde\u63a5",
+      "disconnected": "\u65ad\u5f00\u8fde\u63a5",
+      "connecting": "\u8fde\u63a5\u4e2d...",
+      "disconnecting": "\u65ad\u5f00\u8fde\u63a5\u4e2d...",
+      "reconnecting": "\u91cd\u65b0\u8fde\u63a5\u4e2d..."
     },
     "progress": {
-      "name": "掉宝活动进度",
-      "drop": "掉宝奖励:",
-      "game": "游戏名称:",
-      "remaining": "剩余 {time}",
-      "campaign": "掉宝活动名称:",
-      "drop_progress": "掉宝进度:",
-      "campaign_progress": "活动进度:",
-      "no_drop": "无活跃掉宝",
-      "return_to_auto": "返回自动模式",
-      "manual_mode_info": "手动模式：正在挖掘"
+      "name": "\u6389\u5b9d\u6d3b\u52a8\u8fdb\u5ea6",
+      "drop": "\u6389\u5b9d\u5956\u52b1:",
+      "game": "\u6e38\u620f\u540d\u79f0:",
+      "remaining": "\u5269\u4f59 {time}",
+      "campaign": "\u6389\u5b9d\u6d3b\u52a8\u540d\u79f0:",
+      "drop_progress": "\u6389\u5b9d\u8fdb\u5ea6:",
+      "campaign_progress": "\u6d3b\u52a8\u8fdb\u5ea6:",
+      "no_drop": "\u65e0\u6d3b\u8dc3\u6389\u5b9d",
+      "return_to_auto": "\u8fd4\u56de\u81ea\u52a8\u6a21\u5f0f",
+      "manual_mode_info": "\u624b\u52a8\u6a21\u5f0f\uff1a\u6b63\u5728\u6316\u6398"
     },
     "channels": {
-      "name": "活动频道",
-      "online": "ONLINE  ✔",
-      "pending": "OFFLINE ⏳",
-      "offline": "OFFLINE ❌",
-      "no_channels": "尚未跟踪任何频道...",
-      "no_channels_for_games": "所选游戏未找到频道...",
-      "channel_count": "频道",
-      "channel_count_plural": "频道",
-      "viewers": "观众"
+      "name": "\u6d3b\u52a8\u9891\u9053",
+      "online": "ONLINE  \u2714",
+      "pending": "OFFLINE \u23f3",
+      "offline": "OFFLINE \u274c",
+      "no_channels": "\u5c1a\u672a\u8ddf\u8e2a\u4efb\u4f55\u9891\u9053...",
+      "no_channels_for_games": "\u6240\u9009\u6e38\u620f\u672a\u627e\u5230\u9891\u9053...",
+      "channel_count": "\u9891\u9053",
+      "channel_count_plural": "\u9891\u9053",
+      "viewers": "\u89c2\u4f17"
     },
     "inventory": {
       "status": {
-        "active": "已上线 ✔",
-        "upcoming": "即将上线 ⏳",
-        "expired": "已结束 ❌",
-        "claimed": "已领取 ✔"
+        "active": "\u5df2\u4e0a\u7ebf \u2714",
+        "upcoming": "\u5373\u5c06\u4e0a\u7ebf \u23f3",
+        "expired": "\u5df2\u7ed3\u675f \u274c",
+        "claimed": "\u5df2\u9886\u53d6 \u2714"
       },
-      "starts": "开始时间: {time}",
-      "ends": "结束时间: {time}",
-      "no_campaigns": "尚未加载任何活动...",
-      "claimed_drops": "已领取",
+      "starts": "\u5f00\u59cb\u65f6\u95f4: {time}",
+      "ends": "\u7ed3\u675f\u65f6\u95f4: {time}",
+      "no_campaigns": "\u5c1a\u672a\u52a0\u8f7d\u4efb\u4f55\u6d3b\u52a8...",
+      "claimed_drops": "\u5df2\u9886\u53d6",
       "filters": {
-        "active": "活动中",
-        "not_linked": "未关联",
-        "upcoming": "即将开始",
-        "expired": "已过期",
-        "finished": "已完成",
-        "item": "物品",
-        "badge": "徽章",
-        "emote": "表情",
-        "other": "其他",
-        "clear": "清除过滤器",
-        "search_placeholder": "搜索游戏..."
+        "active": "\u6d3b\u52a8\u4e2d",
+        "not_linked": "\u672a\u5173\u8054",
+        "upcoming": "\u5373\u5c06\u5f00\u59cb",
+        "expired": "\u5df2\u8fc7\u671f",
+        "finished": "\u5df2\u5b8c\u6210",
+        "item": "\u7269\u54c1",
+        "badge": "\u5fbd\u7ae0",
+        "emote": "\u8868\u60c5",
+        "other": "\u5176\u4ed6",
+        "clear": "\u6e05\u9664\u8fc7\u6ee4\u5668",
+        "search_placeholder": "\u641c\u7d22\u6e38\u620f..."
       },
       "filter_linked": "Linked"
     },
     "settings": {
       "general": {
-        "name": "常规设置",
-        "dark_mode": "深色模式"
+        "name": "\u5e38\u89c4\u8bbe\u7f6e",
+        "dark_mode": "\u6df1\u8272\u6a21\u5f0f"
       },
-      "reload": "刷新",
-      "games_to_watch": "观看游戏",
-      "games_help": "选择要观看的游戏。顺序很重要 - 拖动以重新排序优先级（顶部 = 最高优先级）。",
-      "search_games": "搜索游戏...",
+      "reload": "\u5237\u65b0",
+      "games_to_watch": "\u89c2\u770b\u6e38\u620f",
+      "games_help": "\u9009\u62e9\u8981\u89c2\u770b\u7684\u6e38\u620f\u3002\u987a\u5e8f\u5f88\u91cd\u8981 - \u62d6\u52a8\u4ee5\u91cd\u65b0\u6392\u5e8f\u4f18\u5148\u7ea7\uff08\u9876\u90e8 = \u6700\u9ad8\u4f18\u5148\u7ea7\uff09\u3002",
+      "search_games": "\u641c\u7d22\u6e38\u620f...",
       "add_game": "Add Game",
       "add_game_hint": " Click \"Add Game\" to add it manually.",
-      "select_all": "全选",
-      "deselect_all": "取消全选",
-      "selected_games": "已选游戏（拖动以重新排序）",
-      "available_games": "可用游戏",
-      "no_games_selected": "未选择游戏。勾选下方游戏以添加。",
-      "no_games_match": "没有游戏符合您的搜索。",
-      "all_games_selected": "所有游戏都已选择或没有可用游戏。",
-      "actions": "操作",
-      "connection_quality": "连接质量：",
-      "minimum_refresh": "最小刷新间隔（分钟）：",
-      "reload_campaigns": "重新加载活动",
-      "mining_benefits": "挖掘奖励",
-      "mining_benefits_help": "选择您想要获取的掉落类型。",
+      "select_all": "\u5168\u9009",
+      "deselect_all": "\u53d6\u6d88\u5168\u9009",
+      "selected_games": "\u5df2\u9009\u6e38\u620f\uff08\u62d6\u52a8\u4ee5\u91cd\u65b0\u6392\u5e8f\uff09",
+      "available_games": "\u53ef\u7528\u6e38\u620f",
+      "no_games_selected": "\u672a\u9009\u62e9\u6e38\u620f\u3002\u52fe\u9009\u4e0b\u65b9\u6e38\u620f\u4ee5\u6dfb\u52a0\u3002",
+      "no_games_match": "\u6ca1\u6709\u6e38\u620f\u7b26\u5408\u60a8\u7684\u641c\u7d22\u3002",
+      "all_games_selected": "\u6240\u6709\u6e38\u620f\u90fd\u5df2\u9009\u62e9\u6216\u6ca1\u6709\u53ef\u7528\u6e38\u620f\u3002",
+      "actions": "\u64cd\u4f5c",
+      "connection_quality": "\u8fde\u63a5\u8d28\u91cf\uff1a",
+      "minimum_refresh": "\u6700\u5c0f\u5237\u65b0\u95f4\u9694\uff08\u5206\u949f\uff09\uff1a",
+      "reload_campaigns": "\u91cd\u65b0\u52a0\u8f7d\u6d3b\u52a8",
+      "mining_benefits": "\u6316\u6398\u5956\u52b1",
+      "mining_benefits_help": "\u9009\u62e9\u60a8\u60f3\u8981\u83b7\u53d6\u7684\u6389\u843d\u7c7b\u578b\u3002",
       "select_linked": "Select Linked",
       "password_header": "Login & Password",
       "password_current_label": "Current Password",
@@ -162,13 +162,13 @@
       "password_saved": "Password saved.",
       "password_disabled_msg": "Login disabled.",
       "password_mismatch": "Passwords don't match.",
-      "password_status_active": "🔒 Login active — Password set",
-      "password_status_inactive": "🔓 No login — publicly accessible",
+      "password_status_active": "\ud83d\udd12 Login active \u2014 Password set",
+      "password_status_inactive": "\ud83d\udd13 No login \u2014 publicly accessible",
       "discord_bot": {
         "header": "Discord Bot",
         "description": "Pair a Discord bot to control TwitchDropsMiner via chat commands.",
         "not_connected": "Not connected",
-        "connected": "✅ Connected",
+        "connected": "\u2705 Connected",
         "generate_code": "Generate code",
         "generating": "Generating...",
         "disconnect": "Disconnect",
@@ -210,63 +210,66 @@
       "bot_notification_channels": "Notification Channels",
       "bot_setchannel_hint": "Use /setchannel in Discord to set channels.",
       "add_account": "+ Add Account",
-      "account_label_placeholder": "Label (e.g. Main, Alt)"
+      "account_label_placeholder": "Label (e.g. Main, Alt)",
+      "bet_percentage_gap_label": "Bet Gap % (SMART)",
+      "blacklist_ids_header": "Blacklisted Drop IDs",
+      "blacklist_ids_help": "Specific drops excluded by exact ID \u2014 added via the \ud83d\udeab button next to an active drop, or manually below. Unlike the keyword blacklist above, this matches one exact drop; other drops for the same game keep mining."
     },
     "help": {
-      "about": "关于 Twitch 掉宝矿工",
-      "about_text": "此应用程序可在不下载流数据的情况下自动挖掘定时 Twitch 掉宝。",
-      "how_to_use": "使用方法",
-      "features": "功能",
-      "important_notes": "重要提示",
-      "github_repo": "GitHub 仓库",
+      "about": "\u5173\u4e8e Twitch \u6389\u5b9d\u77ff\u5de5",
+      "about_text": "\u6b64\u5e94\u7528\u7a0b\u5e8f\u53ef\u5728\u4e0d\u4e0b\u8f7d\u6d41\u6570\u636e\u7684\u60c5\u51b5\u4e0b\u81ea\u52a8\u6316\u6398\u5b9a\u65f6 Twitch \u6389\u5b9d\u3002",
+      "how_to_use": "\u4f7f\u7528\u65b9\u6cd5",
+      "features": "\u529f\u80fd",
+      "important_notes": "\u91cd\u8981\u63d0\u793a",
+      "github_repo": "GitHub \u4ed3\u5e93",
       "how_to_use_items": [
-        "使用您的 Twitch 账号登录（OAuth 设备代码流程）",
-        "在 <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a> 关联您的账号",
-        "矿工将自动发现活动并开始挖掘",
-        "在设置中配置优先游戏以关注您想要的内容",
-        "在主界面和库存选项卡中监控进度"
+        "\u4f7f\u7528\u60a8\u7684 Twitch \u8d26\u53f7\u767b\u5f55\uff08OAuth \u8bbe\u5907\u4ee3\u7801\u6d41\u7a0b\uff09",
+        "\u5728 <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a> \u5173\u8054\u60a8\u7684\u8d26\u53f7",
+        "\u77ff\u5de5\u5c06\u81ea\u52a8\u53d1\u73b0\u6d3b\u52a8\u5e76\u5f00\u59cb\u6316\u6398",
+        "\u5728\u8bbe\u7f6e\u4e2d\u914d\u7f6e\u4f18\u5148\u6e38\u620f\u4ee5\u5173\u6ce8\u60a8\u60f3\u8981\u7684\u5185\u5bb9",
+        "\u5728\u4e3b\u754c\u9762\u548c\u5e93\u5b58\u9009\u9879\u5361\u4e2d\u76d1\u63a7\u8fdb\u5ea6"
       ],
       "features_items": [
-        "无流挖掘 - 节省带宽",
-        "游戏优先级和排除列表",
-        "同时跟踪最多 199 个频道",
-        "自动切换频道",
-        "实时进度跟踪"
+        "\u65e0\u6d41\u6316\u6398 - \u8282\u7701\u5e26\u5bbd",
+        "\u6e38\u620f\u4f18\u5148\u7ea7\u548c\u6392\u9664\u5217\u8868",
+        "\u540c\u65f6\u8ddf\u8e2a\u6700\u591a 199 \u4e2a\u9891\u9053",
+        "\u81ea\u52a8\u5207\u6362\u9891\u9053",
+        "\u5b9e\u65f6\u8fdb\u5ea6\u8ddf\u8e2a"
       ],
       "important_notes_items": [
-        "挖掘时请勿在同一账号上观看流",
-        "保护好您的 cookies.jar 文件",
-        "需要关联游戏账号才能掉宝"
+        "\u6316\u6398\u65f6\u8bf7\u52ff\u5728\u540c\u4e00\u8d26\u53f7\u4e0a\u89c2\u770b\u6d41",
+        "\u4fdd\u62a4\u597d\u60a8\u7684 cookies.jar \u6587\u4ef6",
+        "\u9700\u8981\u5173\u8054\u6e38\u620f\u8d26\u53f7\u624d\u80fd\u6389\u5b9d"
       ]
     },
     "header": {
       "title": "Twitch Drops Miner",
-      "language": "语言：",
-      "initializing": "初始化中...",
+      "language": "\u8bed\u8a00\uff1a",
+      "initializing": "\u521d\u59cb\u5316\u4e2d...",
       "auto_mode": "AUTO",
       "manual_mode": "MANUAL",
-      "connected": "已连接",
-      "disconnected": "已断开"
+      "connected": "\u5df2\u8fde\u63a5",
+      "disconnected": "\u5df2\u65ad\u5f00"
     },
     "footer": {
-      "version": "版本:",
-      "loading": "加载中...",
-      "update_available": "可用更新:"
+      "version": "\u7248\u672c:",
+      "loading": "\u52a0\u8f7d\u4e2d...",
+      "update_available": "\u53ef\u7528\u66f4\u65b0:"
     },
     "badges": {
       "manual": {
-        "title": "手动模式已激活 - 正在观看特定游戏"
+        "title": "\u624b\u52a8\u6a21\u5f0f\u5df2\u6fc0\u6d3b - \u6b63\u5728\u89c2\u770b\u7279\u5b9a\u6e38\u620f"
       },
       "auto": {
-        "title": "自动模式 - 遵循游戏优先级"
+        "title": "\u81ea\u52a8\u6a21\u5f0f - \u9075\u5faa\u6e38\u620f\u4f18\u5148\u7ea7"
       },
       "proxy": {
-        "title": "代理连接已激活"
+        "title": "\u4ee3\u7406\u8fde\u63a5\u5df2\u6fc0\u6d3b"
       }
     },
     "wanted": {
-      "name": "期望掉落队列",
-      "none": "队列中没有期望的掉落..."
+      "name": "\u671f\u671b\u6389\u843d\u961f\u5217",
+      "none": "\u961f\u5217\u4e2d\u6ca1\u6709\u671f\u671b\u7684\u6389\u843d..."
     },
     "system": {
       "header": "System",
@@ -281,7 +284,7 @@
       "logout_btn": "Logout",
       "reload_ok": "Campaigns reload triggered.",
       "restart_confirm": "Restart the miner? PM2 will restart it automatically.",
-      "restart_ok": "Miner stopping — will restart via PM2 in a few seconds.",
+      "restart_ok": "Miner stopping \u2014 will restart via PM2 in a few seconds.",
       "accounts_header": "Accounts"
     },
     "analytics": {
@@ -292,10 +295,11 @@
       "claims_by_game": "Claims by Game",
       "claims_activity": "Claims Activity",
       "channel_points": "Channel Points",
-      "refresh": "↻ Refresh",
+      "refresh": "\u21bb Refresh",
       "no_channel_points": "No channel points data yet. Points are recorded while watching channels.",
       "drop_history": "Drop History",
-      "no_history": "No drops claimed yet."
+      "no_history": "No drops claimed yet.",
+      "unknown_result_tooltip": "Result unknown \u2014 the app didn't see this prediction resolve (bot restart, disconnect, or channel went offline before it concluded)."
     }
   }
 }

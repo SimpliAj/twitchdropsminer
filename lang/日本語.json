@@ -1,157 +1,157 @@
 {
-  "language_name": "日本語",
+  "language_name": "\u65e5\u672c\u8a9e",
   "english_name": "Japanese",
   "status": {
-    "terminated": "\nアプリケーションが終了しました。\nウィンドウを閉じてアプリケーションを終了します。",
-    "watching": "{channel} を視聴中",
-    "goes_online": "{channel} がオンラインになりました。切り替え中...",
-    "goes_offline": "{channel} がオフラインになりました。切り替え中...",
-    "claimed_drop": "ドロップを取得しました：{drop}",
-    "no_channel": "視聴可能なチャンネルがありません。オンラインになるチャンネルを待機中...",
-    "no_campaign": "マイニングするドロップがないアクティブなキャンペーンはありません。アクティブなキャンペーンを待機中..."
+    "terminated": "\n\u30a2\u30d7\u30ea\u30b1\u30fc\u30b7\u30e7\u30f3\u304c\u7d42\u4e86\u3057\u307e\u3057\u305f\u3002\n\u30a6\u30a3\u30f3\u30c9\u30a6\u3092\u9589\u3058\u3066\u30a2\u30d7\u30ea\u30b1\u30fc\u30b7\u30e7\u30f3\u3092\u7d42\u4e86\u3057\u307e\u3059\u3002",
+    "watching": "{channel} \u3092\u8996\u8074\u4e2d",
+    "goes_online": "{channel} \u304c\u30aa\u30f3\u30e9\u30a4\u30f3\u306b\u306a\u308a\u307e\u3057\u305f\u3002\u5207\u308a\u66ff\u3048\u4e2d...",
+    "goes_offline": "{channel} \u304c\u30aa\u30d5\u30e9\u30a4\u30f3\u306b\u306a\u308a\u307e\u3057\u305f\u3002\u5207\u308a\u66ff\u3048\u4e2d...",
+    "claimed_drop": "\u30c9\u30ed\u30c3\u30d7\u3092\u53d6\u5f97\u3057\u307e\u3057\u305f\uff1a{drop}",
+    "no_channel": "\u8996\u8074\u53ef\u80fd\u306a\u30c1\u30e3\u30f3\u30cd\u30eb\u304c\u3042\u308a\u307e\u305b\u3093\u3002\u30aa\u30f3\u30e9\u30a4\u30f3\u306b\u306a\u308b\u30c1\u30e3\u30f3\u30cd\u30eb\u3092\u5f85\u6a5f\u4e2d...",
+    "no_campaign": "\u30de\u30a4\u30cb\u30f3\u30b0\u3059\u308b\u30c9\u30ed\u30c3\u30d7\u304c\u306a\u3044\u30a2\u30af\u30c6\u30a3\u30d6\u306a\u30ad\u30e3\u30f3\u30da\u30fc\u30f3\u306f\u3042\u308a\u307e\u305b\u3093\u3002\u30a2\u30af\u30c6\u30a3\u30d6\u306a\u30ad\u30e3\u30f3\u30da\u30fc\u30f3\u3092\u5f85\u6a5f\u4e2d..."
   },
   "login": {
-    "unexpected_content": "予期しないコンテンツタイプが返されました。リダイレクトされたためかもしれません。インターネットアクセスのためにログインが必要ですか？",
-    "error_code": "ログインエラーコード：{error_code}",
-    "incorrect_login_pass": "ユーザー名またはパスワードが間違っています。",
-    "incorrect_email_code": "メールコードが間違っています。",
-    "incorrect_twofa_code": "2段階認証コードが間違っています。",
-    "email_code_required": "メールコードが必要です。メールを確認してください。",
-    "twofa_code_required": "2段階認証トークンが必要です。",
+    "unexpected_content": "\u4e88\u671f\u3057\u306a\u3044\u30b3\u30f3\u30c6\u30f3\u30c4\u30bf\u30a4\u30d7\u304c\u8fd4\u3055\u308c\u307e\u3057\u305f\u3002\u30ea\u30c0\u30a4\u30ec\u30af\u30c8\u3055\u308c\u305f\u305f\u3081\u304b\u3082\u3057\u308c\u307e\u305b\u3093\u3002\u30a4\u30f3\u30bf\u30fc\u30cd\u30c3\u30c8\u30a2\u30af\u30bb\u30b9\u306e\u305f\u3081\u306b\u30ed\u30b0\u30a4\u30f3\u304c\u5fc5\u8981\u3067\u3059\u304b\uff1f",
+    "error_code": "\u30ed\u30b0\u30a4\u30f3\u30a8\u30e9\u30fc\u30b3\u30fc\u30c9\uff1a{error_code}",
+    "incorrect_login_pass": "\u30e6\u30fc\u30b6\u30fc\u540d\u307e\u305f\u306f\u30d1\u30b9\u30ef\u30fc\u30c9\u304c\u9593\u9055\u3063\u3066\u3044\u307e\u3059\u3002",
+    "incorrect_email_code": "\u30e1\u30fc\u30eb\u30b3\u30fc\u30c9\u304c\u9593\u9055\u3063\u3066\u3044\u307e\u3059\u3002",
+    "incorrect_twofa_code": "2\u6bb5\u968e\u8a8d\u8a3c\u30b3\u30fc\u30c9\u304c\u9593\u9055\u3063\u3066\u3044\u307e\u3059\u3002",
+    "email_code_required": "\u30e1\u30fc\u30eb\u30b3\u30fc\u30c9\u304c\u5fc5\u8981\u3067\u3059\u3002\u30e1\u30fc\u30eb\u3092\u78ba\u8a8d\u3057\u3066\u304f\u3060\u3055\u3044\u3002",
+    "twofa_code_required": "2\u6bb5\u968e\u8a8d\u8a3c\u30c8\u30fc\u30af\u30f3\u304c\u5fc5\u8981\u3067\u3059\u3002",
     "status": {
-      "logged_in": "ログイン済み",
-      "logged_out": "ログアウト済み",
-      "logging_in": "ログイン中...",
-      "required": "ログインが必要です",
-      "waiting_auth": "認証を待っています..."
+      "logged_in": "\u30ed\u30b0\u30a4\u30f3\u6e08\u307f",
+      "logged_out": "\u30ed\u30b0\u30a2\u30a6\u30c8\u6e08\u307f",
+      "logging_in": "\u30ed\u30b0\u30a4\u30f3\u4e2d...",
+      "required": "\u30ed\u30b0\u30a4\u30f3\u304c\u5fc5\u8981\u3067\u3059",
+      "waiting_auth": "\u8a8d\u8a3c\u3092\u5f85\u3063\u3066\u3044\u307e\u3059..."
     },
-    "oauth_prompt": "このコードを次の場所に入力してください:",
-    "oauth_activate": "Twitchをアクティベート",
-    "oauth_confirm": "コードを入力しました"
+    "oauth_prompt": "\u3053\u306e\u30b3\u30fc\u30c9\u3092\u6b21\u306e\u5834\u6240\u306b\u5165\u529b\u3057\u3066\u304f\u3060\u3055\u3044:",
+    "oauth_activate": "Twitch\u3092\u30a2\u30af\u30c6\u30a3\u30d9\u30fc\u30c8",
+    "oauth_confirm": "\u30b3\u30fc\u30c9\u3092\u5165\u529b\u3057\u307e\u3057\u305f"
   },
   "error": {
-    "captcha": "ログイン試行がCAPTCHAによって拒否されました。\n12時間以上後に再試行してください。",
-    "site_down": "Twitchがダウンしています。{seconds}秒後に再試行します...",
-    "no_connection": "Twitchに接続できません。{seconds}秒後に再試行します..."
+    "captcha": "\u30ed\u30b0\u30a4\u30f3\u8a66\u884c\u304cCAPTCHA\u306b\u3088\u3063\u3066\u62d2\u5426\u3055\u308c\u307e\u3057\u305f\u3002\n12\u6642\u9593\u4ee5\u4e0a\u5f8c\u306b\u518d\u8a66\u884c\u3057\u3066\u304f\u3060\u3055\u3044\u3002",
+    "site_down": "Twitch\u304c\u30c0\u30a6\u30f3\u3057\u3066\u3044\u307e\u3059\u3002{seconds}\u79d2\u5f8c\u306b\u518d\u8a66\u884c\u3057\u307e\u3059...",
+    "no_connection": "Twitch\u306b\u63a5\u7d9a\u3067\u304d\u307e\u305b\u3093\u3002{seconds}\u79d2\u5f8c\u306b\u518d\u8a66\u884c\u3057\u307e\u3059..."
   },
   "gui": {
-    "output": "出力",
+    "output": "\u51fa\u529b",
     "status": {
-      "name": "ステータス",
-      "idle": "アイドル",
-      "exiting": "終了しています...",
-      "terminated": "終了",
-      "cleanup": "チャンネルをクリーンアップ中...",
-      "gathering": "チャンネルを収集中...",
-      "switching": "チャンネルを切り替え中...",
-      "fetching_inventory": "インベントリを取得中...",
-      "fetching_campaigns": "キャンペーンを取得中...",
-      "adding_campaigns": "キャンペーンをインベントリに追加中... {counter}"
+      "name": "\u30b9\u30c6\u30fc\u30bf\u30b9",
+      "idle": "\u30a2\u30a4\u30c9\u30eb",
+      "exiting": "\u7d42\u4e86\u3057\u3066\u3044\u307e\u3059...",
+      "terminated": "\u7d42\u4e86",
+      "cleanup": "\u30c1\u30e3\u30f3\u30cd\u30eb\u3092\u30af\u30ea\u30fc\u30f3\u30a2\u30c3\u30d7\u4e2d...",
+      "gathering": "\u30c1\u30e3\u30f3\u30cd\u30eb\u3092\u53ce\u96c6\u4e2d...",
+      "switching": "\u30c1\u30e3\u30f3\u30cd\u30eb\u3092\u5207\u308a\u66ff\u3048\u4e2d...",
+      "fetching_inventory": "\u30a4\u30f3\u30d9\u30f3\u30c8\u30ea\u3092\u53d6\u5f97\u4e2d...",
+      "fetching_campaigns": "\u30ad\u30e3\u30f3\u30da\u30fc\u30f3\u3092\u53d6\u5f97\u4e2d...",
+      "adding_campaigns": "\u30ad\u30e3\u30f3\u30da\u30fc\u30f3\u3092\u30a4\u30f3\u30d9\u30f3\u30c8\u30ea\u306b\u8ffd\u52a0\u4e2d... {counter}"
     },
     "tabs": {
-      "main": "メイン",
-      "inventory": "インベントリ",
-      "settings": "設定",
-      "help": "ヘルプ",
+      "main": "\u30e1\u30a4\u30f3",
+      "inventory": "\u30a4\u30f3\u30d9\u30f3\u30c8\u30ea",
+      "settings": "\u8a2d\u5b9a",
+      "help": "\u30d8\u30eb\u30d7",
       "system": "System",
       "stats": "Stats",
       "analytics": "Analytics"
     },
     "login": {
-      "name": "ログインフォーム",
-      "labels": "ステータス：\nユーザーID：",
-      "request": "続行するにはログインしてください。",
-      "username": "ユーザー名",
-      "password": "パスワード",
-      "twofa_code": "2段階認証コード（オプション）",
-      "button": "ログイン",
+      "name": "\u30ed\u30b0\u30a4\u30f3\u30d5\u30a9\u30fc\u30e0",
+      "labels": "\u30b9\u30c6\u30fc\u30bf\u30b9\uff1a\n\u30e6\u30fc\u30b6\u30fcID\uff1a",
+      "request": "\u7d9a\u884c\u3059\u308b\u306b\u306f\u30ed\u30b0\u30a4\u30f3\u3057\u3066\u304f\u3060\u3055\u3044\u3002",
+      "username": "\u30e6\u30fc\u30b6\u30fc\u540d",
+      "password": "\u30d1\u30b9\u30ef\u30fc\u30c9",
+      "twofa_code": "2\u6bb5\u968e\u8a8d\u8a3c\u30b3\u30fc\u30c9\uff08\u30aa\u30d7\u30b7\u30e7\u30f3\uff09",
+      "button": "\u30ed\u30b0\u30a4\u30f3",
       "oauth_prompt": "Enter this code at:",
       "oauth_activate": "Twitch Activate",
       "oauth_confirm": "I've entered the code"
     },
     "websocket": {
-      "name": "Websocketステータス",
-      "websocket": "Websocket #{id}：",
-      "initializing": "初期化中...",
-      "connected": "接続済み",
-      "disconnected": "切断されました",
-      "connecting": "接続中...",
-      "disconnecting": "切断中...",
-      "reconnecting": "再接続中..."
+      "name": "Websocket\u30b9\u30c6\u30fc\u30bf\u30b9",
+      "websocket": "Websocket #{id}\uff1a",
+      "initializing": "\u521d\u671f\u5316\u4e2d...",
+      "connected": "\u63a5\u7d9a\u6e08\u307f",
+      "disconnected": "\u5207\u65ad\u3055\u308c\u307e\u3057\u305f",
+      "connecting": "\u63a5\u7d9a\u4e2d...",
+      "disconnecting": "\u5207\u65ad\u4e2d...",
+      "reconnecting": "\u518d\u63a5\u7d9a\u4e2d..."
     },
     "progress": {
-      "name": "キャンペーン進行状況",
-      "drop": "ドロップ：",
-      "game": "ゲーム：",
-      "campaign": "キャンペーン：",
-      "remaining": "残り時間：{time}",
-      "drop_progress": "進行状況：",
-      "campaign_progress": "進行状況：",
-      "no_drop": "アクティブなドロップなし",
-      "return_to_auto": "自動モードに戻る",
-      "manual_mode_info": "手動モード: マイニング中"
+      "name": "\u30ad\u30e3\u30f3\u30da\u30fc\u30f3\u9032\u884c\u72b6\u6cc1",
+      "drop": "\u30c9\u30ed\u30c3\u30d7\uff1a",
+      "game": "\u30b2\u30fc\u30e0\uff1a",
+      "campaign": "\u30ad\u30e3\u30f3\u30da\u30fc\u30f3\uff1a",
+      "remaining": "\u6b8b\u308a\u6642\u9593\uff1a{time}",
+      "drop_progress": "\u9032\u884c\u72b6\u6cc1\uff1a",
+      "campaign_progress": "\u9032\u884c\u72b6\u6cc1\uff1a",
+      "no_drop": "\u30a2\u30af\u30c6\u30a3\u30d6\u306a\u30c9\u30ed\u30c3\u30d7\u306a\u3057",
+      "return_to_auto": "\u81ea\u52d5\u30e2\u30fc\u30c9\u306b\u623b\u308b",
+      "manual_mode_info": "\u624b\u52d5\u30e2\u30fc\u30c9: \u30de\u30a4\u30cb\u30f3\u30b0\u4e2d"
     },
     "channels": {
-      "name": "チャンネル",
-      "online": "オンライン ✔",
-      "pending": "オフライン中 ⏳",
-      "offline": "オフライン ❌",
-      "no_channels": "まだチャンネルが追跡されていません...",
-      "no_channels_for_games": "選択したゲームのチャンネルが見つかりません...",
-      "channel_count": "チャンネル",
-      "channel_count_plural": "チャンネル",
-      "viewers": "視聴者"
+      "name": "\u30c1\u30e3\u30f3\u30cd\u30eb",
+      "online": "\u30aa\u30f3\u30e9\u30a4\u30f3 \u2714",
+      "pending": "\u30aa\u30d5\u30e9\u30a4\u30f3\u4e2d \u23f3",
+      "offline": "\u30aa\u30d5\u30e9\u30a4\u30f3 \u274c",
+      "no_channels": "\u307e\u3060\u30c1\u30e3\u30f3\u30cd\u30eb\u304c\u8ffd\u8de1\u3055\u308c\u3066\u3044\u307e\u305b\u3093...",
+      "no_channels_for_games": "\u9078\u629e\u3057\u305f\u30b2\u30fc\u30e0\u306e\u30c1\u30e3\u30f3\u30cd\u30eb\u304c\u898b\u3064\u304b\u308a\u307e\u305b\u3093...",
+      "channel_count": "\u30c1\u30e3\u30f3\u30cd\u30eb",
+      "channel_count_plural": "\u30c1\u30e3\u30f3\u30cd\u30eb",
+      "viewers": "\u8996\u8074\u8005"
     },
     "inventory": {
       "status": {
-        "active": "アクティブ ✔",
-        "upcoming": "予定 ⏳",
-        "expired": "期限切れ ❌",
-        "claimed": "受け取り済み ✔"
+        "active": "\u30a2\u30af\u30c6\u30a3\u30d6 \u2714",
+        "upcoming": "\u4e88\u5b9a \u23f3",
+        "expired": "\u671f\u9650\u5207\u308c \u274c",
+        "claimed": "\u53d7\u3051\u53d6\u308a\u6e08\u307f \u2714"
       },
-      "starts": "開始：{time}",
-      "ends": "終了：{time}",
-      "no_campaigns": "まだキャンペーンが読み込まれていません...",
-      "claimed_drops": "受け取り済み",
+      "starts": "\u958b\u59cb\uff1a{time}",
+      "ends": "\u7d42\u4e86\uff1a{time}",
+      "no_campaigns": "\u307e\u3060\u30ad\u30e3\u30f3\u30da\u30fc\u30f3\u304c\u8aad\u307f\u8fbc\u307e\u308c\u3066\u3044\u307e\u305b\u3093...",
+      "claimed_drops": "\u53d7\u3051\u53d6\u308a\u6e08\u307f",
       "filters": {
-        "active": "アクティブ",
-        "not_linked": "未連携",
-        "upcoming": "近日開催",
-        "expired": "期限切れ",
-        "finished": "完了",
-        "item": "アイテム",
-        "badge": "バッジ",
-        "emote": "エモート",
-        "other": "その他",
-        "clear": "フィルター解除",
-        "search_placeholder": "ゲームを検索..."
+        "active": "\u30a2\u30af\u30c6\u30a3\u30d6",
+        "not_linked": "\u672a\u9023\u643a",
+        "upcoming": "\u8fd1\u65e5\u958b\u50ac",
+        "expired": "\u671f\u9650\u5207\u308c",
+        "finished": "\u5b8c\u4e86",
+        "item": "\u30a2\u30a4\u30c6\u30e0",
+        "badge": "\u30d0\u30c3\u30b8",
+        "emote": "\u30a8\u30e2\u30fc\u30c8",
+        "other": "\u305d\u306e\u4ed6",
+        "clear": "\u30d5\u30a3\u30eb\u30bf\u30fc\u89e3\u9664",
+        "search_placeholder": "\u30b2\u30fc\u30e0\u3092\u691c\u7d22..."
       },
       "filter_linked": "Linked"
     },
     "settings": {
       "general": {
-        "name": "一般",
-        "dark_mode": "ダークモード"
+        "name": "\u4e00\u822c",
+        "dark_mode": "\u30c0\u30fc\u30af\u30e2\u30fc\u30c9"
       },
-      "reload": "再読み込み",
-      "games_to_watch": "視聴するゲーム",
-      "games_help": "視聴するゲームを選択してください。順序が重要です - ドラッグして優先順位を並べ替えます（上 = 最高優先度）。",
-      "search_games": "ゲームを検索...",
+      "reload": "\u518d\u8aad\u307f\u8fbc\u307f",
+      "games_to_watch": "\u8996\u8074\u3059\u308b\u30b2\u30fc\u30e0",
+      "games_help": "\u8996\u8074\u3059\u308b\u30b2\u30fc\u30e0\u3092\u9078\u629e\u3057\u3066\u304f\u3060\u3055\u3044\u3002\u9806\u5e8f\u304c\u91cd\u8981\u3067\u3059 - \u30c9\u30e9\u30c3\u30b0\u3057\u3066\u512a\u5148\u9806\u4f4d\u3092\u4e26\u3079\u66ff\u3048\u307e\u3059\uff08\u4e0a = \u6700\u9ad8\u512a\u5148\u5ea6\uff09\u3002",
+      "search_games": "\u30b2\u30fc\u30e0\u3092\u691c\u7d22...",
       "add_game": "Add Game",
       "add_game_hint": " Click \"Add Game\" to add it manually.",
-      "select_all": "すべて選択",
-      "deselect_all": "すべて選択解除",
-      "selected_games": "選択されたゲーム（ドラッグして並べ替え）",
-      "available_games": "利用可能なゲーム",
-      "no_games_selected": "ゲームが選択されていません。下のゲームにチェックを入れて追加してください。",
-      "no_games_match": "検索に一致するゲームはありません。",
-      "all_games_selected": "すべてのゲームが選択されているか、利用可能なゲームがありません。",
-      "actions": "アクション",
-      "connection_quality": "接続品質：",
-      "minimum_refresh": "最小更新間隔（分）：",
-      "reload_campaigns": "キャンペーンを再読み込み",
-      "mining_benefits": "マイニング特典",
-      "mining_benefits_help": "マイニングしたいドロップの種類を選択してください。",
+      "select_all": "\u3059\u3079\u3066\u9078\u629e",
+      "deselect_all": "\u3059\u3079\u3066\u9078\u629e\u89e3\u9664",
+      "selected_games": "\u9078\u629e\u3055\u308c\u305f\u30b2\u30fc\u30e0\uff08\u30c9\u30e9\u30c3\u30b0\u3057\u3066\u4e26\u3079\u66ff\u3048\uff09",
+      "available_games": "\u5229\u7528\u53ef\u80fd\u306a\u30b2\u30fc\u30e0",
+      "no_games_selected": "\u30b2\u30fc\u30e0\u304c\u9078\u629e\u3055\u308c\u3066\u3044\u307e\u305b\u3093\u3002\u4e0b\u306e\u30b2\u30fc\u30e0\u306b\u30c1\u30a7\u30c3\u30af\u3092\u5165\u308c\u3066\u8ffd\u52a0\u3057\u3066\u304f\u3060\u3055\u3044\u3002",
+      "no_games_match": "\u691c\u7d22\u306b\u4e00\u81f4\u3059\u308b\u30b2\u30fc\u30e0\u306f\u3042\u308a\u307e\u305b\u3093\u3002",
+      "all_games_selected": "\u3059\u3079\u3066\u306e\u30b2\u30fc\u30e0\u304c\u9078\u629e\u3055\u308c\u3066\u3044\u308b\u304b\u3001\u5229\u7528\u53ef\u80fd\u306a\u30b2\u30fc\u30e0\u304c\u3042\u308a\u307e\u305b\u3093\u3002",
+      "actions": "\u30a2\u30af\u30b7\u30e7\u30f3",
+      "connection_quality": "\u63a5\u7d9a\u54c1\u8cea\uff1a",
+      "minimum_refresh": "\u6700\u5c0f\u66f4\u65b0\u9593\u9694\uff08\u5206\uff09\uff1a",
+      "reload_campaigns": "\u30ad\u30e3\u30f3\u30da\u30fc\u30f3\u3092\u518d\u8aad\u307f\u8fbc\u307f",
+      "mining_benefits": "\u30de\u30a4\u30cb\u30f3\u30b0\u7279\u5178",
+      "mining_benefits_help": "\u30de\u30a4\u30cb\u30f3\u30b0\u3057\u305f\u3044\u30c9\u30ed\u30c3\u30d7\u306e\u7a2e\u985e\u3092\u9078\u629e\u3057\u3066\u304f\u3060\u3055\u3044\u3002",
       "select_linked": "Select Linked",
       "password_header": "Login & Password",
       "password_current_label": "Current Password",
@@ -165,13 +165,13 @@
       "password_saved": "Password saved.",
       "password_disabled_msg": "Login disabled.",
       "password_mismatch": "Passwords don't match.",
-      "password_status_active": "🔒 Login active — Password set",
-      "password_status_inactive": "🔓 No login — publicly accessible",
+      "password_status_active": "\ud83d\udd12 Login active \u2014 Password set",
+      "password_status_inactive": "\ud83d\udd13 No login \u2014 publicly accessible",
       "discord_bot": {
         "header": "Discord Bot",
         "description": "Pair a Discord bot to control TwitchDropsMiner via chat commands.",
         "not_connected": "Not connected",
-        "connected": "✅ Connected",
+        "connected": "\u2705 Connected",
         "generate_code": "Generate code",
         "generating": "Generating...",
         "disconnect": "Disconnect",
@@ -213,63 +213,66 @@
       "bot_notification_channels": "Notification Channels",
       "bot_setchannel_hint": "Use /setchannel in Discord to set channels.",
       "add_account": "+ Add Account",
-      "account_label_placeholder": "Label (e.g. Main, Alt)"
+      "account_label_placeholder": "Label (e.g. Main, Alt)",
+      "bet_percentage_gap_label": "Bet Gap % (SMART)",
+      "blacklist_ids_header": "Blacklisted Drop IDs",
+      "blacklist_ids_help": "Specific drops excluded by exact ID \u2014 added via the \ud83d\udeab button next to an active drop, or manually below. Unlike the keyword blacklist above, this matches one exact drop; other drops for the same game keep mining."
     },
     "help": {
-      "about": "Twitch Drops Minerについて",
-      "about_text": "このアプリケーションは、ストリームデータをダウンロードせずに、時間指定のTwitchドロップを自動的にマイニングします。",
-      "how_to_use": "使い方",
-      "features": "機能",
-      "important_notes": "重要な注意事項",
-      "github_repo": "GitHubリポジトリ",
+      "about": "Twitch Drops Miner\u306b\u3064\u3044\u3066",
+      "about_text": "\u3053\u306e\u30a2\u30d7\u30ea\u30b1\u30fc\u30b7\u30e7\u30f3\u306f\u3001\u30b9\u30c8\u30ea\u30fc\u30e0\u30c7\u30fc\u30bf\u3092\u30c0\u30a6\u30f3\u30ed\u30fc\u30c9\u305b\u305a\u306b\u3001\u6642\u9593\u6307\u5b9a\u306eTwitch\u30c9\u30ed\u30c3\u30d7\u3092\u81ea\u52d5\u7684\u306b\u30de\u30a4\u30cb\u30f3\u30b0\u3057\u307e\u3059\u3002",
+      "how_to_use": "\u4f7f\u3044\u65b9",
+      "features": "\u6a5f\u80fd",
+      "important_notes": "\u91cd\u8981\u306a\u6ce8\u610f\u4e8b\u9805",
+      "github_repo": "GitHub\u30ea\u30dd\u30b8\u30c8\u30ea",
       "how_to_use_items": [
-        "Twitchアカウントを使用してログイン（OAuthデバイスコードフロー）",
-        "<a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>でアカウントをリンク",
-        "マイナーは自動的にキャンペーンを発見してマイニングを開始します",
-        "設定で優先ゲームを設定して、希望するものに集中します",
-        "メインタブとインベントリタブで進行状況を監視します"
+        "Twitch\u30a2\u30ab\u30a6\u30f3\u30c8\u3092\u4f7f\u7528\u3057\u3066\u30ed\u30b0\u30a4\u30f3\uff08OAuth\u30c7\u30d0\u30a4\u30b9\u30b3\u30fc\u30c9\u30d5\u30ed\u30fc\uff09",
+        "<a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>\u3067\u30a2\u30ab\u30a6\u30f3\u30c8\u3092\u30ea\u30f3\u30af",
+        "\u30de\u30a4\u30ca\u30fc\u306f\u81ea\u52d5\u7684\u306b\u30ad\u30e3\u30f3\u30da\u30fc\u30f3\u3092\u767a\u898b\u3057\u3066\u30de\u30a4\u30cb\u30f3\u30b0\u3092\u958b\u59cb\u3057\u307e\u3059",
+        "\u8a2d\u5b9a\u3067\u512a\u5148\u30b2\u30fc\u30e0\u3092\u8a2d\u5b9a\u3057\u3066\u3001\u5e0c\u671b\u3059\u308b\u3082\u306e\u306b\u96c6\u4e2d\u3057\u307e\u3059",
+        "\u30e1\u30a4\u30f3\u30bf\u30d6\u3068\u30a4\u30f3\u30d9\u30f3\u30c8\u30ea\u30bf\u30d6\u3067\u9032\u884c\u72b6\u6cc1\u3092\u76e3\u8996\u3057\u307e\u3059"
       ],
       "features_items": [
-        "ストリームレスドロップマイニング - 帯域幅を節約",
-        "ゲームの優先順位リストと除外リスト",
-        "最大199チャンネルを同時に追跡",
-        "自動チャンネル切り替え",
-        "リアルタイム進行状況追跡"
+        "\u30b9\u30c8\u30ea\u30fc\u30e0\u30ec\u30b9\u30c9\u30ed\u30c3\u30d7\u30de\u30a4\u30cb\u30f3\u30b0 - \u5e2f\u57df\u5e45\u3092\u7bc0\u7d04",
+        "\u30b2\u30fc\u30e0\u306e\u512a\u5148\u9806\u4f4d\u30ea\u30b9\u30c8\u3068\u9664\u5916\u30ea\u30b9\u30c8",
+        "\u6700\u5927199\u30c1\u30e3\u30f3\u30cd\u30eb\u3092\u540c\u6642\u306b\u8ffd\u8de1",
+        "\u81ea\u52d5\u30c1\u30e3\u30f3\u30cd\u30eb\u5207\u308a\u66ff\u3048",
+        "\u30ea\u30a2\u30eb\u30bf\u30a4\u30e0\u9032\u884c\u72b6\u6cc1\u8ffd\u8de1"
       ],
       "important_notes_items": [
-        "マイニング中は同じアカウントでストリームを視聴しないでください",
-        "cookies.jarファイルを安全に保管してください",
-        "ドロップにはリンクされたゲームアカウントが必要です"
+        "\u30de\u30a4\u30cb\u30f3\u30b0\u4e2d\u306f\u540c\u3058\u30a2\u30ab\u30a6\u30f3\u30c8\u3067\u30b9\u30c8\u30ea\u30fc\u30e0\u3092\u8996\u8074\u3057\u306a\u3044\u3067\u304f\u3060\u3055\u3044",
+        "cookies.jar\u30d5\u30a1\u30a4\u30eb\u3092\u5b89\u5168\u306b\u4fdd\u7ba1\u3057\u3066\u304f\u3060\u3055\u3044",
+        "\u30c9\u30ed\u30c3\u30d7\u306b\u306f\u30ea\u30f3\u30af\u3055\u308c\u305f\u30b2\u30fc\u30e0\u30a2\u30ab\u30a6\u30f3\u30c8\u304c\u5fc5\u8981\u3067\u3059"
       ]
     },
     "header": {
       "title": "Twitch Drops Miner",
-      "language": "言語:",
-      "initializing": "初期化中...",
+      "language": "\u8a00\u8a9e:",
+      "initializing": "\u521d\u671f\u5316\u4e2d...",
       "auto_mode": "AUTO",
-      "manual_mode": "手動",
-      "connected": "接続済み",
-      "disconnected": "切断"
+      "manual_mode": "\u624b\u52d5",
+      "connected": "\u63a5\u7d9a\u6e08\u307f",
+      "disconnected": "\u5207\u65ad"
     },
     "footer": {
-      "version": "バージョン:",
-      "loading": "読み込み中...",
-      "update_available": "更新利用可能:"
+      "version": "\u30d0\u30fc\u30b8\u30e7\u30f3:",
+      "loading": "\u8aad\u307f\u8fbc\u307f\u4e2d...",
+      "update_available": "\u66f4\u65b0\u5229\u7528\u53ef\u80fd:"
     },
     "badges": {
       "manual": {
-        "title": "手動モード - 特定のゲームを視聴中"
+        "title": "\u624b\u52d5\u30e2\u30fc\u30c9 - \u7279\u5b9a\u306e\u30b2\u30fc\u30e0\u3092\u8996\u8074\u4e2d"
       },
       "auto": {
-        "title": "自動モード - ゲーム優先度に従う"
+        "title": "\u81ea\u52d5\u30e2\u30fc\u30c9 - \u30b2\u30fc\u30e0\u512a\u5148\u5ea6\u306b\u5f93\u3046"
       },
       "proxy": {
-        "title": "プロキシ接続中"
+        "title": "\u30d7\u30ed\u30ad\u30b7\u63a5\u7d9a\u4e2d"
       }
     },
     "wanted": {
-      "name": "欲しいDropsキュー",
-      "none": "キューに欲しいDropsはありません..."
+      "name": "\u6b32\u3057\u3044Drops\u30ad\u30e5\u30fc",
+      "none": "\u30ad\u30e5\u30fc\u306b\u6b32\u3057\u3044Drops\u306f\u3042\u308a\u307e\u305b\u3093..."
     },
     "system": {
       "header": "System",
@@ -284,7 +287,7 @@
       "logout_btn": "Logout",
       "reload_ok": "Campaigns reload triggered.",
       "restart_confirm": "Restart the miner? PM2 will restart it automatically.",
-      "restart_ok": "Miner stopping — will restart via PM2 in a few seconds.",
+      "restart_ok": "Miner stopping \u2014 will restart via PM2 in a few seconds.",
       "accounts_header": "Accounts"
     },
     "analytics": {
@@ -295,10 +298,11 @@
       "claims_by_game": "Claims by Game",
       "claims_activity": "Claims Activity",
       "channel_points": "Channel Points",
-      "refresh": "↻ Refresh",
+      "refresh": "\u21bb Refresh",
       "no_channel_points": "No channel points data yet. Points are recorded while watching channels.",
       "drop_history": "Drop History",
-      "no_history": "No drops claimed yet."
+      "no_history": "No drops claimed yet.",
+      "unknown_result_tooltip": "Result unknown \u2014 the app didn't see this prediction resolve (bot restart, disconnect, or channel went offline before it concluded)."
     }
   }
 }

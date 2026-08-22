@@ -1,157 +1,157 @@
 {
-  "language_name": "العربية",
+  "language_name": "\u0627\u0644\u0639\u0631\u0628\u064a\u0629",
   "english_name": "Arabic",
   "status": {
-    "terminated": "تم إنهاء التطبيق. \n أغلق النافذة للخروج من التطبيق.",
-    "watching": "{channel} :يتم حالياَ مشاهدة",
-    "goes_online": "...اصبح نشط ، تبديل {channel}",
-    "goes_offline": "...اصبح غير نشط ، تبديل {channel}",
-    "claimed_drop": "{drop} :تم الحصول على",
-    "no_channel": "...لا توجد قنوات نشطة متاحة للمشاهدة. في انتظار قناة نشطة",
-    "no_campaign": "...لا توجد حملات نشطة من اجل تنقيب الإسقاطات. في انتظار حملة نشطة"
+    "terminated": "\u062a\u0645 \u0625\u0646\u0647\u0627\u0621 \u0627\u0644\u062a\u0637\u0628\u064a\u0642. \n \u0623\u063a\u0644\u0642 \u0627\u0644\u0646\u0627\u0641\u0630\u0629 \u0644\u0644\u062e\u0631\u0648\u062c \u0645\u0646 \u0627\u0644\u062a\u0637\u0628\u064a\u0642.",
+    "watching": "{channel} :\u064a\u062a\u0645 \u062d\u0627\u0644\u064a\u0627\u064e \u0645\u0634\u0627\u0647\u062f\u0629",
+    "goes_online": "...\u0627\u0635\u0628\u062d \u0646\u0634\u0637 \u060c \u062a\u0628\u062f\u064a\u0644 {channel}",
+    "goes_offline": "...\u0627\u0635\u0628\u062d \u063a\u064a\u0631 \u0646\u0634\u0637 \u060c \u062a\u0628\u062f\u064a\u0644 {channel}",
+    "claimed_drop": "{drop} :\u062a\u0645 \u0627\u0644\u062d\u0635\u0648\u0644 \u0639\u0644\u0649",
+    "no_channel": "...\u0644\u0627 \u062a\u0648\u062c\u062f \u0642\u0646\u0648\u0627\u062a \u0646\u0634\u0637\u0629 \u0645\u062a\u0627\u062d\u0629 \u0644\u0644\u0645\u0634\u0627\u0647\u062f\u0629. \u0641\u064a \u0627\u0646\u062a\u0638\u0627\u0631 \u0642\u0646\u0627\u0629 \u0646\u0634\u0637\u0629",
+    "no_campaign": "...\u0644\u0627 \u062a\u0648\u062c\u062f \u062d\u0645\u0644\u0627\u062a \u0646\u0634\u0637\u0629 \u0645\u0646 \u0627\u062c\u0644 \u062a\u0646\u0642\u064a\u0628 \u0627\u0644\u0625\u0633\u0642\u0627\u0637\u0627\u062a. \u0641\u064a \u0627\u0646\u062a\u0638\u0627\u0631 \u062d\u0645\u0644\u0629 \u0646\u0634\u0637\u0629"
   },
   "login": {
-    "unexpected_content": "تم إرجاع نوع محتوى غير متوقع ، يحدث عادة بسبب إعادة التوجيه. هل تحتاج إلى تسجيل الدخول للوصول إلى الإنترنت؟",
-    "error_code": "{error_code} :رمز خطأ تسجيل الدخول",
-    "incorrect_login_pass": ".اسم المستخدم أو كلمة المرور غير صحيحة",
-    "incorrect_email_code": ".كود البريد الإلكتروني غير صحيح",
-    "incorrect_twofa_code": ".كود المصادقة الثنائية غير صحيح",
-    "email_code_required": ".كود البريد الإلكتروني مطلوب. تحقق من بريدك الالكتروني",
-    "twofa_code_required": ".رمز المصادقة الثنائية مطلوب",
+    "unexpected_content": "\u062a\u0645 \u0625\u0631\u062c\u0627\u0639 \u0646\u0648\u0639 \u0645\u062d\u062a\u0648\u0649 \u063a\u064a\u0631 \u0645\u062a\u0648\u0642\u0639 \u060c \u064a\u062d\u062f\u062b \u0639\u0627\u062f\u0629 \u0628\u0633\u0628\u0628 \u0625\u0639\u0627\u062f\u0629 \u0627\u0644\u062a\u0648\u062c\u064a\u0647. \u0647\u0644 \u062a\u062d\u062a\u0627\u062c \u0625\u0644\u0649 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u0644\u0644\u0648\u0635\u0648\u0644 \u0625\u0644\u0649 \u0627\u0644\u0625\u0646\u062a\u0631\u0646\u062a\u061f",
+    "error_code": "{error_code} :\u0631\u0645\u0632 \u062e\u0637\u0623 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644",
+    "incorrect_login_pass": ".\u0627\u0633\u0645 \u0627\u0644\u0645\u0633\u062a\u062e\u062f\u0645 \u0623\u0648 \u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 \u063a\u064a\u0631 \u0635\u062d\u064a\u062d\u0629",
+    "incorrect_email_code": ".\u0643\u0648\u062f \u0627\u0644\u0628\u0631\u064a\u062f \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a \u063a\u064a\u0631 \u0635\u062d\u064a\u062d",
+    "incorrect_twofa_code": ".\u0643\u0648\u062f \u0627\u0644\u0645\u0635\u0627\u062f\u0642\u0629 \u0627\u0644\u062b\u0646\u0627\u0626\u064a\u0629 \u063a\u064a\u0631 \u0635\u062d\u064a\u062d",
+    "email_code_required": ".\u0643\u0648\u062f \u0627\u0644\u0628\u0631\u064a\u062f \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a \u0645\u0637\u0644\u0648\u0628. \u062a\u062d\u0642\u0642 \u0645\u0646 \u0628\u0631\u064a\u062f\u0643 \u0627\u0644\u0627\u0644\u0643\u062a\u0631\u0648\u0646\u064a",
+    "twofa_code_required": ".\u0631\u0645\u0632 \u0627\u0644\u0645\u0635\u0627\u062f\u0642\u0629 \u0627\u0644\u062b\u0646\u0627\u0626\u064a\u0629 \u0645\u0637\u0644\u0648\u0628",
     "status": {
-      "logged_in": "تم تسجيل الدخول",
-      "logged_out": "تم تسجيل الخروج",
-      "logging_in": "...تسجيل الدخول",
-      "required": "تسجيل الدخول مطلوب",
-      "waiting_auth": "في انتظار المصادقة..."
+      "logged_in": "\u062a\u0645 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644",
+      "logged_out": "\u062a\u0645 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062e\u0631\u0648\u062c",
+      "logging_in": "...\u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644",
+      "required": "\u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u0645\u0637\u0644\u0648\u0628",
+      "waiting_auth": "\u0641\u064a \u0627\u0646\u062a\u0638\u0627\u0631 \u0627\u0644\u0645\u0635\u0627\u062f\u0642\u0629..."
     },
-    "oauth_prompt": "أدخل هذا الرمز في:",
-    "oauth_activate": "تفعيل Twitch",
-    "oauth_confirm": "لقد أدخلت الرمز"
+    "oauth_prompt": "\u0623\u062f\u062e\u0644 \u0647\u0630\u0627 \u0627\u0644\u0631\u0645\u0632 \u0641\u064a:",
+    "oauth_activate": "\u062a\u0641\u0639\u064a\u0644 Twitch",
+    "oauth_confirm": "\u0644\u0642\u062f \u0623\u062f\u062e\u0644\u062a \u0627\u0644\u0631\u0645\u0632"
   },
   "error": {
-    "captcha": ".يرجى المحاولة مجدداَ بعد مرور 12 ساعة \n .CAPTCHA تم رفض محاولة تسجيل الدخول الخاصة بك من قبل",
-    "site_down": "...ثانية {seconds} معطل  ، إعادة المحاولة خلال Twitch",
-    "no_connection": "...ثانية {seconds} إعادة المحاولة خلال ، Twitch لا يمكن الإتصال بـ"
+    "captcha": ".\u064a\u0631\u062c\u0649 \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629 \u0645\u062c\u062f\u062f\u0627\u064e \u0628\u0639\u062f \u0645\u0631\u0648\u0631 12 \u0633\u0627\u0639\u0629 \n .CAPTCHA \u062a\u0645 \u0631\u0641\u0636 \u0645\u062d\u0627\u0648\u0644\u0629 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u0627\u0644\u062e\u0627\u0635\u0629 \u0628\u0643 \u0645\u0646 \u0642\u0628\u0644",
+    "site_down": "...\u062b\u0627\u0646\u064a\u0629 {seconds} \u0645\u0639\u0637\u0644  \u060c \u0625\u0639\u0627\u062f\u0629 \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629 \u062e\u0644\u0627\u0644 Twitch",
+    "no_connection": "...\u062b\u0627\u0646\u064a\u0629 {seconds} \u0625\u0639\u0627\u062f\u0629 \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629 \u062e\u0644\u0627\u0644 \u060c Twitch \u0644\u0627 \u064a\u0645\u0643\u0646 \u0627\u0644\u0625\u062a\u0635\u0627\u0644 \u0628\u0640"
   },
   "gui": {
-    "output": "الإخراج",
+    "output": "\u0627\u0644\u0625\u062e\u0631\u0627\u062c",
     "status": {
-      "name": "الحالة",
-      "idle": "خامل",
-      "exiting": "...جاري الخروج",
-      "terminated": "تم الانهاء",
-      "cleanup": "...مسح القنوات",
-      "gathering": "...جمع القنوات",
-      "switching": "...تبديل القناة",
-      "fetching_inventory": "...جلب محتويات الحقيبة",
-      "fetching_campaigns": "...جلب الحملات",
-      "adding_campaigns": "{counter} ...إضافة الحملات إلى الحقيبة"
+      "name": "\u0627\u0644\u062d\u0627\u0644\u0629",
+      "idle": "\u062e\u0627\u0645\u0644",
+      "exiting": "...\u062c\u0627\u0631\u064a \u0627\u0644\u062e\u0631\u0648\u062c",
+      "terminated": "\u062a\u0645 \u0627\u0644\u0627\u0646\u0647\u0627\u0621",
+      "cleanup": "...\u0645\u0633\u062d \u0627\u0644\u0642\u0646\u0648\u0627\u062a",
+      "gathering": "...\u062c\u0645\u0639 \u0627\u0644\u0642\u0646\u0648\u0627\u062a",
+      "switching": "...\u062a\u0628\u062f\u064a\u0644 \u0627\u0644\u0642\u0646\u0627\u0629",
+      "fetching_inventory": "...\u062c\u0644\u0628 \u0645\u062d\u062a\u0648\u064a\u0627\u062a \u0627\u0644\u062d\u0642\u064a\u0628\u0629",
+      "fetching_campaigns": "...\u062c\u0644\u0628 \u0627\u0644\u062d\u0645\u0644\u0627\u062a",
+      "adding_campaigns": "{counter} ...\u0625\u0636\u0627\u0641\u0629 \u0627\u0644\u062d\u0645\u0644\u0627\u062a \u0625\u0644\u0649 \u0627\u0644\u062d\u0642\u064a\u0628\u0629"
     },
     "tabs": {
-      "main": "الرئيسية",
-      "inventory": "الحقيبة",
-      "settings": "الإعدادات",
-      "help": "مساعدة",
+      "main": "\u0627\u0644\u0631\u0626\u064a\u0633\u064a\u0629",
+      "inventory": "\u0627\u0644\u062d\u0642\u064a\u0628\u0629",
+      "settings": "\u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a",
+      "help": "\u0645\u0633\u0627\u0639\u062f\u0629",
       "system": "System",
       "stats": "Stats",
       "analytics": "Analytics"
     },
     "login": {
-      "name": "تسجيل الدخول و معلومات عن الحساب",
-      "labels": "الحالة ➜\nالمستخدم ID ➜",
-      "request": ".الرجاء تسجيل الدخول للمتابعة",
-      "username": "اسم المستخدم",
-      "password": "كلمة المرور",
-      "twofa_code": "المصادقة الثنائية (اختياري)",
-      "button": "تسجيل الدخول",
+      "name": "\u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u0648 \u0645\u0639\u0644\u0648\u0645\u0627\u062a \u0639\u0646 \u0627\u0644\u062d\u0633\u0627\u0628",
+      "labels": "\u0627\u0644\u062d\u0627\u0644\u0629 \u279c\n\u0627\u0644\u0645\u0633\u062a\u062e\u062f\u0645 ID \u279c",
+      "request": ".\u0627\u0644\u0631\u062c\u0627\u0621 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u0644\u0644\u0645\u062a\u0627\u0628\u0639\u0629",
+      "username": "\u0627\u0633\u0645 \u0627\u0644\u0645\u0633\u062a\u062e\u062f\u0645",
+      "password": "\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631",
+      "twofa_code": "\u0627\u0644\u0645\u0635\u0627\u062f\u0642\u0629 \u0627\u0644\u062b\u0646\u0627\u0626\u064a\u0629 (\u0627\u062e\u062a\u064a\u0627\u0631\u064a)",
+      "button": "\u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644",
       "oauth_prompt": "Enter this code at:",
       "oauth_activate": "Twitch Activate",
       "oauth_confirm": "I've entered the code"
     },
     "websocket": {
-      "name": "حالة Websocket",
+      "name": "\u062d\u0627\u0644\u0629 Websocket",
       "websocket": "WebSocket #{id}:",
-      "initializing": "...جاري التهيئة",
-      "connected": "متصل",
-      "disconnected": "غير متصل",
-      "connecting": "...جاري الاتصال",
-      "disconnecting": "...جاري قطع الاتصال",
-      "reconnecting": "...إعادة الاتصال"
+      "initializing": "...\u062c\u0627\u0631\u064a \u0627\u0644\u062a\u0647\u064a\u0626\u0629",
+      "connected": "\u0645\u062a\u0635\u0644",
+      "disconnected": "\u063a\u064a\u0631 \u0645\u062a\u0635\u0644",
+      "connecting": "...\u062c\u0627\u0631\u064a \u0627\u0644\u0627\u062a\u0635\u0627\u0644",
+      "disconnecting": "...\u062c\u0627\u0631\u064a \u0642\u0637\u0639 \u0627\u0644\u0627\u062a\u0635\u0627\u0644",
+      "reconnecting": "...\u0625\u0639\u0627\u062f\u0629 \u0627\u0644\u0627\u062a\u0635\u0627\u0644"
     },
     "progress": {
-      "name": "تقدم الحملة",
-      "drop": ":الإسقاط",
-      "game": ":اللعبة",
-      "campaign": ":الحملة",
-      "remaining": "{time} متبقي",
-      "drop_progress": "التقدم ➜",
-      "campaign_progress": "التقدم ➜",
-      "no_drop": "لا يوجد إسقاط نشط",
-      "return_to_auto": "العودة إلى الوضع التلقائي",
-      "manual_mode_info": "الوضع اليدوي: التعدين"
+      "name": "\u062a\u0642\u062f\u0645 \u0627\u0644\u062d\u0645\u0644\u0629",
+      "drop": ":\u0627\u0644\u0625\u0633\u0642\u0627\u0637",
+      "game": ":\u0627\u0644\u0644\u0639\u0628\u0629",
+      "campaign": ":\u0627\u0644\u062d\u0645\u0644\u0629",
+      "remaining": "{time} \u0645\u062a\u0628\u0642\u064a",
+      "drop_progress": "\u0627\u0644\u062a\u0642\u062f\u0645 \u279c",
+      "campaign_progress": "\u0627\u0644\u062a\u0642\u062f\u0645 \u279c",
+      "no_drop": "\u0644\u0627 \u064a\u0648\u062c\u062f \u0625\u0633\u0642\u0627\u0637 \u0646\u0634\u0637",
+      "return_to_auto": "\u0627\u0644\u0639\u0648\u062f\u0629 \u0625\u0644\u0649 \u0627\u0644\u0648\u0636\u0639 \u0627\u0644\u062a\u0644\u0642\u0627\u0626\u064a",
+      "manual_mode_info": "\u0627\u0644\u0648\u0636\u0639 \u0627\u0644\u064a\u062f\u0648\u064a: \u0627\u0644\u062a\u0639\u062f\u064a\u0646"
     },
     "channels": {
-      "name": "القنوات",
-      "online": "✔  نشط",
-      "pending": "⏳ غير نشط",
-      "offline": "❌ غير نشط",
-      "no_channels": "لم يتم تتبع أي قنوات بعد...",
-      "no_channels_for_games": "لم يتم العثور على قنوات للألعاب المحددة...",
-      "channel_count": "قناة",
-      "channel_count_plural": "قنوات",
-      "viewers": "مشاهدين"
+      "name": "\u0627\u0644\u0642\u0646\u0648\u0627\u062a",
+      "online": "\u2714  \u0646\u0634\u0637",
+      "pending": "\u23f3 \u063a\u064a\u0631 \u0646\u0634\u0637",
+      "offline": "\u274c \u063a\u064a\u0631 \u0646\u0634\u0637",
+      "no_channels": "\u0644\u0645 \u064a\u062a\u0645 \u062a\u062a\u0628\u0639 \u0623\u064a \u0642\u0646\u0648\u0627\u062a \u0628\u0639\u062f...",
+      "no_channels_for_games": "\u0644\u0645 \u064a\u062a\u0645 \u0627\u0644\u0639\u062b\u0648\u0631 \u0639\u0644\u0649 \u0642\u0646\u0648\u0627\u062a \u0644\u0644\u0623\u0644\u0639\u0627\u0628 \u0627\u0644\u0645\u062d\u062f\u062f\u0629...",
+      "channel_count": "\u0642\u0646\u0627\u0629",
+      "channel_count_plural": "\u0642\u0646\u0648\u0627\u062a",
+      "viewers": "\u0645\u0634\u0627\u0647\u062f\u064a\u0646"
     },
     "inventory": {
       "status": {
-        "active": "✔ نشط",
-        "upcoming": "⏳ قادم",
-        "expired": "❌ منتهي",
-        "claimed": "✔ تم الحصول عليه"
+        "active": "\u2714 \u0646\u0634\u0637",
+        "upcoming": "\u23f3 \u0642\u0627\u062f\u0645",
+        "expired": "\u274c \u0645\u0646\u062a\u0647\u064a",
+        "claimed": "\u2714 \u062a\u0645 \u0627\u0644\u062d\u0635\u0648\u0644 \u0639\u0644\u064a\u0647"
       },
-      "starts": "{time} :يبدأ",
-      "ends": "{time} :ينتهي",
-      "no_campaigns": "لم يتم تحميل أي حملات بعد...",
-      "claimed_drops": "تم المطالبة",
+      "starts": "{time} :\u064a\u0628\u062f\u0623",
+      "ends": "{time} :\u064a\u0646\u062a\u0647\u064a",
+      "no_campaigns": "\u0644\u0645 \u064a\u062a\u0645 \u062a\u062d\u0645\u064a\u0644 \u0623\u064a \u062d\u0645\u0644\u0627\u062a \u0628\u0639\u062f...",
+      "claimed_drops": "\u062a\u0645 \u0627\u0644\u0645\u0637\u0627\u0644\u0628\u0629",
       "filters": {
-        "active": "نشط",
-        "not_linked": "غير مرتبط",
-        "upcoming": "قادم",
-        "expired": "منتهي",
-        "finished": "مكتمل",
-        "item": "عنصر",
-        "badge": "شارة",
-        "emote": "رمز تعبيري",
-        "other": "آخر",
-        "clear": "مسح المرشحات",
-        "search_placeholder": "البحث عن الألعاب..."
+        "active": "\u0646\u0634\u0637",
+        "not_linked": "\u063a\u064a\u0631 \u0645\u0631\u062a\u0628\u0637",
+        "upcoming": "\u0642\u0627\u062f\u0645",
+        "expired": "\u0645\u0646\u062a\u0647\u064a",
+        "finished": "\u0645\u0643\u062a\u0645\u0644",
+        "item": "\u0639\u0646\u0635\u0631",
+        "badge": "\u0634\u0627\u0631\u0629",
+        "emote": "\u0631\u0645\u0632 \u062a\u0639\u0628\u064a\u0631\u064a",
+        "other": "\u0622\u062e\u0631",
+        "clear": "\u0645\u0633\u062d \u0627\u0644\u0645\u0631\u0634\u062d\u0627\u062a",
+        "search_placeholder": "\u0627\u0644\u0628\u062d\u062b \u0639\u0646 \u0627\u0644\u0623\u0644\u0639\u0627\u0628..."
       },
       "filter_linked": "Linked"
     },
     "settings": {
       "general": {
-        "name": "عام",
-        "dark_mode": "الوضع الداكن"
+        "name": "\u0639\u0627\u0645",
+        "dark_mode": "\u0627\u0644\u0648\u0636\u0639 \u0627\u0644\u062f\u0627\u0643\u0646"
       },
-      "reload": "إعادة تحميل",
-      "games_to_watch": "ألعاب للمشاهدة",
-      "games_help": "حدد الألعاب للمشاهدة. الترتيب مهم - اسحب لإعادة ترتيب الأولوية (الأعلى = أعلى أولوية).",
-      "search_games": "البحث عن الألعاب...",
+      "reload": "\u0625\u0639\u0627\u062f\u0629 \u062a\u062d\u0645\u064a\u0644",
+      "games_to_watch": "\u0623\u0644\u0639\u0627\u0628 \u0644\u0644\u0645\u0634\u0627\u0647\u062f\u0629",
+      "games_help": "\u062d\u062f\u062f \u0627\u0644\u0623\u0644\u0639\u0627\u0628 \u0644\u0644\u0645\u0634\u0627\u0647\u062f\u0629. \u0627\u0644\u062a\u0631\u062a\u064a\u0628 \u0645\u0647\u0645 - \u0627\u0633\u062d\u0628 \u0644\u0625\u0639\u0627\u062f\u0629 \u062a\u0631\u062a\u064a\u0628 \u0627\u0644\u0623\u0648\u0644\u0648\u064a\u0629 (\u0627\u0644\u0623\u0639\u0644\u0649 = \u0623\u0639\u0644\u0649 \u0623\u0648\u0644\u0648\u064a\u0629).",
+      "search_games": "\u0627\u0644\u0628\u062d\u062b \u0639\u0646 \u0627\u0644\u0623\u0644\u0639\u0627\u0628...",
       "add_game": "Add Game",
       "add_game_hint": " Click \"Add Game\" to add it manually.",
-      "select_all": "تحديد الكل",
-      "deselect_all": "إلغاء تحديد الكل",
-      "selected_games": "الألعاب المحددة (اسحب لإعادة الترتيب)",
-      "available_games": "الألعاب المتاحة",
-      "no_games_selected": "لم يتم تحديد ألعاب. حدد الألعاب أدناه لإضافتها.",
-      "no_games_match": "لا توجد ألعاب تطابق بحثك.",
-      "all_games_selected": "تم تحديد جميع الألعاب أو لا توجد ألعاب متاحة.",
-      "actions": "الإجراءات",
-      "connection_quality": "جودة الاتصال:",
-      "minimum_refresh": "الحد الأدنى لفترة التحديث (بالدقائق):",
-      "reload_campaigns": "إعادة تحميل الحملات",
-      "mining_benefits": "فوائد التعدين",
-      "mining_benefits_help": "اختر أنواع الجوائز التي تريد تعدينها.",
+      "select_all": "\u062a\u062d\u062f\u064a\u062f \u0627\u0644\u0643\u0644",
+      "deselect_all": "\u0625\u0644\u063a\u0627\u0621 \u062a\u062d\u062f\u064a\u062f \u0627\u0644\u0643\u0644",
+      "selected_games": "\u0627\u0644\u0623\u0644\u0639\u0627\u0628 \u0627\u0644\u0645\u062d\u062f\u062f\u0629 (\u0627\u0633\u062d\u0628 \u0644\u0625\u0639\u0627\u062f\u0629 \u0627\u0644\u062a\u0631\u062a\u064a\u0628)",
+      "available_games": "\u0627\u0644\u0623\u0644\u0639\u0627\u0628 \u0627\u0644\u0645\u062a\u0627\u062d\u0629",
+      "no_games_selected": "\u0644\u0645 \u064a\u062a\u0645 \u062a\u062d\u062f\u064a\u062f \u0623\u0644\u0639\u0627\u0628. \u062d\u062f\u062f \u0627\u0644\u0623\u0644\u0639\u0627\u0628 \u0623\u062f\u0646\u0627\u0647 \u0644\u0625\u0636\u0627\u0641\u062a\u0647\u0627.",
+      "no_games_match": "\u0644\u0627 \u062a\u0648\u062c\u062f \u0623\u0644\u0639\u0627\u0628 \u062a\u0637\u0627\u0628\u0642 \u0628\u062d\u062b\u0643.",
+      "all_games_selected": "\u062a\u0645 \u062a\u062d\u062f\u064a\u062f \u062c\u0645\u064a\u0639 \u0627\u0644\u0623\u0644\u0639\u0627\u0628 \u0623\u0648 \u0644\u0627 \u062a\u0648\u062c\u062f \u0623\u0644\u0639\u0627\u0628 \u0645\u062a\u0627\u062d\u0629.",
+      "actions": "\u0627\u0644\u0625\u062c\u0631\u0627\u0621\u0627\u062a",
+      "connection_quality": "\u062c\u0648\u062f\u0629 \u0627\u0644\u0627\u062a\u0635\u0627\u0644:",
+      "minimum_refresh": "\u0627\u0644\u062d\u062f \u0627\u0644\u0623\u062f\u0646\u0649 \u0644\u0641\u062a\u0631\u0629 \u0627\u0644\u062a\u062d\u062f\u064a\u062b (\u0628\u0627\u0644\u062f\u0642\u0627\u0626\u0642):",
+      "reload_campaigns": "\u0625\u0639\u0627\u062f\u0629 \u062a\u062d\u0645\u064a\u0644 \u0627\u0644\u062d\u0645\u0644\u0627\u062a",
+      "mining_benefits": "\u0641\u0648\u0627\u0626\u062f \u0627\u0644\u062a\u0639\u062f\u064a\u0646",
+      "mining_benefits_help": "\u0627\u062e\u062a\u0631 \u0623\u0646\u0648\u0627\u0639 \u0627\u0644\u062c\u0648\u0627\u0626\u0632 \u0627\u0644\u062a\u064a \u062a\u0631\u064a\u062f \u062a\u0639\u062f\u064a\u0646\u0647\u0627.",
       "select_linked": "Select Linked",
       "password_header": "Login & Password",
       "password_current_label": "Current Password",
@@ -165,13 +165,13 @@
       "password_saved": "Password saved.",
       "password_disabled_msg": "Login disabled.",
       "password_mismatch": "Passwords don't match.",
-      "password_status_active": "🔒 Login active — Password set",
-      "password_status_inactive": "🔓 No login — publicly accessible",
+      "password_status_active": "\ud83d\udd12 Login active \u2014 Password set",
+      "password_status_inactive": "\ud83d\udd13 No login \u2014 publicly accessible",
       "discord_bot": {
         "header": "Discord Bot",
         "description": "Pair a Discord bot to control TwitchDropsMiner via chat commands.",
         "not_connected": "Not connected",
-        "connected": "✅ Connected",
+        "connected": "\u2705 Connected",
         "generate_code": "Generate code",
         "generating": "Generating...",
         "disconnect": "Disconnect",
@@ -213,63 +213,66 @@
       "bot_notification_channels": "Notification Channels",
       "bot_setchannel_hint": "Use /setchannel in Discord to set channels.",
       "add_account": "+ Add Account",
-      "account_label_placeholder": "Label (e.g. Main, Alt)"
+      "account_label_placeholder": "Label (e.g. Main, Alt)",
+      "bet_percentage_gap_label": "Bet Gap % (SMART)",
+      "blacklist_ids_header": "Blacklisted Drop IDs",
+      "blacklist_ids_help": "Specific drops excluded by exact ID \u2014 added via the \ud83d\udeab button next to an active drop, or manually below. Unlike the keyword blacklist above, this matches one exact drop; other drops for the same game keep mining."
     },
     "help": {
-      "about": "حول Twitch Drops Miner",
-      "about_text": "يقوم هذا التطبيق تلقائيًا بتعدين إسقاطات Twitch الموقوتة دون تنزيل بيانات البث.",
-      "how_to_use": "كيفية الاستخدام",
-      "features": "الميزات",
-      "important_notes": "ملاحظات مهمة",
-      "github_repo": "مستودع GitHub",
+      "about": "\u062d\u0648\u0644 Twitch Drops Miner",
+      "about_text": "\u064a\u0642\u0648\u0645 \u0647\u0630\u0627 \u0627\u0644\u062a\u0637\u0628\u064a\u0642 \u062a\u0644\u0642\u0627\u0626\u064a\u064b\u0627 \u0628\u062a\u0639\u062f\u064a\u0646 \u0625\u0633\u0642\u0627\u0637\u0627\u062a Twitch \u0627\u0644\u0645\u0648\u0642\u0648\u062a\u0629 \u062f\u0648\u0646 \u062a\u0646\u0632\u064a\u0644 \u0628\u064a\u0627\u0646\u0627\u062a \u0627\u0644\u0628\u062b.",
+      "how_to_use": "\u0643\u064a\u0641\u064a\u0629 \u0627\u0644\u0627\u0633\u062a\u062e\u062f\u0627\u0645",
+      "features": "\u0627\u0644\u0645\u064a\u0632\u0627\u062a",
+      "important_notes": "\u0645\u0644\u0627\u062d\u0638\u0627\u062a \u0645\u0647\u0645\u0629",
+      "github_repo": "\u0645\u0633\u062a\u0648\u062f\u0639 GitHub",
       "how_to_use_items": [
-        "قم بتسجيل الدخول باستخدام حساب Twitch الخاص بك (تدفق رمز جهاز OAuth)",
-        "اربط حساباتك في <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
-        "سيكتشف المُعدِّن الحملات تلقائيًا ويبدأ التعدين",
-        "قم بتكوين الألعاب ذات الأولوية في الإعدادات للتركيز على ما تريد",
-        "راقب التقدم في علامات التبويب الرئيسية والمخزون"
+        "\u0642\u0645 \u0628\u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u0628\u0627\u0633\u062a\u062e\u062f\u0627\u0645 \u062d\u0633\u0627\u0628 Twitch \u0627\u0644\u062e\u0627\u0635 \u0628\u0643 (\u062a\u062f\u0641\u0642 \u0631\u0645\u0632 \u062c\u0647\u0627\u0632 OAuth)",
+        "\u0627\u0631\u0628\u0637 \u062d\u0633\u0627\u0628\u0627\u062a\u0643 \u0641\u064a <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a>",
+        "\u0633\u064a\u0643\u062a\u0634\u0641 \u0627\u0644\u0645\u064f\u0639\u062f\u0650\u0651\u0646 \u0627\u0644\u062d\u0645\u0644\u0627\u062a \u062a\u0644\u0642\u0627\u0626\u064a\u064b\u0627 \u0648\u064a\u0628\u062f\u0623 \u0627\u0644\u062a\u0639\u062f\u064a\u0646",
+        "\u0642\u0645 \u0628\u062a\u0643\u0648\u064a\u0646 \u0627\u0644\u0623\u0644\u0639\u0627\u0628 \u0630\u0627\u062a \u0627\u0644\u0623\u0648\u0644\u0648\u064a\u0629 \u0641\u064a \u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a \u0644\u0644\u062a\u0631\u0643\u064a\u0632 \u0639\u0644\u0649 \u0645\u0627 \u062a\u0631\u064a\u062f",
+        "\u0631\u0627\u0642\u0628 \u0627\u0644\u062a\u0642\u062f\u0645 \u0641\u064a \u0639\u0644\u0627\u0645\u0627\u062a \u0627\u0644\u062a\u0628\u0648\u064a\u0628 \u0627\u0644\u0631\u0626\u064a\u0633\u064a\u0629 \u0648\u0627\u0644\u0645\u062e\u0632\u0648\u0646"
       ],
       "features_items": [
-        "تعدين الإسقاطات بدون بث - يوفر النطاق الترددي",
-        "قوائم أولوية واستثناء الألعاب",
-        "يتتبع ما يصل إلى 199 قناة في وقت واحد",
-        "تبديل القناة التلقائي",
-        "تتبع التقدم في الوقت الفعلي"
+        "\u062a\u0639\u062f\u064a\u0646 \u0627\u0644\u0625\u0633\u0642\u0627\u0637\u0627\u062a \u0628\u062f\u0648\u0646 \u0628\u062b - \u064a\u0648\u0641\u0631 \u0627\u0644\u0646\u0637\u0627\u0642 \u0627\u0644\u062a\u0631\u062f\u062f\u064a",
+        "\u0642\u0648\u0627\u0626\u0645 \u0623\u0648\u0644\u0648\u064a\u0629 \u0648\u0627\u0633\u062a\u062b\u0646\u0627\u0621 \u0627\u0644\u0623\u0644\u0639\u0627\u0628",
+        "\u064a\u062a\u062a\u0628\u0639 \u0645\u0627 \u064a\u0635\u0644 \u0625\u0644\u0649 199 \u0642\u0646\u0627\u0629 \u0641\u064a \u0648\u0642\u062a \u0648\u0627\u062d\u062f",
+        "\u062a\u0628\u062f\u064a\u0644 \u0627\u0644\u0642\u0646\u0627\u0629 \u0627\u0644\u062a\u0644\u0642\u0627\u0626\u064a",
+        "\u062a\u062a\u0628\u0639 \u0627\u0644\u062a\u0642\u062f\u0645 \u0641\u064a \u0627\u0644\u0648\u0642\u062a \u0627\u0644\u0641\u0639\u0644\u064a"
       ],
       "important_notes_items": [
-        "لا تشاهد البث على نفس الحساب أثناء التعدين",
-        "حافظ على أمان ملف cookies.jar الخاص بك",
-        "يتطلب حسابات ألعاب مرتبطة للإسقاطات"
+        "\u0644\u0627 \u062a\u0634\u0627\u0647\u062f \u0627\u0644\u0628\u062b \u0639\u0644\u0649 \u0646\u0641\u0633 \u0627\u0644\u062d\u0633\u0627\u0628 \u0623\u062b\u0646\u0627\u0621 \u0627\u0644\u062a\u0639\u062f\u064a\u0646",
+        "\u062d\u0627\u0641\u0638 \u0639\u0644\u0649 \u0623\u0645\u0627\u0646 \u0645\u0644\u0641 cookies.jar \u0627\u0644\u062e\u0627\u0635 \u0628\u0643",
+        "\u064a\u062a\u0637\u0644\u0628 \u062d\u0633\u0627\u0628\u0627\u062a \u0623\u0644\u0639\u0627\u0628 \u0645\u0631\u062a\u0628\u0637\u0629 \u0644\u0644\u0625\u0633\u0642\u0627\u0637\u0627\u062a"
       ]
     },
     "header": {
       "title": "Twitch Drops Miner",
-      "language": "اللغة:",
-      "initializing": "جارٍ التهيئة...",
+      "language": "\u0627\u0644\u0644\u063a\u0629:",
+      "initializing": "\u062c\u0627\u0631\u064d \u0627\u0644\u062a\u0647\u064a\u0626\u0629...",
       "auto_mode": "AUTO",
-      "manual_mode": "يدوي",
-      "connected": "متصل",
-      "disconnected": "غير متصل"
+      "manual_mode": "\u064a\u062f\u0648\u064a",
+      "connected": "\u0645\u062a\u0635\u0644",
+      "disconnected": "\u063a\u064a\u0631 \u0645\u062a\u0635\u0644"
     },
     "footer": {
-      "version": "النسخة:",
-      "loading": "جاري التحميل...",
-      "update_available": "تحديث متوفر:"
+      "version": "\u0627\u0644\u0646\u0633\u062e\u0629:",
+      "loading": "\u062c\u0627\u0631\u064a \u0627\u0644\u062a\u062d\u0645\u064a\u0644...",
+      "update_available": "\u062a\u062d\u062f\u064a\u062b \u0645\u062a\u0648\u0641\u0631:"
     },
     "badges": {
       "manual": {
-        "title": "الوضع اليدوي نشط - مشاهدة لعبة محددة"
+        "title": "\u0627\u0644\u0648\u0636\u0639 \u0627\u0644\u064a\u062f\u0648\u064a \u0646\u0634\u0637 - \u0645\u0634\u0627\u0647\u062f\u0629 \u0644\u0639\u0628\u0629 \u0645\u062d\u062f\u062f\u0629"
       },
       "auto": {
-        "title": "الوضع التلقائي - اتباع أولوية الألعاب"
+        "title": "\u0627\u0644\u0648\u0636\u0639 \u0627\u0644\u062a\u0644\u0642\u0627\u0626\u064a - \u0627\u062a\u0628\u0627\u0639 \u0623\u0648\u0644\u0648\u064a\u0629 \u0627\u0644\u0623\u0644\u0639\u0627\u0628"
       },
       "proxy": {
-        "title": "اتصال البروكسي نشط"
+        "title": "\u0627\u062a\u0635\u0627\u0644 \u0627\u0644\u0628\u0631\u0648\u0643\u0633\u064a \u0646\u0634\u0637"
       }
     },
     "wanted": {
-      "name": "قائمة انتظار Drops المطلوبة",
-      "none": "لا توجد drops مطلوبة في قائمة الانتظار..."
+      "name": "\u0642\u0627\u0626\u0645\u0629 \u0627\u0646\u062a\u0638\u0627\u0631 Drops \u0627\u0644\u0645\u0637\u0644\u0648\u0628\u0629",
+      "none": "\u0644\u0627 \u062a\u0648\u062c\u062f drops \u0645\u0637\u0644\u0648\u0628\u0629 \u0641\u064a \u0642\u0627\u0626\u0645\u0629 \u0627\u0644\u0627\u0646\u062a\u0638\u0627\u0631..."
     },
     "system": {
       "header": "System",
@@ -284,7 +287,7 @@
       "logout_btn": "Logout",
       "reload_ok": "Campaigns reload triggered.",
       "restart_confirm": "Restart the miner? PM2 will restart it automatically.",
-      "restart_ok": "Miner stopping — will restart via PM2 in a few seconds.",
+      "restart_ok": "Miner stopping \u2014 will restart via PM2 in a few seconds.",
       "accounts_header": "Accounts"
     },
     "analytics": {
@@ -295,10 +298,11 @@
       "claims_by_game": "Claims by Game",
       "claims_activity": "Claims Activity",
       "channel_points": "Channel Points",
-      "refresh": "↻ Refresh",
+      "refresh": "\u21bb Refresh",
       "no_channel_points": "No channel points data yet. Points are recorded while watching channels.",
       "drop_history": "Drop History",
-      "no_history": "No drops claimed yet."
+      "no_history": "No drops claimed yet.",
+      "unknown_result_tooltip": "Result unknown \u2014 the app didn't see this prediction resolve (bot restart, disconnect, or channel went offline before it concluded)."
     }
   }
 }
