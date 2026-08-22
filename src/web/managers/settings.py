@@ -142,6 +142,9 @@ class SettingsManager:
             "drop_name_blacklist", settings_data.get("drop_name_blacklist")
         )
         self.check_and_update_setting(
+            "blacklisted_drop_ids", settings_data.get("blacklisted_drop_ids")
+        )
+        self.check_and_update_setting(
             "auto_prioritize", settings_data.get("auto_prioritize")
         )
         self.check_and_update_setting(

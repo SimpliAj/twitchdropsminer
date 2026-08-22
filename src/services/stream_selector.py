@@ -26,6 +26,9 @@ class StreamSelector:
         preferred_games = getattr(settings, "preferred_games", [])
         mining_benefits = settings.mining_benefits
         blacklist = [kw.lower() for kw in getattr(settings, "drop_name_blacklist", []) if kw.strip()]
+        blacklisted_ids = {
+            drop_id for drop_id in getattr(settings, "blacklisted_drop_ids", []) if drop_id
+        }
         next_hour = datetime.now(timezone.utc) + timedelta(hours=1)
 
         # Build games_to_watch first (preserving user order), then append preferred games
@@ -76,6 +79,8 @@ class StreamSelector:
                     if not drop._base_can_earn():
                         continue
                     if blacklist and any(kw in drop.name.lower() for kw in blacklist):
+                        continue
+                    if blacklisted_ids and drop.id in blacklisted_ids:
                         continue
 
                     filtered_benefits = [
