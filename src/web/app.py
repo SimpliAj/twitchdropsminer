@@ -518,6 +518,7 @@ class SettingsUpdate(BaseModel):
     discord_webhook_points: str | None = None
     discord_webhook_mentions: str | None = None
     drop_name_blacklist: list[str] | None = None
+    blacklisted_drop_ids: list[str] | None = None
     auto_prioritize: bool | None = None
     auto_add_linked: bool | None = None
     auto_add_excluded_games: list[str] | None = None
