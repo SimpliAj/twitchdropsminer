@@ -1,157 +1,157 @@
 {
-  "language_name": "\u7e41\u9ad4\u4e2d\u6587",
+  "language_name": "繁體中文",
   "english_name": "Traditional Chinese",
   "status": {
-    "terminated": "\n\u61c9\u7528\u7a0b\u5f0f\u5df2\u7d42\u6b62\uff0c\u8acb\u95dc\u9589\u8996\u7a97\u4ee5\u96e2\u958b\u61c9\u7528\u7a0b\u5f0f\u3002",
-    "watching": "\u6b63\u5728\u89c0\u770b\uff1a{channel}",
-    "goes_online": "{channel} \u983b\u9053\u5df2\u958b\u59cb\u5be6\u6cc1\uff0c\u6b63\u5728\u8df3\u8f49\u2026",
-    "goes_offline": "{channel} \u983b\u9053\u5df2\u7d50\u675f\u5be6\u6cc1\uff0c\u6b63\u5728\u8df3\u8f49\u2026",
-    "claimed_drop": "\u5df2\u9818\u53d6\u6389\u5bf6\uff1a{drop}",
-    "no_channel": "\u6c92\u6709\u53ef\u89c0\u770b\u7684\u983b\u9053\uff0c\u6b63\u5728\u7b49\u5f85\u4e00\u500b\u6b63\u5728\u5be6\u6cc1\u7684\u983b\u9053\u2026",
-    "no_campaign": "\u6c92\u6709\u53ef\u7528\u65bc\u6389\u5bf6\u7684\u6d3b\u52d5\uff0c\u6b63\u5728\u7b49\u5f85\u4e00\u500b\u6709\u6548\u7684\u6389\u5bf6\u6d3b\u52d5\u2026"
+    "terminated": "\n應用程式已終止，請關閉視窗以離開應用程式。",
+    "watching": "正在觀看：{channel}",
+    "goes_online": "{channel} 頻道已開始實況，正在跳轉…",
+    "goes_offline": "{channel} 頻道已結束實況，正在跳轉…",
+    "claimed_drop": "已領取掉寶：{drop}",
+    "no_channel": "沒有可觀看的頻道，正在等待一個正在實況的頻道…",
+    "no_campaign": "沒有可用於掉寶的活動，正在等待一個有效的掉寶活動…"
   },
   "login": {
-    "unexpected_content": "\u56de\u50b3\u7684\u5167\u5bb9\u985e\u578b\u6709\u8aa4\uff0c\u901a\u5e38\u662f\u7531\u65bc\u88ab\u91cd\u65b0\u5c0e\u5411\u5c0e\u81f4\u3002\u60a8\u9700\u8981\u8a2d\u7f6e VPN \u6216\u8005\u78ba\u8a8d\u767b\u5165\u9801\u9762\u624d\u80fd\u4e0a\u7db2\u55ce\uff1f",
-    "error_code": "\u767b\u5165\u932f\u8aa4\u4ee3\u78bc\uff1a{error_code}",
-    "incorrect_login_pass": "\u4f7f\u7528\u8005\u540d\u7a31\u6216\u5bc6\u78bc\u932f\u8aa4\u3002",
-    "incorrect_email_code": "\u96fb\u5b50\u90f5\u4ef6\u9a57\u8b49\u78bc\u932f\u8aa4\u3002",
-    "incorrect_twofa_code": "2FA \u9a57\u8b49\u78bc\u4e0d\u6b63\u78ba\u3002",
-    "email_code_required": "\u9700\u8981\u96fb\u5b50\u90f5\u4ef6\u9a57\u8b49\u78bc\uff0c\u8acb\u67e5\u770b\u60a8\u7684\u96fb\u5b50\u90f5\u4ef6\u4fe1\u7bb1\u3002",
-    "twofa_code_required": "\u9700\u8981 2FA \u9a57\u8b49\u78bc\u3002",
+    "unexpected_content": "回傳的內容類型有誤，通常是由於被重新導向導致。您需要設置 VPN 或者確認登入頁面才能上網嗎？",
+    "error_code": "登入錯誤代碼：{error_code}",
+    "incorrect_login_pass": "使用者名稱或密碼錯誤。",
+    "incorrect_email_code": "電子郵件驗證碼錯誤。",
+    "incorrect_twofa_code": "2FA 驗證碼不正確。",
+    "email_code_required": "需要電子郵件驗證碼，請查看您的電子郵件信箱。",
+    "twofa_code_required": "需要 2FA 驗證碼。",
     "status": {
-      "logged_in": "\u5df2\u767b\u5165",
-      "logged_out": "\u672a\u767b\u5165",
-      "logging_in": "\u6b63\u5728\u767b\u5165\u2026",
-      "required": "\u9700\u8981\u767b\u5165",
-      "waiting_auth": "\u6b63\u5728\u7b49\u5f85\u8eab\u4efd\u9a57\u8b49..."
+      "logged_in": "已登入",
+      "logged_out": "未登入",
+      "logging_in": "正在登入…",
+      "required": "需要登入",
+      "waiting_auth": "正在等待身份驗證..."
     },
-    "oauth_prompt": "\u8acb\u5728\u6b64\u8655\u8f38\u5165\u6b64\u4ee3\u78bc\uff1a",
-    "oauth_activate": "\u555f\u7528 Twitch",
-    "oauth_confirm": "\u6211\u5df2\u8f38\u5165\u4ee3\u78bc"
+    "oauth_prompt": "請在此處輸入此代碼：",
+    "oauth_activate": "啟用 Twitch",
+    "oauth_confirm": "我已輸入代碼"
   },
   "error": {
-    "captcha": "\u60a8\u7684\u767b\u5165\u88ab CAPTCHA \u62d2\u7d55\uff0c\u8acb\u65bc12\u5c0f\u6642\u5f8c\u91cd\u8a66\u3002",
-    "site_down": "Twitch \u7db2\u9801\u76ee\u524d\u7121\u6cd5\u958b\u555f\uff0c\u5c07\u5728 {seconds} \u79d2\u5f8c\u91cd\u8a66\u2026",
-    "no_connection": "\u7121\u6cd5\u9023\u63a5\u5230 Twitch\uff0c\u5c07\u5728 {seconds} \u79d2\u5f8c\u91cd\u8a66\u2026"
+    "captcha": "您的登入被 CAPTCHA 拒絕，請於12小時後重試。",
+    "site_down": "Twitch 網頁目前無法開啟，將在 {seconds} 秒後重試…",
+    "no_connection": "無法連接到 Twitch，將在 {seconds} 秒後重試…"
   },
   "gui": {
-    "output": "\u8f38\u51fa\u65e5\u8a8c",
+    "output": "輸出日誌",
     "status": {
-      "name": "\u72c0\u614b",
-      "idle": "\u5df2\u5b8c\u6210\u7372\u53d6",
-      "exiting": "\u6b63\u5728\u9000\u51fa\u2026",
-      "terminated": "\u5df2\u7d42\u6b62\u904b\u884c",
-      "cleanup": "\u6b63\u5728\u6e05\u9664\u983b\u9053\u2026",
-      "gathering": "\u6b63\u5728\u641c\u7d22\u5be6\u6cc1\u983b\u9053\u2026",
-      "switching": "\u6b63\u5728\u5207\u63db\u5be6\u6cc1\u983b\u9053\u2026",
-      "fetching_inventory": "\u6b63\u5728\u7372\u53d6\u5eab\u5b58\u2026",
-      "fetching_campaigns": "\u6b63\u5728\u7372\u53d6\u6389\u5bf6\u6d3b\u52d5\u2026",
-      "adding_campaigns": "\u5c07\u6389\u5bf6\u6d3b\u52d5\u5217\u8868\u65b0\u589e\u81f3\u5eab\u5b58\u2026 {counter}"
+      "name": "狀態",
+      "idle": "已完成獲取",
+      "exiting": "正在退出…",
+      "terminated": "已終止運行",
+      "cleanup": "正在清除頻道…",
+      "gathering": "正在搜索實況頻道…",
+      "switching": "正在切換實況頻道…",
+      "fetching_inventory": "正在獲取庫存…",
+      "fetching_campaigns": "正在獲取掉寶活動…",
+      "adding_campaigns": "將掉寶活動列表新增至庫存… {counter}"
     },
     "tabs": {
-      "main": "\u4e3b\u8981",
-      "inventory": "\u5eab\u5b58",
-      "settings": "\u8a2d\u7f6e",
-      "help": "\u5e6b\u52a9",
+      "main": "主要",
+      "inventory": "庫存",
+      "settings": "設置",
+      "help": "幫助",
       "system": "System",
       "stats": "Stats",
       "analytics": "Analytics"
     },
     "login": {
-      "name": "\u767b\u5165 Twitch",
-      "labels": "\u72c0\u614b\uff1a\n\u7528\u6236ID\uff1a",
-      "request": "\u8acb\u5148\u767b\u5165\u4ee5\u7e7c\u7e8c\u3002",
-      "username": "\u4f7f\u7528\u8005\u540d\u7a31",
-      "password": "\u5bc6\u78bc",
-      "twofa_code": "2FA \u9a57\u8b49\u78bc\uff08\u9078\u7528\uff09",
-      "button": "\u767b\u5165",
+      "name": "登入 Twitch",
+      "labels": "狀態：\n用戶ID：",
+      "request": "請先登入以繼續。",
+      "username": "使用者名稱",
+      "password": "密碼",
+      "twofa_code": "2FA 驗證碼（選用）",
+      "button": "登入",
       "oauth_prompt": "Enter this code at:",
       "oauth_activate": "Twitch Activate",
       "oauth_confirm": "I've entered the code"
     },
     "websocket": {
-      "name": "Websocket \u72c0\u614b",
+      "name": "Websocket 狀態",
       "websocket": "Websocket #{id}:",
-      "initializing": "\u6b63\u5728\u521d\u59cb\u5316\u2026",
-      "connected": "\u5df2\u9023\u63a5",
-      "disconnected": "\u4e2d\u65b7\u9023\u63a5",
-      "connecting": "\u6b63\u5728\u9023\u63a5\u2026",
-      "disconnecting": "\u6b63\u5728\u4e2d\u65b7\u9023\u63a5\u2026",
-      "reconnecting": "\u6b63\u5728\u91cd\u65b0\u9023\u63a5\u2026"
+      "initializing": "正在初始化…",
+      "connected": "已連接",
+      "disconnected": "中斷連接",
+      "connecting": "正在連接…",
+      "disconnecting": "正在中斷連接…",
+      "reconnecting": "正在重新連接…"
     },
     "progress": {
-      "name": "\u6389\u5bf6\u6d3b\u52d5\u9032\u5ea6",
-      "drop": "\u6389\u5bf6\u734e\u52f5\uff1a",
-      "game": "\u904a\u6232\uff1a",
-      "remaining": "\u5269\u9918\u6642\u9593\uff1a{time}",
-      "campaign": "\u6389\u5bf6\u6d3b\u52d5\u540d\u7a31\uff1a",
-      "drop_progress": "\u6389\u5bf6\u9032\u5ea6\uff1a",
-      "campaign_progress": "\u6d3b\u52d5\u9032\u5ea6\uff1a",
-      "no_drop": "\u6c92\u6709\u6d3b\u8e8d\u7684\u6389\u843d",
-      "return_to_auto": "\u8fd4\u56de\u81ea\u52d5\u6a21\u5f0f",
-      "manual_mode_info": "\u624b\u52d5\u6a21\u5f0f\uff1a\u6316\u7926\u4e2d"
+      "name": "掉寶活動進度",
+      "drop": "掉寶獎勵：",
+      "game": "遊戲：",
+      "remaining": "剩餘時間：{time}",
+      "campaign": "掉寶活動名稱：",
+      "drop_progress": "掉寶進度：",
+      "campaign_progress": "活動進度：",
+      "no_drop": "沒有活躍的掉落",
+      "return_to_auto": "返回自動模式",
+      "manual_mode_info": "手動模式：挖礦中"
     },
     "channels": {
-      "name": "\u6d3b\u52d5\u983b\u9053",
-      "online": "\u4e0a\u7dda \u2714",
-      "pending": "\u96e2\u7dda \u23f3",
-      "offline": "\u96e2\u7dda \u274c",
-      "no_channels": "\u5c1a\u672a\u8ffd\u8e64\u4efb\u4f55\u983b\u9053...",
-      "no_channels_for_games": "\u627e\u4e0d\u5230\u6240\u9078\u904a\u6232\u7684\u983b\u9053...",
-      "channel_count": "\u983b\u9053",
-      "channel_count_plural": "\u983b\u9053",
-      "viewers": "\u89c0\u773e"
+      "name": "活動頻道",
+      "online": "上線 ✔",
+      "pending": "離線 ⏳",
+      "offline": "離線 ❌",
+      "no_channels": "尚未追蹤任何頻道...",
+      "no_channels_for_games": "找不到所選遊戲的頻道...",
+      "channel_count": "頻道",
+      "channel_count_plural": "頻道",
+      "viewers": "觀眾"
     },
     "inventory": {
       "status": {
-        "active": "\u5df2\u4e0a\u7dda \u2714",
-        "upcoming": "\u5373\u5c07\u958b\u59cb \u23f3",
-        "expired": "\u5df2\u7d50\u675f \u274c",
-        "claimed": "\u5df2\u9818\u53d6 \u2714"
+        "active": "已上線 ✔",
+        "upcoming": "即將開始 ⏳",
+        "expired": "已結束 ❌",
+        "claimed": "已領取 ✔"
       },
-      "starts": "\u958b\u59cb\u6642\u9593\uff1a{time}",
-      "ends": "\u7d50\u675f\u6642\u9593\uff1a{time}",
-      "no_campaigns": "\u5c1a\u672a\u8f09\u5165\u4efb\u4f55\u6d3b\u52d5...",
-      "claimed_drops": "\u5df2\u9818\u53d6",
+      "starts": "開始時間：{time}",
+      "ends": "結束時間：{time}",
+      "no_campaigns": "尚未載入任何活動...",
+      "claimed_drops": "已領取",
       "filters": {
-        "active": "\u6d3b\u52d5\u4e2d",
-        "not_linked": "\u672a\u9023\u7d50",
-        "upcoming": "\u5373\u5c07\u958b\u59cb",
-        "expired": "\u5df2\u904e\u671f",
-        "finished": "\u5df2\u5b8c\u6210",
-        "item": "\u7269\u54c1",
-        "badge": "\u5fbd\u7ae0",
-        "emote": "\u8868\u60c5",
-        "other": "\u5176\u4ed6",
-        "clear": "\u6e05\u9664\u904e\u6ffe\u5668",
-        "search_placeholder": "\u641c\u5c0b\u904a\u6232..."
+        "active": "活動中",
+        "not_linked": "未連結",
+        "upcoming": "即將開始",
+        "expired": "已過期",
+        "finished": "已完成",
+        "item": "物品",
+        "badge": "徽章",
+        "emote": "表情",
+        "other": "其他",
+        "clear": "清除過濾器",
+        "search_placeholder": "搜尋遊戲..."
       },
       "filter_linked": "Linked"
     },
     "settings": {
       "general": {
-        "name": "\u4e00\u822c",
-        "dark_mode": "\u6df1\u8272\u6a21\u5f0f"
+        "name": "一般",
+        "dark_mode": "深色模式"
       },
-      "reload": "\u91cd\u65b0\u8f09\u5165",
-      "games_to_watch": "\u89c0\u770b\u904a\u6232",
-      "games_help": "\u9078\u64c7\u8981\u89c0\u770b\u7684\u904a\u6232\u3002\u9806\u5e8f\u5f88\u91cd\u8981 - \u62d6\u66f3\u4ee5\u91cd\u65b0\u6392\u5e8f\u512a\u5148\u7d1a\uff08\u9802\u90e8 = \u6700\u9ad8\u512a\u5148\u7d1a\uff09\u3002",
-      "search_games": "\u641c\u5c0b\u904a\u6232...",
+      "reload": "重新載入",
+      "games_to_watch": "觀看遊戲",
+      "games_help": "選擇要觀看的遊戲。順序很重要 - 拖曳以重新排序優先級（頂部 = 最高優先級）。",
+      "search_games": "搜尋遊戲...",
       "add_game": "Add Game",
       "add_game_hint": " Click \"Add Game\" to add it manually.",
-      "select_all": "\u5168\u9078",
-      "deselect_all": "\u53d6\u6d88\u5168\u9078",
-      "selected_games": "\u5df2\u9078\u904a\u6232\uff08\u62d6\u66f3\u4ee5\u91cd\u65b0\u6392\u5e8f\uff09",
-      "available_games": "\u53ef\u7528\u904a\u6232",
-      "no_games_selected": "\u672a\u9078\u64c7\u904a\u6232\u3002\u52fe\u9078\u4e0b\u65b9\u904a\u6232\u4ee5\u65b0\u589e\u3002",
-      "no_games_match": "\u6c92\u6709\u904a\u6232\u7b26\u5408\u60a8\u7684\u641c\u5c0b\u3002",
-      "all_games_selected": "\u6240\u6709\u904a\u6232\u90fd\u5df2\u9078\u64c7\u6216\u6c92\u6709\u53ef\u7528\u904a\u6232\u3002",
-      "actions": "\u64cd\u4f5c",
-      "connection_quality": "\u9023\u7dda\u54c1\u8cea\uff1a",
-      "minimum_refresh": "\u6700\u5c0f\u91cd\u65b0\u6574\u7406\u9593\u9694\uff08\u5206\u9418\uff09\uff1a",
-      "reload_campaigns": "\u91cd\u65b0\u8f09\u5165\u6d3b\u52d5",
-      "mining_benefits": "\u6316\u6398\u734e\u52f5",
-      "mining_benefits_help": "\u9078\u64c7\u60a8\u60f3\u8981\u7372\u53d6\u7684\u6389\u843d\u985e\u578b\u3002",
+      "select_all": "全選",
+      "deselect_all": "取消全選",
+      "selected_games": "已選遊戲（拖曳以重新排序）",
+      "available_games": "可用遊戲",
+      "no_games_selected": "未選擇遊戲。勾選下方遊戲以新增。",
+      "no_games_match": "沒有遊戲符合您的搜尋。",
+      "all_games_selected": "所有遊戲都已選擇或沒有可用遊戲。",
+      "actions": "操作",
+      "connection_quality": "連線品質：",
+      "minimum_refresh": "最小重新整理間隔（分鐘）：",
+      "reload_campaigns": "重新載入活動",
+      "mining_benefits": "挖掘獎勵",
+      "mining_benefits_help": "選擇您想要獲取的掉落類型。",
       "select_linked": "Select Linked",
       "password_header": "Login & Password",
       "password_current_label": "Current Password",
@@ -165,13 +165,13 @@
       "password_saved": "Password saved.",
       "password_disabled_msg": "Login disabled.",
       "password_mismatch": "Passwords don't match.",
-      "password_status_active": "\ud83d\udd12 Login active \u2014 Password set",
-      "password_status_inactive": "\ud83d\udd13 No login \u2014 publicly accessible",
+      "password_status_active": "🔒 Login active — Password set",
+      "password_status_inactive": "🔓 No login — publicly accessible",
       "discord_bot": {
         "header": "Discord Bot",
         "description": "Pair a Discord bot to control TwitchDropsMiner via chat commands.",
         "not_connected": "Not connected",
-        "connected": "\u2705 Connected",
+        "connected": "✅ Connected",
         "generate_code": "Generate code",
         "generating": "Generating...",
         "disconnect": "Disconnect",
@@ -216,63 +216,63 @@
       "account_label_placeholder": "Label (e.g. Main, Alt)",
       "bet_percentage_gap_label": "Bet Gap % (SMART)",
       "blacklist_ids_header": "Blacklisted Drop IDs",
-      "blacklist_ids_help": "Specific drops excluded by exact ID \u2014 added via the \ud83d\udeab button next to an active drop, or manually below. Unlike the keyword blacklist above, this matches one exact drop; other drops for the same game keep mining."
+      "blacklist_ids_help": "Specific drops excluded by exact ID — added via the 🚫 button next to an active drop, or manually below. Unlike the keyword blacklist above, this matches one exact drop; other drops for the same game keep mining."
     },
     "help": {
-      "about": "\u95dc\u65bc Twitch Drops Miner",
-      "about_text": "\u6b64\u61c9\u7528\u7a0b\u5f0f\u6703\u81ea\u52d5\u6316\u6398\u5b9a\u6642\u7684 Twitch \u6389\u843d\uff0c\u800c\u7121\u9700\u4e0b\u8f09\u4e32\u6d41\u8cc7\u6599\u3002",
-      "how_to_use": "\u4f7f\u7528\u65b9\u6cd5",
-      "features": "\u529f\u80fd",
-      "important_notes": "\u91cd\u8981\u6ce8\u610f\u4e8b\u9805",
-      "github_repo": "GitHub \u5132\u5b58\u5eab",
+      "about": "關於 Twitch Drops Miner",
+      "about_text": "此應用程式會自動挖掘定時的 Twitch 掉落，而無需下載串流資料。",
+      "how_to_use": "使用方法",
+      "features": "功能",
+      "important_notes": "重要注意事項",
+      "github_repo": "GitHub 儲存庫",
       "how_to_use_items": [
-        "\u4f7f\u7528\u60a8\u7684 Twitch \u5e33\u6236\u767b\u5165\uff08OAuth \u88dd\u7f6e\u4ee3\u78bc\u6d41\u7a0b\uff09",
-        "\u5728 <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a> \u9023\u7d50\u60a8\u7684\u5e33\u6236",
-        "\u6316\u7926\u5668\u5c07\u81ea\u52d5\u767c\u73fe\u6d3b\u52d5\u4e26\u958b\u59cb\u6316\u7926",
-        "\u5728\u8a2d\u5b9a\u4e2d\u914d\u7f6e\u512a\u5148\u904a\u6232\u4ee5\u5c08\u6ce8\u65bc\u60a8\u60f3\u8981\u7684\u5167\u5bb9",
-        "\u5728\u4e3b\u8981\u548c\u5eab\u5b58\u9801\u7c64\u4e2d\u76e3\u63a7\u9032\u5ea6"
+        "使用您的 Twitch 帳戶登入（OAuth 裝置代碼流程）",
+        "在 <a href=\"https://www.twitch.tv/drops/campaigns\" target=\"_blank\">twitch.tv/drops/campaigns</a> 連結您的帳戶",
+        "挖礦器將自動發現活動並開始挖礦",
+        "在設定中配置優先遊戲以專注於您想要的內容",
+        "在主要和庫存頁籤中監控進度"
       ],
       "features_items": [
-        "\u7121\u4e32\u6d41\u6389\u843d\u6316\u7926 - \u7bc0\u7701\u983b\u5bec",
-        "\u904a\u6232\u512a\u5148\u7d1a\u548c\u6392\u9664\u6e05\u55ae",
-        "\u540c\u6642\u8ffd\u8e64\u6700\u591a 199 \u500b\u983b\u9053",
-        "\u81ea\u52d5\u983b\u9053\u5207\u63db",
-        "\u5373\u6642\u9032\u5ea6\u8ffd\u8e64"
+        "無串流掉落挖礦 - 節省頻寬",
+        "遊戲優先級和排除清單",
+        "同時追蹤最多 199 個頻道",
+        "自動頻道切換",
+        "即時進度追蹤"
       ],
       "important_notes_items": [
-        "\u6316\u7926\u6642\u8acb\u52ff\u5728\u540c\u4e00\u5e33\u6236\u4e0a\u89c0\u770b\u4e32\u6d41",
-        "\u4fdd\u6301\u60a8\u7684 cookies.jar \u6a94\u6848\u5b89\u5168",
-        "\u9700\u8981\u9023\u7d50\u7684\u904a\u6232\u5e33\u6236\u624d\u80fd\u7372\u5f97\u6389\u843d"
+        "挖礦時請勿在同一帳戶上觀看串流",
+        "保持您的 cookies.jar 檔案安全",
+        "需要連結的遊戲帳戶才能獲得掉落"
       ]
     },
     "header": {
       "title": "Twitch Drops Miner",
-      "language": "\u8a9e\u8a00\uff1a",
-      "initializing": "\u6b63\u5728\u521d\u59cb\u5316...",
+      "language": "語言：",
+      "initializing": "正在初始化...",
       "auto_mode": "AUTO",
-      "manual_mode": "\u624b\u52d5",
-      "connected": "\u5df2\u9023\u63a5",
-      "disconnected": "\u5df2\u4e2d\u65b7\u9023\u63a5"
+      "manual_mode": "手動",
+      "connected": "已連接",
+      "disconnected": "已中斷連接"
     },
     "footer": {
-      "version": "\u7248\u672c:",
-      "loading": "\u8f09\u5165\u4e2d...",
-      "update_available": "\u53ef\u7528\u66f4\u65b0:"
+      "version": "版本:",
+      "loading": "載入中...",
+      "update_available": "可用更新:"
     },
     "badges": {
       "manual": {
-        "title": "\u624b\u52d5\u6a21\u5f0f\u5df2\u555f\u7528 - \u6b63\u5728\u89c0\u770b\u7279\u5b9a\u904a\u6232"
+        "title": "手動模式已啟用 - 正在觀看特定遊戲"
       },
       "auto": {
-        "title": "\u81ea\u52d5\u6a21\u5f0f - \u9075\u5faa\u904a\u6232\u512a\u5148\u7d1a"
+        "title": "自動模式 - 遵循遊戲優先級"
       },
       "proxy": {
-        "title": "\u4ee3\u7406\u9023\u63a5\u5df2\u555f\u7528"
+        "title": "代理連接已啟用"
       }
     },
     "wanted": {
-      "name": "\u671f\u671b\u6389\u843d\u968a\u5217",
-      "none": "\u968a\u5217\u4e2d\u6c92\u6709\u671f\u671b\u7684\u6389\u843d..."
+      "name": "期望掉落隊列",
+      "none": "隊列中沒有期望的掉落..."
     },
     "system": {
       "header": "System",
@@ -287,7 +287,7 @@
       "logout_btn": "Logout",
       "reload_ok": "Campaigns reload triggered.",
       "restart_confirm": "Restart the miner? PM2 will restart it automatically.",
-      "restart_ok": "Miner stopping \u2014 will restart via PM2 in a few seconds.",
+      "restart_ok": "Miner stopping — will restart via PM2 in a few seconds.",
       "accounts_header": "Accounts"
     },
     "analytics": {
@@ -298,11 +298,11 @@
       "claims_by_game": "Claims by Game",
       "claims_activity": "Claims Activity",
       "channel_points": "Channel Points",
-      "refresh": "\u21bb Refresh",
+      "refresh": "↻ Refresh",
       "no_channel_points": "No channel points data yet. Points are recorded while watching channels.",
       "drop_history": "Drop History",
       "no_history": "No drops claimed yet.",
-      "unknown_result_tooltip": "Result unknown \u2014 the app didn't see this prediction resolve (bot restart, disconnect, or channel went offline before it concluded)."
+      "unknown_result_tooltip": "Result unknown — the app didn't see this prediction resolve (bot restart, disconnect, or channel went offline before it concluded)."
     }
   }
 }
