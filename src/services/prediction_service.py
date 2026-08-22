@@ -92,9 +92,11 @@ class PredictionService:
             "bet_delay_seconds": overrides.get("bet_delay_seconds", s.bet_delay_seconds),
         }
 
-    def _choose_outcome(self, outcomes: list[dict], cfg: dict) -> dict | None:
+    def _choose_outcome(
+        self, outcomes: list[dict], cfg: dict, channel_name: str = ""
+    ) -> tuple[dict | None, dict | None]:
         if len(outcomes) < 2:
-            return None
+            return None, None
         strategy = cfg["bet_strategy"].upper()
 
         def total_points(o): return o.get("total_points", 0) or 1
@@ -102,20 +104,34 @@ class PredictionService:
         def odds(o): return (sum(x["total_points"] for x in outcomes) / total_points(o))
 
         if strategy == "MOST_VOTED":
-            return max(outcomes, key=lambda o: total_users(o))
+            return max(outcomes, key=lambda o: total_users(o)), None
         elif strategy == "HIGH_ODDS":
-            return max(outcomes, key=lambda o: odds(o))
+            return max(outcomes, key=lambda o: odds(o)), None
         elif strategy == "PERCENTAGE":
-            return max(outcomes, key=lambda o: total_points(o))
+            return max(outcomes, key=lambda o: total_points(o)), None
         else:  # SMART
             sorted_by_users = sorted(outcomes, key=lambda o: total_users(o), reverse=True)
             top, second = sorted_by_users[0], sorted_by_users[1]
-            top_pct = top_users_pct = total_users(top) / sum(total_users(o) for o in outcomes) * 100
+            top_pct = total_users(top) / sum(total_users(o) for o in outcomes) * 100
             second_pct = total_users(second) / sum(total_users(o) for o in outcomes) * 100
             gap = abs(top_pct - second_pct)
-            if gap < cfg["bet_percentage_gap"]:
-                return None  # too close, skip
-            return top
+            threshold = cfg["bet_percentage_gap"]
+            diag = {
+                "top_pct": round(top_pct, 1),
+                "second_pct": round(second_pct, 1),
+                "gap": round(gap, 1),
+            }
+            if gap < threshold:
+                logger.info(
+                    f"Prediction on {channel_name}: top={top_pct:.1f}% second={second_pct:.1f}% "
+                    f"gap={gap:.1f}% (threshold {threshold}%) -> SKIPPED, gap too small"
+                )
+                return None, diag  # too close, skip
+            logger.info(
+                f"Prediction on {channel_name}: top={top_pct:.1f}% second={second_pct:.1f}% "
+                f"gap={gap:.1f}% (threshold {threshold}%) -> BET on '{top.get('title', '')}'"
+            )
+            return top, diag
 
     def _calc_amount(self, balance: int, cfg: dict) -> int:
         amount = int(balance * cfg["bet_percentage"] / 100)
@@ -250,7 +266,7 @@ class PredictionService:
                 )
                 return
             outcomes = event.get("outcomes", [])
-            chosen = self._choose_outcome(outcomes, cfg)
+            chosen, smart_diag = self._choose_outcome(outcomes, cfg, channel_name=channel.name)
             if not chosen:
                 logger.info(f"Prediction {event_id}: no suitable outcome, skipping")
                 return
@@ -283,7 +299,9 @@ class PredictionService:
                 )
                 logger.info(f"Bet {amount} pts on '{chosen.get('title')}' for prediction '{event.get('title')}' on {channel.name}")
                 # Record pending bet
-                self._save_pending_bet(event_id, channel.name, event, chosen, amount, cfg["bet_strategy"])
+                self._save_pending_bet(
+                    event_id, channel.name, event, chosen, amount, cfg["bet_strategy"], smart_diag
+                )
             except Exception as e:
                 logger.warning(f"MakePrediction GQL failed: {e}")
         finally:
@@ -303,7 +321,7 @@ class PredictionService:
             self._pending.pop(event_id, None)
             self._active_events.pop(event_id, None)
 
-    def _save_pending_bet(self, event_id, channel, event, outcome, amount, strategy):
+    def _save_pending_bet(self, event_id, channel, event, outcome, amount, strategy, smart_diag=None):
         from datetime import datetime, timezone
         p = _get_predictions_file()
         try:
@@ -322,6 +340,10 @@ class PredictionService:
             "result": "PENDING",
             "points_won": 0,
         }
+        if smart_diag:
+            entry["top_pct"] = smart_diag["top_pct"]
+            entry["second_pct"] = smart_diag["second_pct"]
+            entry["gap"] = smart_diag["gap"]
         hist.append(entry)
         if len(hist) > MAX_HISTORY:
             hist = hist[-MAX_HISTORY:]
