@@ -195,6 +195,9 @@ A dedicated Discord bot that pairs with your miner instance and sends rich, live
 - **Channel Points total** in Analytics — replaces "Last Claim" with total session points farmed across all accounts
 - **Twitch username** displayed in login form instead of raw user ID
 - **Drop Name Blacklist** — comma-separated keywords; drops whose name contains any keyword are skipped
+- **Blacklist by Drop ID** — one-click 🚫 button next to the currently-mining drop permanently excludes that *exact* drop (e.g. a stuck/broken quest) while other drops for the same game keep being mined; IDs can also be added/removed manually in Settings → Blacklisted Drop IDs
+- **Auto-Bet SMART strategy tuning** — `Bet Gap %` control in Settings → Predictions exposes the minimum vote-share gap between the top two outcomes required to place a SMART bet (skips closer predictions as too uncertain); every SMART evaluation is logged with the computed top/second percentages and gap
+- **Prediction result tooltip** — hovering an `UNKNOWN` result in Predictions History explains why: the app never saw that prediction resolve (bot restart, disconnect, or the channel went offline before it concluded)
 - **Inventory filter fixes** — correct AND/OR logic; both Linked/Not-Linked unchecked shows all campaigns
 - **Dark 7-tab layout**: Main, Inventory, Channel Points, History, Analytics, Settings, System, Help
 - **Drop History tab** — grouped by date, compact single-line rows with item thumbnail images
