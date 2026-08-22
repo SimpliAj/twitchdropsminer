@@ -91,9 +91,9 @@
     },
     "channels": {
       "name": "Channels",
-      "online": "ONLINE  \u2714",
-      "pending": "OFFLINE \u23f3",
-      "offline": "OFFLINE \u274c",
+      "online": "ONLINE  ✔",
+      "pending": "OFFLINE ⏳",
+      "offline": "OFFLINE ❌",
       "no_channels": "No channels tracked yet...",
       "no_channels_for_games": "No channels found for selected games...",
       "channel_count": "channel",
@@ -137,8 +137,8 @@
       "password_saved": "Password saved.",
       "password_disabled_msg": "Login disabled.",
       "password_mismatch": "Passwords don't match.",
-      "password_status_active": "\ud83d\udd12 Login active \u2014 Password set",
-      "password_status_inactive": "\ud83d\udd13 No login \u2014 publicly accessible",
+      "password_status_active": "🔒 Login active — Password set",
+      "password_status_inactive": "🔓 No login — publicly accessible",
       "channel_points_section": "Channel Points",
       "channel_points_auto_claim": "Auto-claim bonus channel points",
       "channel_points_auto_claim_help": "Automatically claims the bonus chest when it appears on watched channels.",
@@ -174,7 +174,7 @@
         "header": "Discord Bot",
         "description": "Pair a Discord bot to control TwitchDropsMiner via chat commands.",
         "not_connected": "Not connected",
-        "connected": "\u2705 Connected",
+        "connected": "✅ Connected",
         "generate_code": "Generate code",
         "generating": "Generating...",
         "disconnect": "Disconnect",
@@ -188,7 +188,7 @@
       "campaign_end_alerts_enabled": "Campaign End Alerts (24h warning)",
       "bet_percentage_gap_label": "Bet Gap % (SMART)",
       "blacklist_ids_header": "Blacklisted Drop IDs",
-      "blacklist_ids_help": "Specific drops excluded by exact ID \u2014 added via the \ud83d\udeab button next to an active drop, or manually below. Unlike the keyword blacklist above, this matches one exact drop; other drops for the same game keep mining."
+      "blacklist_ids_help": "Specific drops excluded by exact ID — added via the 🚫 button next to an active drop, or manually below. Unlike the keyword blacklist above, this matches one exact drop; other drops for the same game keep mining."
     },
     "help": {
       "about": "About Twitch Drops Miner",
@@ -249,10 +249,10 @@
     "inventory": {
       "no_campaigns": "No campaigns loaded yet...",
       "status": {
-        "active": "Active \u2714",
-        "upcoming": "Upcoming \u23f3",
-        "expired": "Expired \u274c",
-        "claimed": "Claimed \u2714"
+        "active": "Active ✔",
+        "upcoming": "Upcoming ⏳",
+        "expired": "Expired ❌",
+        "claimed": "Claimed ✔"
       },
       "starts": "Starts: {time}",
       "ends": "Ends: {time}",
@@ -286,7 +286,7 @@
       "logout_btn": "Logout",
       "reload_ok": "Campaigns reload triggered.",
       "restart_confirm": "Restart the miner? PM2 will restart it automatically.",
-      "restart_ok": "Miner stopping \u2014 will restart via PM2 in a few seconds."
+      "restart_ok": "Miner stopping — will restart via PM2 in a few seconds."
     },
     "analytics": {
       "stats_header": "Drop Statistics",
@@ -296,11 +296,11 @@
       "claims_by_game": "Claims by Game",
       "claims_activity": "Claims Activity",
       "channel_points": "Channel Points",
-      "refresh": "\u21bb Refresh",
+      "refresh": "↻ Refresh",
       "no_channel_points": "No channel points data yet. Points are recorded while watching channels.",
       "drop_history": "Drop History",
       "no_history": "No drops claimed yet.",
-      "unknown_result_tooltip": "Result unknown \u2014 the app didn't see this prediction resolve (bot restart, disconnect, or channel went offline before it concluded)."
+      "unknown_result_tooltip": "Result unknown — the app didn't see this prediction resolve (bot restart, disconnect, or channel went offline before it concluded)."
     }
   }
 }
