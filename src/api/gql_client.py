@@ -91,8 +91,17 @@ class GQLClient:
         """
         gql_logger.debug(f"GQL Request: {ops}")
         backoff = ExponentialBackoff(maximum=60)
-        # Flag to retry the request once for specific errors
-        single_retry: bool = True
+        # Budget of retries for "service error" / "PersistedQueryNotFound".
+        # These aren't retried indefinitely like service timeout/unavailable
+        # below, because they can also mean a permanently broken persisted
+        # query hash - retrying forever would just hang. But a single retry
+        # (the old behavior) wasn't enough: it was a single flag shared across
+        # the *entire* request() call, so a batched request (e.g. CampaignDetails
+        # for a chunk of campaigns) that hit "service error" twice - even for two
+        # different, unrelated campaigns - would burn the one retry on the first
+        # and raise fatally on the second, crashing the whole miner instead of
+        # just that campaign/chunk.
+        retryable_errors_left: int = 3
 
         for delay in backoff:
             async with self._qgl_limiter:
@@ -117,15 +126,16 @@ class GQLClient:
                 if "errors" in response_json:
                     for error_dict in response_json["errors"]:
                         if "message" in error_dict:
-                            if single_retry and error_dict["message"] in (
+                            if retryable_errors_left > 0 and error_dict["message"] in (
                                 "service error",
                                 "PersistedQueryNotFound",
                             ):
                                 logger.error(
                                     f"Retrying a {error_dict['message']} for "
-                                    f"{response_json['extensions']['operationName']}"
+                                    f"{response_json['extensions']['operationName']} "
+                                    f"({retryable_errors_left} retries left)"
                                 )
-                                single_retry = False
+                                retryable_errors_left -= 1
                                 if delay < 5:
                                     # Overwrite delay if too short
                                     delay = 5
