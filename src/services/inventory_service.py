@@ -181,6 +181,7 @@ class InventoryService:
         campaigns.sort(key=lambda c: c.eligible, reverse=True)
 
         self._twitch._drops.clear()
+        self._twitch._campaigns.clear()
         self._twitch.gui.inv.clear()
         self._twitch.inventory.clear()
         self._twitch._mnt_triggers.clear()
