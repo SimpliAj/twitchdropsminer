@@ -16,7 +16,7 @@ from dateutil.parser import isoparse
 
 from src.api import GQLClient
 from src.config import GQL_OPERATIONS
-from src.exceptions import ExitRequest
+from src.exceptions import ExitRequest, GQLException
 from src.i18n import _
 from src.models import DropsCampaign
 from src.utils import chunk
@@ -147,7 +147,17 @@ class InventoryService:
 
         try:
             for coro in asyncio.as_completed(fetch_campaigns_tasks):
-                chunk_campaigns_data = await coro
+                try:
+                    chunk_campaigns_data = await coro
+                except GQLException as exc:
+                    # A chunk's CampaignDetails query can keep failing even after
+                    # gql_client's own retries are exhausted (e.g. Twitch-side
+                    # "service error" that's specific to one campaign). Losing
+                    # detail for that one chunk of ~20 campaigns shouldn't take
+                    # down the entire inventory fetch (and thus the whole miner) -
+                    # log it and keep going with everything else that succeeded.
+                    logger.error(f"Failed to fetch campaign details for a chunk, skipping it: {exc}")
+                    continue
                 # merge the inventory and campaigns datas together
                 inventory_data = GQLClient.merge_data(inventory_data, chunk_campaigns_data)
         except Exception:
