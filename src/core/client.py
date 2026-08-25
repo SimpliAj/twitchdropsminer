@@ -156,6 +156,7 @@ class Twitch:
         if self._http_client is not None:
             await self._http_client.close()
         self._drops.clear()
+        self._campaigns.clear()
         self.channels.clear()
         self.inventory.clear()
         self._auth_state.clear()
