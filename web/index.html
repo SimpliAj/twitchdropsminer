@@ -512,6 +512,16 @@
                     </section>
 
                     <section class="settings-section">
+                        <h2 id="settings-blacklist-games-header">Blacklisted Games</h2>
+                        <p class="help-text" id="settings-blacklist-games-help">Games listed here are never auto-added to Games to Watch by "Auto-add linked games", even if Twitch links a drop campaign for them. Removing a game from Games to Watch already does this automatically — use this list to blacklist a game directly, without adding it first.</p>
+                        <div id="blacklisted-games-list" class="sortable-list"></div>
+                        <div style="display:flex;gap:8px;margin-top:8px;">
+                            <input type="text" id="blacklisted-game-input" class="settings-input" placeholder="Game name..." style="flex:1;">
+                            <button id="blacklisted-game-add-btn" class="secondary-btn">Add</button>
+                        </div>
+                    </section>
+
+                    <section class="settings-section">
                         <h2 id="settings-scheduler-header">Scheduler</h2>
                         <p class="help-text" id="settings-scheduler-help">Automatically pause and resume mining based on time of day.</p>
                         <label style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
