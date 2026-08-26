@@ -4,6 +4,25 @@ from src.config.settings import Settings
 from src.models.campaign import DropsCampaign
 from src.models.game import Game
 
+# Display order for the "Wanted Drop Queue" / Mining Benefits list: badge and
+# emote drops are usually the most sought-after, "other" (unknown type) next,
+# in-game items last. Games are grouped by the highest-priority benefit type
+# they still have wanted/unclaimed, then ordered within each group by the
+# existing games_to_watch/end-date order (see _get_wanted_game_tree).
+_BENEFIT_CATEGORY_ORDER = {"BADGE": 0, "EMOTE": 1, "UNKNOWN": 2, "DIRECT_ENTITLEMENT": 3}
+
+
+def _game_group_category_rank(wanted_campaigns: list[dict]) -> int:
+    """Lowest (best) benefit-category rank among a game group's wanted drops."""
+    best = len(_BENEFIT_CATEGORY_ORDER)
+    for campaign in wanted_campaigns:
+        for drop in campaign["drops"]:
+            for benefit in drop["benefits"]:
+                rank = _BENEFIT_CATEGORY_ORDER.get(benefit["type"], best)
+                if rank < best:
+                    best = rank
+    return best
+
 
 class StreamSelector:
     def _has_unclaimed_streak_today(self, channel_login: str) -> bool:
@@ -84,7 +103,7 @@ class StreamSelector:
                         continue
 
                     filtered_benefits = [
-                        {"name": b.name, "image_url": b.image_url}
+                        {"name": b.name, "image_url": b.image_url, "type": b.type.name}
                         for b in drop.benefits
                         if b.is_wanted(mining_benefits) and not drop.is_claimed
                     ]
@@ -119,6 +138,11 @@ class StreamSelector:
                     }
                 )
 
+        # Group by benefit category (badge, emote, other, item) first; within each
+        # category, keep the existing order (list.sort is stable), which is
+        # already either the manual games_to_watch order or the end-date order
+        # the frontend saved back into it (see sortGamesByEndDate in app.js).
+        wanted_games.sort(key=lambda g: _game_group_category_rank(g["campaigns"]))
         return wanted_games
 
     def get_wanted_game_tree(
