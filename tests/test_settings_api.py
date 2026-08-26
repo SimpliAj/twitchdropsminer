@@ -19,6 +19,11 @@ class TestSettingsAPI(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(model.inventory_list_view, update_data["inventory_list_view"])
         self.assertEqual(model.mining_benefits, update_data["mining_benefits"])
 
+    def test_settings_update_model_accepts_auto_add_excluded_games(self):
+        # Blacklisted Games UI (Settings) writes directly to this field.
+        model = SettingsUpdate(auto_add_excluded_games=["Game A", "Game B"])
+        self.assertEqual(model.auto_add_excluded_games, ["Game A", "Game B"])
+
     async def test_settings_manager_networking(self):
         # Mock dependencies
         mock_broadcaster = AsyncMock()
