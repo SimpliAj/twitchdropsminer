@@ -21,6 +21,7 @@ from .json_utils import (
     json_load,
     json_minify,
     json_save,
+    merge_case_variant_keys,
     merge_json,
 )
 
@@ -51,6 +52,7 @@ __all__ = [
     "isonow",
     "json_load",
     "json_save",
+    "merge_case_variant_keys",
     "merge_json",
     "SERIALIZE_ENV",
     # Async helpers
