@@ -1974,6 +1974,7 @@ function updateSettingsUI(settings) {
     const blacklistEl = document.getElementById('drop-blacklist-input');
     if (blacklistEl) blacklistEl.value = (settings.drop_name_blacklist || []).join(', ');
     renderBlacklistedDropIds(settings.blacklisted_drop_ids || []);
+    renderBlacklistedGames(settings.auto_add_excluded_games || []);
 
     const claimCpEl = document.getElementById('claim-channel-points');
     if (claimCpEl) claimCpEl.checked = settings.claim_channel_points !== false;
@@ -2174,6 +2175,49 @@ function renderBlacklistedDropIds(ids) {
     });
 }
 
+function renderBlacklistedGames(games) {
+    state.settings.auto_add_excluded_games = games;
+    const container = document.getElementById('blacklisted-games-list');
+    if (!container) return;
+    container.replaceChildren();
+    games.slice().sort((a, b) => a.localeCompare(b)).forEach(name => {
+        const item = document.createElement('div');
+        item.className = 'sortable-item';
+        const label = document.createElement('span');
+        label.textContent = name;
+        const btn = document.createElement('button');
+        btn.className = 'remove-btn';
+        btn.textContent = '✕';
+        btn.addEventListener('click', () => {
+            setAutoAddExcluded(name, false);
+            renderBlacklistedGames([...state.settings.auto_add_excluded_games]);
+            saveSettings();
+        });
+        item.appendChild(label);
+        item.appendChild(btn);
+        container.appendChild(item);
+    });
+}
+
+// Blacklist a game directly (Settings → Blacklisted Games), without requiring
+// it to have been added to Games to Watch and removed first. If it's currently
+// watched, removeGameFromWatch() already excludes+saves+re-renders both lists.
+function addGameToBlacklist(gameName) {
+    const name = (gameName || '').trim();
+    if (!name) return;
+    const excluded = state.settings.auto_add_excluded_games || [];
+    if (excluded.map(g => g.toLowerCase()).includes(name.toLowerCase())) return;
+    const watching = state.settings.games_to_watch || [];
+    if (watching.includes(name)) {
+        removeGameFromWatch(name);
+        renderBlacklistedGames([...state.settings.auto_add_excluded_games]);
+        return;
+    }
+    setAutoAddExcluded(name, true);
+    renderBlacklistedGames([...state.settings.auto_add_excluded_games]);
+    saveSettings();
+}
+
 function blacklistCurrentDrop() {
     const drop = state.currentDrop;
     if (!drop || !drop.drop_id) return;
@@ -2253,6 +2297,7 @@ function renderGamesToWatch() {
 
     renderAvailableGames(unselectedGames, filterText);
     renderPreferredWaiting();
+    renderBlacklistedGames(state.settings.auto_add_excluded_games || []);
 }
 
 function renderPreferredWaiting() {
@@ -3343,6 +3388,9 @@ function applyTranslations(t) {
         if (blacklistIdsHeader && s.blacklist_ids_header) blacklistIdsHeader.textContent = s.blacklist_ids_header;
         const blacklistIdsHelp = document.getElementById('settings-blacklist-ids-help');
         if (blacklistIdsHelp && s.blacklist_ids_help) blacklistIdsHelp.textContent = s.blacklist_ids_help;
+        // Note: "Blacklisted Games" section (settings-blacklist-games-header/-help)
+        // intentionally has no i18n binding yet, same as other minor static copy
+        // (e.g. the "Waiting for Campaign" panel) — English-only for now.
 
         // Bet Gap % label (Predictions settings)
         const betGapLabel = document.getElementById('settings-bet-gap-label');
@@ -4055,6 +4103,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.getElementById('blacklisted-drop-id-input')?.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') document.getElementById('blacklisted-drop-id-add-btn').click();
+    });
+
+    document.getElementById('blacklisted-game-add-btn')?.addEventListener('click', () => {
+        const input = document.getElementById('blacklisted-game-input');
+        addGameToBlacklist(input.value);
+        input.value = '';
+    });
+    document.getElementById('blacklisted-game-input')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') document.getElementById('blacklisted-game-add-btn').click();
     });
 
     let prefGameDropdownIndex = -1;
