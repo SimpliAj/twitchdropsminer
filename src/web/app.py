@@ -180,7 +180,8 @@ def _load_channel_points_history() -> dict:
     try:
         p = _get_account_data_dir() / "channel_points.json"
         if p.exists():
-            return json.loads(p.read_text())
+            from src.utils import merge_case_variant_keys
+            return merge_case_variant_keys(json.loads(p.read_text()))
     except Exception:
         pass
     return {}
@@ -756,20 +757,24 @@ async def get_channel_points(channel_login: str):
             pass
         cp_enabled = cp_obj is not None
         points: int = int(cp_obj.get("balance", 0)) if cp_enabled else 0
+        # Twitch logins are case-insensitive; always key persisted history by the
+        # lowercase login so this channel doesn't split across case-variant entries.
+        login_key = channel_login.lower()
         # Persist
         if points:
-            from src.utils import json_load, json_save
+            from src.utils import json_load, json_save, merge_case_variant_keys
             _cp_file = _get_account_data_dir() / "channel_points.json"
-            history = json_load(_cp_file, {}, merge=False)
-            history[channel_login] = points
+            history = merge_case_variant_keys(json_load(_cp_file, {}, merge=False))
+            history[login_key] = points
             json_save(_cp_file, history)
         # Include last chest bonus info for Discord bot split notification
         last_chest = {}
         try:
+            from src.utils import json_load, merge_case_variant_keys
             _chest_file = _get_account_data_dir() / "last_chest.json"
             if _chest_file.exists():
-                _chest_data = json_load(_chest_file, {}, merge=False)
-                last_chest = _chest_data.get(channel_login, {})
+                _chest_data = merge_case_variant_keys(json_load(_chest_file, {}, merge=False))
+                last_chest = _chest_data.get(login_key, {})
         except Exception:
             pass
         return {"channel": channel_login, "balance": points, "cp_enabled": cp_enabled, "last_chest": last_chest}
