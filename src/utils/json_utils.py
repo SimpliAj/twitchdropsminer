@@ -104,6 +104,37 @@ def _deserialize(obj: JsonType) -> Any:
     return obj
 
 
+def merge_case_variant_keys(
+    data: Mapping[str, Any], *, combine: Callable[[Any, Any], Any] | None = None
+) -> dict[str, Any]:
+    """
+    Merge dict keys that only differ by case (e.g. 'Jynxzi' vs 'jynxzi') into a
+    single lowercase key.
+
+    Twitch channel logins are case-insensitive, but some call sites historically
+    stored a display-cased login (e.g. user-typed idle channel names) instead of
+    the canonical lowercase one, splitting one channel's data across two keys.
+
+    combine(existing, new) picks the merged value on conflict; defaults to max()
+    for numeric values (a balance/counter only grows between snapshots) and to
+    the last value seen otherwise.
+    """
+    merged: dict[str, Any] = {}
+    for key, value in data.items():
+        lower_key = key.lower()
+        if lower_key in merged:
+            prev = merged[lower_key]
+            if combine is not None:
+                merged[lower_key] = combine(prev, value)
+            elif isinstance(prev, (int, float)) and isinstance(value, (int, float)):
+                merged[lower_key] = max(prev, value)
+            else:
+                merged[lower_key] = value
+        else:
+            merged[lower_key] = value
+    return merged
+
+
 def merge_json(obj: JsonType, template: Mapping[Any, Any]) -> None:
     """
     Merge a JSON object with a template, ensuring all expected keys exist.

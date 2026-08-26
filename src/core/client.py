@@ -797,6 +797,13 @@ class Twitch:
     async def _fetch_idle_channel_by_login(self, login: str) -> Channel | None:
         """Fetch a specific channel by login and return it if online."""
         from src.models.channel import Stream
+        # Twitch logins are canonically lowercase; user-configured idle_channels
+        # entries may carry whatever case the user typed/pasted (e.g. "Jynxzi").
+        # Normalizing here keeps channel._login consistent with the lowercase
+        # login used everywhere else (channel points tracking, predictions,
+        # watch streaks), instead of splitting the same channel's data across
+        # two case-variant keys.
+        login = login.lower()
         try:
             response = await self.gql_request(
                 GQL_OPERATIONS["GetStreamInfo"].with_variables({"channel": login})

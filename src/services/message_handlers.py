@@ -544,8 +544,11 @@ class MessageHandlerService:
             })
             # Persist balance + update server-side daily points counter
             if points:
+                from src.utils import merge_case_variant_keys
                 _pfile = _get_points_file()
-                history = json_load(_pfile, {}, merge=False)
+                # Merge any pre-existing case-variant keys (e.g. "Jynxzi" vs "jynxzi")
+                # into one lowercase key so the same channel's points stop splitting.
+                history = merge_case_variant_keys(json_load(_pfile, {}, merge=False))
                 _login_key = channel_login.lower()
                 old_balance = history.get(_login_key, 0)
                 if old_balance > 0 and points > old_balance:
@@ -555,7 +558,10 @@ class MessageHandlerService:
                 # Append timestamped snapshot for analytics
                 _ts_file = _pfile.parent / "channel_points_ts.json"
                 try:
-                    _ts_data = _json_mod.loads(_ts_file.read_text()) if _ts_file.exists() else {}
+                    _ts_raw = _json_mod.loads(_ts_file.read_text()) if _ts_file.exists() else {}
+                    _ts_data = merge_case_variant_keys(
+                        _ts_raw, combine=lambda a, b: sorted(a + b, key=lambda s: s.get("ts", ""))
+                    )
                     _snapshots = _ts_data.get(_login_key, [])
                     _snapshots.append({"ts": datetime.now(timezone.utc).isoformat(), "balance": points})
                     if len(_snapshots) > 1000:
