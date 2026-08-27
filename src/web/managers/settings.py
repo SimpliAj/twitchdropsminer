@@ -35,6 +35,7 @@ class SettingsManager:
         on_change: Callable[[], None] | None = None,
         on_scheduler_change: Callable[[], None] | None = None,
         on_predictions_enable: Callable[[], None] | None = None,
+        reload_debounce_seconds: float = 1.0,
     ):
         self._broadcaster = broadcaster
         self._settings = settings
@@ -43,6 +44,18 @@ class SettingsManager:
         self._on_scheduler_change = on_scheduler_change
         self._on_predictions_enable = on_predictions_enable
         self._available_games: list[str] = []
+        self._reload_debounce_seconds = reload_debounce_seconds
+        # Debounces the on_change trigger (State.GAMES_UPDATE): a burst of saves —
+        # e.g. auto_prioritize re-sorting once per campaign on reconnect, or a user
+        # rapid-clicking a reorder button — used to fire one full
+        # GAMES_UPDATE -> CHANNELS_CLEANUP -> CHANNELS_FETCH -> CHANNEL_SWITCH pass
+        # per save (thermalux/QFTFHT, Discord, 2026-08-27: 13-19 saves inside one
+        # second on every web client reconnect). change_state() overwrites
+        # self._state unconditionally, so a save landing mid-pipeline restarts the
+        # pass from scratch — repeated rapidly enough, the pipeline never reaches
+        # CHANNEL_SWITCH and drop mining reads as permanently idle until the user
+        # force-restarts the app. Coalesce bursts into a single trailing-edge call.
+        self._reload_debounce_task: asyncio.Task | None = None
 
     def get_settings(self) -> dict[str, Any]:
         """Get current settings for display.
@@ -200,6 +213,24 @@ class SettingsManager:
         asyncio.create_task(self._broadcaster.emit("settings_updated", self.get_settings()))
 
         if should_trigger_update and self._on_change:
+            self._trigger_reload_debounced()
+
+    def _trigger_reload_debounced(self) -> None:
+        """Coalesce rapid successive on_change triggers into a single call.
+
+        Cancels any pending trigger and schedules a new one; only the last save
+        in a burst actually causes a state change, instead of one per save.
+        """
+        if self._reload_debounce_task is not None and not self._reload_debounce_task.done():
+            self._reload_debounce_task.cancel()
+        self._reload_debounce_task = asyncio.create_task(self._debounced_reload())
+
+    async def _debounced_reload(self) -> None:
+        try:
+            await asyncio.sleep(self._reload_debounce_seconds)
+        except asyncio.CancelledError:
+            return
+        if self._on_change:
             self._on_change()
 
     def check_and_update_setting(

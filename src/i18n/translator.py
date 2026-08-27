@@ -247,6 +247,8 @@ class GUISettings(TypedDict):
     bet_percentage_gap_label: str
     blacklist_ids_header: str
     blacklist_ids_help: str
+    blacklisted_games_header: str
+    blacklisted_games_help: str
 
 
 class GUISystem(TypedDict):
