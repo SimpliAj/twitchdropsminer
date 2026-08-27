@@ -2943,7 +2943,21 @@ function addChannelOverride() {
     if (newRow) _commitOverrideRow(newRow);
 }
 
-async function saveSettings() {
+// Debounces the actual save: callers like sortGamesByEndDate() (called once per
+// campaign from addCampaign() when auto_prioritize is on) or rapid reorder clicks
+// used to fire one full POST /api/settings per call — up to N in a row on a single
+// reconnect with N campaigns, each triggering a full backend reload pass. Coalesce
+// bursts into a single trailing-edge save (thermalux/QFTFHT, Discord, 2026-08-27).
+let _saveSettingsDebounceTimer = null;
+function saveSettings() {
+    if (_saveSettingsDebounceTimer !== null) clearTimeout(_saveSettingsDebounceTimer);
+    _saveSettingsDebounceTimer = setTimeout(() => {
+        _saveSettingsDebounceTimer = null;
+        _saveSettingsNow();
+    }, 400);
+}
+
+async function _saveSettingsNow() {
     if (!state.settingsLoaded) {
         // A change event fired (e.g. browser restoring form state on reload) before the
         // server's real settings arrived via initial_state — state.settings is still {}
@@ -3388,9 +3402,15 @@ function applyTranslations(t) {
         if (blacklistIdsHeader && s.blacklist_ids_header) blacklistIdsHeader.textContent = s.blacklist_ids_header;
         const blacklistIdsHelp = document.getElementById('settings-blacklist-ids-help');
         if (blacklistIdsHelp && s.blacklist_ids_help) blacklistIdsHelp.textContent = s.blacklist_ids_help;
-        // Note: "Blacklisted Games" section (settings-blacklist-games-header/-help)
-        // intentionally has no i18n binding yet, same as other minor static copy
-        // (e.g. the "Waiting for Campaign" panel) — English-only for now.
+
+        // Blacklisted Games section (DogancanYr, Discord, 2026-08-26: "language keys
+        // are missing" — this had no i18n key at all, English text hardcoded in the
+        // DOM regardless of selected language; falls back to that hardcoded text for
+        // languages that don't have the key yet)
+        const blacklistGamesHeader = document.getElementById('settings-blacklist-games-header');
+        if (blacklistGamesHeader && s.blacklisted_games_header) blacklistGamesHeader.textContent = s.blacklisted_games_header;
+        const blacklistGamesHelp = document.getElementById('settings-blacklist-games-help');
+        if (blacklistGamesHelp && s.blacklisted_games_help) blacklistGamesHelp.textContent = s.blacklisted_games_help;
 
         // Bet Gap % label (Predictions settings)
         const betGapLabel = document.getElementById('settings-bet-gap-label');

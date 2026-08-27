@@ -65,9 +65,9 @@
       "password": "密碼",
       "twofa_code": "2FA 驗證碼（選用）",
       "button": "登入",
-      "oauth_prompt": "Enter this code at:",
-      "oauth_activate": "Twitch Activate",
-      "oauth_confirm": "I've entered the code"
+      "oauth_prompt": "請在此處輸入此代碼：",
+      "oauth_activate": "啟用 Twitch",
+      "oauth_confirm": "我已輸入代碼"
     },
     "websocket": {
       "name": "Websocket 狀態",
@@ -216,7 +216,9 @@
       "account_label_placeholder": "Label (e.g. Main, Alt)",
       "bet_percentage_gap_label": "Bet Gap % (SMART)",
       "blacklist_ids_header": "Blacklisted Drop IDs",
-      "blacklist_ids_help": "Specific drops excluded by exact ID — added via the 🚫 button next to an active drop, or manually below. Unlike the keyword blacklist above, this matches one exact drop; other drops for the same game keep mining."
+      "blacklist_ids_help": "Specific drops excluded by exact ID — added via the 🚫 button next to an active drop, or manually below. Unlike the keyword blacklist above, this matches one exact drop; other drops for the same game keep mining.",
+      "blacklisted_games_header": "Blacklisted Games",
+      "blacklisted_games_help": "Games listed here are never auto-added to Games to Watch by \"Auto-add linked games\", even if Twitch links a drop campaign for them. Removing a game from Games to Watch already does this automatically — use this list to blacklist a game directly, without adding it first."
     },
     "help": {
       "about": "關於 Twitch Drops Miner",
