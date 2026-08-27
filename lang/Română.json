@@ -65,9 +65,9 @@
       "password": "Parolă",
       "twofa_code": "Cod 2FA (opțional)",
       "button": "Conectare",
-      "oauth_prompt": "Enter this code at:",
-      "oauth_activate": "Twitch Activate",
-      "oauth_confirm": "I've entered the code"
+      "oauth_prompt": "Introduceți acest cod la:",
+      "oauth_activate": "Activează Twitch",
+      "oauth_confirm": "Am introdus codul"
     },
     "websocket": {
       "name": "Status Websocket",
@@ -216,7 +216,9 @@
       "account_label_placeholder": "Label (e.g. Main, Alt)",
       "bet_percentage_gap_label": "Bet Gap % (SMART)",
       "blacklist_ids_header": "Blacklisted Drop IDs",
-      "blacklist_ids_help": "Specific drops excluded by exact ID — added via the 🚫 button next to an active drop, or manually below. Unlike the keyword blacklist above, this matches one exact drop; other drops for the same game keep mining."
+      "blacklist_ids_help": "Specific drops excluded by exact ID — added via the 🚫 button next to an active drop, or manually below. Unlike the keyword blacklist above, this matches one exact drop; other drops for the same game keep mining.",
+      "blacklisted_games_header": "Blacklisted Games",
+      "blacklisted_games_help": "Games listed here are never auto-added to Games to Watch by \"Auto-add linked games\", even if Twitch links a drop campaign for them. Removing a game from Games to Watch already does this automatically — use this list to blacklist a game directly, without adding it first."
     },
     "help": {
       "about": "Despre Twitch Drops Miner",

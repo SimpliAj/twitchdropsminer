@@ -188,7 +188,9 @@
       "campaign_end_alerts_enabled": "Campaign End Alerts (24h warning)",
       "bet_percentage_gap_label": "Bet Gap % (SMART)",
       "blacklist_ids_header": "Blacklisted Drop IDs",
-      "blacklist_ids_help": "Specific drops excluded by exact ID — added via the 🚫 button next to an active drop, or manually below. Unlike the keyword blacklist above, this matches one exact drop; other drops for the same game keep mining."
+      "blacklist_ids_help": "Specific drops excluded by exact ID — added via the 🚫 button next to an active drop, or manually below. Unlike the keyword blacklist above, this matches one exact drop; other drops for the same game keep mining.",
+      "blacklisted_games_header": "Blacklisted Games",
+      "blacklisted_games_help": "Games listed here are never auto-added to Games to Watch by \"Auto-add linked games\", even if Twitch links a drop campaign for them. Removing a game from Games to Watch already does this automatically — use this list to blacklist a game directly, without adding it first."
     },
     "help": {
       "about": "About Twitch Drops Miner",
