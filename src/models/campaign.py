@@ -85,6 +85,14 @@ class DropsCampaign:
     def eligible(self) -> bool:
         return self.linked or self.has_badge_or_emote
 
+    @property
+    def ignored(self) -> bool:
+        # User opted out of this specific campaign (Inventory "Ignore" button) —
+        # unlike eligible/linked (Twitch account state) or blacklisted_drop_ids
+        # (per-drop), this is a per-campaign preference so the game and its
+        # other campaigns keep mining normally.
+        return self.id in getattr(self._twitch.settings, "ignored_campaign_ids", [])
+
     @cached_property
     def has_badge_or_emote(self) -> bool:
         return any(
@@ -156,6 +164,7 @@ class DropsCampaign:
     ) -> bool:
         return (
             self.eligible  # account is eligible
+            and not self.ignored  # user hasn't ignored this campaign
             and self.active  # campaign is active (and valid)
             and (
                 channel is None
@@ -195,6 +204,7 @@ class DropsCampaign:
         # and uses a future timestamp to see if we can earn this campaign later
         return (
             self.eligible
+            and not self.ignored
             and self._valid
             and self.ends_at > datetime.now(timezone.utc)
             and self.starts_at < stamp

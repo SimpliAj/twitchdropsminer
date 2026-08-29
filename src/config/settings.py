@@ -64,6 +64,7 @@ default_settings = {
     "discord_webhook_points": "",
     "drop_name_blacklist": [],
     "blacklisted_drop_ids": [],
+    "ignored_campaign_ids": [],
     "auto_prioritize": False,
     "auto_add_linked": False,
     "auto_add_excluded_games": [],
@@ -107,6 +108,7 @@ class Settings:
     discord_webhook_points: str
     drop_name_blacklist: list[str]
     blacklisted_drop_ids: list[str]
+    ignored_campaign_ids: list[str]
     auto_prioritize: bool
     auto_add_linked: bool
     auto_add_excluded_games: list[str]

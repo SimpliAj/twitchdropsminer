@@ -39,6 +39,7 @@
     "status": {
       "name": "狀態",
       "idle": "已完成獲取",
+      "ready": "已就緒",
       "exiting": "正在退出…",
       "terminated": "已終止運行",
       "cleanup": "正在清除頻道…",

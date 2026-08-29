@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, SupportsInt, cast
 import aiohttp
 from yarl import URL
 
-from src.config.constants import CALL, ONLINE_DELAY, GQLOperation, JsonType, URLType
+from src.config.constants import ONLINE_DELAY, GQLOperation, JsonType, URLType
 from src.config.operations import GQL_OPERATIONS
 from src.exceptions import MinerException, RequestException
 from src.models.game import Game
@@ -38,7 +38,13 @@ class Stream:
         self.channel: Channel = channel
         self.broadcast_id = int(id)
         self.viewers: int = viewers
-        self.drops_enabled: bool = True
+        # NOTE: defaults to False; callers building a Stream from live data
+        # (from_get_stream / external_update) must verify real drop eligibility
+        # via Channel._has_earnable_drops(). Never hardcode this True — it drives
+        # the "DROPS" badge in the UI and must always agree with can_earn() checks
+        # used to gate actually watching the channel (see app.py select_channel,
+        # watch_service.can_watch), otherwise the UI lies about eligibility.
+        self.drops_enabled: bool = False
         self.game: Game | None = Game(game) if game else None
         self.title: str = title
         self._stream_url: URLType | None = None
@@ -317,16 +323,22 @@ class Channel:
                 raise MinerException("Error while spade_url extraction: step #2")
         return URLType(match.group(1))
 
-    def _check_drops_enabled(self, available_drops: list[JsonType]) -> bool:
-        return any(
-            (
-                (campaign := self._twitch._campaigns.get(campaign_data["id"])) is not None
-                and campaign.can_earn(self, ignore_channel_status=True)
-            )
-            for campaign_data in available_drops
-        )
+    def _has_earnable_drops(self) -> bool:
+        """
+        Whether any inventory campaign can currently earn drops on this channel.
 
-    def external_update(self, channel_data: JsonType, available_drops: list[JsonType]) -> None:
+        This is the single source of truth for drop eligibility: it's used both to
+        drive the "DROPS" badge shown in the web UI's channel list, and (via
+        WatchService.can_watch / app.py's select_channel) to decide whether the
+        miner will actually watch the channel. Both MUST use this exact same
+        predicate — previously the UI badge used a looser, channel-status-ignoring
+        check (or was hardcoded True for ACL channels), which let it advertise
+        channels as drop-eligible that the real watch-selection logic correctly
+        rejected because the channel wasn't actually streaming the campaign's game.
+        """
+        return any(campaign.can_earn(self) for campaign in self._twitch.inventory)
+
+    def external_update(self, channel_data: JsonType) -> None:
         """
         Update stream information based on data provided externally.
 
@@ -336,8 +348,7 @@ class Channel:
             self._stream = None
             return
         stream = Stream.from_get_stream(self, channel_data)
-        if not stream.drops_enabled:
-            stream.drops_enabled = self._check_drops_enabled(available_drops)
+        stream.drops_enabled = self._has_earnable_drops()
         self._stream = stream
 
     async def get_stream(self) -> Stream | None:
@@ -354,17 +365,7 @@ class Channel:
         if not channel_data["stream"]:
             return None
         stream = Stream.from_get_stream(self, channel_data)
-        if not stream.drops_enabled:
-            try:
-                available_drops_campaigns: JsonType = await self._twitch.gql_request(
-                    GQL_OPERATIONS["AvailableDrops"].with_variables({"channelID": str(self.id)})
-                )
-            except MinerException:
-                logger.log(CALL, f"AvailableDrops GQL call failed for channel: {self._login}")
-            else:
-                stream.drops_enabled = self._check_drops_enabled(
-                    available_drops_campaigns["data"]["channel"]["viewerDropCampaigns"] or []
-                )
+        stream.drops_enabled = self._has_earnable_drops()
         return stream
 
     async def update_stream(self) -> bool:

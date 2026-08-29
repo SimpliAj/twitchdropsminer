@@ -39,6 +39,7 @@
     "status": {
       "name": "Status",
       "idle": "Inactief",
+      "ready": "Klaar",
       "exiting": "Beëindigd...",
       "terminated": "Geannuleerd",
       "cleanup": "Kanalen opruimen..",

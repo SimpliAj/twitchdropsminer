@@ -39,6 +39,7 @@
     "status": {
       "name": "Status",
       "idle": "Em espera",
+      "ready": "Pronto",
       "exiting": "Saindo",
       "terminated": "Finalizado",
       "cleanup": "Limpando os Canais...",
