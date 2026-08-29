@@ -39,6 +39,7 @@
     "status": {
       "name": "Status",
       "idle": "Tidak aktif",
+      "ready": "Siap",
       "exiting": "Keluar...",
       "terminated": "Diakhiri",
       "cleanup": "Membersihkan saluran...",

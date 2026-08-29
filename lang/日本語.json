@@ -39,6 +39,7 @@
     "status": {
       "name": "ステータス",
       "idle": "アイドル",
+      "ready": "準備完了",
       "exiting": "終了しています...",
       "terminated": "終了",
       "cleanup": "チャンネルをクリーンアップ中...",

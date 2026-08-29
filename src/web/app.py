@@ -43,22 +43,23 @@ def _get_account_data_dir() -> Path:
     return _DATA_DIR
 
 _SHARED_CSS = """
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#0e0e10;color:#efeff1;font-family:system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
-.card{background:#18181b;border:1px solid #2d2d35;border-radius:12px;padding:32px;width:100%;max-width:380px;text-align:center}
-.logo{width:90px;height:90px;margin:0 auto 16px;display:block}
-h1{font-size:1.2rem;margin-bottom:6px;color:#efeff1}
-.subtitle{font-size:.85rem;color:#adadb8;margin-bottom:24px}
-input{width:100%;background:#0e0e10;border:1px solid #3d3d4a;border-radius:8px;padding:10px 14px;color:#efeff1;font-size:.95rem;margin-bottom:12px;outline:none;text-align:left}
-input:focus{border-color:#9147ff}
-.btn{width:100%;border:none;border-radius:8px;padding:11px;font-size:.95rem;font-weight:600;cursor:pointer;margin-bottom:8px}
-.btn-primary{background:#9147ff;color:#fff}
-.btn-primary:hover{background:#7d3ce0}
-.btn-ghost{background:transparent;color:#adadb8;border:1px solid #3d3d4a}
-.btn-ghost:hover{background:#2d2d35}
-.err{color:#eb4a4a;font-size:.85rem;margin-bottom:12px;text-align:left}
-.info{color:#adadb8;font-size:.82rem;margin-bottom:12px;text-align:left;line-height:1.5}
-hr{border:none;border-top:1px solid #2d2d35;margin:16px 0}
+body{background:radial-gradient(900px 420px at 15% -10%,rgba(145,70,255,.10),transparent 60%),radial-gradient(700px 360px at 100% 0%,rgba(18,128,95,.08),transparent 55%),#0B0D12;color:#ECEEF3;font-family:'IBM Plex Sans',system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+.card{background:#12151D;border:1px solid #262B38;border-radius:16px;padding:32px;width:100%;max-width:380px;text-align:center;box-shadow:0 20px 48px -12px rgba(0,0,0,.65)}
+.logo{width:84px;height:84px;margin:0 auto 16px;display:block;border-radius:12px;box-shadow:0 0 0 1px #262B38}
+h1{font-family:'Space Grotesk',system-ui,sans-serif;font-size:1.2rem;font-weight:700;margin-bottom:6px;color:#ECEEF3}
+.subtitle{font-size:.85rem;color:#8991A6;margin-bottom:24px}
+input{width:100%;background:#0B0D12;border:1px solid #333A4A;border-radius:8px;padding:10px 14px;color:#ECEEF3;font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:.95rem;margin-bottom:12px;outline:none;text-align:left;transition:border-color .15s}
+input:focus{border-color:#9146FF}
+.btn{width:100%;border:none;border-radius:8px;padding:11px;font-family:'Space Grotesk',system-ui,sans-serif;font-size:.95rem;font-weight:600;cursor:pointer;margin-bottom:8px;transition:filter .15s,background .15s}
+.btn-primary{background:#9146FF;color:#fff}
+.btn-primary:hover{filter:brightness(1.1)}
+.btn-ghost{background:transparent;color:#8991A6;border:1px solid #333A4A}
+.btn-ghost:hover{background:#1B2029}
+.err{color:#FF6B81;font-size:.85rem;margin-bottom:12px;text-align:left}
+.info{color:#8991A6;font-size:.82rem;margin-bottom:12px;text-align:left;line-height:1.5}
+hr{border:none;border-top:1px solid #262B38;margin:16px 0}
 """
 
 
@@ -520,6 +521,7 @@ class SettingsUpdate(BaseModel):
     discord_webhook_mentions: str | None = None
     drop_name_blacklist: list[str] | None = None
     blacklisted_drop_ids: list[str] | None = None
+    ignored_campaign_ids: list[str] | None = None
     auto_prioritize: bool | None = None
     auto_add_linked: bool | None = None
     auto_add_excluded_games: list[str] | None = None
@@ -1731,6 +1733,323 @@ async def remove_instance(n: int):
     if result.returncode != 0:
         raise HTTPException(status_code=500, detail=result.stderr)
     return {"success": True, "instances": _load_instances_registry()["instances"]}
+
+
+# ==================== Accounts Fleet View ====================
+# Multi-account overview + bulk settings. This deliberately doesn't invent a
+# new cross-instance data layer: it fans out plain HTTP calls to each
+# instance's own already-existing single-account API (the same endpoints its
+# own dashboard uses) and aggregates the responses. Bulk-apply works the same
+# way — it just calls each target instance's own POST /api/settings once per
+# account, reusing that endpoint's existing partial-update semantics.
+
+_FLEET_HTTP_TIMEOUT = 4.0
+# The only settings exposed for bulk-apply — the ones genuinely shared across
+# a fleet of accounts mining the same set of games. Not every SettingsUpdate
+# field belongs here (things like proxy/webhooks are inherently per-account).
+_BULK_EDITABLE_FIELDS = {
+    "games_to_watch": "Games to Watch (priority list)",
+    "auto_add_excluded_games": "Blacklisted Games",
+}
+
+
+def _instance_base_url(inst: dict) -> str:
+    if inst.get("base_url"):
+        return inst["base_url"].rstrip("/")
+    return f"http://127.0.0.1:{inst.get('port', 8080)}"
+
+
+def _fleet_auth_cookies() -> dict:
+    # All instances in a single-user deployment share the same web password
+    # (that's how the account-switcher pills already work today — they just
+    # navigate the browser to another port and the same session cookie is
+    # valid there too, since cookies aren't port-scoped). Reuse that here:
+    # send this instance's own password as the session cookie on outbound
+    # calls. If a target instance was set up with a different password, that
+    # one call 401s and is reported per-account instead of failing the batch.
+    pw = _get_password()
+    return {"__tdm_session": pw} if pw else {}
+
+
+def _compute_bulk_list(current: list[str], values: list[str], mode: str) -> list[str]:
+    """Pure merge logic for bulk-editing a settings list field, split out for testability."""
+    cleaned = [v.strip() for v in values if v.strip()]
+    if mode == "replace":
+        return list(dict.fromkeys(cleaned))
+    if mode == "remove":
+        remove_set = {v.lower() for v in cleaned}
+        return [v for v in current if v.strip().lower() not in remove_set]
+    # add (default)
+    result = list(current)
+    existing_lower = {v.strip().lower() for v in result}
+    for v in cleaned:
+        if v.lower() not in existing_lower:
+            result.append(v)
+            existing_lower.add(v.lower())
+    return result
+
+
+async def _fetch_instance_overview(session, inst: dict) -> dict:
+    n = inst["n"]
+    label = inst.get("label") or f"Account {n}"
+    base = _instance_base_url(inst)
+    cookies = _fleet_auth_cookies()
+    result: dict = {
+        "n": n,
+        "label": label,
+        "base_url": base,
+        "reachable": False,
+        "login": None,
+        "status_text": None,
+        "paused": None,
+        "watching": None,
+        "drops_today": None,
+        "last_active": None,
+        "error": None,
+    }
+    try:
+        async with session.get(f"{base}/api/instance", cookies=cookies, timeout=_FLEET_HTTP_TIMEOUT) as r:
+            if r.status == 200:
+                d = await r.json()
+                result["login"] = d.get("login")
+            elif r.status == 401:
+                result["error"] = "Auth failed (password mismatch between instances)"
+                return result
+    except Exception as e:
+        result["error"] = f"Unreachable: {e}"
+        return result
+
+    try:
+        async with session.get(f"{base}/api/status", cookies=cookies, timeout=_FLEET_HTTP_TIMEOUT) as r:
+            if r.status == 200:
+                d = await r.json()
+                result["status_text"] = d.get("status")
+                result["paused"] = d.get("paused")
+                result["reachable"] = True
+            elif r.status == 503:
+                result["reachable"] = True
+                result["status_text"] = "Starting…"
+    except Exception as e:
+        result["error"] = result["error"] or str(e)
+
+    try:
+        async with session.get(f"{base}/api/channels", cookies=cookies, timeout=_FLEET_HTTP_TIMEOUT) as r:
+            if r.status == 200:
+                d = await r.json()
+                watching = next((c for c in d.get("channels", []) if c.get("watching")), None)
+                if watching:
+                    result["watching"] = {"channel": watching.get("name"), "game": watching.get("game")}
+    except Exception:
+        pass
+
+    try:
+        async with session.get(f"{base}/api/stats", cookies=cookies, timeout=_FLEET_HTTP_TIMEOUT) as r:
+            if r.status == 200:
+                d = await r.json()
+                today_key = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+                by_day = {e.get("date"): e.get("count", 0) for e in d.get("by_day", [])}
+                result["drops_today"] = by_day.get(today_key, 0)
+    except Exception:
+        pass
+
+    try:
+        async with session.get(f"{base}/api/drops-history", cookies=cookies, timeout=_FLEET_HTTP_TIMEOUT) as r:
+            if r.status == 200:
+                d = await r.json()
+                if isinstance(d, list) and d:
+                    result["last_active"] = d[0].get("timestamp")
+    except Exception:
+        pass
+
+    return result
+
+
+@app.get("/api/accounts/overview")
+async def get_accounts_overview():
+    """Fleet-wide status snapshot: one row per registered instance."""
+    registry = _load_instances_registry()
+    instances = registry.get("instances", [])
+    import aiohttp
+    async with aiohttp.ClientSession() as session:
+        results = await asyncio.gather(*[_fetch_instance_overview(session, inst) for inst in instances])
+    return {"accounts": results, "bulk_editable_fields": _BULK_EDITABLE_FIELDS}
+
+
+class BulkSettingsRequest(BaseModel):
+    targets: list[int]
+    field: str
+    values: list[str]
+    mode: str = "add"  # "add" | "remove" | "replace"
+
+
+@app.post("/api/accounts/bulk-settings")
+async def bulk_apply_settings(req: BulkSettingsRequest):
+    """Apply a shared-settings change across multiple accounts at once.
+
+    Fans out to each target instance's own GET/POST /api/settings — the same
+    endpoint that instance's own Settings tab uses — instead of writing to
+    any settings file directly, so per-instance validation/side effects
+    (debounced reload, broadcast to that instance's own connected clients)
+    still happen exactly as they do for a normal single-account save.
+    """
+    if req.field not in _BULK_EDITABLE_FIELDS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"'{req.field}' isn't bulk-editable. Choose one of: {', '.join(_BULK_EDITABLE_FIELDS)}",
+        )
+    if req.mode not in ("add", "remove", "replace"):
+        raise HTTPException(status_code=400, detail="mode must be 'add', 'remove', or 'replace'")
+    if not req.targets:
+        raise HTTPException(status_code=400, detail="No target accounts selected")
+
+    registry = _load_instances_registry()
+    by_n = {i["n"]: i for i in registry.get("instances", [])}
+    cookies = _fleet_auth_cookies()
+    results = []
+    import aiohttp
+    async with aiohttp.ClientSession() as session:
+        for n in req.targets:
+            inst = by_n.get(n)
+            if inst is None:
+                results.append({"n": n, "success": False, "error": "Unknown instance"})
+                continue
+            base = _instance_base_url(inst)
+            try:
+                current: list[str] = []
+                if req.mode != "replace":
+                    async with session.get(
+                        f"{base}/api/settings", cookies=cookies, timeout=_FLEET_HTTP_TIMEOUT
+                    ) as r:
+                        if r.status == 200:
+                            d = await r.json()
+                            current = list(d.get(req.field) or [])
+                        elif r.status == 401:
+                            results.append({"n": n, "success": False, "error": "Auth failed"})
+                            continue
+                new_list = _compute_bulk_list(current, req.values, req.mode)
+                async with session.post(
+                    f"{base}/api/settings", cookies=cookies, json={req.field: new_list}, timeout=_FLEET_HTTP_TIMEOUT
+                ) as r:
+                    if r.status == 200:
+                        results.append({"n": n, "success": True, "count": len(new_list)})
+                    else:
+                        text = await r.text()
+                        results.append({"n": n, "success": False, "error": f"HTTP {r.status}: {text[:200]}"})
+            except Exception as e:
+                results.append({"n": n, "success": False, "error": str(e)})
+    return {"results": results}
+
+
+class BulkActionRequest(BaseModel):
+    targets: list[int]
+    action: str  # "start" | "pause" | "drop_mining"
+
+
+@app.post("/api/accounts/bulk-action")
+async def bulk_account_action(req: BulkActionRequest):
+    """Fan out a real operational action (not just a settings change) across accounts.
+
+    Same fan-out shape as /api/accounts/bulk-settings: for each target this
+    calls that instance's own already-existing single-account endpoints —
+    never reimplements mining-control logic here.
+
+    - "pause": POST {instance}/api/pause — identical to that instance's own
+      "Pause" quick-control button; stops the mining loop entirely.
+    - "start": ensures the account is actively watching. If it's currently
+      paused, POST {instance}/api/resume first (mirrors that instance's own
+      "Resume" button) so the account isn't stuck in the PAUSED loop, which
+      would otherwise silently discard any channel switch. Then POST
+      {instance}/api/idle-watch/switch — identical to that instance's own
+      "Start Idle Watch" / "Switch Channel" quick-control button, which picks
+      an idle channel from that instance's own configured idle_channels list
+      and/or its followed-live channels (whichever idle_use_followed setting
+      that instance already has configured).
+    - "drop_mining": POST {instance}/api/reload — identical to that instance's
+      own "Start Drop Mining" quick-control button; stops idle-watching and
+      makes that instance search for active drop campaigns right away.
+    """
+    if req.action not in ("start", "pause", "drop_mining"):
+        raise HTTPException(status_code=400, detail="action must be 'start', 'pause', or 'drop_mining'")
+    if not req.targets:
+        raise HTTPException(status_code=400, detail="No target accounts selected")
+
+    registry = _load_instances_registry()
+    by_n = {i["n"]: i for i in registry.get("instances", [])}
+    cookies = _fleet_auth_cookies()
+    results = []
+    import aiohttp
+    async with aiohttp.ClientSession() as session:
+        for n in req.targets:
+            inst = by_n.get(n)
+            if inst is None:
+                results.append({"n": n, "success": False, "error": "Unknown instance"})
+                continue
+            base = _instance_base_url(inst)
+            try:
+                if req.action == "pause":
+                    async with session.post(
+                        f"{base}/api/pause", cookies=cookies, timeout=_FLEET_HTTP_TIMEOUT
+                    ) as r:
+                        if r.status == 200:
+                            results.append({"n": n, "success": True, "paused": True})
+                        elif r.status == 401:
+                            results.append({"n": n, "success": False, "error": "Auth failed"})
+                        else:
+                            text = await r.text()
+                            results.append({"n": n, "success": False, "error": f"HTTP {r.status}: {text[:200]}"})
+                    continue
+
+                if req.action == "drop_mining":
+                    async with session.post(
+                        f"{base}/api/reload", cookies=cookies, timeout=_FLEET_HTTP_TIMEOUT
+                    ) as r:
+                        if r.status == 200:
+                            results.append({"n": n, "success": True})
+                        elif r.status == 401:
+                            results.append({"n": n, "success": False, "error": "Auth failed"})
+                        else:
+                            text = await r.text()
+                            results.append({"n": n, "success": False, "error": f"HTTP {r.status}: {text[:200]}"})
+                    continue
+
+                # action == "start"
+                was_paused = False
+                try:
+                    async with session.get(
+                        f"{base}/api/status", cookies=cookies, timeout=_FLEET_HTTP_TIMEOUT
+                    ) as r:
+                        if r.status == 200:
+                            d = await r.json()
+                            was_paused = bool(d.get("paused"))
+                        elif r.status == 401:
+                            results.append({"n": n, "success": False, "error": "Auth failed"})
+                            continue
+                except Exception:
+                    pass  # fall through and try to switch anyway
+
+                if was_paused:
+                    async with session.post(
+                        f"{base}/api/resume", cookies=cookies, timeout=_FLEET_HTTP_TIMEOUT
+                    ) as r:
+                        if r.status not in (200,):
+                            text = await r.text()
+                            results.append({"n": n, "success": False, "error": f"Resume failed — HTTP {r.status}: {text[:200]}"})
+                            continue
+
+                async with session.post(
+                    f"{base}/api/idle-watch/switch", cookies=cookies, timeout=_FLEET_HTTP_TIMEOUT
+                ) as r:
+                    if r.status == 200:
+                        d = await r.json()
+                        results.append({"n": n, "success": True, "channel": d.get("switched_to")})
+                    elif r.status == 401:
+                        results.append({"n": n, "success": False, "error": "Auth failed"})
+                    else:
+                        text = await r.text()
+                        results.append({"n": n, "success": False, "error": f"HTTP {r.status}: {text[:200]}"})
+            except Exception as e:
+                results.append({"n": n, "success": False, "error": str(e)})
+    return {"results": results}
 
 
 @app.get("/api/predictions")

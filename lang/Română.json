@@ -39,6 +39,7 @@
     "status": {
       "name": "Statut",
       "idle": "Inactiv",
+      "ready": "Pregătit",
       "exiting": "Ieșire...",
       "terminated": "Terminat",
       "cleanup": "Curățarea canalelor...",

@@ -12,6 +12,7 @@
   },
   "login": {
     "unexpected_content": "Chyba při přesměrování. Nepoužíváte VPN?",
+    "error_code": "Kód chyby přihlášení: {error_code}",
     "incorrect_login_pass": "Nesprávné přihlašení.",
     "incorrect_email_code": "Nesprávný E-Mail kód.",
     "incorrect_twofa_code": "Nesprávný dvoufaktorový token",
@@ -38,6 +39,7 @@
     "status": {
       "name": "Status",
       "idle": "Dokončeno načítání",
+      "ready": "Připraveno",
       "exiting": "Ukončování...",
       "terminated": "Aplikace ukončena",
       "cleanup": "Čištění...",

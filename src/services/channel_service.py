@@ -183,5 +183,6 @@ class ChannelService:
             channel_data = acl_streams_map[channel_id]
             if channel_data["stream"] is None:
                 continue
-            # Update channel with stream data (no available drops check)
-            channel.external_update(channel_data, [])
+            # Update channel with stream data; drops_enabled is (re)computed
+            # locally from inventory inside external_update() itself.
+            channel.external_update(channel_data)
