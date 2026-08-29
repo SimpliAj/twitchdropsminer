@@ -31,7 +31,9 @@ const state = {
     countdownTimer: null,  // Track the active countdown timer
     translations: {},  // Store current translations
     sessionPoints: {},  // channel_login -> { balance, claimed }
-    collapsedGameGroups: {}  // gameId -> boolean
+    collapsedGameGroups: {},  // gameId -> boolean
+    subscribedChannels: null,  // Set of lowercase logins the account is subscribed to, or null if not loaded yet
+    analyticsSubscribedOnly: localStorage.getItem('tdm_analytics_subs_only') !== '0'  // default on
 };
 
 // ==================== Local Drop Minutes Cache ====================
@@ -733,9 +735,17 @@ function renderChannelPointsTab() {
     const summaryEl = document.getElementById('cp-tab-summary');
     if (!emptyEl || !listEl) return;
 
-    const entries = Object.entries(state.sessionPoints).sort((a, b) => b[1].balance - a[1].balance);
+    let entries = Object.entries(state.sessionPoints).sort((a, b) => b[1].balance - a[1].balance);
+    const totalTracked = entries.length;
+    if (state.analyticsSubscribedOnly && state.subscribedChannels) {
+        entries = entries.filter(([login]) => state.subscribedChannels.has(login.toLowerCase()));
+    }
     if (entries.length === 0) {
         emptyEl.style.display = 'block';
+        const a = state.translations?.gui?.analytics || {};
+        emptyEl.textContent = (state.analyticsSubscribedOnly && totalTracked > 0)
+            ? (a.no_subscribed_channels || 'No subscribed channels among the {count} tracked. Untick "Subscribed channels only" to see all.').replace('{count}', totalTracked)
+            : (a.no_channel_points || 'No channel points data yet. Points are recorded while watching channels.');
         listEl.style.display = 'none';
         if (summaryEl) summaryEl.textContent = '';
         return;
@@ -1670,9 +1680,11 @@ function renderInventory() {
     }
 
     if (campaigns.length === 0) {
-        container.replaceChildren(makeElement('p', { class: 'empty-message' }, 'No campaigns match the current filters.'));
+        const filteredMsg = t.gui?.inventory?.no_campaigns_filtered || 'No campaigns match the current filters.';
+        container.replaceChildren(makeElement('p', { class: 'empty-message' }, filteredMsg));
         return;
     }
+    const inv = t.gui?.inventory || {};
 
     campaigns.forEach(campaign => {
         const card = document.createElement('div');
@@ -1703,17 +1715,17 @@ function renderInventory() {
 
         // Linked/not linked badge — only show "Link Account" if linking is actually required
         const linkStatusBadge = campaign.linked
-            ? makeElement('span', { class: 'campaign-badge linked', title: 'Account is linked' }, 'LINKED')
+            ? makeElement('span', { class: 'campaign-badge linked', title: inv.linked_badge_title || 'Account is linked' }, inv.linked_badge || 'LINKED')
             : campaign.has_badge_or_emote
                 ? null  // badge/emote campaigns don't need account linking
-                : makeElement('span', { class: 'campaign-badge not-linked', title: 'Click to link your account on Twitch' }, '🔗 Link Account', el => {
+                : makeElement('span', { class: 'campaign-badge not-linked', title: inv.link_account_title || 'Click to link your account on Twitch' }, inv.link_account_badge || '🔗 Link Account', el => {
                     el.addEventListener('click', () => window.open(campaign.link_url, '_blank'));
                 });
 
         // Ignored badge — shown for both manually-linked and auto-linked campaigns
         // (i.e. any campaign the user chose to ignore, regardless of link status)
         const ignoredBadge = isIgnored
-            ? makeElement('span', { class: 'campaign-badge ignored', title: 'This campaign is ignored and its drops are not being mined' }, 'IGNORED')
+            ? makeElement('span', { class: 'campaign-badge ignored', title: inv.ignored_badge_title || 'This campaign is ignored and its drops are not being mined' }, inv.ignored_badge || 'IGNORED')
             : null;
 
         // Farm toggle button
@@ -1725,10 +1737,12 @@ function renderInventory() {
 
         const farmToggle = makeElement('button', {
             class: `farm-toggle-btn ${farmingActive ? 'farming' : 'skipped'}`,
-            title: watchListEmpty ? 'All games farming (no filter active)' : farmingActive ? 'Click to skip this game' : 'Click to farm this game'
+            title: watchListEmpty
+                ? (inv.farm_title_all || 'All games farming (no filter active)')
+                : farmingActive ? (inv.farm_title_skip || 'Click to skip this game') : (inv.farm_title_farm || 'Click to farm this game')
         }, '', el => {
-            el.appendChild(makeElement('span', { class: 'farm-state-label' }, farmingActive ? '⛏ Farming' : '⊘ Skipped'));
-            el.appendChild(makeElement('span', { class: 'farm-action-label' }, farmingActive ? '⊘ Skip' : '⛏ Farm'));
+            el.appendChild(makeElement('span', { class: 'farm-state-label' }, farmingActive ? (inv.farming_label || '⛏ Farming') : (inv.skipped_label || '⊘ Skipped')));
+            el.appendChild(makeElement('span', { class: 'farm-action-label' }, farmingActive ? (inv.skip_action_label || '⊘ Skip') : (inv.farm_action_label || '⛏ Farm')));
         });
 
         farmToggle.addEventListener('click', (e) => {
@@ -1757,9 +1771,9 @@ function renderInventory() {
         const ignoreToggle = makeElement('button', {
             class: `ignore-toggle-btn ${isIgnored ? 'ignored' : ''}`,
             title: isIgnored
-                ? 'Click to un-ignore this campaign'
-                : 'Click to ignore this campaign — its drops will stop being mined, but the game and its other campaigns keep going'
-        }, isIgnored ? '↩ Un-ignore' : '🚫 Ignore');
+                ? (inv.unignore_title || 'Click to un-ignore this campaign')
+                : (inv.ignore_title || 'Click to ignore this campaign — its drops will stop being mined, but the game and its other campaigns keep going')
+        }, isIgnored ? (inv.unignore_btn || '↩ Un-ignore') : (inv.ignore_btn || '🚫 Ignore'));
 
         ignoreToggle.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -1784,7 +1798,8 @@ function renderInventory() {
 
         // Toggle button
         const dropCount = campaign.drops.filter(d => !filters.show_sub_drops ? (d.required_subs || 0) === 0 : true).length;
-        const toggleBtn = makeElement('button', { class: 'inv-toggle-btn' }, `▸ ${dropCount} drop${dropCount !== 1 ? 's' : ''}`);
+        const dropWord = dropCount !== 1 ? (inv.drop_plural || 'drops') : (inv.drop_singular || 'drop');
+        const toggleBtn = makeElement('button', { class: 'inv-toggle-btn' }, `▸ ${dropCount} ${dropWord}`);
 
         // Remaining drops + time estimate — only show for linked campaigns
         const unclaimedDrops = campaign.drops.filter(d => !d.is_claimed
@@ -1801,7 +1816,9 @@ function renderInventory() {
         const timeEst = formatTime(remainingMins);
         const progressInfo = campaign.linked && !isIgnored && unclaimedDrops.length > 0
             ? makeElement('div', { class: 'campaign-progress-info' }, '', el => {
-                el.appendChild(makeElement('span', { class: 'campaign-remaining-drops' }, `${unclaimedDrops.length} drop${unclaimedDrops.length !== 1 ? 's' : ''} left`));
+                const remWord = unclaimedDrops.length !== 1 ? (inv.drop_plural || 'drops') : (inv.drop_singular || 'drop');
+                const leftSuffix = inv.drops_left_suffix || 'left';
+                el.appendChild(makeElement('span', { class: 'campaign-remaining-drops' }, `${unclaimedDrops.length} ${remWord} ${leftSuffix}`));
                 if (timeEst) el.appendChild(makeElement('span', { class: 'campaign-time-est' }, timeEst));
             })
             : null;
@@ -2155,7 +2172,7 @@ async function botGenerateCode() {
         }
         if (box) box.style.display = 'block';
     } catch (e) {
-        alert('Fehler: ' + e.message);
+        alert('Error: ' + e.message);
     } finally {
         if (btn) { btn.disabled = false; btn.textContent = state.translations.gui?.settings?.discord_bot?.generate_code || 'Generate code'; }
     }
@@ -2170,7 +2187,7 @@ async function botRevoke() {
         const box = document.getElementById('bot-pair-code-box');
         if (box) box.style.display = 'none';
     } catch (e) {
-        alert('Fehler: ' + e.message);
+        alert('Error: ' + e.message);
     }
 }
 
@@ -3569,8 +3586,13 @@ function applyTranslations(t) {
         if (cpHeader) cpHeader.textContent = a.channel_points;
         const cpRefreshBtn = document.getElementById('cp-tab-refresh-btn');
         if (cpRefreshBtn) cpRefreshBtn.textContent = a.refresh;
-        const cpEmpty = document.getElementById('cp-tab-empty');
-        if (cpEmpty) cpEmpty.textContent = a.no_channel_points;
+        const cpSubsOnlyLabel = document.getElementById('cp-subscribed-only-label');
+        if (cpSubsOnlyLabel && a.subscribed_only_label) cpSubsOnlyLabel.textContent = a.subscribed_only_label;
+        // Empty-state text depends on the current subscribed-only filter state too
+        // (two different messages), so it's owned by renderChannelPointsTab() itself
+        // rather than being force-set here — this just makes sure it re-renders with
+        // whatever text the newly-applied language provides.
+        renderChannelPointsTab();
         const historyHeader = document.getElementById('analytics-history-header');
         if (historyHeader) historyHeader.textContent = a.drop_history;
         const historyRefreshBtn = document.getElementById('history-refresh-btn');
@@ -3580,88 +3602,20 @@ function applyTranslations(t) {
     }
 
     // Update Help tab
-    const helpTab = document.getElementById('help-tab');
-    if (helpTab && t.gui?.help) {
-        // Robust ID selection for Help tab headers
-        const aboutHeader = document.getElementById('help-about-header');
-        if (aboutHeader) aboutHeader.textContent = t.gui.help.about || 'About Twitch Drops Miner';
-
-        const howtoHeader = document.getElementById('help-howto-header');
-        if (howtoHeader) howtoHeader.textContent = t.gui.help.how_to_use || 'How to Use';
-
-        const featuresHeader = document.getElementById('help-features-header');
-        if (featuresHeader) featuresHeader.textContent = t.gui.help.features || 'Features';
-
-        const notesHeader = document.getElementById('help-notes-header');
-        if (notesHeader) notesHeader.textContent = t.gui.help.important_notes || 'Important Notes';
-
-        // Update list items and links (keeping innerHTML approach for lists as they are dynamic content blocks)
-        const helpContent = helpTab.querySelector('.help-content');
-        if (helpContent) {
-            const howToItems = t.gui.help.how_to_use_items || [
-                'Login using your Twitch account (OAuth device code flow)',
-                'Link your accounts at <a href="https://www.twitch.tv/drops/campaigns" target="_blank">twitch.tv/drops/campaigns</a>',
-                'The miner will automatically discover campaigns and start mining',
-                'Configure priority games in Settings to focus on what you want',
-                'Monitor progress in the Main and Inventory tabs'
-            ];
-            const featuresItems = t.gui.help.features_items || [
-                'Stream-less drop mining - saves bandwidth',
-                'Game priority and exclusion lists',
-                'Tracks up to 199 channels simultaneously',
-                'Automatic channel switching',
-                'Real-time progress tracking'
-            ];
-            const notesItems = t.gui.help.important_notes_items || [
-                'Do not watch streams on the same account while mining',
-                'Keep your cookies.jar file secure',
-                'Requires linked game accounts for drops'
-            ];
-
-            const webhookItems = [
-                'Go to your Discord server → Channel Settings → Integrations → Webhooks → New Webhook',
-                'Copy the webhook URL',
-                'Paste it into <strong>Settings → Discord Notifications</strong> (separate URLs for drops and points)',
-                'Use <strong>Test Webhook</strong> to verify it works',
-            ];
-            const botSetupItems = [
-                'Go to <strong>Settings → Discord Bot</strong> and click <strong>Generate code</strong>',
-                'Note your dashboard URL (e.g. <code>http://your-server:8081</code>) and the code (e.g. <code>DROPS-A1B2C3D4</code>)',
-                'In Discord, run: <code>/link http://your-server:8081 DROPS-A1B2C3D4</code>',
-                'The bot confirms: ✅ Connected',
-            ];
-            const botCommands = [
-                '<code>/link [url] [code]</code> — connect to your dashboard',
-                '<code>/dashboard</code> — post a live-updating embed with control buttons (pause, campaigns, drops)',
-                '<code>/setchannel drops</code> — send drop notifications to this channel',
-                '<code>/setchannel points</code> — send channel points notifications to this channel',
-                '<code>/unlink</code> — disconnect the bot',
-            ];
-            helpContent.replaceChildren(
-                makeElement('h2', { id: 'help-about-header' }, t.gui.help.about || 'About Twitch Drops Miner'),
-                makeElement('p', {}, t.gui.help.about_text || 'This application automatically mines timed Twitch drops without downloading stream data.'),
-                makeElement('h3', { id: 'help-howto-header' }, t.gui.help.how_to_use || 'How to Use'),
-                makeHelpList('ol', howToItems),
-                makeElement('h3', { id: 'help-features-header' }, t.gui.help.features || 'Features'),
-                makeHelpList('ul', featuresItems),
-                makeElement('h3', { id: 'help-notes-header' }, t.gui.help.important_notes || 'Important Notes'),
-                makeHelpList('ul', notesItems),
-                makeElement('h3', { id: 'help-discord-webhook-header' }, 'Discord Webhook'),
-                makeElement('p', {}, 'Get notified in Discord when drops are claimed or channel points are earned.'),
-                makeHelpList('ol', webhookItems),
-                makeElement('h3', { id: 'help-discord-bot-header' }, 'Discord Bot'),
-                makeElement('p', {}, 'Control your miner directly from Discord using slash commands.'),
-                makeElement('h4', {}, 'Setup'),
-                makeHelpList('ol', botSetupItems),
-                makeElement('h4', {}, 'Commands'),
-                makeHelpList('ul', botCommands),
-                makeElement('p', {}, null, el => appendTrustedHelpContent(el, '<strong>Note:</strong> The pairing code expires in 10 minutes. To rename your profile (shown in bot footer), go to <strong>System → Accounts</strong> and use the ✏️ button.')),
-                makeElement('div', { class: 'help-links' }, '', el =>
-                    el.appendChild(makeElement('a', { href: 'https://github.com/SimpliAj/twitchdropsminer', target: '_blank', rel: 'noopener noreferrer' }, t.gui.help.github_repo || 'GitHub Repository'))
-                ),
-            );
-        }
-    }
+    // NOTE: the Help tab was redesigned into a long-form multi-topic wiki
+    // (see .help-wiki / .help-section markup in index.html) that reuses a
+    // handful of header IDs (help-about-header, help-howto-header,
+    // help-features-header, help-notes-header) left over from the old
+    // simple-list Help layout for unrelated purposes now (e.g. help-notes-header
+    // is the "do not watch streams" warning box, not an "Important Notes"
+    // heading). Overwriting their textContent here used to blow away the
+    // icon + heading markup inside them on every language load. The wiki
+    // content itself is intentionally left English-only (see i18n audit
+    // notes) — only the "Contents" nav label is translated.
+    const helpContentsLabel = document.getElementById('help-contents-label');
+    if (helpContentsLabel && t.gui?.help?.contents) helpContentsLabel.textContent = t.gui.help.contents;
+    const helpContentsTitle = document.getElementById('help-contents-title');
+    if (helpContentsTitle && t.gui?.help?.contents) helpContentsTitle.textContent = t.gui.help.contents;
 
     // Update Footer
     if (t.gui?.footer) {
@@ -3701,6 +3655,52 @@ function applyTranslations(t) {
         if (wantedHeader) wantedHeader.textContent = t.gui.wanted.name;
         // Re-render wanted items to update empty message
         // Since we don't store wanted items in state globally (only receives them), we rely on updateWantedItems triggering render
+    }
+
+    // Update Main tab stat cards (Drops Today / Drops Total / Points Today)
+    if (t.gui?.main_stats) {
+        const ms = t.gui.main_stats;
+        const dropsTodayLabel = document.getElementById('stat-drops-today-label');
+        if (dropsTodayLabel && ms.drops_today) dropsTodayLabel.textContent = ms.drops_today;
+        const dropsTotalLabel = document.getElementById('stat-drops-total-label');
+        if (dropsTotalLabel && ms.drops_total) dropsTotalLabel.textContent = ms.drops_total;
+        const pointsTodayLabel = document.getElementById('stat-points-today-label');
+        if (pointsTodayLabel && ms.points_today) pointsTodayLabel.textContent = ms.points_today;
+        const dropsTodayCard = document.getElementById('stat-drops-today-card');
+        if (dropsTodayCard && ms.drops_today_card_title) dropsTodayCard.title = ms.drops_today_card_title;
+    }
+
+    // Update Quick Controls panel (only updates title/labels when the buttons
+    // are in their default, non-toggled state — pause/resume toggling has its
+    // own live text managed by updatePauseState()).
+    if (t.gui?.quick_controls) {
+        const qc = t.gui.quick_controls;
+        const setQcBtn = (id, title, label, desc) => {
+            const btn = document.getElementById(id);
+            if (!btn) return;
+            if (title) btn.title = title;
+            const strong = btn.querySelector('strong');
+            const small = btn.querySelector('small');
+            if (strong && label) strong.textContent = label;
+            if (small && desc) small.textContent = desc;
+        };
+        setQcBtn('qc-skip-btn', qc.skip_title, qc.skip_label, qc.skip_desc);
+        setQcBtn('qc-check-drops-btn', qc.check_drops_title, qc.check_drops_label, qc.check_drops_desc);
+        setQcBtn('qc-idle-btn', qc.idle_title, qc.idle_label, qc.idle_desc);
+        setQcBtn('qc-switch-btn', qc.switch_title, qc.switch_label, qc.switch_desc);
+        // Pause/resume: only set the default "Pause" state here; if mining is
+        // currently paused, updatePauseState(true) (driven by live status,
+        // called elsewhere) will overwrite this with the "Resume" wording.
+        if (!state.paused) setQcBtn('pause-resume-btn', qc.pause_title, qc.pause_label, qc.pause_desc);
+    }
+
+    // Update "Manage Accounts" trigger button in the header
+    if (t.gui?.accounts_manager) {
+        const amBtn = document.getElementById('manage-accounts-btn');
+        if (amBtn) {
+            if (t.gui.accounts_manager.trigger_btn) amBtn.textContent = t.gui.accounts_manager.trigger_btn;
+            if (t.gui.accounts_manager.trigger_btn_title) amBtn.title = t.gui.accounts_manager.trigger_btn_title;
+        }
     }
 
     // Update Inventory Filters (re-using existing inventoryTab variable if available, or just querying)
@@ -3868,6 +3868,20 @@ async function loadAnalytics(channel, days) {
     } catch(e) {}
 }
 
+// Channel points accrue just from watching — being subscribed is a separate
+// relationship entirely. Fetched/cached server-side (one Helix check per
+// tracked channel), so this just loads whatever the backend already has.
+async function loadSubscribedChannels(force) {
+    try {
+        const resp = await fetch(API_BASE + `/api/analytics/subscribed-channels${force ? '?refresh=1' : ''}`);
+        const data = await resp.json();
+        state.subscribedChannels = new Set((data.channels || []).map(c => c.toLowerCase()));
+    } catch (e) {
+        // Leave subscribedChannels as-is (null on first failure) — filters
+        // fall back to "show all" rather than hard-failing when null.
+    }
+}
+
 // Only list channels that actually have data points in the selected range —
 // the backend always returns a key per known channel even when the filtered
 // snapshot list for that range is empty, which used to leave an empty
@@ -3878,10 +3892,13 @@ async function populateAnalyticsChannelSelect(days, preferChannel) {
     try {
         const resp = await fetch(API_BASE + `/api/analytics/points?days=${days}`);
         const data = await resp.json();
-        const channels = Object.entries(data.channels || {})
+        let channels = Object.entries(data.channels || {})
             .filter(([, snaps]) => snaps.length > 0)
             .sort((a, b) => b[1].length - a[1].length)
             .map(([ch]) => ch);
+        if (state.analyticsSubscribedOnly && state.subscribedChannels) {
+            channels = channels.filter(ch => state.subscribedChannels.has(ch.toLowerCase()));
+        }
         sel.replaceChildren(...channels.map(ch => { const opt = document.createElement("option"); opt.value = ch; opt.textContent = ch; return opt; }));
         const chosen = channels.includes(preferChannel) ? preferChannel : (channels[0] || "");
         if (chosen) sel.value = chosen;
@@ -3889,11 +3906,27 @@ async function populateAnalyticsChannelSelect(days, preferChannel) {
     } catch (e) { return null; }
 }
 
+async function refreshAnalyticsSubscribedFilter() {
+    renderChannelPointsTab();
+    const chosen = await populateAnalyticsChannelSelect(analyticsCurrentDays, analyticsCurrentChannel);
+    if (chosen) loadAnalytics(chosen, analyticsCurrentDays);
+    else {
+        // Filtered down to nothing — clear the stale chart instead of leaving
+        // a previously-selected (now hidden) channel's data on screen.
+        if (analyticsChart) { analyticsChart.destroy(); analyticsChart = null; }
+        analyticsCurrentChannel = "";
+    }
+}
+
 async function initAnalyticsTab() {
+    const toggle = document.getElementById('cp-subscribed-only-toggle');
+    if (toggle) toggle.checked = state.analyticsSubscribedOnly;
     if (analyticsTabInited) { loadAnalytics(analyticsCurrentChannel, analyticsCurrentDays); return; }
     analyticsTabInited = true;
     const sel = document.getElementById("analytics-channel");
     if (!sel) return;
+    await loadSubscribedChannels();
+    renderChannelPointsTab();
     const chosen = await populateAnalyticsChannelSelect(analyticsCurrentDays, analyticsCurrentChannel);
     if (chosen) loadAnalytics(chosen, analyticsCurrentDays);
     sel.addEventListener("change", () => loadAnalytics(sel.value, analyticsCurrentDays));
@@ -3906,6 +3939,13 @@ async function initAnalyticsTab() {
             if (chosen) loadAnalytics(chosen, days);
         });
     });
+    if (toggle) {
+        toggle.addEventListener("change", () => {
+            state.analyticsSubscribedOnly = toggle.checked;
+            localStorage.setItem('tdm_analytics_subs_only', toggle.checked ? '1' : '0');
+            refreshAnalyticsSubscribedFilter();
+        });
+    }
 }
 
 // ==================== Tab Management ====================
@@ -4839,6 +4879,7 @@ function renderWantedItems(tree) {
 }
 
 function showCampaignDropsModal(campaignId, onlyRemaining) {
+    const cm = state.translations?.gui?.campaign_modal || {};
     const campaign = campaignId && state.campaigns
         ? Object.values(state.campaigns).find(c => c.id === campaignId)
         : null;
@@ -4866,7 +4907,7 @@ function showCampaignDropsModal(campaignId, onlyRemaining) {
 
     const sub = document.createElement('div');
     sub.style.cssText = 'font-size:.78rem;color:var(--text-secondary);margin:-10px 0 14px';
-    sub.textContent = `${campaign.game_name} · ${onlyRemaining ? 'Remaining drops' : 'All drops'}`;
+    sub.textContent = `${campaign.game_name} · ${onlyRemaining ? (cm.subtitle_remaining || 'Remaining drops') : (cm.subtitle_all || 'All drops')}`;
     modal.appendChild(sub);
 
     // Mirrors DropsCampaign.finished (campaign.py) / autoCleanWantedQueue: a drop
@@ -4882,7 +4923,7 @@ function showCampaignDropsModal(campaignId, onlyRemaining) {
     if (drops.length === 0) {
         const empty = document.createElement('div');
         empty.style.cssText = 'text-align:center;color:var(--text-secondary);padding:20px 0;font-size:.88rem';
-        empty.textContent = onlyRemaining ? '✓ All drops claimed!' : 'No drops in this campaign.';
+        empty.textContent = onlyRemaining ? (cm.empty_remaining || '✓ All drops claimed!') : (cm.empty_all || 'No drops in this campaign.');
         modal.appendChild(empty);
     } else {
         const list = document.createElement('div');
@@ -4908,22 +4949,22 @@ function showCampaignDropsModal(campaignId, onlyRemaining) {
             if (drop.is_claimed) {
                 badge.style.background = 'rgba(52,231,184,0.18)';
                 badge.style.color = '#1DA980';
-                badge.textContent = '✓ Claimed';
+                badge.textContent = cm.badge_claimed || '✓ Claimed';
             } else if (locallyEarned) {
                 badge.style.background = 'rgba(52,231,184,0.14)';
                 badge.style.color = '#1DA980';
-                badge.textContent = '✓ Earned';
-                badge.title = 'Watch time completed — waiting for Twitch to confirm';
+                badge.textContent = cm.badge_earned || '✓ Earned';
+                badge.title = cm.badge_earned_title || 'Watch time completed — waiting for Twitch to confirm';
             } else if (drop.can_claim) {
                 badge.style.background = 'rgba(255,203,97,0.18)';
                 badge.style.color = '#C8850A';
-                badge.textContent = '⚡ Claim now';
+                badge.textContent = cm.badge_claim_now || '⚡ Claim now';
             } else {
                 const pct = drop.required_minutes > 0 ? Math.round((effectiveMinutes / drop.required_minutes) * 100) : 0;
                 const minsLeft = Math.max(0, drop.required_minutes - effectiveMinutes);
                 badge.style.background = 'rgba(191,148,255,0.18)';
                 badge.style.color = '#A970FF';
-                badge.textContent = `${pct}% · ${minsLeft}min left`;
+                badge.textContent = (cm.badge_percent_left || '{pct}% · {mins}min left').replace('{pct}', pct).replace('{mins}', minsLeft);
             }
             header.appendChild(badge);
             item.appendChild(header);
@@ -4969,6 +5010,7 @@ function showCampaignDropsModal(campaignId, onlyRemaining) {
 }
 
 async function showDropsTodayModal() {
+    const dt = state.translations?.gui?.drops_today || {};
     document.getElementById('drops-today-modal')?.remove();
     const overlay = document.createElement('div');
     overlay.id = 'drops-today-modal';
@@ -4979,23 +5021,23 @@ async function showDropsTodayModal() {
     modal.className = 'wq-modal cdm-modal';
     modal.setAttribute('role', 'dialog');
     modal.setAttribute('aria-modal', 'true');
-    modal.setAttribute('aria-label', 'Drops claimed today');
+    modal.setAttribute('aria-label', dt.aria_label || 'Drops claimed today');
 
     const closeBtn = document.createElement('button');
     closeBtn.className = 'wq-modal-close';
     closeBtn.textContent = '×';
-    closeBtn.setAttribute('aria-label', 'Close');
+    closeBtn.setAttribute('aria-label', dt.close_aria || 'Close');
     closeBtn.addEventListener('click', () => closeDropsTodayModal());
     modal.appendChild(closeBtn);
 
     const title = document.createElement('div');
     title.className = 'wq-modal-title';
-    title.textContent = 'Drops Claimed Today';
+    title.textContent = dt.title || 'Drops Claimed Today';
     modal.appendChild(title);
 
     const loading = document.createElement('div');
     loading.style.cssText = 'text-align:center;color:var(--ink-dim);padding:20px 0;font-size:.88rem';
-    loading.textContent = 'Loading…';
+    loading.textContent = dt.loading || 'Loading…';
     modal.appendChild(loading);
 
     overlay.appendChild(modal);
@@ -5010,7 +5052,7 @@ async function showDropsTodayModal() {
         const today = new Date().toDateString();
         todayDrops = (drops || []).filter(d => new Date(d.timestamp).toDateString() === today);
     } catch (e) {
-        loading.textContent = 'Failed to load drops.';
+        loading.textContent = dt.load_failed || 'Failed to load drops.';
         return;
     }
 
@@ -5019,14 +5061,14 @@ async function showDropsTodayModal() {
     if (todayDrops.length === 0) {
         const empty = document.createElement('div');
         empty.style.cssText = 'text-align:center;color:var(--ink-dim);padding:20px 0;font-size:.88rem';
-        empty.textContent = 'No drops claimed today yet.';
+        empty.textContent = dt.empty || 'No drops claimed today yet.';
         modal.appendChild(empty);
         return;
     }
 
     const sub = document.createElement('div');
     sub.style.cssText = 'font-size:.78rem;color:var(--ink-dim);margin:-10px 0 14px';
-    sub.textContent = `${todayDrops.length} claimed today · most recent first`;
+    sub.textContent = (dt.subtitle || '{count} claimed today · most recent first').replace('{count}', todayDrops.length);
     modal.appendChild(sub);
 
     const list = document.createElement('div');
@@ -5096,6 +5138,7 @@ function _dropsTodayModalEscHandler(e) {
 let _accountsManagerDropdownCleanup = null;
 
 function openAccountsManagerModal() {
+    const am = state.translations?.gui?.accounts_manager || {};
     document.getElementById('accounts-manager-modal')?.remove();
     _accountsManagerDropdownCleanup?.();
     _accountsManagerDropdownCleanup = null;
@@ -5109,41 +5152,41 @@ function openAccountsManagerModal() {
     modal.style.cssText = 'max-width:920px;max-height:85vh;overflow-y:auto;width:100%';
     modal.setAttribute('role', 'dialog');
     modal.setAttribute('aria-modal', 'true');
-    modal.setAttribute('aria-label', 'Manage Accounts');
+    modal.setAttribute('aria-label', am.aria_label || 'Manage Accounts');
 
     const closeBtn = document.createElement('button');
     closeBtn.className = 'wq-modal-close';
     closeBtn.textContent = '×';
-    closeBtn.setAttribute('aria-label', 'Close');
+    closeBtn.setAttribute('aria-label', am.close_aria || 'Close');
     closeBtn.addEventListener('click', () => closeAccountsManagerModal());
     modal.appendChild(closeBtn);
 
     const title = document.createElement('div');
     title.className = 'wq-modal-title';
-    title.textContent = 'Manage Accounts';
+    title.textContent = am.title || 'Manage Accounts';
     modal.appendChild(title);
 
     const sub = document.createElement('div');
     sub.style.cssText = 'font-size:.78rem;color:var(--ink-dim);margin:-10px 0 16px';
-    sub.textContent = 'Fleet status and bulk settings across every registered account.';
+    sub.textContent = am.subtitle || 'Fleet status and bulk settings across every registered account.';
     modal.appendChild(sub);
 
     const statusHeading = document.createElement('h3');
     statusHeading.style.cssText = 'font-size:.9rem;margin:0 0 8px;color:var(--ink);font-family:var(--font-display)';
-    statusHeading.textContent = 'Fleet Status';
+    statusHeading.textContent = am.fleet_status_heading || 'Fleet Status';
     modal.appendChild(statusHeading);
 
     const statusWrap = document.createElement('div');
     statusWrap.style.cssText = 'overflow-x:auto;margin-bottom:22px';
     const loading = document.createElement('div');
     loading.style.cssText = 'text-align:center;color:var(--ink-dim);padding:16px 0;font-size:.85rem';
-    loading.textContent = 'Loading fleet status…';
+    loading.textContent = am.loading_fleet || 'Loading fleet status…';
     statusWrap.appendChild(loading);
     modal.appendChild(statusWrap);
 
     const selectorHeading = document.createElement('h3');
     selectorHeading.style.cssText = 'font-size:.9rem;margin:0 0 8px;color:var(--ink);font-family:var(--font-display)';
-    selectorHeading.textContent = 'Select Accounts';
+    selectorHeading.textContent = am.select_accounts_heading || 'Select Accounts';
     modal.appendChild(selectorHeading);
 
     const selectorWrap = document.createElement('div');
@@ -5152,7 +5195,7 @@ function openAccountsManagerModal() {
 
     const actionsHeading = document.createElement('h3');
     actionsHeading.style.cssText = 'font-size:.9rem;margin:0 0 8px;color:var(--ink);font-family:var(--font-display)';
-    actionsHeading.textContent = 'Bulk Actions';
+    actionsHeading.textContent = am.bulk_actions_heading || 'Bulk Actions';
     modal.appendChild(actionsHeading);
 
     const actionsWrap = document.createElement('div');
@@ -5160,7 +5203,7 @@ function openAccountsManagerModal() {
 
     const bulkHeading = document.createElement('h3');
     bulkHeading.style.cssText = 'font-size:.9rem;margin:22px 0 8px;color:var(--ink);font-family:var(--font-display)';
-    bulkHeading.textContent = 'Bulk Settings';
+    bulkHeading.textContent = am.bulk_settings_heading || 'Bulk Settings';
     modal.appendChild(bulkHeading);
 
     const bulkWrap = document.createElement('div');
@@ -5194,7 +5237,7 @@ async function _loadAccountsOverview(statusWrap, selectorWrap, actionsWrap, bulk
         statusWrap.textContent = '';
         const err = document.createElement('div');
         err.style.cssText = 'color:#FF6B81;font-size:.85rem;padding:8px 0';
-        err.textContent = 'Failed to load fleet status.';
+        err.textContent = state.translations?.gui?.accounts_manager?.load_failed || 'Failed to load fleet status.';
         statusWrap.appendChild(err);
         return;
     }
@@ -5219,12 +5262,13 @@ async function _refreshFleetStatusTable(statusWrap) {
 // Settings read from the same checkbox elements so selection state stays
 // in sync between the two panels instead of each keeping its own copy.
 function _renderAccountSelector(container, accounts) {
+    const am = state.translations?.gui?.accounts_manager || {};
     container.textContent = '';
 
     if (accounts.length === 0) {
         const empty = document.createElement('div');
         empty.style.cssText = 'color:var(--ink-dim);font-size:.85rem;padding:8px 0';
-        empty.textContent = 'No accounts registered.';
+        empty.textContent = am.no_accounts_registered || 'No accounts registered.';
         container.appendChild(empty);
         return { checkboxes: [] };
     }
@@ -5235,7 +5279,7 @@ function _renderAccountSelector(container, accounts) {
     selectAllCb.type = 'checkbox';
     selectAllCb.checked = true;
     selectAllLabel.appendChild(selectAllCb);
-    selectAllLabel.appendChild(document.createTextNode('Select all accounts'));
+    selectAllLabel.appendChild(document.createTextNode(am.select_all_accounts || 'Select all accounts'));
     container.appendChild(selectAllLabel);
 
     const checkboxRow = document.createElement('div');
@@ -5266,12 +5310,13 @@ function _renderAccountSelector(container, accounts) {
 }
 
 function _renderBulkActionsPanel(container, accounts, checkboxes, statusWrap) {
+    const am = state.translations?.gui?.accounts_manager || {};
     container.textContent = '';
 
     if (accounts.length === 0) {
         const empty = document.createElement('div');
         empty.style.cssText = 'color:var(--ink-dim);font-size:.85rem;padding:8px 0';
-        empty.textContent = 'No accounts available for bulk actions.';
+        empty.textContent = am.no_accounts_for_actions || 'No accounts available for bulk actions.';
         container.appendChild(empty);
         return;
     }
@@ -5282,19 +5327,19 @@ function _renderBulkActionsPanel(container, accounts, checkboxes, statusWrap) {
     const startBtn = document.createElement('button');
     startBtn.className = 'btn-primary';
     startBtn.style.cssText = 'width:auto;padding:8px 18px;font-size:.85rem';
-    startBtn.textContent = 'Start Idle-Watch (Followed)';
+    startBtn.textContent = am.start_idle_btn || 'Start Idle-Watch (Followed)';
     btnRow.appendChild(startBtn);
 
     const dropMiningBtn = document.createElement('button');
     dropMiningBtn.className = 'btn-primary';
     dropMiningBtn.style.cssText = 'width:auto;padding:8px 18px;font-size:.85rem;background:var(--signal);border-color:var(--signal)';
-    dropMiningBtn.textContent = 'Start Drop Mining (Selected)';
+    dropMiningBtn.textContent = am.start_drop_mining_btn || 'Start Drop Mining (Selected)';
     btnRow.appendChild(dropMiningBtn);
 
     const pauseBtn = document.createElement('button');
     pauseBtn.className = 'btn-danger';
     pauseBtn.style.cssText = 'width:auto;padding:8px 18px;font-size:.85rem';
-    pauseBtn.textContent = 'Pause / Stop All Selected';
+    pauseBtn.textContent = am.pause_all_btn || 'Pause / Stop All Selected';
     btnRow.appendChild(pauseBtn);
 
     container.appendChild(btnRow);
@@ -5309,7 +5354,7 @@ function _renderBulkActionsPanel(container, accounts, checkboxes, statusWrap) {
         if (targets.length === 0) {
             const msg = document.createElement('div');
             msg.style.cssText = 'font-size:.82rem;color:#FF6B81';
-            msg.textContent = 'Select at least one account.';
+            msg.textContent = am.select_one_account || 'Select at least one account.';
             resultsWrap.appendChild(msg);
             return;
         }
@@ -5317,7 +5362,7 @@ function _renderBulkActionsPanel(container, accounts, checkboxes, statusWrap) {
         dropMiningBtn.disabled = true;
         pauseBtn.disabled = true;
         const originalLabel = btn.textContent;
-        btn.textContent = action === 'start' ? 'Starting…' : action === 'drop_mining' ? 'Starting…' : 'Pausing…';
+        btn.textContent = action === 'pause' ? (am.pausing || 'Pausing…') : (am.starting || 'Starting…');
         try {
             const resp = await fetch(API_BASE + '/api/accounts/bulk-action', {
                 method: 'POST',
@@ -5327,6 +5372,7 @@ function _renderBulkActionsPanel(container, accounts, checkboxes, statusWrap) {
             const data = await resp.json();
             const byN = {};
             accounts.forEach(acc => { byN[acc.n] = acc.label; });
+            const fallbackLabel = n => (am.account_fallback_label || 'Account {n}').replace('{n}', n);
             (data.results || []).forEach(r => {
                 const row = document.createElement('div');
                 row.style.cssText = 'font-size:.82rem;display:flex;gap:6px;align-items:center';
@@ -5336,14 +5382,15 @@ function _renderBulkActionsPanel(container, accounts, checkboxes, statusWrap) {
                 row.appendChild(icon);
                 const text = document.createElement('span');
                 text.style.color = 'var(--ink)';
+                const label = byN[r.n] || fallbackLabel(r.n);
                 if (r.success && action === 'start') {
-                    text.textContent = `${byN[r.n] || `Account ${r.n}`}: idle-watching ${r.channel || '(next available channel)'}`;
+                    text.textContent = (am.result_idle_watching || '{label}: idle-watching {channel}').replace('{label}', label).replace('{channel}', r.channel || '(next available channel)');
                 } else if (r.success && action === 'drop_mining') {
-                    text.textContent = `${byN[r.n] || `Account ${r.n}`}: searching for drops`;
+                    text.textContent = (am.result_searching_drops || '{label}: searching for drops').replace('{label}', label);
                 } else if (r.success) {
-                    text.textContent = `${byN[r.n] || `Account ${r.n}`}: paused`;
+                    text.textContent = (am.result_paused || '{label}: paused').replace('{label}', label);
                 } else {
-                    text.textContent = `${byN[r.n] || `Account ${r.n}`}: ${r.error || 'failed'}`;
+                    text.textContent = (am.result_failed || '{label}: {error}').replace('{label}', label).replace('{error}', r.error || 'failed');
                 }
                 row.appendChild(text);
                 resultsWrap.appendChild(row);
@@ -5351,7 +5398,7 @@ function _renderBulkActionsPanel(container, accounts, checkboxes, statusWrap) {
         } catch (e) {
             const msg = document.createElement('div');
             msg.style.cssText = 'font-size:.82rem;color:#FF6B81';
-            msg.textContent = 'Request failed: ' + e.message;
+            msg.textContent = (am.request_failed || 'Request failed: {error}').replace('{error}', e.message);
             resultsWrap.appendChild(msg);
         } finally {
             startBtn.disabled = false;
@@ -5370,11 +5417,12 @@ function _renderBulkActionsPanel(container, accounts, checkboxes, statusWrap) {
 }
 
 function _renderFleetStatusTable(container, accounts) {
+    const am = state.translations?.gui?.accounts_manager || {};
     container.textContent = '';
     if (accounts.length === 0) {
         const empty = document.createElement('div');
         empty.style.cssText = 'color:var(--ink-dim);font-size:.85rem;padding:8px 0';
-        empty.textContent = 'No accounts registered.';
+        empty.textContent = am.no_accounts_registered || 'No accounts registered.';
         container.appendChild(empty);
         return;
     }
@@ -5384,7 +5432,13 @@ function _renderFleetStatusTable(container, accounts) {
 
     const thead = document.createElement('thead');
     const hrow = document.createElement('tr');
-    ['Account', 'Status', 'Watching', 'Drops Today', 'Last Active'].forEach(label => {
+    [
+        am.table_account || 'Account',
+        am.table_status || 'Status',
+        am.table_watching || 'Watching',
+        am.table_drops_today || 'Drops Today',
+        am.table_last_active || 'Last Active',
+    ].forEach(label => {
         const th = document.createElement('th');
         th.textContent = label;
         hrow.appendChild(th);
@@ -5407,9 +5461,9 @@ function _renderFleetStatusTable(container, accounts) {
             tdStatus.textContent = acc.error;
         } else if (!acc.reachable) {
             tdStatus.style.color = 'var(--ink-dim)';
-            tdStatus.textContent = 'Unreachable';
+            tdStatus.textContent = am.status_unreachable || 'Unreachable';
         } else if (acc.paused) {
-            tdStatus.textContent = '⏸ Paused';
+            tdStatus.textContent = am.status_paused || '⏸ Paused';
         } else {
             tdStatus.textContent = acc.status_text || '—';
         }
@@ -5445,12 +5499,13 @@ function _renderFleetStatusTable(container, accounts) {
 }
 
 function _renderBulkSettingsPanel(container, accounts, fieldOptions, checkboxes) {
+    const am = state.translations?.gui?.accounts_manager || {};
     container.textContent = '';
 
     if (Object.keys(fieldOptions).length === 0 || accounts.length === 0) {
         const empty = document.createElement('div');
         empty.style.cssText = 'color:var(--ink-dim);font-size:.85rem;padding:8px 0';
-        empty.textContent = 'No accounts available for bulk settings.';
+        empty.textContent = am.no_accounts_for_settings || 'No accounts available for bulk settings.';
         container.appendChild(empty);
         return;
     }
@@ -5458,13 +5513,21 @@ function _renderBulkSettingsPanel(container, accounts, fieldOptions, checkboxes)
     const formRow = document.createElement('div');
     formRow.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px';
 
+    // fieldOptions labels come from the backend (_BULK_EDITABLE_FIELDS in
+    // src/web/app.py) and are always plain English there — override with the
+    // translated label for known field keys, falling back to the backend
+    // text for any future field the backend adds before this map catches up.
+    const fieldLabelOverrides = {
+        games_to_watch: am.field_games_to_watch,
+        auto_add_excluded_games: am.field_blacklisted_games,
+    };
     const fieldSelect = document.createElement('select');
     fieldSelect.className = 'settings-select';
     fieldSelect.style.flex = '1 1 220px';
     Object.entries(fieldOptions).forEach(([key, labelText]) => {
         const opt = document.createElement('option');
         opt.value = key;
-        opt.textContent = labelText;
+        opt.textContent = fieldLabelOverrides[key] || labelText;
         fieldSelect.appendChild(opt);
     });
     formRow.appendChild(fieldSelect);
@@ -5472,7 +5535,7 @@ function _renderBulkSettingsPanel(container, accounts, fieldOptions, checkboxes)
     const modeSelect = document.createElement('select');
     modeSelect.className = 'settings-select';
     modeSelect.style.flex = '1 1 180px';
-    [['add', 'Add to existing list'], ['remove', 'Remove from list'], ['replace', 'Replace entire list']].forEach(([val, text]) => {
+    [['add', am.mode_add || 'Add to existing list'], ['remove', am.mode_remove || 'Remove from list'], ['replace', am.mode_replace || 'Replace entire list']].forEach(([val, text]) => {
         const opt = document.createElement('option');
         opt.value = val;
         opt.textContent = text;
@@ -5487,7 +5550,7 @@ function _renderBulkSettingsPanel(container, accounts, fieldOptions, checkboxes)
     const valuesInput = document.createElement('input');
     valuesInput.type = 'text';
     valuesInput.autocomplete = 'off';
-    valuesInput.placeholder = 'Game names, comma-separated — start typing for suggestions';
+    valuesInput.placeholder = am.values_placeholder || 'Game names, comma-separated — start typing for suggestions';
     valuesInput.style.cssText = 'width:100%;box-sizing:border-box;padding:7px 10px;border:1px solid var(--seam);border-radius:var(--r-sm);background:var(--panel-raised);color:var(--ink);font-size:.88rem;outline:none';
     valuesWrap.appendChild(valuesInput);
     container.appendChild(valuesWrap);
@@ -5628,7 +5691,7 @@ function _renderBulkSettingsPanel(container, accounts, fieldOptions, checkboxes)
     const applyBtn = document.createElement('button');
     applyBtn.className = 'btn-primary';
     applyBtn.style.cssText = 'width:auto;padding:8px 18px;font-size:.85rem';
-    applyBtn.textContent = 'Apply to Selected Accounts';
+    applyBtn.textContent = am.apply_btn || 'Apply to Selected Accounts';
     container.appendChild(applyBtn);
 
     const resultsWrap = document.createElement('div');
@@ -5642,24 +5705,24 @@ function _renderBulkSettingsPanel(container, accounts, fieldOptions, checkboxes)
         if (targets.length === 0) {
             const msg = document.createElement('div');
             msg.style.cssText = 'font-size:.82rem;color:#FF6B81';
-            msg.textContent = 'Select at least one account.';
+            msg.textContent = am.select_one_account || 'Select at least one account.';
             resultsWrap.appendChild(msg);
             return;
         }
         if (values.length === 0 && modeSelect.value !== 'replace') {
             const msg = document.createElement('div');
             msg.style.cssText = 'font-size:.82rem;color:#FF6B81';
-            msg.textContent = 'Enter at least one value.';
+            msg.textContent = am.enter_one_value || 'Enter at least one value.';
             resultsWrap.appendChild(msg);
             return;
         }
         if (modeSelect.value === 'replace'
-            && !confirm(`Replace the entire list on ${targets.length} account(s)? This overwrites their current list.`)) {
+            && !confirm((am.confirm_replace || 'Replace the entire list on {count} account(s)? This overwrites their current list.').replace('{count}', targets.length))) {
             return;
         }
         applyBtn.disabled = true;
         const originalLabel = applyBtn.textContent;
-        applyBtn.textContent = 'Applying…';
+        applyBtn.textContent = am.applying || 'Applying…';
         try {
             const resp = await fetch(API_BASE + '/api/accounts/bulk-settings', {
                 method: 'POST',
@@ -5674,6 +5737,7 @@ function _renderBulkSettingsPanel(container, accounts, fieldOptions, checkboxes)
             const data = await resp.json();
             const byN = {};
             accounts.forEach(acc => { byN[acc.n] = acc.label; });
+            const fallbackLabel = n => (am.account_fallback_label || 'Account {n}').replace('{n}', n);
             (data.results || []).forEach(r => {
                 const row = document.createElement('div');
                 row.style.cssText = 'font-size:.82rem;display:flex;gap:6px;align-items:center';
@@ -5683,16 +5747,17 @@ function _renderBulkSettingsPanel(container, accounts, fieldOptions, checkboxes)
                 row.appendChild(icon);
                 const text = document.createElement('span');
                 text.style.color = 'var(--ink)';
+                const label = byN[r.n] || fallbackLabel(r.n);
                 text.textContent = r.success
-                    ? `${byN[r.n] || `Account ${r.n}`}: updated (${r.count} entries)`
-                    : `${byN[r.n] || `Account ${r.n}`}: ${r.error || 'failed'}`;
+                    ? (am.result_updated || '{label}: updated ({count} entries)').replace('{label}', label).replace('{count}', r.count)
+                    : (am.result_failed || '{label}: {error}').replace('{label}', label).replace('{error}', r.error || 'failed');
                 row.appendChild(text);
                 resultsWrap.appendChild(row);
             });
         } catch (e) {
             const msg = document.createElement('div');
             msg.style.cssText = 'font-size:.82rem;color:#FF6B81';
-            msg.textContent = 'Request failed: ' + e.message;
+            msg.textContent = (am.request_failed || 'Request failed: {error}').replace('{error}', e.message);
             resultsWrap.appendChild(msg);
         } finally {
             applyBtn.disabled = false;
@@ -5756,6 +5821,7 @@ function renderMarkdown(md) {
 }
 
 function showUpdateModal(text, withInstallBtn, latestVersion) {
+    const um = state.translations?.gui?.update_modal || {};
     document.getElementById('update-log-modal')?.remove();
     const overlay = document.createElement('div');
     overlay.id = 'update-log-modal';
@@ -5764,7 +5830,7 @@ function showUpdateModal(text, withInstallBtn, latestVersion) {
     const box = document.createElement('div');
     box.style.cssText = 'background:var(--card-bg,#1B2029);border:1px solid var(--border-color,#262B38);border-radius:12px;padding:24px;max-width:520px;width:90%;margin:auto;';
     const title = document.createElement('div');
-    title.textContent = '🔄 Update Available';
+    title.textContent = um.title || '🔄 Update Available';
     title.style.cssText = 'font-size:1.1rem;font-weight:700;color:var(--twitch-purple,#A970FF);margin-bottom:12px;';
     const pre = document.createElement('div');
     pre.style.cssText = 'background:#0B0D12;padding:12px;border-radius:8px;margin:0;';
@@ -5782,14 +5848,14 @@ function showUpdateModal(text, withInstallBtn, latestVersion) {
         const row = document.createElement('div');
         row.style.cssText = 'display:flex;gap:10px;margin-top:14px;justify-content:flex-end;';
         const cancelBtn = document.createElement('button');
-        cancelBtn.textContent = 'Cancel';
+        cancelBtn.textContent = um.cancel || 'Cancel';
         cancelBtn.style.cssText = 'padding:8px 16px;border-radius:8px;border:1px solid #262B38A4A;background:transparent;color:#8991A6;cursor:pointer;';
         cancelBtn.addEventListener('click', () => overlay.remove());
         const installBtn = document.createElement('button');
-        installBtn.textContent = `Install v${latestVersion}`;
+        installBtn.textContent = (um.install || 'Install v{version}').replace('{version}', latestVersion);
         installBtn.style.cssText = 'padding:8px 16px;border-radius:8px;border:none;background:var(--twitch-purple,#A970FF);color:#fff;font-weight:600;cursor:pointer;';
         installBtn.addEventListener('click', async () => {
-            installBtn.textContent = '⏳ Updating...';
+            installBtn.textContent = um.updating || '⏳ Updating...';
             installBtn.disabled = true;
             cancelBtn.disabled = true;
             pre.innerHTML = '';
@@ -5797,22 +5863,22 @@ function showUpdateModal(text, withInstallBtn, latestVersion) {
             pre.style.whiteSpace = 'pre-wrap';
             pre.style.fontSize = '.8rem';
             pre.style.color = '#ECEEF3';
-            pre.textContent = 'Pulling latest code from GitHub...\n';
+            pre.textContent = (um.pulling || 'Pulling latest code from GitHub...') + '\n';
             try {
                 const res = await fetch(API_BASE + '/api/self-update', { method: 'POST' });
                 const json = await res.json();
                 if (json.docker) {
                     pre.textContent = json.log;
-                    title.textContent = '🐳 Docker detected';
+                    title.textContent = um.docker_detected || '🐳 Docker detected';
                     installBtn.style.display = 'none';
-                    cancelBtn.textContent = 'Close';
+                    cancelBtn.textContent = um.close || 'Close';
                     cancelBtn.disabled = false;
                 } else {
-                    pre.textContent = json.log + '\n\n⏳ Restarting... page will reconnect shortly.';
-                    title.textContent = '✅ Update Applied';
+                    pre.textContent = json.log + '\n\n' + (um.restarting_suffix || '⏳ Restarting... page will reconnect shortly.');
+                    title.textContent = um.applied || '✅ Update Applied';
                 }
             } catch (_) {
-                pre.textContent = 'Error contacting server.';
+                pre.textContent = um.error_contacting || 'Error contacting server.';
             }
         });
         row.append(cancelBtn, installBtn);
