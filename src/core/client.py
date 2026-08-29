@@ -794,6 +794,77 @@ class Twitch:
             logger.warning(f"Could not fetch followed live channels: {exc}")
             return []
 
+    async def _fetch_subscribed_channels(self, candidate_logins: list[str]) -> list[str]:
+        """Check which of the given channel logins the account currently holds
+        an active subscription to.
+
+        Channel points accrue from watching regardless of subscription status, so
+        "channels with points history" and "channels I'm subscribed to" are two
+        genuinely separate sets — this checks the latter via Helix, which is the
+        only reliable source (the GQL subscribedChannels/subscriptionBenefits
+        fields silently return empty/null for this app's token, even when a
+        subscription exists). Helix's /subscriptions endpoint requires
+        broadcaster-level auth for the "list my subscribers" direction, but the
+        /subscriptions/user variant (checking one broadcaster/viewer pair) works
+        fine with a regular user token and the user_subscriptions scope this app
+        already has.
+        """
+        if not candidate_logins:
+            return []
+        try:
+            auth = await self.get_auth()
+            user_id = auth.user_id
+            client_id = self._client_type.CLIENT_ID
+            access_token = auth.access_token
+            headers = {
+                "Authorization": f"Bearer {access_token}",
+                "Client-Id": client_id,
+            }
+            # Resolve logins -> broadcaster ids (Helix allows up to 100 per call)
+            id_to_login: dict[str, str] = {}
+            for i in range(0, len(candidate_logins), 100):
+                batch = candidate_logins[i:i + 100]
+                params = [("login", login) for login in batch]
+                async with self._http_client.request(
+                    "GET", "https://api.twitch.tv/helix/users", params=params, headers=headers
+                ) as resp:
+                    if resp.status != 200:
+                        continue
+                    data = await resp.json()
+                for u in data.get("data", []):
+                    id_to_login[u["id"]] = u["login"].lower()
+
+            subscribed: list[str] = []
+            # Bounded concurrency — 253 sequential round-trips would be slow,
+            # but hammering all of them at once risks Helix rate limits.
+            sem = asyncio.Semaphore(8)
+
+            async def check(broadcaster_id: str, login: str) -> None:
+                async with sem:
+                    url = (
+                        "https://api.twitch.tv/helix/subscriptions/user"
+                        f"?broadcaster_id={broadcaster_id}&user_id={user_id}"
+                    )
+                    try:
+                        async with self._http_client.request(
+                            "GET", url, headers=headers
+                        ) as resp:
+                            if resp.status == 200:
+                                data = await resp.json()
+                                if data.get("data"):
+                                    subscribed.append(login)
+                    except Exception:
+                        pass
+
+            await asyncio.gather(*(check(bid, login) for bid, login in id_to_login.items()))
+            logger.info(
+                f"Subscribed channels: {len(subscribed)}/{len(candidate_logins)} checked"
+            )
+            return subscribed
+        except Exception as e:
+            logger.warning(f"Failed to fetch subscribed channels: {e}")
+            return []
+
     async def _fetch_idle_channel_by_login(self, login: str) -> Channel | None:
         """Fetch a specific channel by login and return it if online."""
         from src.models.channel import Stream

@@ -785,6 +785,48 @@ async def get_channel_points(channel_login: str):
 
 
 
+_SUBSCRIBED_CHANNELS_TTL = 6 * 3600  # subscription status changes rarely — avoid re-checking every tab open
+
+
+@app.get("/api/analytics/subscribed-channels")
+async def get_subscribed_channels(refresh: bool = False):
+    """Return which channels (from channel-points history) the account currently
+    holds an active Twitch subscription to. Cached with a TTL since it costs one
+    Helix call per tracked channel; falls back to stale cache if the live check
+    fails so the UI doesn't hard-error on a transient Twitch/Helix hiccup.
+    """
+    if not gui_manager or not twitch_client:
+        raise HTTPException(status_code=503, detail="Not ready")
+    import time
+    cache_file = _get_account_data_dir() / "subscribed_channels.json"
+    now = time.time()
+
+    def _read_cache() -> dict | None:
+        try:
+            if cache_file.exists():
+                return json.loads(cache_file.read_text())
+        except Exception:
+            pass
+        return None
+
+    if not refresh:
+        cached = _read_cache()
+        if cached and (now - cached.get("ts", 0)) < _SUBSCRIBED_CHANNELS_TTL:
+            return {"channels": cached.get("channels", []), "cached": True, "ts": cached.get("ts")}
+
+    history_logins = list(_load_channel_points_history().keys())
+    try:
+        subscribed = await twitch_client._fetch_subscribed_channels(history_logins)
+        cache_file.parent.mkdir(parents=True, exist_ok=True)
+        cache_file.write_text(json.dumps({"ts": now, "channels": subscribed}))
+        return {"channels": subscribed, "cached": False, "ts": now}
+    except Exception as e:
+        cached = _read_cache()
+        if cached is not None:
+            return {"channels": cached.get("channels", []), "cached": True, "stale": True, "ts": cached.get("ts")}
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/api/analytics/points")
 async def get_analytics_points(channel: str = "", days: int = 7):
     """Return timestamped channel points history for analytics chart."""

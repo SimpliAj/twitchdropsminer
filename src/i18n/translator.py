@@ -164,6 +164,28 @@ class GUIInventory(TypedDict):
     ends: str
     claimed_drops: str
     filters: GUIInvFilters
+    filter_linked: str
+    no_campaigns_filtered: str
+    linked_badge: str
+    linked_badge_title: str
+    link_account_badge: str
+    link_account_title: str
+    ignored_badge: str
+    ignored_badge_title: str
+    ignore_btn: str
+    unignore_btn: str
+    ignore_title: str
+    unignore_title: str
+    farming_label: str
+    skipped_label: str
+    farm_action_label: str
+    skip_action_label: str
+    farm_title_all: str
+    farm_title_skip: str
+    farm_title_farm: str
+    drop_singular: str
+    drop_plural: str
+    drops_left_suffix: str
 
 
 class GUISettingsGeneral(TypedDict):
@@ -278,6 +300,8 @@ class GUIAnalytics(TypedDict):
     channel_points: str
     refresh: str
     no_channel_points: str
+    subscribed_only_label: str
+    no_subscribed_channels: str
     drop_history: str
     no_history: str
     unknown_result_tooltip: str
@@ -293,6 +317,7 @@ class GUIHelp(TypedDict):
     important_notes: str
     important_notes_items: list[str]
     github_repo: str
+    contents: str
 
 
 class GUIHeader(TypedDict):
@@ -303,6 +328,86 @@ class GUIHeader(TypedDict):
     manual_mode: str
     connected: str
     disconnected: str
+
+
+class GUIDropsToday(TypedDict):
+    title: str
+    aria_label: str
+    close_aria: str
+    loading: str
+    load_failed: str
+    empty: str
+    subtitle: str
+
+
+class GUICampaignModal(TypedDict):
+    subtitle_remaining: str
+    subtitle_all: str
+    empty_remaining: str
+    empty_all: str
+    badge_claimed: str
+    badge_earned: str
+    badge_earned_title: str
+    badge_claim_now: str
+    badge_percent_left: str
+
+
+class GUIAccountsManager(TypedDict):
+    aria_label: str
+    close_aria: str
+    title: str
+    subtitle: str
+    fleet_status_heading: str
+    loading_fleet: str
+    load_failed: str
+    select_accounts_heading: str
+    bulk_actions_heading: str
+    bulk_settings_heading: str
+    no_accounts_registered: str
+    no_accounts_for_actions: str
+    no_accounts_for_settings: str
+    select_all_accounts: str
+    table_account: str
+    table_status: str
+    table_watching: str
+    table_drops_today: str
+    table_last_active: str
+    status_unreachable: str
+    status_paused: str
+    start_idle_btn: str
+    start_drop_mining_btn: str
+    pause_all_btn: str
+    starting: str
+    pausing: str
+    select_one_account: str
+    request_failed: str
+    result_idle_watching: str
+    result_searching_drops: str
+    result_paused: str
+    result_failed: str
+    account_fallback_label: str
+    values_placeholder: str
+    mode_add: str
+    mode_remove: str
+    mode_replace: str
+    apply_btn: str
+    applying: str
+    enter_one_value: str
+    confirm_replace: str
+    result_updated: str
+
+
+class GUIUpdateModal(TypedDict):
+    title: str
+    cancel: str
+    install: str
+    updating: str
+    pulling: str
+    docker_detected: str
+    close: str
+    applied: str
+    restarting_suffix: str
+    error_contacting: str
 
 
 class GUIMessages(TypedDict):
@@ -322,6 +427,10 @@ class GUIMessages(TypedDict):
     wanted: GUIWanted
     system: GUISystem
     analytics: GUIAnalytics
+    drops_today: GUIDropsToday
+    campaign_modal: GUICampaignModal
+    accounts_manager: GUIAccountsManager
+    update_modal: GUIUpdateModal
 
 
 class Translation(TypedDict):

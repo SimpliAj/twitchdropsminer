@@ -60,10 +60,10 @@
             <button class="tab-button" data-tab="analytics">Analytics</button>
             <button class="tab-button" data-tab="help">Help</button>
             <input type="checkbox" id="help-subnav-toggle" class="tabs-subnav-toggle-checkbox">
-            <label for="help-subnav-toggle" class="tabs-subnav-toggle-label">Contents <span class="tabs-subnav-toggle-chevron">▾</span></label>
+            <label for="help-subnav-toggle" class="tabs-subnav-toggle-label"><span id="help-contents-label">Contents</span> <span class="tabs-subnav-toggle-chevron">▾</span></label>
             <label for="help-subnav-toggle" class="tabs-subnav-backdrop" aria-hidden="true"></label>
             <div class="tabs-subnav" id="help-subnav">
-                <div class="tabs-subnav-title">Contents</div>
+                <div class="tabs-subnav-title" id="help-contents-title">Contents</div>
                 <a href="#help-section-start" class="tabs-subnav-link">🚀 Getting Started</a>
                 <a href="#help-section-mining" class="tabs-subnav-link">⛏️ Drop Mining</a>
                 <a href="#help-section-multi" class="tabs-subnav-link">👥 Multi-Account</a>
@@ -87,15 +87,15 @@
                     <div id="stats-content" class="stats-grid">
                         <div class="stat-card stat-card-clickable" id="stat-drops-today-card" tabindex="0" role="button" aria-haspopup="dialog" title="View drops claimed today">
                             <div class="stat-value" id="stat-drops-today">&#x2014;</div>
-                            <div class="stat-label">Drops Today</div>
+                            <div class="stat-label" id="stat-drops-today-label">Drops Today</div>
                         </div>
                         <div class="stat-card">
                             <div class="stat-value" id="stat-drops-total">&#x2014;</div>
-                            <div class="stat-label">Drops Total</div>
+                            <div class="stat-label" id="stat-drops-total-label">Drops Total</div>
                         </div>
                         <div class="stat-card">
                             <div class="stat-value" id="stat-points-session">&#x2014;</div>
-                            <div class="stat-label">Points Today</div>
+                            <div class="stat-label" id="stat-points-today-label">Points Today</div>
                         </div>
                     </div>
                 </section>
@@ -758,13 +758,17 @@
 
                 <!-- Channel Points ranking -->
                 <section class="panel analytics-cp-col">
-                    <div class="cp-header-row" style="margin-bottom:16px;">
+                    <div class="cp-header-row" style="margin-bottom:8px;">
                         <h2 id="analytics-cp-header">Channel Points</h2>
                         <div style="display:flex;gap:8px;align-items:center;">
                             <span id="cp-tab-summary" class="analytics-header-meta"></span>
                             <button id="cp-tab-refresh-btn" class="secondary-btn">↻ Refresh</button>
                         </div>
                     </div>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:0.82rem;color:var(--ink-dim);margin-bottom:12px;cursor:pointer;" title="Also filters the Points Over Time channel dropdown below">
+                        <input type="checkbox" id="cp-subscribed-only-toggle" checked>
+                        <span id="cp-subscribed-only-label">Subscribed channels only</span>
+                    </label>
                     <div id="cp-tab-empty" style="color:var(--ink-dim);font-size:0.9rem;padding:12px 0;">No channel points data yet. Points are recorded while watching channels.</div>
                     <div id="cp-tab-list" style="display:none;"></div>
                 </section>
