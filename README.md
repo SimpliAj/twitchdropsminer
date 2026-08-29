@@ -9,35 +9,116 @@
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/Python-3.12+-blue?style=for-the-badge&logo=python" alt="Python"></a>
 </p>
 
-This is an **independently developed and maintained** fork originally based on [rangermix/TwitchDropsMiner](https://github.com/rangermix/TwitchDropsMiner).  
-It has diverged significantly and is now its own standalone project with active development, independent features, and bug fixes that go well beyond the upstream codebase.
+**TwitchDropsMiner watches Twitch drop campaigns for you** — no video stream, no browser tab, no bandwidth. It sends the same "watch" heartbeats Twitch's own player sends, discovers active campaigns automatically, claims every drop the moment it's earned, and runs headlessly behind a clean web dashboard you can check from your phone.
+
+This is an **independently developed and maintained** fork originally based on [rangermix/TwitchDropsMiner](https://github.com/rangermix/TwitchDropsMiner), which itself descends from [DevilXD/TwitchDropsMiner](https://github.com/DevilXD/TwitchDropsMiner). It has diverged significantly and is now its own standalone project — a full dashboard redesign, multi-account fleet management, an auto-betting engine, a Discord bot, and a large list of reliability fixes on top of the original streamless-mining core.
 
 Upstream changes that make sense will continue to be merged when applicable, but this project follows its own roadmap.
 
 ---
 
-## 🔀 What's Different From the Original
+## ✨ Features
 
-The following features and fixes have been added on top of the upstream codebase:
+- 🚀 **Streamless Mining** — Earn drops without streaming video, by sending Twitch watch events directly
+- 🔍 **Automatic Campaign Discovery** — Detects new drop campaigns and switches to them automatically
+- ⚙️ **Auto Channel Switching** — Always mines the best available stream for the highest-priority game with progress remaining
+- 💾 **Persistent Login** — OAuth device-flow login, saved via cookies, survives restarts
+- 🕹️ **Extraction Console Dashboard** — A from-scratch web UI redesign: a dark, instrument-panel-style control room with a 7-tab layout (Main, Inventory, Channel Points, History, Analytics, Settings, System) plus a Help wiki tab
+- 👥 **Multi-Account Fleet Management** — Run unlimited isolated accounts and manage all of them from one "Manage Accounts" view with live fleet status and bulk actions/settings
+- 💰 **Channel Points Auto-Claimer** — Bonus chests claimed automatically via WebSocket (PubSub) with a 60s polling fallback
+- 💤 **Idle Watch** — Farms channel points on chosen (or auto-followed) channels whenever no drop campaign is active
+- 🎯 **Auto-Betting on Predictions** — Optional, off by default: automatically places Twitch Prediction bets using one of four strategies, with per-channel overrides
+- 🚫 **Fine-Grained Blacklisting** — Blacklist by game, by drop name (keyword), by exact drop ID, or ignore a single campaign without touching the rest of that game
+- 🤖 **Discord Bot** — Slash-command pairing, live-updating dashboard embeds, and drop/points notifications across multiple servers
+- 🔔 **Discord Webhooks** — Separate webhook URLs for drops and channel points, with a one-click test button
+- 🌍 **19-Language UI** — Actively audited for translation-key coverage, not just "has a language file"
+- 🛡️ **Safe Frontend Rendering** — Dynamic UI content is built with DOM APIs, not innerHTML, to avoid HTML injection
+- 🔒 **Password-Protected Dashboard** — Optional `WEB_PASSWORD` lock with a 30-day session cookie, for safely exposing the dashboard remotely
+- 🧩 **Docker-Ready** — Pre-built multi-arch images, or build from source; one command to deploy anywhere
 
-### 👥 Multi-Account Support
-- Each Twitch account lives in its own isolated `data/accounts/<name>/` directory (cookies, settings, drop history, channel points)
-- Switch accounts from the **System tab** in the web UI — no config files needed
-- Full CRUD via REST API: `/api/accounts` (list, add, switch, delete)
-- Drop history and channel points are saved per-account; switching accounts shows the correct data instantly
+---
 
-### 🔀 Multi-Account Parallel Mode
-Run unlimited independent miner instances at the same time — each as a fully isolated process with its own data, settings, and login session.
+## 🧰 Quick Start
 
-- **Dynamic management** — add/remove instances directly from the **System → Instances** tab in the dashboard; no manual config needed
-- Instance 1 runs on port **8080** with data stored in `data/` (always present, cannot be removed)
+### 🐳 Pre-built Image (Recommended)
+
+No need to clone or build — pull the image directly from Docker Hub:
+
+```yaml
+# docker-compose.yml
+services:
+  twitch-drops-miner:
+    image: gitsimpliaj/twitch-drops-miner:latest
+    container_name: twitch-drops-miner
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - TZ=Europe/Vienna           # Set your timezone
+      - WEB_PASSWORD=yourpassword  # Optional: lock the dashboard
+    restart: always
+```
+
+```bash
+docker compose up -d
+```
+
+Visit 👉 **<http://localhost:8080>**
+
+Images are built automatically for `linux/amd64` and `linux/arm64` on every release.
+Also available on GHCR: `ghcr.io/simpliaj/twitchdropsminer:latest`
+
+### 🔨 Build from Source with Docker
+
+```bash
+git clone https://github.com/SimpliAj/twitchdropsminer.git
+cd twitchdropsminer
+docker compose up -d
+```
+
+### 🧑‍💻 From Source (without Docker)
+
+Requires Python 3.12+.
+
+```bash
+pip install -e .
+python main.py
+```
+
+Visit 👉 **<http://localhost:8080>**
+
+---
+
+## 👥 Multi-Account: Two Ways to Run Several Accounts
+
+There are two different features for running more than one Twitch account — pick based on whether you want them sharing one process or fully separate ones.
+
+### Fleet Management (single instance, many accounts)
+
+Each Twitch account lives in its own isolated `data/accounts/<name>/` directory (cookies, settings, drop history, channel points). Add, switch, rename, and delete accounts from **System → Accounts** in the dashboard — no config files needed.
+
+Click **⚙ Manage Accounts** in the header to open the fleet manager:
+
+- **Fleet Status table** — one row per registered account showing live status, what it's currently watching, drops claimed today, and last-active time
+- **Bulk Actions** — apply an operation to every selected account at once:
+  - *Start Idle-Watch (Followed)*
+  - *Start Drop Mining (Selected)*
+  - *Pause / Stop All Selected*
+- **Bulk Settings** — push a shared **Games to Watch** priority list or **Blacklisted Games** change across every selected account in one step, instead of editing each account's settings individually
+
+### Multi-Account Parallel Mode (separate processes)
+
+Run unlimited fully independent miner processes at once — each with its own port, its own data directory, and its own login session. Useful when you want hard process isolation (e.g. separate proxies per account) rather than one dashboard managing several logins.
+
+- **Dynamic management** — add/remove instances from **System → Instances**; no manual config editing
+- Instance 1 runs on port **8080** with data in `data/` (always present, cannot be removed)
 - Additional instances use ports **8082, 8084, ...** and data dirs `data2/`, `data3/`, ...
-- Each instance is fully isolated: cookies, settings, drop history, channel points
 - Nginx config regenerates automatically when instances are added or removed
-- Proxy warning shown in the dashboard when running 3+ instances on one IP (Twitch may flag the account)
+- A proxy warning is shown in the dashboard when running 3+ instances on one IP (Twitch may flag the accounts)
 - Configured via `TDM_PORT` (listening port) and `TDM_DATA_DIR` (data directory) environment variables
 
-**Docker Compose (both instances):**
+**Docker Compose (two instances):**
 
 ```yaml
 services:
@@ -118,34 +199,61 @@ server {
 **Accessing both dashboards:**
 - Account 1: `https://tdm.example.xyz/` (or `http://localhost:8080`)
 - Account 2: `https://tdm.example.xyz/acc2/` (or `http://localhost:8082`)
-- The web dashboard shows account switcher buttons labeled with each account's Twitch username. Click to jump between dashboards, or append `?acc=2` to the URL to go directly to account 2.
+- The header shows account switcher buttons labeled with each account's actual Twitch username once logged in. Click to jump between dashboards, or append `?acc=2` to the URL to go directly to account 2.
 
-### 💰 Channel Points Auto-Claimer
-- Automatically claims bonus channel point chests via both WebSocket (PubSub) and GQL polling (60s fallback)
-- Fixes upstream issues where chests were missed due to unreliable PubSub delivery
-- Toggle in Settings tab; real-time balance shown in the Main tab
-- **Points (Session)** stat tracks total bonus points claimed in the current session
+---
 
-### 💤 Idle Watch
-- When no drop campaigns are active, automatically watches configured channels to farm channel points
-- **Auto: use followed channels** — fetches all channels you follow on Twitch that are currently live (via Helix API); no manual config needed
-- Manual channel list with priority ordering
-- **Quick Controls** show a "Start Idle Watch" button when idle channels are available, and a "Switch Channel" button while idle-watching
-- The switch endpoint skips offline channels and cycles through the full list
+## 🌈 Using the Web App
 
-### 📊 Channel Points Tracker
-- Live per-channel balance with session history
-- Compact "Recent channels" section showing the 3 most recently active channels in the main view
-- Full ranked list in the **Channel Points tab**
+1. Open `http://localhost:8080`
+2. Log in with your Twitch account (OAuth device flow)
+3. The miner auto-fetches available campaigns
+4. Go to **Settings → Games to Watch** and select games:
+   - **Select Linked** — auto-selects games where your account is linked
+   - **Add Game** — add any custom game by name
+   - **Drag to reorder** — top = highest priority
+   - **Select All / Deselect All** for quick changes
+5. Click **Reload** to apply changes
+6. TDM starts mining drops automatically 🎉
 
-### 🔔 Discord Webhook Notifications
-- Drop claimed → embed with game, drop name, reward, item thumbnail image, and **account name**
-- Channel points bonus chest → embed with channel, bonus amount, balance, and **account name**
-- Two separate webhook URLs (drops / channel points) configurable in Settings
-- Test button included to verify webhooks without waiting for a real event
-- Account name in footer makes it easy to distinguish multiple accounts using the same webhook
+📝 **Tip:** Make sure your Twitch account is linked to your game accounts →
+👉 [https://www.twitch.tv/drops/campaigns](https://www.twitch.tv/drops/campaigns)
 
-### 🤖 Discord Bot Integration
+### Channel Points
+
+- Enable **Auto-claim bonus channel points** in Settings to claim chests automatically
+- Add channels to **Idle Watch** to keep earning points when no drops are active
+- Live balance is shown in the **Main** tab; full earn/spend history lives in the **Channel Points** tab
+- Click the **Drops Today** stat on the Main tab to open a popup listing exactly what's been claimed so far today, most recent first
+
+### Blacklisting & Ignoring
+
+TDM has four separate ways to exclude content, from broadest to narrowest:
+
+| Scope | Where | Effect |
+|-------|-------|--------|
+| **Blacklisted Games** | Settings → Games to Watch | The game is never auto-added or mined at all |
+| **Ignore Campaign** | Inventory card → 🚫 Ignore | One specific campaign for a game is skipped; the game's other campaigns keep mining normally |
+| **Drop Name Blacklist** | Settings → Blacklist | Any drop whose name contains a listed keyword is skipped |
+| **Blacklisted Drop IDs** | Settings, or the 🚫 button next to the active drop | One exact drop (e.g. a stuck/broken quest) is permanently excluded; everything else for that game keeps mining |
+
+### Auto-Betting (Predictions)
+
+Configure under **Settings → Predictions → Auto-Bet**. Disabled by default — nothing is wagered unless you turn it on.
+
+| Strategy | How it picks an outcome |
+|----------|--------------------------|
+| **SMART** | Compares vote share between the top two outcomes; only bets if the gap is at least the configured **Bet Gap %**, otherwise skips as too close to call |
+| **PERCENTAGE** | Always bets on the outcome with the most points already wagered (the crowd favorite by points) |
+| **HIGH_ODDS** | Always bets on the underdog — fewest points wagered, highest payout if it wins |
+| **MOST_VOTED** | Always bets on whichever outcome the most individual users picked |
+
+Other controls: bet size as a percentage of balance, a hard max-points-per-bet cap, a minimum balance floor below which the miner sits out, a configurable delay before betting (auto-shortened if the prediction's own lock window is shorter), a channel whitelist, and per-channel overrides for strategy/percentages/delay. Every bet is logged to **Analytics → Predictions History**, and a win/loss Discord embed is posted automatically if a channel-points webhook is configured.
+
+---
+
+## 🤖 Discord Bot Integration
+
 A dedicated Discord bot that pairs with your miner instance and sends rich, live-updating notifications — no webhook URLs needed.
 
 **Slash Commands**
@@ -176,183 +284,13 @@ A dedicated Discord bot that pairs with your miner instance and sends rich, live
 4. Run `/setchannel drops` and `/setchannel points` in the channels where you want notifications
 5. Run `/dashboard` to post a live-updating stats embed with control buttons
 
-### 🎮 Campaign Drops Modal
-- Click any campaign name in the Inventory to see all its drops in a popup — images, progress bars, and status badges
-- Click **▸ N drops left** to open the same modal filtered to unclaimed drops only
-- "X drops left" count is only shown for **linked** campaigns
+### Discord Webhooks (alternative to the bot)
 
-### 🃏 Inventory Card Redesign
-- 3-column CSS Grid layout — all cards in a row are always the same height
-- Farm toggle button shows **⛏ Farming** / **⊘ Skip** with hover swap animation
-- Game name no longer truncates with `...`
-- Campaign end date is always pinned to the bottom of the card
-
-### 🖥️ Web UI Improvements
-- **State-aware Quick Controls** — equal-size 2×2 grid; buttons highlight based on what the miner is currently doing:
-  - 🟢 Green: Drop Mining Active (currently farming drops)
-  - 🟡 Yellow: Skip Game (while a drop is active)
-  - 🟣 Purple: Start Drop Mining / Switch Channel (while idle-watching)
-- **Channel Points total** in Analytics — replaces "Last Claim" with total session points farmed across all accounts
-- **Twitch username** displayed in login form instead of raw user ID
-- **Drop Name Blacklist** — comma-separated keywords; drops whose name contains any keyword are skipped
-- **Blacklist by Drop ID** — one-click 🚫 button next to the currently-mining drop permanently excludes that *exact* drop (e.g. a stuck/broken quest) while other drops for the same game keep being mined; IDs can also be added/removed manually in Settings → Blacklisted Drop IDs
-- **Auto-Bet SMART strategy tuning** — `Bet Gap %` control in Settings → Predictions exposes the minimum vote-share gap between the top two outcomes required to place a SMART bet (skips closer predictions as too uncertain); every SMART evaluation is logged with the computed top/second percentages and gap
-- **Prediction result tooltip** — hovering an `UNKNOWN` result in Predictions History explains why: the app never saw that prediction resolve (bot restart, disconnect, or the channel went offline before it concluded)
-- **Inventory filter fixes** — correct AND/OR logic; both Linked/Not-Linked unchecked shows all campaigns
-- **Dark 7-tab layout**: Main, Inventory, Channel Points, History, Analytics, Settings, System, Help
-- **Drop History tab** — grouped by date, compact single-line rows with item thumbnail images
-- **Mobile-responsive** — full `@media` breakpoints at 768px and 480px; compact progress bars on small screens
-- No-cache headers for web assets; auto-updating cache hash on deploy
-- **Discord support link** in footer → [discord.gg/X5YKZBh9xV](https://discord.gg/X5YKZBh9xV)
-
-### 🔒 Dashboard Password Protection
-- Set `WEB_PASSWORD` to lock the web UI behind a password with 30-day session cookie
-- Change or remove the password from the Settings tab at any time
-
-### 🐛 Bug Fixes (also relevant to upstream)
-| Fix | Upstream issue |
-|-----|---------------|
-| Topics overflow crash (`MinerException`) — reserve buffer, catch gracefully | — |
-| Sub-drops (0-minute timers) hidden by default | [#37](https://github.com/rangermix/TwitchDropsMiner/issues/37) |
-| Not-Linked drops hidden by default | [#51](https://github.com/rangermix/TwitchDropsMiner/issues/51) |
-| Spade watch events sent for all channels (not only idle) | — |
-| Channel points webhook missing on WebSocket path | — |
-| `sendSpadeEvents` crash on `None` response | — |
-| `show_sub_drops`, `claim_channel_points`, `idle_channels` not persisted across restarts | — |
-| Discord webhooks not populating from saved settings on page load | — |
-
-### 🔄 Deployment
-- `update.sh` — one-command update that preserves `data/accounts/` and all customizations
-- Docker Compose with `WEB_PASSWORD` env support
-
----
-
-## ✨ Features
-
-- 🚀 **Streamless Mining** — Earn drops without streaming video by sending Twitch watch events
-- 🔍 **Automatic Campaign Discovery** — Detects new drop events automatically
-- ⚙️ **Auto Channel Switching** — Always mines the best available stream
-- 💾 **Persistent Login** — OAuth login saved via cookies
-- 🕹️ **Simple Web UI** — Manage everything from your browser
-- 🛡️ **Safe Frontend Rendering** — Dynamic UI content is rendered with DOM APIs to avoid HTML injection
-- 🧩 **Docker-Ready** — One command to deploy anywhere
-- 💰 **Channel Points Auto-Claimer** — Bonus chests claimed within 60s automatically
-- 💤 **Idle Watch** — Earns channel points on favorite channels when no drops are active
-- 📊 **Channel Points Tracker** — Live balance display with persistent history
-- 🤖 **Discord Bot** — Live dashboard embed + drop/points notifications across multiple Discord servers
-
----
-
-## 🧰 Quick Start
-
-### 🐳 Pre-built Image (Recommended)
-
-No need to clone or build — pull the image directly from Docker Hub:
-
-```yaml
-# docker-compose.yml
-services:
-  twitch-drops-miner:
-    image: gitsimpliaj/twitch-drops-miner:latest
-    container_name: twitch-drops-miner
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./data:/app/data
-    environment:
-      - TZ=Europe/Vienna           # Set your timezone
-      - WEB_PASSWORD=yourpassword  # Optional: lock the dashboard
-    restart: always
-```
-
-```bash
-docker compose up -d
-```
-
-Visit 👉 **<http://localhost:8080>**
-
-Images are built automatically for `linux/amd64` and `linux/arm64` on every release.  
-Also available on GHCR: `ghcr.io/simpliaj/twitchdropsminer:latest`
-
-### 🔨 Build from Source with Docker
-
-```bash
-git clone https://github.com/SimpliAj/twitchdropsminer.git
-cd twitchdropsminer
-docker compose up -d
-```
-
-### 🧑‍💻 From Source (without Docker)
-
-```bash
-pip install -e .
-python main.py
-```
-
-Visit 👉 **<http://localhost:8080>**
-
-### 👥 Multi-Account Parallel (Two Instances)
-
-Run both accounts simultaneously with Docker Compose:
-
-```yaml
-services:
-  tdm-account1:
-    build: .
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./data:/app/data
-      - ./logs:/app/logs
-    environment:
-      - TZ=Europe/Vienna
-      - WEB_PASSWORD=yourpassword
-      - TDM_PORT=8080
-      - TDM_DATA_DIR=data
-    restart: unless-stopped
-
-  tdm-account2:
-    build: .
-    ports:
-      - "8082:8082"
-    volumes:
-      - ./data2:/app/data
-      - ./logs2:/app/logs
-    environment:
-      - TZ=Europe/Vienna
-      - WEB_PASSWORD=yourpassword
-      - TDM_PORT=8082
-      - TDM_DATA_DIR=data
-    restart: unless-stopped
-```
-
-Then visit:
-- Account 1: **<http://localhost:8080>**
-- Account 2: **<http://localhost:8082>**
-
----
-
-## 🌈 Using the Web App
-
-1. Open `http://localhost:8080`
-2. Login with your Twitch account (OAuth device flow)
-3. The miner auto-fetches available campaigns
-4. Go to **Settings → Games to Watch** and select games:
-   - **Select Linked** — auto-selects games where your account is linked
-   - **Add Game** — add any custom game by name
-   - **Drag to reorder** — top = highest priority
-   - **Select All / Deselect All** for quick changes
-5. Click **Reload** to apply changes
-6. TDM starts mining drops automatically 🎉
-
-**Channel Points (Settings tab):**
-- Enable **Auto-claim bonus channel points** to claim chests automatically
-- Add channels to **Idle Watch** to earn points when no drops are active
-- Balance is shown in the **Main tab** and updates every 5 minutes
-
-📝 **Tip:**  
-Make sure your Twitch account is linked to your game accounts →  
-👉 [https://www.twitch.tv/drops/campaigns](https://www.twitch.tv/drops/campaigns)
+If you'd rather not add a bot, two separate webhook URLs (drops / channel points) can be configured directly in Settings:
+- Drop claimed → embed with game, drop name, reward, item thumbnail image, and account name
+- Channel points bonus chest → embed with channel, bonus amount, balance, and account name
+- A test button is included to verify webhooks without waiting for a real event
+- Account name in the footer makes it easy to distinguish multiple accounts using the same webhook
 
 ---
 
@@ -377,15 +315,25 @@ The dashboard will show a password prompt on first visit. Auth is stored as a 30
 
 ---
 
+## 🌍 Languages
+
+The dashboard is fully translated into 19 languages (selectable from the header), with translation-key coverage actively audited against every string the frontend and backend actually reference — not just "a file exists for it":
+
+Arabic · Chinese (Simplified) · Chinese (Traditional) · Czech · Danish · Dutch · English · French · German · Indonesian · Italian · Japanese · Polish · Portuguese · Romanian · Russian · Spanish · Turkish · Ukrainian
+
+See the [Original Project Credits](#original-project-credits) section for translation credits.
+
+---
+
 ## ⚠️ Notes & Warnings
 
-> ⚠️ **Avoid Watching on the Same Account**  
-> Watching Twitch manually while the miner runs can cause progress desync.  
+> ⚠️ **Avoid Watching on the Same Account**
+> Watching Twitch manually while the miner runs can cause progress desync.
 > Use a different account if you want to watch live streams while mining.
 
-> 💡 **Requirements**  
-> Python 3.12+  
-> Docker optional but recommended  
+> 💡 **Requirements**
+> Python 3.12+
+> Docker optional but recommended
 > Persistent data stored in `/data`
 
 ---
@@ -416,12 +364,17 @@ The dashboard will show a password prompt on first visit. Auth is stored as a 30
 ![Help Tab](./docs/screenshots/help-tab.jpg)
 </details>
 
+<details>
+<summary>📱 Mobile — Drop History</summary>
+
+![Mobile Drop History](./docs/screenshots/mobile-drop-history.jpg)
+</details>
 
 ---
 
 ## 💬 Contributing
 
-⭐ **Star this repo** if it's useful!  
+⭐ **Star this repo** if it's useful!
 💬 [Open an issue](../../issues) or [submit a PR](../../pulls) for bugs and improvements.
 
 ---
@@ -450,7 +403,7 @@ For translation credits, see the [Original Project Credits](#original-project-cr
 
 ## 🧾 Disclaimer
 
-> This project is actively developed. It is stable and runs continuously in production,  
+> This project is actively developed. It is stable and runs continuously in production,
 > but use it at your own risk. Always back up your `data/` directory before updating.
 
 ---
