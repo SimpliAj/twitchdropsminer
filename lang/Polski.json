@@ -39,6 +39,7 @@
     "status": {
       "name": "Status",
       "idle": "Bezczynność",
+      "ready": "Gotowy",
       "exiting": "Zamykanie...",
       "terminated": "Zatrzymano",
       "cleanup": "Czyszczenie kanałów...",

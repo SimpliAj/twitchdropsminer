@@ -459,7 +459,7 @@ function updateChannelPointsDisplay(login, claimedAmount) {
     channelEl.textContent = login;
     const cpDisabled = pts && pts.cpEnabled === false;
     balanceEl.textContent = cpDisabled ? 'No Points' : (pts ? `${pts.balance.toLocaleString()} pts` : '0 pts');
-    balanceEl.style.color = cpDisabled ? '#adadb8' : '';
+    balanceEl.style.color = cpDisabled ? '#8991A6' : '';
 
     if (claimedAmount && claimedEl) {
         claimedEl.textContent = `+${claimedAmount.toLocaleString()} pts`;
@@ -491,12 +491,12 @@ function renderPointsTracker() {
             nameEl.style.display = 'flex';nameEl.style.alignItems = 'center';nameEl.style.gap = '5px';
             const nameTxt = document.createElement('span');
             nameTxt.textContent = login;
-            nameTxt.style.color = '#9147ff';
+            nameTxt.style.color = '#A970FF';
             nameEl.appendChild(nameTxt);
             if (data.cpEnabled === false) {
                 const badge = document.createElement('span');
                 badge.textContent = 'No Points';
-                badge.style.cssText = 'font-size:0.7rem;background:#3d3d4a;color:#adadb8;padding:1px 5px;border-radius:4px;';
+                badge.style.cssText = 'font-size:0.7rem;background:#262B38A4A;color:#8991A6;padding:1px 5px;border-radius:4px;';
                 nameEl.appendChild(badge);
             }
             const ptsEl = document.createElement('span');
@@ -588,7 +588,7 @@ function renderDropHistory(drops) {
     if (summaryEl) summaryEl.textContent = `${drops.length} total · ${todayCount} today`;
     listEl.replaceChildren();
 
-    listEl.style.cssText = 'max-height:520px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border-color) transparent;';
+    listEl.style.cssText = 'scrollbar-width:thin;scrollbar-color:var(--border-color) transparent;';
 
     // Group by date (current page only)
     const pageStart = (dropHistoryPage - 1) * HISTORY_PAGE_SIZE;
@@ -604,7 +604,7 @@ function renderDropHistory(drops) {
     groups.forEach((dayDrops, dateKey) => {
         // Date header
         const dateHeader = document.createElement('div');
-        dateHeader.style.cssText = 'font-size:0.7rem;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-secondary);padding:10px 4px 4px;border-bottom:1px solid var(--border-color);margin-bottom:2px;position:sticky;top:0;background:var(--bg-primary,#1a1a1a);z-index:1;';
+        dateHeader.style.cssText = 'font-size:0.7rem;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--text-secondary);padding:10px 4px 4px;border-bottom:1px solid var(--border-color);margin-bottom:2px;position:sticky;top:0;background:var(--bg-primary,#12151D);z-index:1;';
         const isToday = new Date(dayDrops[0].ts).toDateString() === today;
         dateHeader.textContent = isToday ? `Today — ${dateKey}` : dateKey;
         listEl.appendChild(dateHeader);
@@ -642,7 +642,7 @@ function renderDropHistory(drops) {
             // Game tag
             const gameEl = document.createElement('span');
             gameEl.textContent = drop.game;
-            gameEl.style.cssText = 'font-size:0.72rem;color:#9147ff;white-space:nowrap;flex-shrink:0;max-width:120px;overflow:hidden;text-overflow:ellipsis;';
+            gameEl.style.cssText = 'font-size:0.72rem;color:var(--ore);font-weight:600;white-space:nowrap;flex-shrink:0;max-width:120px;overflow:hidden;text-overflow:ellipsis;';
             row.appendChild(gameEl);
 
             // Drop name (fills space)
@@ -653,8 +653,9 @@ function renderDropHistory(drops) {
 
             // Reward badge
             const rewardEl = document.createElement('span');
+            rewardEl.className = 'reward-pill';
             rewardEl.textContent = drop.reward;
-            rewardEl.style.cssText = 'font-size:0.68rem;font-weight:600;color:#3ddc84;background:rgba(61,220,132,0.1);padding:2px 7px;border-radius:20px;white-space:nowrap;flex-shrink:0;max-width:160px;overflow:hidden;text-overflow:ellipsis;';
+            rewardEl.style.cssText = 'flex-shrink:0;max-width:160px;overflow:hidden;text-overflow:ellipsis;';
             row.appendChild(rewardEl);
 
             listEl.appendChild(row);
@@ -675,7 +676,7 @@ function renderPager(containerEl, totalItems, pageSize, currentPage, onPageChang
     containerEl.style.cssText = '';
     const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
     if (totalPages <= 1) return;
-    containerEl.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 0;font-size:0.8rem;color:var(--text-secondary,#adadb8);';
+    containerEl.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 0;font-size:0.8rem;color:var(--text-secondary,#8991A6);';
 
     const prevBtn = document.createElement('button');
     prevBtn.textContent = '‹ Prev';
@@ -750,13 +751,13 @@ function renderChannelPointsTab() {
     }
 
     listEl.replaceChildren();
-    listEl.style.cssText = 'max-height:480px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border-color) transparent;';
+    listEl.style.cssText = 'scrollbar-width:thin;scrollbar-color:var(--border-color) transparent;';
 
     entries.forEach(([login, data], idx) => {
         const isTop = idx === 0;
         const row = document.createElement('div');
         row.style.cssText = `display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:5px;cursor:pointer;transition:background 0.1s;${isTop ? 'background:rgba(145,71,255,0.07);' : ''}`;
-        row.addEventListener('mouseover', () => row.style.background = 'rgba(145,71,255,0.1)');
+        row.addEventListener('mouseover', () => row.style.background = 'rgba(191,148,255,0.14)');
         row.addEventListener('mouseout', () => row.style.background = isTop ? 'rgba(145,71,255,0.07)' : '');
         row.addEventListener('click', () => window.open(`https://www.twitch.tv/${login}`, '_blank'));
 
@@ -767,19 +768,20 @@ function renderChannelPointsTab() {
 
         const nameEl = document.createElement('span');
         nameEl.textContent = login;
-        nameEl.style.cssText = `flex:1;font-size:0.88rem;font-weight:${isTop ? '600' : '400'};color:${isTop ? '#9147ff' : 'var(--text-primary)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;`;
+        nameEl.style.cssText = `flex:1;font-size:0.88rem;font-weight:${isTop ? '600' : '400'};color:${isTop ? 'var(--ore)' : 'var(--text-primary)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;`;
         row.appendChild(nameEl);
 
         if (data.claimed > 0) {
             const badge = document.createElement('span');
+            badge.className = 'reward-pill';
             badge.textContent = `+${data.claimed.toLocaleString()}`;
-            badge.style.cssText = 'font-size:0.72rem;font-weight:600;color:#3ddc84;background:rgba(61,220,132,0.1);padding:1px 6px;border-radius:20px;white-space:nowrap;flex-shrink:0;';
+            badge.style.cssText = 'flex-shrink:0;';
             row.appendChild(badge);
         }
 
         const ptsEl = document.createElement('span');
         ptsEl.textContent = `${(data.balance || 0).toLocaleString()} pts`;
-        ptsEl.style.cssText = `font-size:0.85rem;font-weight:600;color:${isTop ? '#9147ff' : 'var(--text-primary)'};white-space:nowrap;flex-shrink:0;`;
+        ptsEl.style.cssText = `font-size:0.85rem;font-weight:600;color:${isTop ? 'var(--ore)' : 'var(--text-primary)'};white-space:nowrap;flex-shrink:0;`;
         row.appendChild(ptsEl);
 
         listEl.appendChild(row);
@@ -863,6 +865,17 @@ function updateQCButtons(status) {
         if (small) small.textContent = 'End this drop, find next game';
     } else if (skipBtn) {
         skipBtn.classList.remove('qc-btn--active-warn', 'qc-btn--active');
+    }
+
+    // Odd number of visible buttons leaves a lone item stranded in a half-width
+    // column on its own row — stretch it to the full row width instead.
+    const row = document.querySelector('.quick-controls-row');
+    if (row) {
+        const visibleBtns = Array.from(row.querySelectorAll('.qc-btn')).filter(b => b.style.display !== 'none');
+        visibleBtns.forEach(b => b.classList.remove('qc-btn--span-full'));
+        if (visibleBtns.length % 2 === 1) {
+            visibleBtns[visibleBtns.length - 1].classList.add('qc-btn--span-full');
+        }
     }
 }
 
@@ -1035,6 +1048,20 @@ function renderChannels() {
         gameHeader.appendChild(makeElement('div', { class: 'game-group-info' }, null, el => {
             el.appendChild(makeElement('div', { class: 'game-group-name' }, group.name));
             el.appendChild(makeElement('div', { class: 'game-group-stats' }, `${channelCount} ${channelText} • ${totalViewers.toLocaleString()} ${viewersText}`));
+            if (isCollapsed) {
+                // Preview the top channels so a collapsed row still carries useful
+                // info instead of just a summary count — makes use of the row's
+                // width instead of leaving it empty.
+                const previewNames = [...group.channels]
+                    .sort((a, b) => (b.viewers || 0) - (a.viewers || 0))
+                    .slice(0, 3)
+                    .map(ch => ch.name);
+                const extra = channelCount - previewNames.length;
+                const previewText = previewNames.join(', ') + (extra > 0 ? ` +${extra}` : '');
+                if (previewText) {
+                    el.appendChild(makeElement('div', { class: 'game-group-preview' }, previewText));
+                }
+            }
         }));
 
         const chevron = makeElement('span', { class: 'game-group-chevron' }, isCollapsed ? '▸' : '▾');
@@ -1649,7 +1676,8 @@ function renderInventory() {
 
     campaigns.forEach(campaign => {
         const card = document.createElement('div');
-        card.className = 'campaign-card';
+        const isIgnored = (state.settings.ignored_campaign_ids || []).includes(campaign.id);
+        card.className = `campaign-card${isIgnored ? ' ignored' : ''}`;
 
         let statusClass = '';
         let statusText = '';
@@ -1681,6 +1709,12 @@ function renderInventory() {
                 : makeElement('span', { class: 'campaign-badge not-linked', title: 'Click to link your account on Twitch' }, '🔗 Link Account', el => {
                     el.addEventListener('click', () => window.open(campaign.link_url, '_blank'));
                 });
+
+        // Ignored badge — shown for both manually-linked and auto-linked campaigns
+        // (i.e. any campaign the user chose to ignore, regardless of link status)
+        const ignoredBadge = isIgnored
+            ? makeElement('span', { class: 'campaign-badge ignored', title: 'This campaign is ignored and its drops are not being mined' }, 'IGNORED')
+            : null;
 
         // Farm toggle button
         const gameName = campaign.game_name;
@@ -1715,6 +1749,23 @@ function renderInventory() {
             renderInventory();
         });
 
+        // Ignore toggle — available on every card (LINKED and auto-linked campaigns
+        // alike; there's no separate backend flag for "auto-linked", auto-add-linked
+        // just watches games from campaigns where campaign.linked is already true, so
+        // gating this on campaign.linked would already cover both, but we don't gate
+        // it at all: not-yet-linked campaigns can be pre-emptively ignored too).
+        const ignoreToggle = makeElement('button', {
+            class: `ignore-toggle-btn ${isIgnored ? 'ignored' : ''}`,
+            title: isIgnored
+                ? 'Click to un-ignore this campaign'
+                : 'Click to ignore this campaign — its drops will stop being mined, but the game and its other campaigns keep going'
+        }, isIgnored ? '↩ Un-ignore' : '🚫 Ignore');
+
+        ignoreToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleIgnoreCampaign(campaign.id);
+        });
+
         // Link account button
         const campaignGameDiv = makeElement('div', { class: 'campaign-game' }, '', el => {
             if (campaign.game_box_art_url) {
@@ -1723,6 +1774,7 @@ function renderInventory() {
             }
             el.appendChild(makeElement('span', { class: 'campaign-game-name' }, campaign.game_name));
             if (linkStatusBadge) el.appendChild(linkStatusBadge);
+            if (ignoredBadge) el.appendChild(ignoredBadge);
         });
 
         const campaignHeader = makeElement('div', { class: 'campaign-header' }, '', el => {
@@ -1747,7 +1799,7 @@ function renderInventory() {
             return h > 0 ? `~${h}h ${m}m` : `~${m}m`;
         };
         const timeEst = formatTime(remainingMins);
-        const progressInfo = campaign.linked && unclaimedDrops.length > 0
+        const progressInfo = campaign.linked && !isIgnored && unclaimedDrops.length > 0
             ? makeElement('div', { class: 'campaign-progress-info' }, '', el => {
                 el.appendChild(makeElement('span', { class: 'campaign-remaining-drops' }, `${unclaimedDrops.length} drop${unclaimedDrops.length !== 1 ? 's' : ''} left`));
                 if (timeEst) el.appendChild(makeElement('span', { class: 'campaign-time-est' }, timeEst));
@@ -1761,6 +1813,7 @@ function renderInventory() {
             el.appendChild(infoGroup);
             const btnGroup = makeElement('div', { class: 'campaign-status-btns' });
             btnGroup.appendChild(farmToggle);
+            btnGroup.appendChild(ignoreToggle);
             btnGroup.appendChild(toggleBtn);
             el.appendChild(btnGroup);
         });
@@ -1869,7 +1922,7 @@ function updateLoginStatus(data) {
         document.getElementById('oauth-code-display').style.display = 'none';
         if (loginPanel) loginPanel.classList.add('is-logged-in');
     } else {
-        const loggedOut = t.gui?.login?.logged_out || 'Not logged in';
+        const loggedOut = t.login?.status?.logged_out || 'Not logged in';
         statusEl.textContent = data.status || loggedOut;
         statusEl.setAttribute('translation-key', 'logged_out');
         statusEl.style.color = 'var(--text-secondary)';
@@ -2028,7 +2081,7 @@ function updateBotPairedUI(paired) {
     if (badge) {
         badge.replaceChildren();
         const span = document.createElement('span');
-        span.style.color = paired ? '#57d75b' : '#adadb8';
+        span.style.color = paired ? '#1DA980' : '#8991A6';
         const db = state.translations.gui?.settings?.discord_bot;
         span.textContent = paired ? (db?.connected || '✅ Connected') : (db?.not_connected || 'Not connected');
         badge.appendChild(span);
@@ -2150,6 +2203,23 @@ socket.on('games_available', (data) => {
     availableGames = new Set(data.games || []);
     renderGamesToWatch();
 });
+
+// Per-campaign ignore (Inventory grid) — distinct from the per-game
+// "Blacklisted Games" list (auto_add_excluded_games) and the per-drop
+// blacklist (blacklisted_drop_ids): this stops mining for one specific
+// campaign only, leaving the game and its other campaigns untouched.
+function toggleIgnoreCampaign(campaignId) {
+    const ids = state.settings.ignored_campaign_ids || [];
+    const idx = ids.indexOf(campaignId);
+    if (idx >= 0) {
+        ids.splice(idx, 1);
+    } else {
+        ids.push(campaignId);
+    }
+    state.settings.ignored_campaign_ids = ids;
+    saveSettings();
+    renderInventory();
+}
 
 function renderBlacklistedDropIds(ids) {
     state.settings.blacklisted_drop_ids = ids;
@@ -2312,13 +2382,13 @@ function renderPreferredWaiting() {
     list.replaceChildren();
     waiting.forEach(g => {
         const item = document.createElement('div');
-        item.style.cssText = 'display:flex;align-items:center;gap:8px;padding:5px 2px;font-size:0.88em;';
+        item.className = 'wq-waiting-item';
         const name = document.createElement('span');
+        name.className = 'wq-waiting-name';
         name.textContent = g;
-        name.style.flex = '1';
         const badge = document.createElement('span');
+        badge.className = 'wq-waiting-badge';
         badge.textContent = 'No campaign';
-        badge.style.cssText = 'font-size:0.8em;color:var(--text-muted,#888);background:var(--bg-secondary,#222);padding:2px 6px;border-radius:4px;';
         item.append(name, badge);
         list.appendChild(item);
     });
@@ -2674,7 +2744,7 @@ async function confirmOAuth() {
         // Hide the OAuth form and show waiting message
         document.getElementById('oauth-code-display').style.display = 'none';
         const t = state.translations;
-        const waitingAuth = t.gui?.login?.waiting_auth || 'Waiting for authentication...';
+        const waitingAuth = t.login?.status?.waiting_auth || 'Waiting for authentication...';
         const loginStatus = document.getElementById('login-status');
         loginStatus.textContent = waitingAuth;
         loginStatus.setAttribute('translation-key', 'waiting_auth');
@@ -2729,12 +2799,12 @@ function renderPredChannels(channels) {
     container.innerHTML = '';
     channels.forEach(ch => {
         const tag = document.createElement('span');
-        tag.style.cssText = 'display:inline-flex;align-items:center;gap:4px;background:#3a3a4a;border-radius:12px;padding:3px 10px;font-size:0.85rem;';
+        tag.style.cssText = 'display:inline-flex;align-items:center;gap:4px;background:#262B38;border-radius:12px;padding:3px 10px;font-size:0.85rem;';
         const name = document.createElement('span');
         name.textContent = ch;
         const btn = document.createElement('button');
         btn.textContent = '×';
-        btn.style.cssText = 'background:none;border:none;color:#adadb8;cursor:pointer;font-size:1rem;padding:0;line-height:1;';
+        btn.style.cssText = 'background:none;border:none;color:#8991A6;cursor:pointer;font-size:1rem;padding:0;line-height:1;';
         btn.onclick = () => { tag.remove(); saveSettings(); };
         tag.appendChild(name);
         tag.appendChild(btn);
@@ -2786,7 +2856,7 @@ function renderChannelOverrides(overrides) {
     const entries = Object.entries(overrides);
     if (entries.length === 0) {
         const empty = document.createElement('div');
-        empty.style.cssText = 'color:#adadb8;font-size:0.85rem;padding:4px 0;';
+        empty.style.cssText = 'color:#8991A6;font-size:0.85rem;padding:4px 0;';
         empty.textContent = 'No per-channel overrides configured.';
         container.appendChild(empty);
         return;
@@ -2795,7 +2865,7 @@ function renderChannelOverrides(overrides) {
     table.style.cssText = 'width:100%;border-collapse:collapse;font-size:0.85rem;min-width:540px;';
     const thead = document.createElement('thead');
     const hrow = document.createElement('tr');
-    hrow.style.cssText = 'color:#adadb8;text-align:left;';
+    hrow.style.cssText = 'color:#8991A6;text-align:left;';
     ['Channel','Strategy','Bet%','Max pts','Min bal','Delay(s)',''].forEach(label => {
         const th = document.createElement('th');
         th.style.cssText = 'padding:4px 8px;';
@@ -2813,10 +2883,10 @@ function renderChannelOverrides(overrides) {
 function _buildOverrideRow(channel, ov) {
     const tr = document.createElement('tr');
     tr.dataset.channel = channel;
-    tr.style.cssText = 'border-top:1px solid #2a2a35;';
+    tr.style.cssText = 'border-top:1px solid #1B2029;';
 
     const tdCh = document.createElement('td');
-    tdCh.style.cssText = 'padding:6px 8px;color:#efeff1;font-weight:500;white-space:nowrap;';
+    tdCh.style.cssText = 'padding:6px 8px;color:#ECEEF3;font-weight:500;white-space:nowrap;';
     tdCh.textContent = channel;
     tr.appendChild(tdCh);
 
@@ -2864,7 +2934,7 @@ function _buildOverrideRow(channel, ov) {
     const btn = document.createElement('button');
     btn.textContent = 'Remove';
     btn.className = 'secondary-btn';
-    btn.style.cssText = 'padding:2px 8px;font-size:0.8rem;color:#eb4a4a;border-color:#eb4a4a;white-space:nowrap;';
+    btn.style.cssText = 'padding:2px 8px;font-size:0.8rem;color:#E5484D;border-color:#E5484D;white-space:nowrap;';
     btn.onclick = () => _removeChannelOverride(channel, tr);
     tdRm.appendChild(btn);
     tr.appendChild(tdRm);
@@ -2898,7 +2968,7 @@ async function _removeChannelOverride(channel, tr) {
     const container = document.getElementById('channel-overrides-table');
     if (container && !container.querySelector('tr[data-channel]')) {
         const empty = document.createElement('div');
-        empty.style.cssText = 'color:#adadb8;font-size:0.85rem;padding:4px 0;';
+        empty.style.cssText = 'color:#8991A6;font-size:0.85rem;padding:4px 0;';
         empty.textContent = 'No per-channel overrides configured.';
         container.replaceChildren(empty);
     }
@@ -2996,6 +3066,7 @@ async function _saveSettingsNow() {
         drop_name_blacklist: (document.getElementById('drop-blacklist-input')?.value || '')
             .split(',').map(s => s.trim()).filter(Boolean),
         blacklisted_drop_ids: state.settings.blacklisted_drop_ids || [],
+        ignored_campaign_ids: state.settings.ignored_campaign_ids || [],
         scheduler_enabled: document.getElementById('scheduler-enabled')?.checked || false,
         scheduler_start: document.getElementById('scheduler-start')?.value || '22:00',
         scheduler_stop: document.getElementById('scheduler-stop')?.value || '08:00',
@@ -3726,7 +3797,7 @@ function renderPredictions(preds) {
     const summaryEl = document.getElementById("pred-summary");
     if (summaryEl) {
         summaryEl.replaceChildren();
-        [{ label: "Total", value: preds.length }, { label: "Win Rate", value: `${winRate}%` }, { label: "Net", value: `${net >= 0 ? "+" : ""}${net.toLocaleString()} pts`, color: net >= 0 ? "#00b368" : "#eb4a4a" }]
+        [{ label: "Total", value: preds.length }, { label: "Win Rate", value: `${winRate}%` }, { label: "Net", value: `${net >= 0 ? "+" : ""}${net.toLocaleString()} pts`, color: net >= 0 ? "#1DA980" : "#E5484D" }]
             .forEach(c => { const div = document.createElement("div"); div.className = "stat-card"; if (c.color) div.style.color = c.color; div.textContent = `${c.label}: ${c.value}`; summaryEl.appendChild(div); });
     }
     const tbody = document.getElementById("pred-tbody");
@@ -3734,9 +3805,9 @@ function renderPredictions(preds) {
     tbody.replaceChildren();
     const pageStart = (predHistoryPage - 1) * HISTORY_PAGE_SIZE;
     preds.slice(pageStart, pageStart + HISTORY_PAGE_SIZE).forEach(p => {
-        const color = p.result === "WIN" ? "#00b368" : p.result === "LOSE" ? "#eb4a4a" : "#adadb8";
+        const color = p.result === "WIN" ? "#1DA980" : p.result === "LOSE" ? "#E5484D" : "#8991A6";
         const tr = document.createElement("tr");
-        tr.style.borderTop = "1px solid #2d2d35";
+        tr.className = "pred-row";
         const netWon = p.result === "WIN" ? (p.points_won || 0) - (p.points_bet || 0) : 0;
         const wonText = p.result === "WIN" ? `+${netWon.toLocaleString()}` : p.result === "LOSE" ? `−${(p.points_bet || 0).toLocaleString()}` : "—";
         const tsText = p.ts
@@ -3747,8 +3818,23 @@ function renderPredictions(preds) {
             ? (state.translations?.gui?.analytics?.unknown_result_tooltip
                 || "Result unknown — the app didn't see this prediction resolve (bot restart, disconnect, or channel went offline before it concluded).")
             : "";
-        [{ text: tsText, style: "color:#adadb8;white-space:nowrap" }, { text: p.channel || "—" }, { text: p.title ? p.title.slice(0, 40) : "—" }, { text: p.outcome_chosen || "—" }, { text: (p.points_bet || 0).toLocaleString() }, { text: resultText, style: `color:${color};font-weight:600`, title: resultTitle }, { text: wonText, style: `color:${color}` }]
-            .forEach(c => { const td = document.createElement("td"); td.style.padding = "5px 8px"; if (c.style) td.style.cssText += c.style; td.textContent = c.text; if (c.title) td.title = c.title; tr.appendChild(td); });
+        [
+            { text: tsText, cls: "pred-cell-time" },
+            { text: p.channel || "—", cls: "pred-cell-channel" },
+            { text: p.title ? p.title.slice(0, 40) : "—", label: "Prediction" },
+            { text: p.outcome_chosen || "—", label: "Selection" },
+            { text: (p.points_bet || 0).toLocaleString(), label: "Bet" },
+            { text: resultText, style: `color:${color};font-weight:600`, title: resultTitle, label: "Result" },
+            { text: wonText, style: `color:${color}`, label: "Won" },
+        ].forEach(c => {
+            const td = document.createElement("td");
+            if (c.cls) td.className = c.cls;
+            if (c.style) td.style.cssText = c.style;
+            td.textContent = c.text;
+            if (c.title) td.title = c.title;
+            if (c.label) td.dataset.label = c.label;
+            tr.appendChild(td);
+        });
         tbody.appendChild(tr);
     });
 
@@ -3778,33 +3864,235 @@ async function loadAnalytics(channel, days) {
         if (!canvas) return;
         const ctx = canvas.getContext("2d");
         if (analyticsChart) analyticsChart.destroy();
-        analyticsChart = new Chart(ctx, { type: "line", data: { labels, datasets: [{ label: channel || "Points", data: values, borderColor: "#9147ff", backgroundColor: "rgba(145,71,255,0.1)", tension: 0.3, pointRadius: snapshots.length > 100 ? 0 : 3, fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: "#adadb8", maxTicksLimit: 8 }, grid: { color: "#2d2d35" } }, y: { ticks: { color: "#adadb8" }, grid: { color: "#2d2d35" } } } } });
+        analyticsChart = new Chart(ctx, { type: "line", data: { labels, datasets: [{ label: channel || "Points", data: values, borderColor: "#A970FF", backgroundColor: "rgba(191,148,255,0.14)", tension: 0.3, pointRadius: snapshots.length > 100 ? 0 : 3, fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: "#8991A6", maxTicksLimit: 8 }, grid: { color: "#262B38" } }, y: { ticks: { color: "#8991A6" }, grid: { color: "#262B38" } } } } });
     } catch(e) {}
+}
+
+// Only list channels that actually have data points in the selected range —
+// the backend always returns a key per known channel even when the filtered
+// snapshot list for that range is empty, which used to leave an empty
+// channel selected (flat, data-less chart) by default.
+async function populateAnalyticsChannelSelect(days, preferChannel) {
+    const sel = document.getElementById("analytics-channel");
+    if (!sel) return null;
+    try {
+        const resp = await fetch(API_BASE + `/api/analytics/points?days=${days}`);
+        const data = await resp.json();
+        const channels = Object.entries(data.channels || {})
+            .filter(([, snaps]) => snaps.length > 0)
+            .sort((a, b) => b[1].length - a[1].length)
+            .map(([ch]) => ch);
+        sel.replaceChildren(...channels.map(ch => { const opt = document.createElement("option"); opt.value = ch; opt.textContent = ch; return opt; }));
+        const chosen = channels.includes(preferChannel) ? preferChannel : (channels[0] || "");
+        if (chosen) sel.value = chosen;
+        return chosen || null;
+    } catch (e) { return null; }
 }
 
 async function initAnalyticsTab() {
     if (analyticsTabInited) { loadAnalytics(analyticsCurrentChannel, analyticsCurrentDays); return; }
     analyticsTabInited = true;
-    try {
-        const resp = await fetch(API_BASE + "/api/analytics/points?days=7");
-        const data = await resp.json();
-        const channels = Object.keys(data.channels || {});
-        const sel = document.getElementById("analytics-channel");
-        if (!sel) return;
-        sel.replaceChildren(...channels.map(ch => { const opt = document.createElement("option"); opt.value = ch; opt.textContent = ch; return opt; }));
-        if (channels.length > 0) loadAnalytics(channels[0], 7);
-        sel.addEventListener("change", () => loadAnalytics(sel.value, analyticsCurrentDays));
-        document.querySelectorAll(".range-btn").forEach(btn => {
-            btn.addEventListener("click", () => {
-                document.querySelectorAll(".range-btn").forEach(b => b.classList.remove("active-range"));
-                btn.classList.add("active-range");
-                loadAnalytics(analyticsCurrentChannel, parseInt(btn.dataset.days));
-            });
+    const sel = document.getElementById("analytics-channel");
+    if (!sel) return;
+    const chosen = await populateAnalyticsChannelSelect(analyticsCurrentDays, analyticsCurrentChannel);
+    if (chosen) loadAnalytics(chosen, analyticsCurrentDays);
+    sel.addEventListener("change", () => loadAnalytics(sel.value, analyticsCurrentDays));
+    document.querySelectorAll(".range-btn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            document.querySelectorAll(".range-btn").forEach(b => b.classList.remove("active-range"));
+            btn.classList.add("active-range");
+            const days = parseInt(btn.dataset.days);
+            const chosen = await populateAnalyticsChannelSelect(days, analyticsCurrentChannel);
+            if (chosen) loadAnalytics(chosen, days);
         });
-    } catch(e) {}
+    });
 }
 
 // ==================== Tab Management ====================
+
+// ==================== Account / Instance Data Loaders ====================
+// Top-level (not nested in a DOMContentLoaded closure) so they're callable
+// from switchTab() and openAccountsManagerModal()'s call chain alike.
+
+// Instance management
+async function loadInstances() {
+    const listEl = document.getElementById('instances-list');
+    const statusEl = document.getElementById('instances-status');
+    const warningEl = document.getElementById('instances-proxy-warning');
+    if (!listEl) return;
+    try {
+        const r = await fetch('/api/instances');
+        const data = await r.json();
+        if (warningEl) warningEl.style.display = data.proxy_warning ? 'block' : 'none';
+        // Auto-provisioning (pm2+nginx) only works on the maintainer's own VPS —
+        // hide it everywhere else so self-hosters only see the option that
+        // actually works for them (registering an already-running instance).
+        const addBtn = document.getElementById('add-instance-btn');
+        if (addBtn) addBtn.style.display = data.autoprovision_enabled ? '' : 'none';
+        const instances = data.instances || [];
+        listEl.innerHTML = '';
+        instances.forEach(inst => {
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border-color);';
+            const isActive = inst.n === ACC_NUM;
+            const namePart = document.createElement('span');
+            namePart.style.cssText = 'flex:1;font-size:.88rem;font-weight:600;';
+            namePart.textContent = inst.label;
+            const portBadge = document.createElement('span');
+            portBadge.style.cssText = 'font-size:.75rem;color:var(--text-secondary);background:var(--bg-secondary);padding:2px 7px;border-radius:4px;';
+            portBadge.textContent = inst.base_url ? new URL(inst.base_url).host : `:${inst.port}`;
+            const switchBtn = document.createElement('button');
+            switchBtn.className = isActive ? 'btn-secondary' : 'btn-primary';
+            switchBtn.style.cssText = 'padding:4px 10px;font-size:.8rem;width:auto;';
+            switchBtn.textContent = isActive ? 'Active' : 'Switch';
+            switchBtn.disabled = isActive;
+            switchBtn.onclick = () => switchAccount(inst);
+            row.appendChild(namePart);
+            row.appendChild(portBadge);
+            row.appendChild(switchBtn);
+            if (inst.n > 1) {
+                const rmBtn = document.createElement('button');
+                rmBtn.className = 'btn-secondary';
+                rmBtn.style.cssText = 'padding:4px 10px;font-size:.8rem;width:auto;color:#E5484D;border-color:#E5484D;';
+                rmBtn.textContent = '✕';
+                rmBtn.title = 'Remove instance';
+                rmBtn.onclick = async () => {
+                    if (!confirm(`Remove Account ${inst.n}? The process will be stopped. Data is preserved.`)) return;
+                    rmBtn.disabled = true;
+                    if (statusEl) { statusEl.textContent = `Removing instance ${inst.n}...`; statusEl.style.display = 'block'; }
+                    const res = await fetch(`/api/instances/${inst.n}`, { method: 'DELETE' });
+                    if (res.ok) {
+                        if (statusEl) { statusEl.textContent = `Instance ${inst.n} removed. Reloading...`; }
+                        setTimeout(() => { loadInstanceTabs(); loadInstances(); if (statusEl) statusEl.style.display = 'none'; }, 2000);
+                    } else {
+                        const err = await res.json().catch(() => ({}));
+                        if (statusEl) { statusEl.textContent = `Error: ${err.detail || 'Failed'}`; statusEl.style.display = 'block'; }
+                        rmBtn.disabled = false;
+                    }
+                };
+                row.appendChild(rmBtn);
+            }
+            listEl.appendChild(row);
+        });
+    } catch(e) {
+        if (listEl) listEl.textContent = 'Failed to load instances.';
+    }
+}
+
+// Account management
+async function loadAccounts() {
+    const listEl = document.getElementById('accounts-list');
+    const statusEl = document.getElementById('accounts-status');
+    if (!listEl) return;
+    try {
+        const r = await fetch(API_BASE + '/api/accounts');
+        const data = await r.json();
+        listEl.replaceChildren();
+        if (data.accounts.length === 0) {
+            const msg = document.createElement('div');
+            msg.textContent = 'No accounts saved yet.';
+            msg.style.cssText = 'font-size:0.82rem;color:var(--text-secondary);padding:4px 0;';
+            listEl.appendChild(msg);
+            return;
+        }
+        data.accounts.forEach(acc => {
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border-color);';
+
+            // Name display / inline edit
+            const nameEl = document.createElement('span');
+            nameEl.textContent = acc.label;
+            nameEl.style.cssText = 'flex:1;font-size:0.88rem;font-weight:500;';
+            row.appendChild(nameEl);
+
+            // Edit pencil button
+            const editBtn = document.createElement('button');
+            editBtn.textContent = '✏️';
+            editBtn.title = 'Rename';
+            editBtn.style.cssText = 'font-size:0.75rem;padding:2px 6px;border-radius:4px;border:1px solid var(--border-color);background:transparent;color:var(--text-secondary);cursor:pointer;';
+            editBtn.addEventListener('click', () => {
+                // Replace nameEl with inline input
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = acc.label;
+                input.maxLength = 40;
+                input.style.cssText = 'flex:1;background:#12151D;border:1px solid #A970FF;border-radius:4px;padding:2px 8px;color:var(--text-primary);font-size:0.85rem;outline:none;';
+                row.replaceChild(input, nameEl);
+                editBtn.style.display = 'none';
+                input.focus();
+                input.select();
+
+                const save = async () => {
+                    const newLabel = input.value.trim();
+                    if (!newLabel || newLabel === acc.label) { loadAccounts(); return; }
+                    try {
+                        const r = await fetch(API_BASE + `/api/accounts/${encodeURIComponent(acc.label)}`, {
+                            method: 'PATCH',
+                            headers: {'Content-Type':'application/json'},
+                            body: JSON.stringify({new_label: newLabel}),
+                        });
+                        if (!r.ok) throw new Error(await r.text());
+                        loadAccounts();
+                    } catch (e) {
+                        if (statusEl) { statusEl.textContent = 'Error: ' + e.message; statusEl.style.display = 'block'; statusEl.style.color = '#E5484D'; }
+                        loadAccounts();
+                    }
+                };
+                input.addEventListener('blur', save);
+                input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); if (e.key === 'Escape') loadAccounts(); });
+            });
+            row.appendChild(editBtn);
+
+            if (acc.active) {
+                const badge = document.createElement('span');
+                badge.textContent = 'Active';
+                badge.style.cssText = 'font-size:0.72rem;font-weight:600;color:#A970FF;background:rgba(191,148,255,0.16);padding:2px 8px;border-radius:20px;';
+                row.appendChild(badge);
+            }
+
+            if (!acc.has_cookies) {
+                const warn = document.createElement('span');
+                warn.textContent = 'Not logged in';
+                warn.style.cssText = 'font-size:0.72rem;color:#C8850A;';
+                row.appendChild(warn);
+            }
+
+            if (!acc.active) {
+                const switchBtn = document.createElement('button');
+                switchBtn.textContent = 'Switch';
+                switchBtn.style.cssText = 'font-size:0.78rem;padding:3px 10px;border-radius:4px;border:1px solid var(--border-color);background:transparent;color:var(--text-primary);cursor:pointer;';
+                switchBtn.addEventListener('click', async () => {
+                    if (!confirm(`Switch to account "${acc.label}"? The miner will restart.`)) return;
+                    try {
+                        await fetch(API_BASE + '/api/accounts/switch', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({label: acc.label}) });
+                        if (statusEl) { statusEl.textContent = `Switched to ${acc.label}, restarting...`; statusEl.style.display = 'block'; statusEl.style.color = '#1DA980'; }
+                    } catch (e) {
+                        if (statusEl) { statusEl.textContent = 'Error: ' + e.message; statusEl.style.display = 'block'; statusEl.style.color = '#E5484D'; }
+                    }
+                });
+                row.appendChild(switchBtn);
+
+                const delBtn = document.createElement('button');
+                delBtn.textContent = '✕';
+                delBtn.style.cssText = 'font-size:0.78rem;padding:3px 8px;border-radius:4px;border:1px solid var(--border-color);background:transparent;color:#E5484D;cursor:pointer;';
+                delBtn.addEventListener('click', async () => {
+                    if (!confirm(`Delete account "${acc.label}"?`)) return;
+                    try {
+                        await fetch(API_BASE + `/api/accounts/${encodeURIComponent(acc.label)}`, { method: 'DELETE' });
+                        loadAccounts();
+                    } catch (e) {
+                        if (statusEl) { statusEl.textContent = 'Error: ' + e.message; statusEl.style.display = 'block'; statusEl.style.color = '#E5484D'; }
+                    }
+                });
+                row.appendChild(delBtn);
+            }
+
+            listEl.appendChild(row);
+        });
+    } catch (e) {
+        if (statusEl) { statusEl.textContent = 'Error loading accounts.'; statusEl.style.display = 'block'; }
+    }
+}
 
 function switchTab(tabName) {
     // Hide all tabs
@@ -3929,6 +4217,18 @@ document.addEventListener('DOMContentLoaded', () => {
     initAccountTabs();
     applyUsernameVisibility();
     document.getElementById("history-refresh-btn")?.addEventListener("click", loadDropHistory);
+    document.getElementById("manage-accounts-btn")?.addEventListener("click", openAccountsManagerModal);
+
+    const dropsTodayCard = document.getElementById("stat-drops-today-card");
+    if (dropsTodayCard) {
+        dropsTodayCard.addEventListener("click", showDropsTodayModal);
+        dropsTodayCard.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                showDropsTodayModal();
+            }
+        });
+    }
 
     // Tab switching
     document.querySelectorAll('.tab-button').forEach(button => {
@@ -4012,6 +4312,15 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('filter-benefit-other').addEventListener('change', onInventoryFilterChange);
     document.getElementById('filter-sub-drops')?.addEventListener('change', onInventoryFilterChange);
     document.getElementById('clear-filters-btn').addEventListener('click', clearInventoryFilters);
+
+    // Mobile Help "Contents" sheet: close it once a topic link is tapped so
+    // it doesn't stay open covering the article after jumping to a section.
+    document.querySelectorAll('.tabs-subnav-link').forEach((link) => {
+        link.addEventListener('click', () => {
+            const toggle = document.getElementById('help-subnav-toggle');
+            if (toggle) toggle.checked = false;
+        });
+    });
     document.getElementById('inventory-list-view')?.addEventListener('change', (e) => {
         state.settings.inventory_list_view = e.target.checked;
         applyInventoryViewMode(e.target.checked);
@@ -4298,72 +4607,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch and apply translations for the current language
     fetchAndApplyTranslations();
 
-
-    // Instance management
-    async function loadInstances() {
-        const listEl = document.getElementById('instances-list');
-        const statusEl = document.getElementById('instances-status');
-        const warningEl = document.getElementById('instances-proxy-warning');
-        if (!listEl) return;
-        try {
-            const r = await fetch('/api/instances');
-            const data = await r.json();
-            if (warningEl) warningEl.style.display = data.proxy_warning ? 'block' : 'none';
-            // Auto-provisioning (pm2+nginx) only works on the maintainer's own VPS —
-            // hide it everywhere else so self-hosters only see the option that
-            // actually works for them (registering an already-running instance).
-            const addBtn = document.getElementById('add-instance-btn');
-            if (addBtn) addBtn.style.display = data.autoprovision_enabled ? '' : 'none';
-            const instances = data.instances || [];
-            listEl.innerHTML = '';
-            instances.forEach(inst => {
-                const row = document.createElement('div');
-                row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border-color);';
-                const isActive = inst.n === ACC_NUM;
-                const namePart = document.createElement('span');
-                namePart.style.cssText = 'flex:1;font-size:.88rem;font-weight:600;';
-                namePart.textContent = inst.label;
-                const portBadge = document.createElement('span');
-                portBadge.style.cssText = 'font-size:.75rem;color:var(--text-secondary);background:var(--bg-secondary);padding:2px 7px;border-radius:4px;';
-                portBadge.textContent = inst.base_url ? new URL(inst.base_url).host : `:${inst.port}`;
-                const switchBtn = document.createElement('button');
-                switchBtn.className = isActive ? 'btn-secondary' : 'btn-primary';
-                switchBtn.style.cssText = 'padding:4px 10px;font-size:.8rem;width:auto;';
-                switchBtn.textContent = isActive ? 'Active' : 'Switch';
-                switchBtn.disabled = isActive;
-                switchBtn.onclick = () => switchAccount(inst);
-                row.appendChild(namePart);
-                row.appendChild(portBadge);
-                row.appendChild(switchBtn);
-                if (inst.n > 1) {
-                    const rmBtn = document.createElement('button');
-                    rmBtn.className = 'btn-secondary';
-                    rmBtn.style.cssText = 'padding:4px 10px;font-size:.8rem;width:auto;color:#e53;border-color:#e53;';
-                    rmBtn.textContent = '✕';
-                    rmBtn.title = 'Remove instance';
-                    rmBtn.onclick = async () => {
-                        if (!confirm(`Remove Account ${inst.n}? The process will be stopped. Data is preserved.`)) return;
-                        rmBtn.disabled = true;
-                        if (statusEl) { statusEl.textContent = `Removing instance ${inst.n}...`; statusEl.style.display = 'block'; }
-                        const res = await fetch(`/api/instances/${inst.n}`, { method: 'DELETE' });
-                        if (res.ok) {
-                            if (statusEl) { statusEl.textContent = `Instance ${inst.n} removed. Reloading...`; }
-                            setTimeout(() => { loadInstanceTabs(); loadInstances(); if (statusEl) statusEl.style.display = 'none'; }, 2000);
-                        } else {
-                            const err = await res.json().catch(() => ({}));
-                            if (statusEl) { statusEl.textContent = `Error: ${err.detail || 'Failed'}`; statusEl.style.display = 'block'; }
-                            rmBtn.disabled = false;
-                        }
-                    };
-                    row.appendChild(rmBtn);
-                }
-                listEl.appendChild(row);
-            });
-        } catch(e) {
-            if (listEl) listEl.textContent = 'Failed to load instances.';
-        }
-    }
-
     document.getElementById('add-instance-btn')?.addEventListener('click', async () => {
         const btn = document.getElementById('add-instance-btn');
         const statusEl = document.getElementById('instances-status');
@@ -4410,120 +4653,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (btn) btn.disabled = false;
     });
 
-    // Account management
-    async function loadAccounts() {
-        const listEl = document.getElementById('accounts-list');
-        const statusEl = document.getElementById('accounts-status');
-        if (!listEl) return;
-        try {
-            const r = await fetch(API_BASE + '/api/accounts');
-            const data = await r.json();
-            listEl.replaceChildren();
-            if (data.accounts.length === 0) {
-                const msg = document.createElement('div');
-                msg.textContent = 'No accounts saved yet.';
-                msg.style.cssText = 'font-size:0.82rem;color:var(--text-secondary);padding:4px 0;';
-                listEl.appendChild(msg);
-                return;
-            }
-            data.accounts.forEach(acc => {
-                const row = document.createElement('div');
-                row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border-color);';
-
-                // Name display / inline edit
-                const nameEl = document.createElement('span');
-                nameEl.textContent = acc.label;
-                nameEl.style.cssText = 'flex:1;font-size:0.88rem;font-weight:500;';
-                row.appendChild(nameEl);
-
-                // Edit pencil button
-                const editBtn = document.createElement('button');
-                editBtn.textContent = '✏️';
-                editBtn.title = 'Rename';
-                editBtn.style.cssText = 'font-size:0.75rem;padding:2px 6px;border-radius:4px;border:1px solid var(--border-color);background:transparent;color:var(--text-secondary);cursor:pointer;';
-                editBtn.addEventListener('click', () => {
-                    // Replace nameEl with inline input
-                    const input = document.createElement('input');
-                    input.type = 'text';
-                    input.value = acc.label;
-                    input.maxLength = 40;
-                    input.style.cssText = 'flex:1;background:#18181b;border:1px solid #9147ff;border-radius:4px;padding:2px 8px;color:var(--text-primary);font-size:0.85rem;outline:none;';
-                    row.replaceChild(input, nameEl);
-                    editBtn.style.display = 'none';
-                    input.focus();
-                    input.select();
-
-                    const save = async () => {
-                        const newLabel = input.value.trim();
-                        if (!newLabel || newLabel === acc.label) { loadAccounts(); return; }
-                        try {
-                            const r = await fetch(API_BASE + `/api/accounts/${encodeURIComponent(acc.label)}`, {
-                                method: 'PATCH',
-                                headers: {'Content-Type':'application/json'},
-                                body: JSON.stringify({new_label: newLabel}),
-                            });
-                            if (!r.ok) throw new Error(await r.text());
-                            loadAccounts();
-                        } catch (e) {
-                            if (statusEl) { statusEl.textContent = 'Error: ' + e.message; statusEl.style.display = 'block'; statusEl.style.color = '#f55'; }
-                            loadAccounts();
-                        }
-                    };
-                    input.addEventListener('blur', save);
-                    input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); if (e.key === 'Escape') loadAccounts(); });
-                });
-                row.appendChild(editBtn);
-
-                if (acc.active) {
-                    const badge = document.createElement('span');
-                    badge.textContent = 'Active';
-                    badge.style.cssText = 'font-size:0.72rem;font-weight:600;color:#9147ff;background:rgba(145,71,255,0.12);padding:2px 8px;border-radius:20px;';
-                    row.appendChild(badge);
-                }
-
-                if (!acc.has_cookies) {
-                    const warn = document.createElement('span');
-                    warn.textContent = 'Not logged in';
-                    warn.style.cssText = 'font-size:0.72rem;color:#f90;';
-                    row.appendChild(warn);
-                }
-
-                if (!acc.active) {
-                    const switchBtn = document.createElement('button');
-                    switchBtn.textContent = 'Switch';
-                    switchBtn.style.cssText = 'font-size:0.78rem;padding:3px 10px;border-radius:4px;border:1px solid var(--border-color);background:transparent;color:var(--text-primary);cursor:pointer;';
-                    switchBtn.addEventListener('click', async () => {
-                        if (!confirm(`Switch to account "${acc.label}"? The miner will restart.`)) return;
-                        try {
-                            await fetch(API_BASE + '/api/accounts/switch', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({label: acc.label}) });
-                            if (statusEl) { statusEl.textContent = `Switched to ${acc.label}, restarting...`; statusEl.style.display = 'block'; statusEl.style.color = '#3ddc84'; }
-                        } catch (e) {
-                            if (statusEl) { statusEl.textContent = 'Error: ' + e.message; statusEl.style.display = 'block'; statusEl.style.color = '#f55'; }
-                        }
-                    });
-                    row.appendChild(switchBtn);
-
-                    const delBtn = document.createElement('button');
-                    delBtn.textContent = '✕';
-                    delBtn.style.cssText = 'font-size:0.78rem;padding:3px 8px;border-radius:4px;border:1px solid var(--border-color);background:transparent;color:#f55;cursor:pointer;';
-                    delBtn.addEventListener('click', async () => {
-                        if (!confirm(`Delete account "${acc.label}"?`)) return;
-                        try {
-                            await fetch(API_BASE + `/api/accounts/${encodeURIComponent(acc.label)}`, { method: 'DELETE' });
-                            loadAccounts();
-                        } catch (e) {
-                            if (statusEl) { statusEl.textContent = 'Error: ' + e.message; statusEl.style.display = 'block'; statusEl.style.color = '#f55'; }
-                        }
-                    });
-                    row.appendChild(delBtn);
-                }
-
-                listEl.appendChild(row);
-            });
-        } catch (e) {
-            if (statusEl) { statusEl.textContent = 'Error loading accounts.'; statusEl.style.display = 'block'; }
-        }
-    }
 
     document.getElementById('add-account-btn')?.addEventListener('click', async () => {
         const labelInput = document.getElementById('new-account-label');
@@ -4534,7 +4663,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const r = await fetch(API_BASE + '/api/accounts/add', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({label}) });
             if (!r.ok) { const d = await r.json().catch(() => ({})); alert(d.detail || 'Error'); return; }
             if (labelInput) labelInput.value = '';
-            if (statusEl) { statusEl.textContent = `Account "${label}" added, miner restarting for login...`; statusEl.style.display = 'block'; statusEl.style.color = '#3ddc84'; }
+            if (statusEl) { statusEl.textContent = `Account "${label}" added, miner restarting for login...`; statusEl.style.display = 'block'; statusEl.style.color = '#1DA980'; }
             setTimeout(loadAccounts, 1500);
         } catch (e) {
             alert('Error: ' + e.message);
@@ -4593,8 +4722,16 @@ function renderWantedItems(tree) {
         // Icon
         const iconEl = iconUrl ? makeImageElement(iconUrl, gameGroup.game_name, 'wq-icon') : makeElement('span', { class: 'wq-icon-placeholder' }, '🎮');
 
-        // Name
+        // Name (+ a campaign-name preview shown only while collapsed, so the
+        // row still communicates something on wide desktop rows instead of
+        // leaving the space next to the name empty)
         const nameEl = makeElement('span', { class: 'wq-name' }, gameGroup.game_name);
+        const campaignPreview = gameGroup.campaigns.map(c => c.name).join(' • ');
+        const subtitleEl = makeElement('span', { class: 'wq-subtitle' }, campaignPreview);
+        const nameColEl = makeElement('div', { class: 'wq-name-col' }, '', el => {
+            el.appendChild(nameEl);
+            if (campaignPreview) el.appendChild(subtitleEl);
+        });
 
         // Drop count
         const countEl = makeElement('span', { class: 'wq-count' }, `${totalDrops} drop${totalDrops !== 1 ? 's' : ''}`);
@@ -4641,7 +4778,7 @@ function renderWantedItems(tree) {
 
         // Header row click → toggle expand
         const headerEl = makeElement('div', { class: 'wq-header' }, '', el => {
-            [handle, badge, iconEl, nameEl, countEl, moveUpEl, moveDownEl, toggleEl, removeEl].forEach(c => el.appendChild(c));
+            [handle, badge, iconEl, nameColEl, countEl, moveUpEl, moveDownEl, toggleEl, removeEl].forEach(c => el.appendChild(c));
         });
 
         // Expanded content
@@ -4677,12 +4814,15 @@ function renderWantedItems(tree) {
         if (index !== 0) {
             bodyEl.style.display = 'none';
             toggleEl.textContent = '▸';
+        } else {
+            subtitleEl.style.display = 'none';
         }
 
         headerEl.addEventListener('click', (e) => {
             if (e.target === removeEl || e.target === handle) return;
             const open = bodyEl.style.display !== 'none';
             bodyEl.style.display = open ? 'none' : '';
+            subtitleEl.style.display = open ? '' : 'none';
             toggleEl.textContent = open ? '▸' : '▾';
         });
 
@@ -4766,23 +4906,23 @@ function showCampaignDropsModal(campaignId, onlyRemaining) {
             const badge = document.createElement('span');
             badge.style.cssText = 'font-size:.72rem;padding:2px 7px;border-radius:20px;white-space:nowrap;flex-shrink:0';
             if (drop.is_claimed) {
-                badge.style.background = 'rgba(61,220,132,0.15)';
-                badge.style.color = '#3ddc84';
+                badge.style.background = 'rgba(52,231,184,0.18)';
+                badge.style.color = '#1DA980';
                 badge.textContent = '✓ Claimed';
             } else if (locallyEarned) {
-                badge.style.background = 'rgba(61,220,132,0.1)';
-                badge.style.color = '#3ddc84';
+                badge.style.background = 'rgba(52,231,184,0.14)';
+                badge.style.color = '#1DA980';
                 badge.textContent = '✓ Earned';
                 badge.title = 'Watch time completed — waiting for Twitch to confirm';
             } else if (drop.can_claim) {
-                badge.style.background = 'rgba(255,200,0,0.15)';
-                badge.style.color = '#ffc800';
+                badge.style.background = 'rgba(255,203,97,0.18)';
+                badge.style.color = '#C8850A';
                 badge.textContent = '⚡ Claim now';
             } else {
                 const pct = drop.required_minutes > 0 ? Math.round((effectiveMinutes / drop.required_minutes) * 100) : 0;
                 const minsLeft = Math.max(0, drop.required_minutes - effectiveMinutes);
-                badge.style.background = 'rgba(145,70,255,0.15)';
-                badge.style.color = '#9147ff';
+                badge.style.background = 'rgba(191,148,255,0.18)';
+                badge.style.color = '#A970FF';
                 badge.textContent = `${pct}% · ${minsLeft}min left`;
             }
             header.appendChild(badge);
@@ -4793,7 +4933,7 @@ function showCampaignDropsModal(campaignId, onlyRemaining) {
                 const bar = document.createElement('div');
                 bar.style.cssText = 'width:100%;height:3px;background:var(--bg-secondary);border-radius:2px;overflow:hidden;margin-bottom:6px';
                 const fill = document.createElement('div');
-                fill.style.cssText = `height:100%;width:${pct}%;background:#9147ff;border-radius:2px`;
+                fill.style.cssText = `height:100%;width:${pct}%;background:#A970FF;border-radius:2px`;
                 bar.appendChild(fill);
                 item.appendChild(bar);
             }
@@ -4828,6 +4968,739 @@ function showCampaignDropsModal(campaignId, onlyRemaining) {
     document.body.appendChild(overlay);
 }
 
+async function showDropsTodayModal() {
+    document.getElementById('drops-today-modal')?.remove();
+    const overlay = document.createElement('div');
+    overlay.id = 'drops-today-modal';
+    overlay.className = 'wq-modal-overlay';
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeDropsTodayModal(); });
+
+    const modal = document.createElement('div');
+    modal.className = 'wq-modal cdm-modal';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', 'Drops claimed today');
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'wq-modal-close';
+    closeBtn.textContent = '×';
+    closeBtn.setAttribute('aria-label', 'Close');
+    closeBtn.addEventListener('click', () => closeDropsTodayModal());
+    modal.appendChild(closeBtn);
+
+    const title = document.createElement('div');
+    title.className = 'wq-modal-title';
+    title.textContent = 'Drops Claimed Today';
+    modal.appendChild(title);
+
+    const loading = document.createElement('div');
+    loading.style.cssText = 'text-align:center;color:var(--ink-dim);padding:20px 0;font-size:.88rem';
+    loading.textContent = 'Loading…';
+    modal.appendChild(loading);
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+    document.addEventListener('keydown', _dropsTodayModalEscHandler);
+    closeBtn.focus();
+
+    let todayDrops = [];
+    try {
+        const resp = await fetch(API_BASE + '/api/drops-history');
+        const drops = await resp.json();
+        const today = new Date().toDateString();
+        todayDrops = (drops || []).filter(d => new Date(d.timestamp).toDateString() === today);
+    } catch (e) {
+        loading.textContent = 'Failed to load drops.';
+        return;
+    }
+
+    loading.remove();
+
+    if (todayDrops.length === 0) {
+        const empty = document.createElement('div');
+        empty.style.cssText = 'text-align:center;color:var(--ink-dim);padding:20px 0;font-size:.88rem';
+        empty.textContent = 'No drops claimed today yet.';
+        modal.appendChild(empty);
+        return;
+    }
+
+    const sub = document.createElement('div');
+    sub.style.cssText = 'font-size:.78rem;color:var(--ink-dim);margin:-10px 0 14px';
+    sub.textContent = `${todayDrops.length} claimed today · most recent first`;
+    modal.appendChild(sub);
+
+    const list = document.createElement('div');
+    list.className = 'wq-modal-benefits';
+    // Backend already stores newest-first, but sort defensively in case that
+    // ordering assumption ever changes upstream.
+    todayDrops
+        .slice()
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+        .forEach(drop => {
+            const item = document.createElement('div');
+            item.className = 'wq-modal-benefit';
+
+            if (drop.image_url) {
+                const img = document.createElement('img');
+                img.src = drop.image_url;
+                img.alt = drop.reward || drop.drop || '';
+                img.onerror = () => { img.style.display = 'none'; };
+                item.appendChild(img);
+            }
+
+            const body = document.createElement('div');
+            body.style.cssText = 'display:flex;flex-direction:column;gap:2px;min-width:0;flex:1';
+
+            const nameRow = document.createElement('div');
+            nameRow.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;';
+
+            const nameEl = document.createElement('span');
+            nameEl.className = 'wq-modal-benefit-name';
+            nameEl.style.cssText = 'font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+            nameEl.textContent = drop.drop || drop.reward || 'Drop';
+            nameRow.appendChild(nameEl);
+
+            const timeEl = document.createElement('span');
+            timeEl.style.cssText = 'font-size:.72rem;color:var(--ink-dim);white-space:nowrap;flex-shrink:0;font-variant-numeric:tabular-nums;';
+            const ts = new Date(drop.timestamp);
+            timeEl.textContent = isNaN(ts) ? '' : ts.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+            nameRow.appendChild(timeEl);
+
+            body.appendChild(nameRow);
+
+            const metaEl = document.createElement('div');
+            metaEl.style.cssText = 'font-size:.76rem;color:var(--ink-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+            metaEl.textContent = [drop.game, drop.reward].filter(Boolean).join(' · ');
+            body.appendChild(metaEl);
+
+            item.appendChild(body);
+            list.appendChild(item);
+        });
+    modal.appendChild(list);
+}
+
+function closeDropsTodayModal() {
+    document.getElementById('drops-today-modal')?.remove();
+    document.removeEventListener('keydown', _dropsTodayModalEscHandler);
+}
+
+function _dropsTodayModalEscHandler(e) {
+    if (e.key === 'Escape') closeDropsTodayModal();
+}
+
+// ==================== Manage Accounts (fleet view + bulk settings) ====================
+
+// Teardown for the body-anchored values-suggestion dropdown (see
+// _renderBulkSettingsPanel) — it lives outside the modal's own DOM subtree,
+// so closing the modal doesn't clean it up automatically.
+let _accountsManagerDropdownCleanup = null;
+
+function openAccountsManagerModal() {
+    document.getElementById('accounts-manager-modal')?.remove();
+    _accountsManagerDropdownCleanup?.();
+    _accountsManagerDropdownCleanup = null;
+    const overlay = document.createElement('div');
+    overlay.id = 'accounts-manager-modal';
+    overlay.className = 'wq-modal-overlay';
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeAccountsManagerModal(); });
+
+    const modal = document.createElement('div');
+    modal.className = 'wq-modal cdm-modal';
+    modal.style.cssText = 'max-width:920px;max-height:85vh;overflow-y:auto;width:100%';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', 'Manage Accounts');
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'wq-modal-close';
+    closeBtn.textContent = '×';
+    closeBtn.setAttribute('aria-label', 'Close');
+    closeBtn.addEventListener('click', () => closeAccountsManagerModal());
+    modal.appendChild(closeBtn);
+
+    const title = document.createElement('div');
+    title.className = 'wq-modal-title';
+    title.textContent = 'Manage Accounts';
+    modal.appendChild(title);
+
+    const sub = document.createElement('div');
+    sub.style.cssText = 'font-size:.78rem;color:var(--ink-dim);margin:-10px 0 16px';
+    sub.textContent = 'Fleet status and bulk settings across every registered account.';
+    modal.appendChild(sub);
+
+    const statusHeading = document.createElement('h3');
+    statusHeading.style.cssText = 'font-size:.9rem;margin:0 0 8px;color:var(--ink);font-family:var(--font-display)';
+    statusHeading.textContent = 'Fleet Status';
+    modal.appendChild(statusHeading);
+
+    const statusWrap = document.createElement('div');
+    statusWrap.style.cssText = 'overflow-x:auto;margin-bottom:22px';
+    const loading = document.createElement('div');
+    loading.style.cssText = 'text-align:center;color:var(--ink-dim);padding:16px 0;font-size:.85rem';
+    loading.textContent = 'Loading fleet status…';
+    statusWrap.appendChild(loading);
+    modal.appendChild(statusWrap);
+
+    const selectorHeading = document.createElement('h3');
+    selectorHeading.style.cssText = 'font-size:.9rem;margin:0 0 8px;color:var(--ink);font-family:var(--font-display)';
+    selectorHeading.textContent = 'Select Accounts';
+    modal.appendChild(selectorHeading);
+
+    const selectorWrap = document.createElement('div');
+    selectorWrap.style.marginBottom = '16px';
+    modal.appendChild(selectorWrap);
+
+    const actionsHeading = document.createElement('h3');
+    actionsHeading.style.cssText = 'font-size:.9rem;margin:0 0 8px;color:var(--ink);font-family:var(--font-display)';
+    actionsHeading.textContent = 'Bulk Actions';
+    modal.appendChild(actionsHeading);
+
+    const actionsWrap = document.createElement('div');
+    modal.appendChild(actionsWrap);
+
+    const bulkHeading = document.createElement('h3');
+    bulkHeading.style.cssText = 'font-size:.9rem;margin:22px 0 8px;color:var(--ink);font-family:var(--font-display)';
+    bulkHeading.textContent = 'Bulk Settings';
+    modal.appendChild(bulkHeading);
+
+    const bulkWrap = document.createElement('div');
+    modal.appendChild(bulkWrap);
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+    document.addEventListener('keydown', _accountsManagerEscHandler);
+    closeBtn.focus();
+
+    _loadAccountsOverview(statusWrap, selectorWrap, actionsWrap, bulkWrap);
+}
+
+function closeAccountsManagerModal() {
+    document.getElementById('accounts-manager-modal')?.remove();
+    document.removeEventListener('keydown', _accountsManagerEscHandler);
+    _accountsManagerDropdownCleanup?.();
+    _accountsManagerDropdownCleanup = null;
+}
+
+function _accountsManagerEscHandler(e) {
+    if (e.key === 'Escape') closeAccountsManagerModal();
+}
+
+async function _loadAccountsOverview(statusWrap, selectorWrap, actionsWrap, bulkWrap) {
+    let data;
+    try {
+        const resp = await fetch(API_BASE + '/api/accounts/overview');
+        data = await resp.json();
+    } catch (e) {
+        statusWrap.textContent = '';
+        const err = document.createElement('div');
+        err.style.cssText = 'color:#FF6B81;font-size:.85rem;padding:8px 0';
+        err.textContent = 'Failed to load fleet status.';
+        statusWrap.appendChild(err);
+        return;
+    }
+    const accounts = data.accounts || [];
+    _renderFleetStatusTable(statusWrap, accounts);
+    const { checkboxes } = _renderAccountSelector(selectorWrap, accounts);
+    _renderBulkActionsPanel(actionsWrap, accounts, checkboxes, statusWrap);
+    _renderBulkSettingsPanel(bulkWrap, accounts, data.bulk_editable_fields || {}, checkboxes);
+}
+
+async function _refreshFleetStatusTable(statusWrap) {
+    try {
+        const resp = await fetch(API_BASE + '/api/accounts/overview');
+        const data = await resp.json();
+        _renderFleetStatusTable(statusWrap, data.accounts || []);
+    } catch (e) {
+        // Leave the existing table in place if the refresh itself fails.
+    }
+}
+
+// Shared "which accounts" checkbox picker — both Bulk Actions and Bulk
+// Settings read from the same checkbox elements so selection state stays
+// in sync between the two panels instead of each keeping its own copy.
+function _renderAccountSelector(container, accounts) {
+    container.textContent = '';
+
+    if (accounts.length === 0) {
+        const empty = document.createElement('div');
+        empty.style.cssText = 'color:var(--ink-dim);font-size:.85rem;padding:8px 0';
+        empty.textContent = 'No accounts registered.';
+        container.appendChild(empty);
+        return { checkboxes: [] };
+    }
+
+    const selectAllLabel = document.createElement('label');
+    selectAllLabel.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:.82rem;color:var(--ink-dim);font-weight:600;margin-bottom:8px;cursor:pointer;width:fit-content';
+    const selectAllCb = document.createElement('input');
+    selectAllCb.type = 'checkbox';
+    selectAllCb.checked = true;
+    selectAllLabel.appendChild(selectAllCb);
+    selectAllLabel.appendChild(document.createTextNode('Select all accounts'));
+    container.appendChild(selectAllLabel);
+
+    const checkboxRow = document.createElement('div');
+    checkboxRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px';
+    const checkboxes = [];
+    accounts.forEach(acc => {
+        const label = document.createElement('label');
+        label.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:.85rem;color:var(--ink);background:var(--panel-raised);border:1px solid var(--seam);border-radius:var(--r-sm);padding:6px 10px;cursor:pointer';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.dataset.accN = acc.n;
+        cb.checked = true;
+        checkboxes.push(cb);
+        label.appendChild(cb);
+        label.appendChild(document.createTextNode(acc.label));
+        checkboxRow.appendChild(label);
+    });
+    container.appendChild(checkboxRow);
+
+    selectAllCb.addEventListener('change', () => {
+        checkboxes.forEach(cb => { cb.checked = selectAllCb.checked; });
+    });
+    checkboxes.forEach(cb => cb.addEventListener('change', () => {
+        selectAllCb.checked = checkboxes.every(c => c.checked);
+    }));
+
+    return { checkboxes, selectAllCb };
+}
+
+function _renderBulkActionsPanel(container, accounts, checkboxes, statusWrap) {
+    container.textContent = '';
+
+    if (accounts.length === 0) {
+        const empty = document.createElement('div');
+        empty.style.cssText = 'color:var(--ink-dim);font-size:.85rem;padding:8px 0';
+        empty.textContent = 'No accounts available for bulk actions.';
+        container.appendChild(empty);
+        return;
+    }
+
+    const btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px';
+
+    const startBtn = document.createElement('button');
+    startBtn.className = 'btn-primary';
+    startBtn.style.cssText = 'width:auto;padding:8px 18px;font-size:.85rem';
+    startBtn.textContent = 'Start Idle-Watch (Followed)';
+    btnRow.appendChild(startBtn);
+
+    const dropMiningBtn = document.createElement('button');
+    dropMiningBtn.className = 'btn-primary';
+    dropMiningBtn.style.cssText = 'width:auto;padding:8px 18px;font-size:.85rem;background:var(--signal);border-color:var(--signal)';
+    dropMiningBtn.textContent = 'Start Drop Mining (Selected)';
+    btnRow.appendChild(dropMiningBtn);
+
+    const pauseBtn = document.createElement('button');
+    pauseBtn.className = 'btn-danger';
+    pauseBtn.style.cssText = 'width:auto;padding:8px 18px;font-size:.85rem';
+    pauseBtn.textContent = 'Pause / Stop All Selected';
+    btnRow.appendChild(pauseBtn);
+
+    container.appendChild(btnRow);
+
+    const resultsWrap = document.createElement('div');
+    resultsWrap.style.cssText = 'margin-top:4px;display:flex;flex-direction:column;gap:4px';
+    container.appendChild(resultsWrap);
+
+    async function runBulkAction(action, btn) {
+        const targets = checkboxes.filter(cb => cb.checked).map(cb => parseInt(cb.dataset.accN, 10));
+        resultsWrap.textContent = '';
+        if (targets.length === 0) {
+            const msg = document.createElement('div');
+            msg.style.cssText = 'font-size:.82rem;color:#FF6B81';
+            msg.textContent = 'Select at least one account.';
+            resultsWrap.appendChild(msg);
+            return;
+        }
+        startBtn.disabled = true;
+        dropMiningBtn.disabled = true;
+        pauseBtn.disabled = true;
+        const originalLabel = btn.textContent;
+        btn.textContent = action === 'start' ? 'Starting…' : action === 'drop_mining' ? 'Starting…' : 'Pausing…';
+        try {
+            const resp = await fetch(API_BASE + '/api/accounts/bulk-action', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ targets, action }),
+            });
+            const data = await resp.json();
+            const byN = {};
+            accounts.forEach(acc => { byN[acc.n] = acc.label; });
+            (data.results || []).forEach(r => {
+                const row = document.createElement('div');
+                row.style.cssText = 'font-size:.82rem;display:flex;gap:6px;align-items:center';
+                const icon = document.createElement('span');
+                icon.textContent = r.success ? '✓' : '✗';
+                icon.style.color = r.success ? '#1DA980' : '#FF6B81';
+                row.appendChild(icon);
+                const text = document.createElement('span');
+                text.style.color = 'var(--ink)';
+                if (r.success && action === 'start') {
+                    text.textContent = `${byN[r.n] || `Account ${r.n}`}: idle-watching ${r.channel || '(next available channel)'}`;
+                } else if (r.success && action === 'drop_mining') {
+                    text.textContent = `${byN[r.n] || `Account ${r.n}`}: searching for drops`;
+                } else if (r.success) {
+                    text.textContent = `${byN[r.n] || `Account ${r.n}`}: paused`;
+                } else {
+                    text.textContent = `${byN[r.n] || `Account ${r.n}`}: ${r.error || 'failed'}`;
+                }
+                row.appendChild(text);
+                resultsWrap.appendChild(row);
+            });
+        } catch (e) {
+            const msg = document.createElement('div');
+            msg.style.cssText = 'font-size:.82rem;color:#FF6B81';
+            msg.textContent = 'Request failed: ' + e.message;
+            resultsWrap.appendChild(msg);
+        } finally {
+            startBtn.disabled = false;
+            dropMiningBtn.disabled = false;
+            pauseBtn.disabled = false;
+            btn.textContent = originalLabel;
+            // Reflect the new state in the Fleet Status table right away
+            // instead of leaving it showing stale pre-action data.
+            if (statusWrap) _refreshFleetStatusTable(statusWrap);
+        }
+    }
+
+    startBtn.addEventListener('click', () => runBulkAction('start', startBtn));
+    dropMiningBtn.addEventListener('click', () => runBulkAction('drop_mining', dropMiningBtn));
+    pauseBtn.addEventListener('click', () => runBulkAction('pause', pauseBtn));
+}
+
+function _renderFleetStatusTable(container, accounts) {
+    container.textContent = '';
+    if (accounts.length === 0) {
+        const empty = document.createElement('div');
+        empty.style.cssText = 'color:var(--ink-dim);font-size:.85rem;padding:8px 0';
+        empty.textContent = 'No accounts registered.';
+        container.appendChild(empty);
+        return;
+    }
+    const table = document.createElement('table');
+    table.className = 'help-table';
+    table.style.minWidth = '620px';
+
+    const thead = document.createElement('thead');
+    const hrow = document.createElement('tr');
+    ['Account', 'Status', 'Watching', 'Drops Today', 'Last Active'].forEach(label => {
+        const th = document.createElement('th');
+        th.textContent = label;
+        hrow.appendChild(th);
+    });
+    thead.appendChild(hrow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    accounts.forEach(acc => {
+        const tr = document.createElement('tr');
+
+        const tdName = document.createElement('td');
+        tdName.style.fontWeight = '600';
+        tdName.textContent = acc.login ? `${acc.label} (${acc.login})` : acc.label;
+        tr.appendChild(tdName);
+
+        const tdStatus = document.createElement('td');
+        if (acc.error) {
+            tdStatus.style.color = '#FF6B81';
+            tdStatus.textContent = acc.error;
+        } else if (!acc.reachable) {
+            tdStatus.style.color = 'var(--ink-dim)';
+            tdStatus.textContent = 'Unreachable';
+        } else if (acc.paused) {
+            tdStatus.textContent = '⏸ Paused';
+        } else {
+            tdStatus.textContent = acc.status_text || '—';
+        }
+        tr.appendChild(tdStatus);
+
+        const tdWatching = document.createElement('td');
+        if (acc.watching && (acc.watching.channel || acc.watching.game)) {
+            tdWatching.textContent = [acc.watching.channel, acc.watching.game].filter(Boolean).join(' · ');
+        } else {
+            tdWatching.style.color = 'var(--ink-dim)';
+            tdWatching.textContent = '—';
+        }
+        tr.appendChild(tdWatching);
+
+        const tdDrops = document.createElement('td');
+        tdDrops.textContent = acc.drops_today != null ? String(acc.drops_today) : '—';
+        tr.appendChild(tdDrops);
+
+        const tdLast = document.createElement('td');
+        if (acc.last_active) {
+            const d = new Date(acc.last_active);
+            tdLast.textContent = isNaN(d) ? acc.last_active : d.toLocaleString();
+        } else {
+            tdLast.style.color = 'var(--ink-dim)';
+            tdLast.textContent = '—';
+        }
+        tr.appendChild(tdLast);
+
+        tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    container.appendChild(table);
+}
+
+function _renderBulkSettingsPanel(container, accounts, fieldOptions, checkboxes) {
+    container.textContent = '';
+
+    if (Object.keys(fieldOptions).length === 0 || accounts.length === 0) {
+        const empty = document.createElement('div');
+        empty.style.cssText = 'color:var(--ink-dim);font-size:.85rem;padding:8px 0';
+        empty.textContent = 'No accounts available for bulk settings.';
+        container.appendChild(empty);
+        return;
+    }
+
+    const formRow = document.createElement('div');
+    formRow.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px';
+
+    const fieldSelect = document.createElement('select');
+    fieldSelect.className = 'settings-select';
+    fieldSelect.style.flex = '1 1 220px';
+    Object.entries(fieldOptions).forEach(([key, labelText]) => {
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = labelText;
+        fieldSelect.appendChild(opt);
+    });
+    formRow.appendChild(fieldSelect);
+
+    const modeSelect = document.createElement('select');
+    modeSelect.className = 'settings-select';
+    modeSelect.style.flex = '1 1 180px';
+    [['add', 'Add to existing list'], ['remove', 'Remove from list'], ['replace', 'Replace entire list']].forEach(([val, text]) => {
+        const opt = document.createElement('option');
+        opt.value = val;
+        opt.textContent = text;
+        modeSelect.appendChild(opt);
+    });
+    formRow.appendChild(modeSelect);
+    container.appendChild(formRow);
+
+    const valuesWrap = document.createElement('div');
+    valuesWrap.style.cssText = 'position:relative;margin-bottom:10px';
+
+    const valuesInput = document.createElement('input');
+    valuesInput.type = 'text';
+    valuesInput.autocomplete = 'off';
+    valuesInput.placeholder = 'Game names, comma-separated — start typing for suggestions';
+    valuesInput.style.cssText = 'width:100%;box-sizing:border-box;padding:7px 10px;border:1px solid var(--seam);border-radius:var(--r-sm);background:var(--panel-raised);color:var(--ink);font-size:.88rem;outline:none';
+    valuesWrap.appendChild(valuesInput);
+    container.appendChild(valuesWrap);
+
+    // The suggestion dropdown is appended to <body> and positioned with
+    // `position:fixed`, computed from the input's own bounding box, instead
+    // of living inside the modal. The modal scrolls its own content
+    // (max-height + overflow-y:auto) — content that visually overflows a
+    // scrolling ancestor still gets folded into that ancestor's scrollable
+    // area even when absolutely positioned, so the suggestions were pushing
+    // the modal's own scrollbar down instead of floating over everything.
+    // Anchoring to the viewport instead sidesteps that clipping entirely.
+    document.getElementById('accounts-manager-values-dropdown')?.remove();
+    const valuesDropdown = document.createElement('div');
+    valuesDropdown.id = 'accounts-manager-values-dropdown';
+    valuesDropdown.className = 'game-dropdown-list';
+    valuesDropdown.style.position = 'fixed';
+    valuesDropdown.style.zIndex = '10001';
+    document.body.appendChild(valuesDropdown);
+
+    function _positionValuesDropdown() {
+        const rect = valuesInput.getBoundingClientRect();
+        valuesDropdown.style.left = `${Math.max(8, rect.left)}px`;
+        valuesDropdown.style.top = `${rect.bottom + 4}px`;
+        valuesDropdown.style.width = `${Math.min(rect.width, window.innerWidth - 16)}px`;
+    }
+
+    function _onValuesViewportChange() {
+        if (valuesDropdown.style.display === 'block') _positionValuesDropdown();
+    }
+    window.addEventListener('resize', _onValuesViewportChange);
+    // capture:true so this also fires for scrolling *inside* the modal
+    // (the modal itself is the scroll container, not window) as well as the
+    // page.
+    window.addEventListener('scroll', _onValuesViewportChange, true);
+    _accountsManagerDropdownCleanup = () => {
+        window.removeEventListener('resize', _onValuesViewportChange);
+        window.removeEventListener('scroll', _onValuesViewportChange, true);
+        valuesDropdown.remove();
+    };
+
+    // Suggestions are drawn from `availableGames` — the same set (built from
+    // real, currently-known drop campaigns) already used by the Settings
+    // tab's own game pickers, not a hardcoded or guessed list. Comma-
+    // separated multi-entry is preserved: matching/applying a suggestion
+    // only touches the segment currently being typed (text after the last
+    // comma); earlier entries in the field are left alone.
+    let valuesDropdownIndex = -1;
+
+    function _valuesCurrentSegment() {
+        const parts = valuesInput.value.split(',');
+        return parts[parts.length - 1].trim();
+    }
+
+    function _valuesKnownGames() {
+        if (availableGames.size === 0 && Object.keys(state.campaigns || {}).length > 0) {
+            availableGames = new Set(Object.values(state.campaigns).map(c => c.game_name).filter(Boolean));
+        }
+        return availableGames;
+    }
+
+    function _applyValuesSuggestion(name) {
+        const enteredParts = valuesInput.value.split(',').slice(0, -1).map(p => p.trim()).filter(Boolean);
+        enteredParts.push(name);
+        valuesInput.value = enteredParts.join(', ') + ', ';
+        _closeValuesDropdown();
+        valuesInput.focus();
+    }
+
+    function _renderValuesDropdown() {
+        const term = _valuesCurrentSegment().toLowerCase();
+        if (!term) { _closeValuesDropdown(); return; }
+        const alreadyEntered = new Set(
+            valuesInput.value.split(',').slice(0, -1).map(v => v.trim().toLowerCase()).filter(Boolean)
+        );
+        const matches = Array.from(_valuesKnownGames())
+            .filter(g => g.toLowerCase().includes(term) && !alreadyEntered.has(g.toLowerCase()))
+            .sort((a, b) => {
+                const aStarts = a.toLowerCase().startsWith(term);
+                const bStarts = b.toLowerCase().startsWith(term);
+                if (aStarts !== bStarts) return aStarts ? -1 : 1;
+                return a.localeCompare(b);
+            })
+            .slice(0, 15);
+        valuesDropdown.replaceChildren();
+        if (matches.length === 0) {
+            valuesDropdown.style.display = 'none';
+            return;
+        }
+        matches.forEach((g, idx) => {
+            const item = document.createElement('div');
+            item.className = 'dropdown-item' + (idx === valuesDropdownIndex ? ' focused' : '');
+            item.textContent = g;
+            item.addEventListener('mousedown', (e) => { e.preventDefault(); _applyValuesSuggestion(g); });
+            valuesDropdown.appendChild(item);
+        });
+        valuesDropdown.style.display = 'block';
+        _positionValuesDropdown();
+    }
+
+    function _closeValuesDropdown() {
+        valuesDropdown.style.display = 'none';
+        valuesDropdownIndex = -1;
+    }
+
+    valuesInput.addEventListener('input', () => {
+        valuesDropdownIndex = -1;
+        _renderValuesDropdown();
+    });
+    valuesInput.addEventListener('focus', () => {
+        if (_valuesCurrentSegment()) _renderValuesDropdown();
+    });
+    valuesInput.addEventListener('blur', () => setTimeout(_closeValuesDropdown, 150));
+    valuesInput.addEventListener('keydown', (e) => {
+        const items = valuesDropdown.querySelectorAll('.dropdown-item');
+        if (e.key === 'ArrowDown' && items.length) {
+            e.preventDefault();
+            valuesDropdownIndex = Math.min(valuesDropdownIndex + 1, items.length - 1);
+            _renderValuesDropdown();
+            valuesDropdown.querySelector('.dropdown-item.focused')?.scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'ArrowUp' && items.length) {
+            e.preventDefault();
+            valuesDropdownIndex = Math.max(valuesDropdownIndex - 1, 0);
+            _renderValuesDropdown();
+            valuesDropdown.querySelector('.dropdown-item.focused')?.scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'Enter' && valuesDropdownIndex >= 0 && items[valuesDropdownIndex]) {
+            e.preventDefault();
+            _applyValuesSuggestion(items[valuesDropdownIndex].textContent);
+        } else if (e.key === 'Escape' && valuesDropdown.style.display === 'block') {
+            // Only swallow Escape when the suggestion dropdown is actually
+            // open, so it closes just the dropdown first. Otherwise let it
+            // bubble up to the modal's own Escape handler as normal.
+            e.stopPropagation();
+            _closeValuesDropdown();
+        }
+    });
+
+    const applyBtn = document.createElement('button');
+    applyBtn.className = 'btn-primary';
+    applyBtn.style.cssText = 'width:auto;padding:8px 18px;font-size:.85rem';
+    applyBtn.textContent = 'Apply to Selected Accounts';
+    container.appendChild(applyBtn);
+
+    const resultsWrap = document.createElement('div');
+    resultsWrap.style.cssText = 'margin-top:12px;display:flex;flex-direction:column;gap:4px';
+    container.appendChild(resultsWrap);
+
+    applyBtn.addEventListener('click', async () => {
+        const targets = checkboxes.filter(cb => cb.checked).map(cb => parseInt(cb.dataset.accN, 10));
+        const values = valuesInput.value.split(',').map(v => v.trim()).filter(Boolean);
+        resultsWrap.textContent = '';
+        if (targets.length === 0) {
+            const msg = document.createElement('div');
+            msg.style.cssText = 'font-size:.82rem;color:#FF6B81';
+            msg.textContent = 'Select at least one account.';
+            resultsWrap.appendChild(msg);
+            return;
+        }
+        if (values.length === 0 && modeSelect.value !== 'replace') {
+            const msg = document.createElement('div');
+            msg.style.cssText = 'font-size:.82rem;color:#FF6B81';
+            msg.textContent = 'Enter at least one value.';
+            resultsWrap.appendChild(msg);
+            return;
+        }
+        if (modeSelect.value === 'replace'
+            && !confirm(`Replace the entire list on ${targets.length} account(s)? This overwrites their current list.`)) {
+            return;
+        }
+        applyBtn.disabled = true;
+        const originalLabel = applyBtn.textContent;
+        applyBtn.textContent = 'Applying…';
+        try {
+            const resp = await fetch(API_BASE + '/api/accounts/bulk-settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    targets,
+                    field: fieldSelect.value,
+                    values,
+                    mode: modeSelect.value,
+                }),
+            });
+            const data = await resp.json();
+            const byN = {};
+            accounts.forEach(acc => { byN[acc.n] = acc.label; });
+            (data.results || []).forEach(r => {
+                const row = document.createElement('div');
+                row.style.cssText = 'font-size:.82rem;display:flex;gap:6px;align-items:center';
+                const icon = document.createElement('span');
+                icon.textContent = r.success ? '✓' : '✗';
+                icon.style.color = r.success ? '#1DA980' : '#FF6B81';
+                row.appendChild(icon);
+                const text = document.createElement('span');
+                text.style.color = 'var(--ink)';
+                text.textContent = r.success
+                    ? `${byN[r.n] || `Account ${r.n}`}: updated (${r.count} entries)`
+                    : `${byN[r.n] || `Account ${r.n}`}: ${r.error || 'failed'}`;
+                row.appendChild(text);
+                resultsWrap.appendChild(row);
+            });
+        } catch (e) {
+            const msg = document.createElement('div');
+            msg.style.cssText = 'font-size:.82rem;color:#FF6B81';
+            msg.textContent = 'Request failed: ' + e.message;
+            resultsWrap.appendChild(msg);
+        } finally {
+            applyBtn.disabled = false;
+            applyBtn.textContent = originalLabel;
+        }
+    });
+}
+
 function renderInlineMarkdown(line, container) {
     // Parse **bold** and `code` using DOM nodes only — no innerHTML
     const parts = line.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
@@ -4839,7 +5712,7 @@ function renderInlineMarkdown(line, container) {
             container.appendChild(s);
         } else if (/^`([^`]+)`$/.test(part)) {
             const c = document.createElement('code');
-            c.style.cssText = 'background:#0d0d0d;padding:1px 5px;border-radius:4px;font-size:.8rem;';
+            c.style.cssText = 'background:#0B0D12;padding:1px 5px;border-radius:4px;font-size:.8rem;';
             c.textContent = part.slice(1, -1);
             container.appendChild(c);
         } else {
@@ -4850,7 +5723,7 @@ function renderInlineMarkdown(line, container) {
 
 function renderMarkdown(md) {
     const div = document.createElement('div');
-    div.style.cssText = 'font-size:.85rem;color:#ccc;line-height:1.6;';
+    div.style.cssText = 'font-size:.85rem;color:#ECEEF3;line-height:1.6;';
     // Replace fenced code blocks with a placeholder line
     const lines = md.replace(/```[\s\S]*?```/g, '`…`').split('\n');
     lines.forEach(line => {
@@ -4863,7 +5736,7 @@ function renderMarkdown(md) {
             el.appendChild(s);
         } else if (/^## /.test(line)) {
             const s = document.createElement('strong');
-            s.style.cssText = 'color:var(--twitch-purple,#9147ff);font-size:.95rem;';
+            s.style.cssText = 'color:var(--twitch-purple,#A970FF);font-size:.95rem;';
             s.textContent = line.slice(3);
             el.style.marginTop = '12px';
             el.appendChild(s);
@@ -4889,19 +5762,19 @@ function showUpdateModal(text, withInstallBtn, latestVersion) {
     overlay.className = 'wq-modal-overlay';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center;overflow-y:auto;padding:24px;';
     const box = document.createElement('div');
-    box.style.cssText = 'background:var(--card-bg,#1a1a2e);border:1px solid var(--border-color,#333);border-radius:12px;padding:24px;max-width:520px;width:90%;margin:auto;';
+    box.style.cssText = 'background:var(--card-bg,#1B2029);border:1px solid var(--border-color,#262B38);border-radius:12px;padding:24px;max-width:520px;width:90%;margin:auto;';
     const title = document.createElement('div');
     title.textContent = '🔄 Update Available';
-    title.style.cssText = 'font-size:1.1rem;font-weight:700;color:var(--twitch-purple,#9147ff);margin-bottom:12px;';
+    title.style.cssText = 'font-size:1.1rem;font-weight:700;color:var(--twitch-purple,#A970FF);margin-bottom:12px;';
     const pre = document.createElement('div');
-    pre.style.cssText = 'background:#111;padding:12px;border-radius:8px;margin:0;';
+    pre.style.cssText = 'background:#0B0D12;padding:12px;border-radius:8px;margin:0;';
     if (withInstallBtn) {
         pre.appendChild(renderMarkdown(text));
     } else {
         pre.style.fontFamily = 'monospace';
         pre.style.fontSize = '.8rem';
         pre.style.whiteSpace = 'pre-wrap';
-        pre.style.color = '#ccc';
+        pre.style.color = '#ECEEF3';
         pre.textContent = text;
     }
     box.append(title, pre);
@@ -4910,11 +5783,11 @@ function showUpdateModal(text, withInstallBtn, latestVersion) {
         row.style.cssText = 'display:flex;gap:10px;margin-top:14px;justify-content:flex-end;';
         const cancelBtn = document.createElement('button');
         cancelBtn.textContent = 'Cancel';
-        cancelBtn.style.cssText = 'padding:8px 16px;border-radius:8px;border:1px solid #444;background:transparent;color:#aaa;cursor:pointer;';
+        cancelBtn.style.cssText = 'padding:8px 16px;border-radius:8px;border:1px solid #262B38A4A;background:transparent;color:#8991A6;cursor:pointer;';
         cancelBtn.addEventListener('click', () => overlay.remove());
         const installBtn = document.createElement('button');
         installBtn.textContent = `Install v${latestVersion}`;
-        installBtn.style.cssText = 'padding:8px 16px;border-radius:8px;border:none;background:var(--twitch-purple,#9147ff);color:#fff;font-weight:600;cursor:pointer;';
+        installBtn.style.cssText = 'padding:8px 16px;border-radius:8px;border:none;background:var(--twitch-purple,#A970FF);color:#fff;font-weight:600;cursor:pointer;';
         installBtn.addEventListener('click', async () => {
             installBtn.textContent = '⏳ Updating...';
             installBtn.disabled = true;
@@ -4923,7 +5796,7 @@ function showUpdateModal(text, withInstallBtn, latestVersion) {
             pre.style.fontFamily = 'monospace';
             pre.style.whiteSpace = 'pre-wrap';
             pre.style.fontSize = '.8rem';
-            pre.style.color = '#ccc';
+            pre.style.color = '#ECEEF3';
             pre.textContent = 'Pulling latest code from GitHub...\n';
             try {
                 const res = await fetch(API_BASE + '/api/self-update', { method: 'POST' });

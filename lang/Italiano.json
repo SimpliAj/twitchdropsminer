@@ -39,6 +39,7 @@
     "status": {
       "name": "Stato",
       "idle": "Inattivo",
+      "ready": "Pronto",
       "exiting": "Uscendo...",
       "terminated": "Terminato",
       "cleanup": "Pulendo i canali...",
