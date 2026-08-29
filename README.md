@@ -338,40 +338,6 @@ See the [Original Project Credits](#original-project-credits) section for transl
 
 ---
 
-## 🖼️ Screenshots
-
-<details>
-<summary>📊 Main Dashboard</summary>
-
-![Main Tab](./docs/screenshots/main-tab.jpg)
-</details>
-
-<details>
-<summary>🎒 Inventory</summary>
-
-![Inventory Tab](./docs/screenshots/inventory-tab.jpg)
-</details>
-
-<details>
-<summary>📈 Analytics</summary>
-
-![Analytics Tab](./docs/screenshots/analytics-tab.jpg)
-</details>
-
-<details>
-<summary>❓ Help</summary>
-
-![Help Tab](./docs/screenshots/help-tab.jpg)
-</details>
-
-<details>
-<summary>📱 Mobile — Drop History</summary>
-
-![Mobile Drop History](./docs/screenshots/mobile-drop-history.jpg)
-</details>
-
----
-
 ## 💬 Contributing
 
 ⭐ **Star this repo** if it's useful!
