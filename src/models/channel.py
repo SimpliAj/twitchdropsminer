@@ -348,8 +348,15 @@ class Channel:
             self._stream = None
             return
         stream = Stream.from_get_stream(self, channel_data)
-        stream.drops_enabled = self._has_earnable_drops()
+        # Assign before computing eligibility: _has_earnable_drops() reads
+        # self.game, which reads self._stream.game -- if self._stream still
+        # held the previous (often offline/gameless) stream when this ran,
+        # the game would never match and drops_enabled would be wrongly
+        # False for every channel that just came online. Confirmed live
+        # 2026-08-30: caused "No available channels to watch" for hours
+        # despite real live channels on wanted games.
         self._stream = stream
+        stream.drops_enabled = self._has_earnable_drops()
 
     async def get_stream(self) -> Stream | None:
         try:
@@ -365,6 +372,12 @@ class Channel:
         if not channel_data["stream"]:
             return None
         stream = Stream.from_get_stream(self, channel_data)
+        # Same ordering fix as external_update() above -- self._stream must
+        # reflect the newly-fetched stream before _has_earnable_drops() reads
+        # self.game, or eligibility is computed against the stale/previous
+        # state. Safe: this method's only caller (update_stream()) assigns
+        # the return value straight back onto self._stream anyway.
+        self._stream = stream
         stream.drops_enabled = self._has_earnable_drops()
         return stream
 

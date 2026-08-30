@@ -765,10 +765,11 @@
                             <button id="cp-tab-refresh-btn" class="secondary-btn">↻ Refresh</button>
                         </div>
                     </div>
-                    <label style="display:flex;align-items:center;gap:6px;font-size:0.82rem;color:var(--ink-dim);margin-bottom:12px;cursor:pointer;" title="Also filters the Points Over Time channel dropdown below">
-                        <input type="checkbox" id="cp-subscribed-only-toggle" checked>
-                        <span id="cp-subscribed-only-label">Subscribed channels only</span>
-                    </label>
+                    <div id="cp-channel-filter-group" style="display:flex;gap:4px;margin-bottom:12px;" title="Also filters the Points Over Time channel dropdown below">
+                        <button type="button" class="range-btn" data-filter="all" id="cp-filter-all-btn">All</button>
+                        <button type="button" class="range-btn active-range" data-filter="followed" id="cp-filter-followed-btn">Followed</button>
+                        <button type="button" class="range-btn" data-filter="subscribed" id="cp-filter-subscribed-btn">Subscribed</button>
+                    </div>
                     <div id="cp-tab-empty" style="color:var(--ink-dim);font-size:0.9rem;padding:12px 0;">No channel points data yet. Points are recorded while watching channels.</div>
                     <div id="cp-tab-list" style="display:none;"></div>
                 </section>

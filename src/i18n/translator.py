@@ -300,7 +300,11 @@ class GUIAnalytics(TypedDict):
     channel_points: str
     refresh: str
     no_channel_points: str
-    subscribed_only_label: str
+    channel_filter_all: str
+    channel_filter_followed: str
+    channel_filter_subscribed: str
+    channel_filter_title: str
+    no_followed_channels: str
     no_subscribed_channels: str
     drop_history: str
     no_history: str

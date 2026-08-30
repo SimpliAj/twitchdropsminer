@@ -827,6 +827,51 @@ async def get_subscribed_channels(refresh: bool = False):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+_FOLLOWED_CHANNELS_TTL = 6 * 3600  # matches the subscribed-channels TTL — same cost/rationale
+
+
+@app.get("/api/analytics/followed-channels")
+async def get_followed_channels(refresh: bool = False):
+    """Return which channels the account currently follows on Twitch, for the
+    Channel Points list / Points Over Time "Followed" filter mode. Following is
+    a much lower bar than subscribing (free, one click) so unlike the
+    subscribed-channels filter this is expected to actually have overlap with
+    most accounts' channel-points history. Reuses the same GQL-backed
+    _fetch_followed_channels() idle-watch's "Auto: use followed channels"
+    setting already relies on. Cached with the same TTL/stale-fallback shape
+    as get_subscribed_channels() above.
+    """
+    if not gui_manager or not twitch_client:
+        raise HTTPException(status_code=503, detail="Not ready")
+    import time
+    cache_file = _get_account_data_dir() / "followed_channels.json"
+    now = time.time()
+
+    def _read_cache() -> dict | None:
+        try:
+            if cache_file.exists():
+                return json.loads(cache_file.read_text())
+        except Exception:
+            pass
+        return None
+
+    if not refresh:
+        cached = _read_cache()
+        if cached and (now - cached.get("ts", 0)) < _FOLLOWED_CHANNELS_TTL:
+            return {"channels": cached.get("channels", []), "cached": True, "ts": cached.get("ts")}
+
+    try:
+        followed = await twitch_client._fetch_followed_channels()
+        cache_file.parent.mkdir(parents=True, exist_ok=True)
+        cache_file.write_text(json.dumps({"ts": now, "channels": followed}))
+        return {"channels": followed, "cached": False, "ts": now}
+    except Exception as e:
+        cached = _read_cache()
+        if cached is not None:
+            return {"channels": cached.get("channels", []), "cached": True, "stale": True, "ts": cached.get("ts")}
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/api/analytics/points")
 async def get_analytics_points(channel: str = "", days: int = 7):
     """Return timestamped channel points history for analytics chart."""

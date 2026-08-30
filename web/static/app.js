@@ -33,8 +33,22 @@ const state = {
     sessionPoints: {},  // channel_login -> { balance, claimed }
     collapsedGameGroups: {},  // gameId -> boolean
     subscribedChannels: null,  // Set of lowercase logins the account is subscribed to, or null if not loaded yet
-    analyticsSubscribedOnly: localStorage.getItem('tdm_analytics_subs_only') !== '0'  // default on
+    followedChannels: null,  // Set of lowercase logins the account follows, or null if not loaded yet
+    analyticsChannelFilter: _initialAnalyticsChannelFilter()  // 'all' | 'followed' | 'subscribed'
 };
+
+// Channel Points list / Points Over Time dropdown filter mode. Migrates the
+// old 1.4.1 boolean toggle (tdm_analytics_subs_only): an explicit "off" (user
+// had unticked "Subscribed channels only" to see everything) carries over to
+// "all", but the previous default of subscribed-only is upgraded to "followed"
+// — subscribing is a paid relationship that's empty for most accounts, while
+// following is free and one click, so it actually has data to show.
+function _initialAnalyticsChannelFilter() {
+    const stored = localStorage.getItem('tdm_analytics_channel_filter');
+    if (stored === 'all' || stored === 'followed' || stored === 'subscribed') return stored;
+    if (localStorage.getItem('tdm_analytics_subs_only') === '0') return 'all';
+    return 'followed';
+}
 
 // ==================== Local Drop Minutes Cache ====================
 // Persists max seen current_minutes per drop ID to localStorage.
@@ -737,15 +751,22 @@ function renderChannelPointsTab() {
 
     let entries = Object.entries(state.sessionPoints).sort((a, b) => b[1].balance - a[1].balance);
     const totalTracked = entries.length;
-    if (state.analyticsSubscribedOnly && state.subscribedChannels) {
+    const filterMode = state.analyticsChannelFilter;
+    if (filterMode === 'followed' && state.followedChannels) {
+        entries = entries.filter(([login]) => state.followedChannels.has(login.toLowerCase()));
+    } else if (filterMode === 'subscribed' && state.subscribedChannels) {
         entries = entries.filter(([login]) => state.subscribedChannels.has(login.toLowerCase()));
     }
     if (entries.length === 0) {
         emptyEl.style.display = 'block';
         const a = state.translations?.gui?.analytics || {};
-        emptyEl.textContent = (state.analyticsSubscribedOnly && totalTracked > 0)
-            ? (a.no_subscribed_channels || 'No subscribed channels among the {count} tracked. Untick "Subscribed channels only" to see all.').replace('{count}', totalTracked)
-            : (a.no_channel_points || 'No channel points data yet. Points are recorded while watching channels.');
+        if (filterMode === 'followed' && totalTracked > 0) {
+            emptyEl.textContent = (a.no_followed_channels || 'No followed channels among the {count} tracked. Switch to "All" to see everything.').replace('{count}', totalTracked);
+        } else if (filterMode === 'subscribed' && totalTracked > 0) {
+            emptyEl.textContent = (a.no_subscribed_channels || 'No subscribed channels among the {count} tracked. Switch to "All" to see everything.').replace('{count}', totalTracked);
+        } else {
+            emptyEl.textContent = a.no_channel_points || 'No channel points data yet. Points are recorded while watching channels.';
+        }
         listEl.style.display = 'none';
         if (summaryEl) summaryEl.textContent = '';
         return;
@@ -3586,10 +3607,16 @@ function applyTranslations(t) {
         if (cpHeader) cpHeader.textContent = a.channel_points;
         const cpRefreshBtn = document.getElementById('cp-tab-refresh-btn');
         if (cpRefreshBtn) cpRefreshBtn.textContent = a.refresh;
-        const cpSubsOnlyLabel = document.getElementById('cp-subscribed-only-label');
-        if (cpSubsOnlyLabel && a.subscribed_only_label) cpSubsOnlyLabel.textContent = a.subscribed_only_label;
-        // Empty-state text depends on the current subscribed-only filter state too
-        // (two different messages), so it's owned by renderChannelPointsTab() itself
+        const cpFilterAllBtn = document.getElementById('cp-filter-all-btn');
+        if (cpFilterAllBtn && a.channel_filter_all) cpFilterAllBtn.textContent = a.channel_filter_all;
+        const cpFilterFollowedBtn = document.getElementById('cp-filter-followed-btn');
+        if (cpFilterFollowedBtn && a.channel_filter_followed) cpFilterFollowedBtn.textContent = a.channel_filter_followed;
+        const cpFilterSubscribedBtn = document.getElementById('cp-filter-subscribed-btn');
+        if (cpFilterSubscribedBtn && a.channel_filter_subscribed) cpFilterSubscribedBtn.textContent = a.channel_filter_subscribed;
+        const cpFilterGroup = document.getElementById('cp-channel-filter-group');
+        if (cpFilterGroup && a.channel_filter_title) cpFilterGroup.title = a.channel_filter_title;
+        // Empty-state text depends on the current filter mode too (three
+        // different messages), so it's owned by renderChannelPointsTab() itself
         // rather than being force-set here — this just makes sure it re-renders with
         // whatever text the newly-applied language provides.
         renderChannelPointsTab();
@@ -3882,6 +3909,21 @@ async function loadSubscribedChannels(force) {
     }
 }
 
+// Following is a much lower bar than subscribing (free, one click) so it's
+// far more likely to actually have overlap with the channel-points history.
+// Reuses the same GQL-backed fetch idle-watch's "Auto: use followed channels"
+// already relies on, cached/fetched server-side the same way as subscriptions.
+async function loadFollowedChannels(force) {
+    try {
+        const resp = await fetch(API_BASE + `/api/analytics/followed-channels${force ? '?refresh=1' : ''}`);
+        const data = await resp.json();
+        state.followedChannels = new Set((data.channels || []).map(c => c.toLowerCase()));
+    } catch (e) {
+        // Leave followedChannels as-is (null on first failure) — filters
+        // fall back to "show all" rather than hard-failing when null.
+    }
+}
+
 // Only list channels that actually have data points in the selected range —
 // the backend always returns a key per known channel even when the filtered
 // snapshot list for that range is empty, which used to leave an empty
@@ -3896,7 +3938,9 @@ async function populateAnalyticsChannelSelect(days, preferChannel) {
             .filter(([, snaps]) => snaps.length > 0)
             .sort((a, b) => b[1].length - a[1].length)
             .map(([ch]) => ch);
-        if (state.analyticsSubscribedOnly && state.subscribedChannels) {
+        if (state.analyticsChannelFilter === 'followed' && state.followedChannels) {
+            channels = channels.filter(ch => state.followedChannels.has(ch.toLowerCase()));
+        } else if (state.analyticsChannelFilter === 'subscribed' && state.subscribedChannels) {
             channels = channels.filter(ch => state.subscribedChannels.has(ch.toLowerCase()));
         }
         sel.replaceChildren(...channels.map(ch => { const opt = document.createElement("option"); opt.value = ch; opt.textContent = ch; return opt; }));
@@ -3906,7 +3950,7 @@ async function populateAnalyticsChannelSelect(days, preferChannel) {
     } catch (e) { return null; }
 }
 
-async function refreshAnalyticsSubscribedFilter() {
+async function refreshAnalyticsChannelFilter() {
     renderChannelPointsTab();
     const chosen = await populateAnalyticsChannelSelect(analyticsCurrentDays, analyticsCurrentChannel);
     if (chosen) loadAnalytics(chosen, analyticsCurrentDays);
@@ -3918,34 +3962,40 @@ async function refreshAnalyticsSubscribedFilter() {
     }
 }
 
+function _setActiveChannelFilterBtn() {
+    document.querySelectorAll('#cp-channel-filter-group .range-btn').forEach(b => {
+        b.classList.toggle('active-range', b.dataset.filter === state.analyticsChannelFilter);
+    });
+}
+
 async function initAnalyticsTab() {
-    const toggle = document.getElementById('cp-subscribed-only-toggle');
-    if (toggle) toggle.checked = state.analyticsSubscribedOnly;
+    _setActiveChannelFilterBtn();
     if (analyticsTabInited) { loadAnalytics(analyticsCurrentChannel, analyticsCurrentDays); return; }
     analyticsTabInited = true;
     const sel = document.getElementById("analytics-channel");
     if (!sel) return;
-    await loadSubscribedChannels();
+    await Promise.all([loadSubscribedChannels(), loadFollowedChannels()]);
     renderChannelPointsTab();
     const chosen = await populateAnalyticsChannelSelect(analyticsCurrentDays, analyticsCurrentChannel);
     if (chosen) loadAnalytics(chosen, analyticsCurrentDays);
     sel.addEventListener("change", () => loadAnalytics(sel.value, analyticsCurrentDays));
-    document.querySelectorAll(".range-btn").forEach(btn => {
+    document.querySelectorAll(".analytics-chart-col .range-btn").forEach(btn => {
         btn.addEventListener("click", async () => {
-            document.querySelectorAll(".range-btn").forEach(b => b.classList.remove("active-range"));
+            document.querySelectorAll(".analytics-chart-col .range-btn").forEach(b => b.classList.remove("active-range"));
             btn.classList.add("active-range");
             const days = parseInt(btn.dataset.days);
             const chosen = await populateAnalyticsChannelSelect(days, analyticsCurrentChannel);
             if (chosen) loadAnalytics(chosen, days);
         });
     });
-    if (toggle) {
-        toggle.addEventListener("change", () => {
-            state.analyticsSubscribedOnly = toggle.checked;
-            localStorage.setItem('tdm_analytics_subs_only', toggle.checked ? '1' : '0');
-            refreshAnalyticsSubscribedFilter();
+    document.querySelectorAll('#cp-channel-filter-group .range-btn').forEach(btn => {
+        btn.addEventListener("click", () => {
+            state.analyticsChannelFilter = btn.dataset.filter;
+            localStorage.setItem('tdm_analytics_channel_filter', state.analyticsChannelFilter);
+            _setActiveChannelFilterBtn();
+            refreshAnalyticsChannelFilter();
         });
-    }
+    });
 }
 
 // ==================== Tab Management ====================
