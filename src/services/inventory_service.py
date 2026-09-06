@@ -118,7 +118,15 @@ class InventoryService:
 
         # fetch in-progress campaigns (inventory)
         response = await self._twitch.gql_request(GQL_OPERATIONS["Inventory"])
-        inventory: JsonType = response["data"]["currentUser"]["inventory"]
+        current_user: JsonType | None = response["data"]["currentUser"]
+        if current_user is None:
+            # Twitch can answer with a "server error" GQL error scoped to the whole
+            # "currentUser" field while still returning HTTP 200 (no exception raised)
+            # - see watch_service.watch_loop for the full explanation. The maintenance
+            # heartbeat gets rescheduled regardless (see the finally: above), so this
+            # just delays the fetch to the next periodic retry instead of crashing.
+            raise GQLException("Inventory query returned currentUser=None (transient Twitch-side error)")
+        inventory: JsonType = current_user["inventory"]
         ongoing_campaigns: list[JsonType] = inventory["dropCampaignsInProgress"] or []
 
         # this contains claimed benefit edge IDs, not drop IDs
@@ -130,7 +138,10 @@ class InventoryService:
 
         # fetch general available campaigns data (campaigns)
         response = await self._twitch.gql_request(GQL_OPERATIONS["Campaigns"])
-        available_list: list[JsonType] = response["data"]["currentUser"]["dropCampaigns"] or []
+        current_user = response["data"]["currentUser"]
+        if current_user is None:
+            raise GQLException("Campaigns query returned currentUser=None (transient Twitch-side error)")
+        available_list: list[JsonType] = current_user["dropCampaigns"] or []
         applicable_statuses = ("ACTIVE", "UPCOMING")
         available_campaigns: dict[str, JsonType] = {
             c["id"]: c

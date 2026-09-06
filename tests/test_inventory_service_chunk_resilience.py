@@ -103,5 +103,45 @@ class TestInventoryServiceChunkResilience(unittest.IsolatedAsyncioTestCase):
         self.assertIsNotNone(twitch._mnt_task)
 
 
+class TestInventoryServiceCurrentUserNone(unittest.IsolatedAsyncioTestCase):
+    """
+    Same root cause as the watch_loop crash (see
+    test_watch_loop_current_user_none.py): Twitch's GQL backend can nullify
+    the whole "currentUser" field with a "server error" while still
+    returning HTTP 200. The Inventory/Campaigns queries here had the same
+    unguarded `response["data"]["currentUser"][...]` access and would raise
+    an opaque TypeError instead of a clear, catchable GQLException.
+    """
+
+    async def test_inventory_query_current_user_none_raises_clear_gql_exception(self):
+        twitch = MagicMock()
+        twitch.gql_request = AsyncMock(return_value={"data": {"currentUser": None}})
+
+        service = InventoryService(twitch)
+
+        with self.assertRaises(GQLException):
+            await service._fetch_inventory()
+
+    async def test_campaigns_query_current_user_none_raises_clear_gql_exception(self):
+        twitch = MagicMock()
+        inventory_response = {
+            "data": {
+                "currentUser": {
+                    "inventory": {
+                        "dropCampaignsInProgress": [],
+                        "gameEventDrops": [],
+                    }
+                }
+            }
+        }
+        campaigns_response = {"data": {"currentUser": None}}
+        twitch.gql_request = AsyncMock(side_effect=[inventory_response, campaigns_response])
+
+        service = InventoryService(twitch)
+
+        with self.assertRaises(GQLException):
+            await service._fetch_inventory()
+
+
 if __name__ == "__main__":
     unittest.main()
