@@ -308,9 +308,22 @@ class WatchService:
                     context = await self._twitch.gql_request(
                         GQL_OPERATIONS["CurrentDrop"].with_variables({"channelID": str(channel.id)})
                     )
-                    drop_data: JsonType | None = context["data"]["currentUser"][
-                        "dropCurrentSession"
-                    ]
+                    current_user: JsonType | None = context["data"]["currentUser"]
+                    if current_user is None:
+                        # Twitch can answer with a "server error" GQL error scoped to the
+                        # whole "currentUser" field while still returning HTTP 200 (no
+                        # exception raised) - gql_client.py nulls out exactly the path the
+                        # error points to, which here is the entire object, not just
+                        # "dropCurrentSession" underneath it. Treat it like a failed
+                        # request (below) instead of crashing on a None subscript.
+                        logger.log(
+                            CALL,
+                            "CurrentDrop GQL returned currentUser=None "
+                            "(likely a transient Twitch-side error) — skipping this cycle",
+                        )
+                        drop_data = None
+                    else:
+                        drop_data = current_user["dropCurrentSession"]
                 except GQLException:
                     drop_data = None
 

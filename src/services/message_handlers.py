@@ -338,9 +338,14 @@ class MessageHandlerService:
                             {"channelID": str(watching_channel.id)}
                         )
                     )
-                    drop_data: JsonType | None = context["data"]["currentUser"][
-                        "dropCurrentSession"
-                    ]
+                    # currentUser can come back None on a transient Twitch-side
+                    # "server error" scoped to that field (still HTTP 200, no
+                    # exception) - see watch_service.watch_loop for details.
+                    # Treat it the same as "no drop data yet" instead of crashing.
+                    current_user: JsonType | None = context["data"]["currentUser"]
+                    drop_data: JsonType | None = (
+                        current_user["dropCurrentSession"] if current_user is not None else None
+                    )
                     if drop_data is None or drop_data["dropID"] != drop.id:
                         break
                     await asyncio.sleep(2)
