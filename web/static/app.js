@@ -2374,6 +2374,8 @@ function renderPreferredGames(games) {
     games.forEach((g, idx) => {
         const item = document.createElement('div');
         item.className = 'sortable-item';
+        item.draggable = true;
+        item.dataset.game = g;
         const label = document.createElement('span');
         label.textContent = g;
         const btn = document.createElement('button');
@@ -2387,7 +2389,21 @@ function renderPreferredGames(games) {
         item.appendChild(label);
         item.appendChild(btn);
         container.appendChild(item);
+        item.addEventListener('dragstart', handleDragStart);
+        item.addEventListener('dragover', handleDragOver);
+        item.addEventListener('drop', handleDrop);
+        item.addEventListener('dragend', handlePreferredGamesDragEnd);
     });
+}
+
+function handlePreferredGamesDragEnd(e) {
+    e.target.classList.remove('dragging');
+    const container = document.getElementById('preferred-games-list');
+    const items = container.querySelectorAll('.sortable-item');
+    const newOrder = Array.from(items).map(item => item.dataset.game);
+    state.settings.preferred_games = newOrder;
+    renderPreferredGames(newOrder);
+    saveSettings();
 }
 
 function renderGamesToWatch() {
@@ -3260,6 +3276,19 @@ async function fetchAndApplyTranslations() {
 
         state.translations = data;
         applyTranslations(data);
+        // On page load, the 'initial_state' socket event (settings, wanted items,
+        // channels, campaigns, etc.) commonly arrives and renders before this
+        // fetch resolves - those render functions read state.translations at
+        // render time and fall back to hardcoded English text when it's still
+        // {}, then never get re-run by applyTranslations() itself. Re-render
+        // them now that translations are actually available (using the state
+        // already cached by their original render call), so a page reload
+        // doesn't get stuck showing English until some unrelated event happens
+        // to re-render them again.
+        renderGamesToWatch();
+        renderChannels();
+        renderInventory();
+        renderWantedItems(_wantedTree);
         console.log('Translations applied for language:', data.language_name);
     } catch (error) {
         console.error('Failed to fetch translations:', error);
