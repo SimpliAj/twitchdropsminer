@@ -243,6 +243,29 @@ class Twitch:
         if topics_to_remove:
             self.websocket.remove_topics(topics_to_remove)
 
+    def _clear_idle_watch(self) -> None:
+        """
+        Drop all idle-watch bookkeeping (channel set + subscribed topics).
+
+        2026-09-17, user-reported (temperance, Discord, 13.09.): this used to
+        run only at the TOP of the State.IDLE branch, right before
+        re-populating _idle_channels_set for a fresh idle session -- there
+        was no matching cleanup on the way OUT of idle. State.CHANNEL_SWITCH
+        finding a real drop-eligible channel calls self.watch(new_watching)
+        but never touched _idle_channels_set, so it kept whatever idle
+        channels were left over from the last idle period. watch_loop's
+        idle-parallel block reads that set unconditionally every iteration
+        regardless of app state, so it kept sending "Watch sent OK (idle)"
+        to those stale channels in parallel with the real drop watch --
+        exactly the reported symptom ("only drops should be watched under
+        these conditions"). Called from both directions now: entering IDLE
+        (clear before repopulating) and leaving it for real drop-farming.
+        """
+        if self._idle_topic_ids:
+            self.websocket.remove_topics(self._idle_topic_ids)
+            self._idle_topic_ids = []
+        self._idle_channels_set = set()
+
     async def run(self) -> None:
         """Main entry point for the miner - handles exit requests."""
         while True:
@@ -312,11 +335,8 @@ class Twitch:
                 self.gui.status.update(_.t["gui"]["status"]["idle"])
                 self.stop_watching()
                 # Remove any previously added idle channel topics to prevent accumulation
-                if self._idle_topic_ids:
-                    self.websocket.remove_topics(self._idle_topic_ids)
-                    self._idle_topic_ids = []
+                self._clear_idle_watch()
                 # Try idle watch if channels are configured or followed auto-mode is on
-                self._idle_channels_set = set()
                 if self.settings.idle_channels or self.settings.idle_use_followed:
                     logger.info(f"Idle watch: trying channels {self.settings.idle_channels}")
                     idle_parallel = getattr(self.settings, "idle_parallel", True)
@@ -696,7 +716,12 @@ class Twitch:
                                 break
 
                 if new_watching is not None:
-                    # Switch to new channel
+                    # Switch to new channel -- drop any leftover idle-watch
+                    # bookkeeping first (see _clear_idle_watch's own comment)
+                    # so watch_loop's idle-parallel block doesn't keep
+                    # sending watch payloads to stale idle channels once
+                    # we're actively drop-farming again.
+                    self._clear_idle_watch()
                     self.watch(new_watching)
                     asyncio.create_task(self._irc_service.join(new_watching.name))
                     # Display the active drop for the new channel
