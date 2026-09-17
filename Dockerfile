@@ -49,8 +49,17 @@ RUN mkdir -p /app/logs && chmod 777 /app/logs
 EXPOSE 8080
 
 # Health check
+# 2026-09-17, GitHub issue #12: ~107 accumulated healthcheck subprocesses
+# were found sleeping on a hung instance. urlopen() here had no per-request
+# timeout of its own, relying entirely on Docker's --timeout=3s to kill the
+# CMD process tree -- a real gap under a genuinely stuck event loop (GC
+# pressure, swap thrashing) where signal delivery to a shelled-out `python
+# -c` subprocess can be less reliable than an in-process timeout. Passing
+# timeout=2 makes the request self-terminate on its own regardless of
+# whether Docker's own enforcement lands, so stale processes can't pile up
+# even if the outer timeout has a gap in some runtime/environment.
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/healthz')" || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/healthz', timeout=2)" || exit 1
 
 # Run the application (web GUI is now default)
 CMD ["python", "main.py"]
