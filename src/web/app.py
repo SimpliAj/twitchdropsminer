@@ -87,6 +87,52 @@ def _get_password() -> str:
     return os.environ.get("WEB_PASSWORD", "")
 
 
+# 2026-09-17: __tdm_session used to literally BE the plaintext password --
+# any XSS/log-leak/proxy-log exposure of the cookie handed over the actual
+# password, not just a revocable credential, and the Fleet page deliberately
+# relied on that (see _fleet_auth_headers's old comment: cookies aren't
+# port-scoped, so the same cookie authenticates against every instance
+# sharing one password). Replaced with real random session tokens, server-
+# side only, so a leaked cookie only grants session access (revocable via
+# /__auth_logout) and never exposes the password itself. Fleet-to-fleet
+# calls now authenticate via an explicit X-Fleet-Password header instead
+# (see _fleet_auth_headers) rather than piggy-backing on the browser cookie.
+_SESSIONS: dict[str, float] = {}  # token -> expiry (unix seconds)
+_SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30
+_SESSION_MAX_COUNT = 128  # bound memory regardless of login frequency
+
+
+def _prune_sessions() -> None:
+    now = time.time()
+    for token, expiry in list(_SESSIONS.items()):
+        if expiry <= now:
+            del _SESSIONS[token]
+    while len(_SESSIONS) > _SESSION_MAX_COUNT:
+        oldest = min(_SESSIONS, key=lambda t: _SESSIONS[t])
+        del _SESSIONS[oldest]
+
+
+def _new_session_token() -> str:
+    _prune_sessions()
+    token = secrets.token_urlsafe(32)
+    _SESSIONS[token] = time.time() + _SESSION_MAX_AGE_SECONDS
+    while len(_SESSIONS) > _SESSION_MAX_COUNT:
+        oldest = min(_SESSIONS, key=lambda t: _SESSIONS[t])
+        del _SESSIONS[oldest]
+    return token
+
+
+def _session_valid(token: str) -> bool:
+    if not token:
+        return False
+    expiry = _SESSIONS.get(token)
+    return expiry is not None and expiry > time.time()
+
+
+def _revoke_session(token: str) -> None:
+    _SESSIONS.pop(token, None)
+
+
 def _get_bot_token() -> str:
     try:
         if _BOT_TOKEN_FILE.exists():
@@ -392,8 +438,16 @@ class PasswordAuthMiddleware(BaseHTTPMiddleware):
         pw = _get_password()
         if not pw:
             return await call_next(request)
+        # Fleet-to-fleet calls (see _fleet_auth_headers): a sibling instance
+        # authenticates with the shared password over an explicit header,
+        # never via the browser session cookie -- decoupled from the human
+        # login session entirely, so it survives that session expiring/
+        # rotating and never needs a browser present.
+        fleet_pw_header = request.headers.get("X-Fleet-Password", "")
+        if fleet_pw_header and secrets.compare_digest(fleet_pw_header, pw):
+            return await call_next(request)
         session = request.cookies.get("__tdm_session", "")
-        if secrets.compare_digest(session, pw):
+        if _session_valid(session):
             return await call_next(request)
         return HTMLResponse(_login_html(), status_code=401)
 
@@ -575,7 +629,7 @@ async def setup_post(request: Request):
             return HTMLResponse(_setup_html(f'<p class="err">{_web_auth_strings()["error_password_mismatch"]}</p>'))
         _save_web_config({"setup_done": True, "password": pw})
         resp = RedirectResponse("/", status_code=303)
-        resp.set_cookie("__tdm_session", pw, httponly=True, samesite="lax", max_age=60*60*24*30)
+        resp.set_cookie("__tdm_session", _new_session_token(), httponly=True, samesite="lax", max_age=_SESSION_MAX_AGE_SECONDS)
         return resp
     else:
         _save_web_config({"setup_done": True, "password": ""})
@@ -616,13 +670,14 @@ async def auth_login_post(request: Request):
     current_pw = _get_password()
     if current_pw and secrets.compare_digest(pw, current_pw):
         resp = RedirectResponse("/", status_code=303)
-        resp.set_cookie("__tdm_session", current_pw, httponly=True, samesite="lax", max_age=60*60*24*30)
+        resp.set_cookie("__tdm_session", _new_session_token(), httponly=True, samesite="lax", max_age=_SESSION_MAX_AGE_SECONDS)
         return resp
     return HTMLResponse(_login_html(f'<p class="err">{_web_auth_strings()["wrong_password"]}</p>'), status_code=401)
 
 
 @app.get("/__auth_logout")
-async def auth_logout():
+async def auth_logout(request: Request):
+    _revoke_session(request.cookies.get("__tdm_session", ""))
     resp = RedirectResponse("/__auth_login_page", status_code=303)
     resp.delete_cookie("__tdm_session")
     return resp
@@ -1418,11 +1473,15 @@ async def change_password(data: PasswordChangeRequest, request: Request):
     cfg["setup_done"] = True
     _save_web_config(cfg)
     resp_data = {"success": True}
-    # Update session cookie to new password
+    # Issue a fresh session token for the new password rather than reusing
+    # the old one -- keeps the "cookie == credential" property from ever
+    # coming back in disguise (the token itself still carries no password
+    # information, but minting fresh here means a stale copy of this
+    # response can never be replayed to imply a specific password value).
     from fastapi.responses import JSONResponse
     response = JSONResponse(resp_data)
     if data.new_password:
-        response.set_cookie("__tdm_session", data.new_password, httponly=True, samesite="lax", max_age=60*60*24*30)
+        response.set_cookie("__tdm_session", _new_session_token(), httponly=True, samesite="lax", max_age=_SESSION_MAX_AGE_SECONDS)
     else:
         response.delete_cookie("__tdm_session")
     return response
@@ -1915,16 +1974,20 @@ def _instance_base_url(inst: dict) -> str:
     return f"http://127.0.0.1:{inst.get('port', 8080)}"
 
 
-def _fleet_auth_cookies() -> dict:
+def _fleet_auth_headers() -> dict:
     # All instances in a single-user deployment share the same web password
-    # (that's how the account-switcher pills already work today — they just
-    # navigate the browser to another port and the same session cookie is
-    # valid there too, since cookies aren't port-scoped). Reuse that here:
-    # send this instance's own password as the session cookie on outbound
-    # calls. If a target instance was set up with a different password, that
-    # one call 401s and is reported per-account instead of failing the batch.
+    # (that's how the account-switcher pills already work today). Used to
+    # ride along as the raw session cookie (relying on cookies not being
+    # port-scoped) -- 2026-09-17: that made the cookie literally BE the
+    # password, so a leaked/logged cookie leaked the real credential, not
+    # just a revocable session. Session cookies are now random per-login
+    # tokens (see _new_session_token) that a sibling instance could never
+    # recognize, so fleet-to-fleet calls authenticate with this explicit
+    # header instead, checked by PasswordAuthMiddleware before it ever
+    # looks at the session cookie. If a target instance has a different
+    # password, that call 401s and is reported per-account, same as before.
     pw = _get_password()
-    return {"__tdm_session": pw} if pw else {}
+    return {"X-Fleet-Password": pw} if pw else {}
 
 
 def _compute_bulk_list(current: list[str], values: list[str], mode: str) -> list[str]:
@@ -1949,7 +2012,7 @@ async def _fetch_instance_overview(session, inst: dict) -> dict:
     n = inst["n"]
     label = inst.get("label") or f"Account {n}"
     base = _instance_base_url(inst)
-    cookies = _fleet_auth_cookies()
+    headers = _fleet_auth_headers()
     result: dict = {
         "n": n,
         "label": label,
@@ -1964,7 +2027,7 @@ async def _fetch_instance_overview(session, inst: dict) -> dict:
         "error": None,
     }
     try:
-        async with session.get(f"{base}/api/instance", cookies=cookies, timeout=_FLEET_HTTP_TIMEOUT) as r:
+        async with session.get(f"{base}/api/instance", headers=headers, timeout=_FLEET_HTTP_TIMEOUT) as r:
             if r.status == 200:
                 d = await r.json()
                 result["login"] = d.get("login")
@@ -1976,7 +2039,7 @@ async def _fetch_instance_overview(session, inst: dict) -> dict:
         return result
 
     try:
-        async with session.get(f"{base}/api/status", cookies=cookies, timeout=_FLEET_HTTP_TIMEOUT) as r:
+        async with session.get(f"{base}/api/status", headers=headers, timeout=_FLEET_HTTP_TIMEOUT) as r:
             if r.status == 200:
                 d = await r.json()
                 result["status_text"] = d.get("status")
@@ -1989,7 +2052,7 @@ async def _fetch_instance_overview(session, inst: dict) -> dict:
         result["error"] = result["error"] or str(e)
 
     try:
-        async with session.get(f"{base}/api/channels", cookies=cookies, timeout=_FLEET_HTTP_TIMEOUT) as r:
+        async with session.get(f"{base}/api/channels", headers=headers, timeout=_FLEET_HTTP_TIMEOUT) as r:
             if r.status == 200:
                 d = await r.json()
                 watching = next((c for c in d.get("channels", []) if c.get("watching")), None)
@@ -1999,7 +2062,7 @@ async def _fetch_instance_overview(session, inst: dict) -> dict:
         pass
 
     try:
-        async with session.get(f"{base}/api/stats", cookies=cookies, timeout=_FLEET_HTTP_TIMEOUT) as r:
+        async with session.get(f"{base}/api/stats", headers=headers, timeout=_FLEET_HTTP_TIMEOUT) as r:
             if r.status == 200:
                 d = await r.json()
                 today_key = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -2009,7 +2072,7 @@ async def _fetch_instance_overview(session, inst: dict) -> dict:
         pass
 
     try:
-        async with session.get(f"{base}/api/drops-history", cookies=cookies, timeout=_FLEET_HTTP_TIMEOUT) as r:
+        async with session.get(f"{base}/api/drops-history", headers=headers, timeout=_FLEET_HTTP_TIMEOUT) as r:
             if r.status == 200:
                 d = await r.json()
                 if isinstance(d, list) and d:
@@ -2060,7 +2123,7 @@ async def bulk_apply_settings(req: BulkSettingsRequest):
 
     registry = _load_instances_registry()
     by_n = {i["n"]: i for i in registry.get("instances", [])}
-    cookies = _fleet_auth_cookies()
+    headers = _fleet_auth_headers()
     results = []
     import aiohttp
     async with aiohttp.ClientSession() as session:
@@ -2074,7 +2137,7 @@ async def bulk_apply_settings(req: BulkSettingsRequest):
                 current: list[str] = []
                 if req.mode != "replace":
                     async with session.get(
-                        f"{base}/api/settings", cookies=cookies, timeout=_FLEET_HTTP_TIMEOUT
+                        f"{base}/api/settings", headers=headers, timeout=_FLEET_HTTP_TIMEOUT
                     ) as r:
                         if r.status == 200:
                             d = await r.json()
@@ -2084,7 +2147,7 @@ async def bulk_apply_settings(req: BulkSettingsRequest):
                             continue
                 new_list = _compute_bulk_list(current, req.values, req.mode)
                 async with session.post(
-                    f"{base}/api/settings", cookies=cookies, json={req.field: new_list}, timeout=_FLEET_HTTP_TIMEOUT
+                    f"{base}/api/settings", headers=headers, json={req.field: new_list}, timeout=_FLEET_HTTP_TIMEOUT
                 ) as r:
                     if r.status == 200:
                         results.append({"n": n, "success": True, "count": len(new_list)})
@@ -2131,7 +2194,7 @@ async def bulk_account_action(req: BulkActionRequest):
 
     registry = _load_instances_registry()
     by_n = {i["n"]: i for i in registry.get("instances", [])}
-    cookies = _fleet_auth_cookies()
+    headers = _fleet_auth_headers()
     results = []
     import aiohttp
     async with aiohttp.ClientSession() as session:
@@ -2144,7 +2207,7 @@ async def bulk_account_action(req: BulkActionRequest):
             try:
                 if req.action == "pause":
                     async with session.post(
-                        f"{base}/api/pause", cookies=cookies, timeout=_FLEET_HTTP_TIMEOUT
+                        f"{base}/api/pause", headers=headers, timeout=_FLEET_HTTP_TIMEOUT
                     ) as r:
                         if r.status == 200:
                             results.append({"n": n, "success": True, "paused": True})
@@ -2157,7 +2220,7 @@ async def bulk_account_action(req: BulkActionRequest):
 
                 if req.action == "drop_mining":
                     async with session.post(
-                        f"{base}/api/reload", cookies=cookies, timeout=_FLEET_HTTP_TIMEOUT
+                        f"{base}/api/reload", headers=headers, timeout=_FLEET_HTTP_TIMEOUT
                     ) as r:
                         if r.status == 200:
                             results.append({"n": n, "success": True})
@@ -2172,7 +2235,7 @@ async def bulk_account_action(req: BulkActionRequest):
                 was_paused = False
                 try:
                     async with session.get(
-                        f"{base}/api/status", cookies=cookies, timeout=_FLEET_HTTP_TIMEOUT
+                        f"{base}/api/status", headers=headers, timeout=_FLEET_HTTP_TIMEOUT
                     ) as r:
                         if r.status == 200:
                             d = await r.json()
@@ -2185,7 +2248,7 @@ async def bulk_account_action(req: BulkActionRequest):
 
                 if was_paused:
                     async with session.post(
-                        f"{base}/api/resume", cookies=cookies, timeout=_FLEET_HTTP_TIMEOUT
+                        f"{base}/api/resume", headers=headers, timeout=_FLEET_HTTP_TIMEOUT
                     ) as r:
                         if r.status not in (200,):
                             text = await r.text()
@@ -2193,7 +2256,7 @@ async def bulk_account_action(req: BulkActionRequest):
                             continue
 
                 async with session.post(
-                    f"{base}/api/idle-watch/switch", cookies=cookies, timeout=_FLEET_HTTP_TIMEOUT
+                    f"{base}/api/idle-watch/switch", headers=headers, timeout=_FLEET_HTTP_TIMEOUT
                 ) as r:
                     if r.status == 200:
                         d = await r.json()
