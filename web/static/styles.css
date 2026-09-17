@@ -1906,7 +1906,8 @@ body.dark-mode #manual-mode-badge {
 .drag-handle { font-size: 18px; color: var(--ink-dim); cursor: grab; }
 .drag-handle:active { cursor: grabbing; }
 
-.priority-number {
+.priority-number,
+.priority-input {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1919,6 +1920,26 @@ body.dark-mode #manual-mode-badge {
     font-weight: 700;
     font-family: var(--font-mono);
     flex-shrink: 0;
+}
+
+/* Ported from upstream #94: editable priority-number input, styled to
+   mirror the old static .priority-number circle exactly. */
+.priority-input {
+    border: none;
+    text-align: center;
+    padding: 0;
+    box-sizing: border-box;
+}
+.priority-input:focus {
+    outline: 2px solid var(--on-accent);
+}
+.priority-input::-webkit-outer-spin-button,
+.priority-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.priority-input {
+    -moz-appearance: textfield;
 }
 
 .game-name { flex: 1; font-weight: 500; }
