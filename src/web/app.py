@@ -3,6 +3,8 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
+import time
+from collections import deque
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -580,8 +582,35 @@ async def setup_post(request: Request):
         return RedirectResponse("/", status_code=303)
 
 
+# 2026-09-17: ported from upstream TwitchDropsMiner v1.3.0 (#104) after noticing
+# /__auth_login had no brute-force protection at all -- unlimited password guesses
+# against whatever the user set at /__setup. Same two-tier shape upstream uses (a
+# global ceiling bounds total hashing/CPU work regardless of source, a tighter
+# per-IP ceiling is the actual anti-guessing limit): 30 attempts/min globally, 5
+# attempts/min per source IP. In-memory only (a restart clears it, same as
+# upstream) -- this endpoint is guessed against interactively, not scripted across
+# process restarts, so persistence isn't worth the complexity.
+_LOGIN_ATTEMPTS: deque[tuple[float, str]] = deque()
+_LOGIN_ATTEMPTS_GLOBAL_MAX = 30
+_LOGIN_ATTEMPTS_PER_IP_MAX = 5
+_LOGIN_ATTEMPTS_WINDOW_SECONDS = 60
+
+
+def _check_login_rate_limit(peer: str) -> None:
+    now = time.monotonic()
+    while _LOGIN_ATTEMPTS and _LOGIN_ATTEMPTS[0][0] <= now - _LOGIN_ATTEMPTS_WINDOW_SECONDS:
+        _LOGIN_ATTEMPTS.popleft()
+    if (
+        len(_LOGIN_ATTEMPTS) >= _LOGIN_ATTEMPTS_GLOBAL_MAX
+        or sum(ip == peer for _, ip in _LOGIN_ATTEMPTS) >= _LOGIN_ATTEMPTS_PER_IP_MAX
+    ):
+        raise HTTPException(429, "Too many login attempts", headers={"Retry-After": "60"})
+    _LOGIN_ATTEMPTS.append((now, peer))
+
+
 @app.post("/__auth_login")
 async def auth_login_post(request: Request):
+    _check_login_rate_limit(request.client.host if request.client else "unknown")
     form = await request.form()
     pw = form.get("password", "")
     current_pw = _get_password()
@@ -903,6 +932,46 @@ async def get_drops_history():
     except Exception:
         pass
     return []
+
+
+@app.get("/api/drops-history/export.csv")
+async def export_drops_history_csv():
+    """
+    2026-09-17, ported from upstream TwitchDropsMiner v1.3.0's "Drop History &
+    CSV Export" feature -- our fork already had drops_history.json + the
+    /api/drops-history endpoint + a History tab consuming it (predates
+    upstream's version), the CSV download was the one piece actually missing.
+    Same entry shape drop_history.save_drop_claim writes (timestamp, game,
+    drop, reward, image_url) -- streamed straight from JSON to CSV, no
+    re-fetch, so this always matches whatever the History tab is showing.
+    """
+    import csv
+    import io
+
+    hist_file = _get_account_data_dir() / "drops_history.json"
+    try:
+        history = json.loads(hist_file.read_text()) if hist_file.exists() else []
+    except Exception:
+        history = []
+
+    buffer = io.StringIO()
+    writer = csv.writer(buffer)
+    writer.writerow(["timestamp", "game", "drop", "reward", "image_url"])
+    for entry in history:
+        writer.writerow([
+            entry.get("timestamp", ""),
+            entry.get("game", ""),
+            entry.get("drop", ""),
+            entry.get("reward", ""),
+            entry.get("image_url", "") or "",
+        ])
+
+    filename = f"drops-history-{datetime.now(timezone.utc).strftime('%Y%m%d')}.csv"
+    return Response(
+        content=buffer.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 @app.get("/api/stats")
 async def get_stats(request: Request):
