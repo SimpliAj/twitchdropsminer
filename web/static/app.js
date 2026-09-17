@@ -2641,7 +2641,24 @@ function sortGamesByEndDate() {
 }
 
 function selectAllGames() {
-    state.settings.games_to_watch = Array.from(availableGames).sort();
+    // Ported from upstream rangermix/TwitchDropsMiner #95: this used to
+    // REPLACE games_to_watch outright from availableGames, which only fills
+    // in as campaigns load -- clicking Select All before that finishes
+    // wiped out every manually-added game not yet in availableGames (real
+    // data loss). Merge instead, same idiom selectLinkedGames/
+    // selectBadgeEmoteGames right below already use. Case-insensitive so
+    // e.g. availableGames' lowercase 'rust' doesn't duplicate an existing
+    // manually-cased 'Rust' entry.
+    const current = state.settings.games_to_watch || [];
+    const seen = new Set(current.map(g => g.toLowerCase()));
+    const merged = [...current];
+    for (const game of availableGames) {
+        if (!seen.has(game.toLowerCase())) {
+            seen.add(game.toLowerCase());
+            merged.push(game);
+        }
+    }
+    state.settings.games_to_watch = merged;
     state.settings.auto_add_excluded_games = [];
     renderGamesToWatch();
     renderChannels();
