@@ -4336,6 +4336,9 @@ document.addEventListener('DOMContentLoaded', () => {
     initAccountTabs();
     applyUsernameVisibility();
     document.getElementById("history-refresh-btn")?.addEventListener("click", loadDropHistory);
+    document.getElementById("history-export-csv-btn")?.addEventListener("click", () => {
+        window.open(API_BASE + "/api/drops-history/export.csv", "_blank");
+    });
     document.getElementById("manage-accounts-btn")?.addEventListener("click", openAccountsManagerModal);
 
     const dropsTodayCard = document.getElementById("stat-drops-today-card");
