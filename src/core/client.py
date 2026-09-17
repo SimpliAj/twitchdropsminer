@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 from collections import OrderedDict, abc, deque
 from datetime import datetime, timedelta, timezone
 from functools import partial
@@ -40,6 +41,7 @@ from src.services.watch_service import WatchService
 from src.utils import (
     AwaitableValue,
 )
+from src.utils.debug_memory import run_debug_memory_logger
 from src.websocket import WebsocketPool
 
 
@@ -103,6 +105,7 @@ class Twitch:
         self._pause_source: str | None = None
         self._user_override: bool = False
         self._scheduler_task: asyncio.Task[None] | None = None
+        self._debug_memory_task: asyncio.Task[None] | None = None
         self._scheduler_service: SchedulerService = SchedulerService(self)
         from src.services.campaign_alert_service import CampaignAlertService
         self._campaign_alert_service: CampaignAlertService = CampaignAlertService(self)
@@ -299,6 +302,14 @@ class Twitch:
         if self._scheduler_task is not None:
             self._scheduler_task.cancel()
         self._scheduler_task = asyncio.create_task(self._scheduler_service.run_scheduler())
+        # 2026-09-17, GitHub issue #12: opt-in periodic RSS + long-lived
+        # collection size logging, off by default (TDM_DEBUG_MEMORY=1 to
+        # enable) -- see src/utils/debug_memory.py's module docstring for
+        # why this exists instead of a guess-fix.
+        if os.environ.get("TDM_DEBUG_MEMORY"):
+            if self._debug_memory_task is not None:
+                self._debug_memory_task.cancel()
+            self._debug_memory_task = asyncio.create_task(run_debug_memory_logger(self))
         # Add default topics
         self.websocket.add_topics(
             [
