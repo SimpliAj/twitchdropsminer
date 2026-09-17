@@ -2466,12 +2466,32 @@ function renderSelectedGames(games) {
         div.className = 'sortable-item';
         div.draggable = true;
         div.dataset.game = game;
+        const priorityInput = makeElement('input', {
+            type: 'number',
+            class: 'priority-input',
+            value: String(index + 1),
+            min: '1',
+            max: String(games.length),
+        });
         div.replaceChildren(
             makeElement('span', { class: 'drag-handle' }, '☰'),
-            makeElement('span', { class: 'priority-number' }, String(index + 1)),
+            priorityInput,
             makeElement('span', { class: 'game-name' }, game),
             makeElement('button', { class: 'remove-btn' }, '✕'),
         );
+
+        // Editable priority number -- ported from upstream #94: lets a user
+        // jump a game straight to a position instead of only drag-reordering
+        // one slot at a time. Writes to the same games_to_watch order our
+        // existing drag-and-drop already reads/writes, so the two don't fight.
+        priorityInput.addEventListener('change', (e) => {
+            const priority = Number(e.target.value);
+            if (e.target.value.trim() && Number.isInteger(priority)) {
+                changeGamePriority(game, priority - 1);
+            } else {
+                e.target.value = String(index + 1); // Reset on invalid
+            }
+        });
 
         // Event listener for the delete button
         const removeBtn = div.querySelector('.remove-btn');
@@ -2609,6 +2629,27 @@ function toggleGameWatch(gameName, checked) {
     renderGamesToWatch();
     renderChannels();
     saveSettings();
+}
+
+function changeGamePriority(gameName, newIndex) {
+    // Ported from upstream #94: lets a user jump a game straight to a
+    // priority slot by typing a number, instead of only drag-reordering.
+    if (!Number.isInteger(newIndex)) return;
+    const games = [...(state.settings.games_to_watch || [])];
+    const currentIndex = games.indexOf(gameName);
+
+    if (currentIndex > -1) {
+        games.splice(currentIndex, 1);
+
+        // Ensure newIndex is within bounds
+        newIndex = Math.max(0, Math.min(newIndex, games.length));
+        games.splice(newIndex, 0, gameName);
+
+        state.settings.games_to_watch = games;
+        renderGamesToWatch();
+        renderChannels();
+        saveSettings();
+    }
 }
 
 function removeGameFromWatch(gameName) {
