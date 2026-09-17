@@ -73,6 +73,29 @@ class Websocket:
         self._handle_task: asyncio.Task[None] | None = None
         # topics stuff
         self.topics: dict[str, WebsocketTopic] = {}
+        # 2026-09-17, GitHub issue #12 (memory growth + unresponsive process
+        # over long runs, "large anonymous mmap regions", traditional heap
+        # small): _handle_message below fired a bare asyncio.create_task()
+        # per incoming websocket message with the return value discarded --
+        # a well-documented asyncio footgun (see the "Important" note on
+        # create_task in the stdlib docs): with no strong reference kept,
+        # the task is only weakly referenced by the loop, and if the
+        # wrapped coroutine ever raises, nothing ever retrieves that
+        # exception. Retained tracebacks (which pin every local variable
+        # and stack frame along the exception's chain) plus asyncio's own
+        # internal bookkeeping for never-collected exception state is a
+        # plausible slow, steady leak under a busy, long-running websocket
+        # -- not confirmed as the sole cause of issue #12, but a genuine,
+        # fixable instance of the exact anti-pattern the docs warn about.
+        # Track tasks in a set (discarded via done-callback once finished)
+        # so a real reference is always held, and route the handler
+        # through _run_topic_handler below (same spirit as task_wrapper,
+        # used elsewhere in this file for watch_loop, but WebsocketTopic
+        # has no __name__ for that helper's own exception-logging line to
+        # read -- see _run_topic_handler's own comment) so a raising
+        # handler is caught and logged instead of completing with an
+        # unretrieved exception.
+        self._message_tasks: set[asyncio.Task] = set()
         self._submitted: set[WebsocketTopic] = set()
         # notify GUI
         self.set_status(_.t["gui"]["websocket"]["disconnected"])
@@ -338,8 +361,28 @@ class Websocket:
         # request the assigned topic to process the response
         topic = self.topics.get(message["data"]["topic"])
         if topic is not None:
-            # use a task to not block the websocket
-            asyncio.create_task(topic(json.loads(message["data"]["message"])))
+            # use a task to not block the websocket -- wrapped so a raising
+            # handler is logged and consumed instead of leaving an
+            # unretrieved exception on an untracked task (see __init__'s
+            # _message_tasks comment, GitHub issue #12). Not reusing the
+            # existing task_wrapper() helper here: it does
+            # `afunc.__name__` in its except-branch, but `topic` is a
+            # WebsocketTopic instance (a __call__-based callable with no
+            # __name__), which would itself raise AttributeError the
+            # moment a real handler exception needed logging -- str(topic)
+            # is the safe equivalent (WebsocketTopic defines __str__).
+            task = asyncio.create_task(
+                self._run_topic_handler(topic, json.loads(message["data"]["message"]))
+            )
+            self._message_tasks.add(task)
+            task.add_done_callback(self._message_tasks.discard)
+
+    async def _run_topic_handler(self, topic: WebsocketTopic, data: JsonType) -> None:
+        """Run one topic handler, logging (never propagating) any exception."""
+        try:
+            await topic(data)
+        except Exception:
+            ws_logger.exception(f"Exception in websocket topic handler for {topic}")
 
     async def _handle_recv(self):
         """Handle receiving and processing messages from the websocket."""
