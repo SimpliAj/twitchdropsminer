@@ -13,6 +13,17 @@ from src.config import COOKIES_PATH, ClientType
 from src.i18n import _
 from src.utils import CHARS_HEX_LOWER, create_nonce
 
+# 2026-09-18: the device-code/token endpoints (id.twitch.tv/oauth2/*) only accept
+# certain client_ids (SmartTV-style clients) for this grant type -- independent of
+# whatever self._twitch._client_type is set to for browsing/scraping www.twitch.tv
+# (that one needs its CLIENT_URL to point at the real site, ANDROID_APP normally).
+# Traced today's widespread "KeyError: device_code" reports (this fork's issue #13,
+# upstream DevilXD/TwitchDropsMiner#1165/#1166) to exactly this mismatch -- credit to
+# ThermaLux (github.com/ThermaLux/twitchdropsminer) for identifying and fixing this
+# properly; this replaces the cruder same-day fallback-after-3-failures attempt with
+# ThermaLux's cleaner fix of never using the browsing client for login at all.
+LOGIN_CLIENT = ClientType.SMARTBOX
+
 
 if TYPE_CHECKING:
     from src.config import ClientInfo, JsonType
@@ -79,37 +90,33 @@ class _AuthState:
             str: The access token
         """
         login_form: LoginForm = self._twitch.gui.login
-        # 2026-09-18, GitHub issues #1165/#1166 upstream (DevilXD/TwitchDropsMiner):
-        # Twitch appears to have broken the device-code grant specifically for the
-        # ANDROID_APP client ID today -- unconfirmed community reports (no reactions,
-        # not independently verified) suggest SMARTBOX's client ID still works.
-        # Rebuilt fresh each retry (was built once, outside the loop) so a mid-loop
-        # client-type fallback below actually takes effect on the next attempt.
-        device_code_failures = 0
+        # Use the dedicated login client (see LOGIN_CLIENT's own comment above),
+        # not self._twitch._client_type -- built fresh each retry in case that
+        # ever needs to change, though LOGIN_CLIENT itself is a fixed constant.
+        client_info: ClientInfo = LOGIN_CLIENT
+        headers = {
+            "Accept": "application/json",
+            "Accept-Encoding": "gzip",
+            "Accept-Language": "en-US",
+            "Cache-Control": "no-cache",
+            "Client-Id": client_info.CLIENT_ID,
+            "Host": "id.twitch.tv",
+            "Origin": str(client_info.CLIENT_URL),
+            "Pragma": "no-cache",
+            "Referer": str(client_info.CLIENT_URL),
+            "User-Agent": client_info.USER_AGENT,
+            "X-Device-Id": self.device_id,
+        }
+        payload = {
+            "client_id": client_info.CLIENT_ID,
+            "scopes": "",  # no scopes needed
+        }
         while True:
             try:
                 from datetime import datetime, timedelta, timezone
 
                 from src.exceptions import RequestInvalid
 
-                client_info: ClientInfo = self._twitch._client_type
-                headers = {
-                    "Accept": "application/json",
-                    "Accept-Encoding": "gzip",
-                    "Accept-Language": "en-US",
-                    "Cache-Control": "no-cache",
-                    "Client-Id": client_info.CLIENT_ID,
-                    "Host": "id.twitch.tv",
-                    "Origin": str(client_info.CLIENT_URL),
-                    "Pragma": "no-cache",
-                    "Referer": str(client_info.CLIENT_URL),
-                    "User-Agent": client_info.USER_AGENT,
-                    "X-Device-Id": self.device_id,
-                }
-                payload = {
-                    "client_id": client_info.CLIENT_ID,
-                    "scopes": "",  # no scopes needed
-                }
                 now = datetime.now(timezone.utc)
                 async with self._twitch.request(
                     "POST", "https://id.twitch.tv/oauth2/device", headers=headers, data=payload
@@ -121,36 +128,17 @@ class _AuthState:
                     #     "user_code": "8 chars [A-Z]",
                     #     "verification_uri": "https://www.twitch.tv/activate?device-code=ABCDEFGH"
                     # }
-                    # 2026-09-18, user-reported: Twitch briefly stopped accepting this
-                    # client ID on the device-code endpoint, returning a non-200 error
-                    # body (e.g. {"status":400,"message":"..."}) with no "device_code"
-                    # key -- indexing into it directly raised a bare KeyError, crashing
-                    # the whole client instead of surfacing what Twitch actually said.
-                    # This is a Twitch-side condition this app can't fix by itself, so
-                    # retry with backoff and log the real reason instead of crashing.
+                    # 2026-09-18, user-reported (this fork's issue #13-adjacent bug
+                    # reports, upstream DevilXD/TwitchDropsMiner#1165/#1166): a non-200
+                    # error body (no "device_code" key) used to get indexed into
+                    # directly, crashing with a bare KeyError instead of surfacing what
+                    # Twitch actually said. Surface it and retry with backoff instead.
                     if response.status != 200:
                         error_body = await response.text()
-                        device_code_failures += 1
                         logger.error(
                             f"Device code request failed (HTTP {response.status}): "
-                            f"{error_body}. This is on Twitch's side, not something this "
-                            "app can fix directly -- retrying in 30s."
+                            f"{error_body}. Retrying in 30s."
                         )
-                        # 2026-09-18: after a few straight failures on the CURRENT
-                        # client type, try the community-suggested ANDROID_APP ->
-                        # SMARTBOX fallback from upstream issues #1165/#1166 (see
-                        # this function's own comment above) -- unverified, but this
-                        # only ever triggers on an already-broken login, so it can't
-                        # make a currently-working client type worse. Only switches
-                        # once per login attempt (not every failure) so a genuinely
-                        # broken SMARTBOX doesn't just bounce back and forth forever.
-                        if device_code_failures == 3 and self._twitch._client_type is ClientType.ANDROID_APP:
-                            logger.warning(
-                                "Falling back from ANDROID_APP to SMARTBOX client type "
-                                "after repeated device-code failures (unverified "
-                                "community workaround, see upstream issue #1165)."
-                            )
-                            self._twitch._client_type = ClientType.SMARTBOX
                         await asyncio.sleep(30)
                         continue
                     response_json: JsonType = await response.json()
@@ -164,7 +152,7 @@ class _AuthState:
                 await login_form.ask_enter_code(verification_uri, user_code)
 
                 payload = {
-                    "client_id": self._twitch._client_type.CLIENT_ID,
+                    "client_id": client_info.CLIENT_ID,
                     "device_code": device_code,
                     "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
                 }
@@ -298,8 +286,11 @@ class _AuthState:
                             break
                 else:
                     raise RuntimeError("Login verification failure (step #2)")
-                # ensure the cookie's client ID matches the currently selected client
-                if validate_response["client_id"] == client_info.CLIENT_ID:
+                # ensure the cookie's client ID matches the client actually used to log
+                # in -- _oauth_login() always mints its token under LOGIN_CLIENT's
+                # client_id now (see LOGIN_CLIENT's own comment), regardless of which
+                # client_info is used for browsing/scraping here.
+                if validate_response["client_id"] == LOGIN_CLIENT.CLIENT_ID:
                     break
                 # otherwise, we need to delete the entire cookie file and clear the jar
                 logger.info("Cookie client ID mismatch")
