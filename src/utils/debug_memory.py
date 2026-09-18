@@ -20,10 +20,22 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import resource
 from typing import TYPE_CHECKING
 
 from src.utils.async_helpers import task_wrapper
+
+# 2026-09-18, GitHub issue #13: `resource` is POSIX-only stdlib -- doesn't
+# exist on Windows at all. This module was only ever meant to be opt-in
+# (TDM_DEBUG_MEMORY env var), but src/core/client.py imports
+# run_debug_memory_logger unconditionally at startup, so the bare
+# `import resource` here crashed EVERY Windows-from-source user on launch
+# with ModuleNotFoundError, regardless of whether they ever set the env
+# var. Soft-fail instead: run_debug_memory_logger checks availability and
+# logs+returns instead of starting on a platform that can't support it.
+try:
+    import resource
+except ImportError:
+    resource = None  # type: ignore[assignment]
 
 
 if TYPE_CHECKING:
@@ -37,6 +49,7 @@ DEFAULT_INTERVAL_SECONDS = 300  # 5 minutes
 
 def current_rss_mb() -> float:
     """Current process resident set size, in MiB (Linux: ru_maxrss is KiB)."""
+    assert resource is not None
     return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024
 
 
@@ -60,6 +73,12 @@ async def run_debug_memory_logger(
     twitch: "Twitch", interval_seconds: float = DEFAULT_INTERVAL_SECONDS
 ) -> None:
     """Log RSS + long-lived collection sizes every `interval_seconds`, forever."""
+    if resource is None:
+        logger.warning(
+            "[debug-memory] TDM_DEBUG_MEMORY is set, but the stdlib `resource` "
+            "module isn't available on this platform (Windows) -- skipping."
+        )
+        return
     while True:
         await asyncio.sleep(interval_seconds)
         sizes = collection_sizes(twitch)

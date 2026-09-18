@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, cast
 import aiohttp
 from yarl import URL
 
-from src.config import COOKIES_PATH
+from src.config import COOKIES_PATH, ClientType
 from src.i18n import _
 from src.utils import CHARS_HEX_LOWER, create_nonce
 
@@ -79,30 +79,37 @@ class _AuthState:
             str: The access token
         """
         login_form: LoginForm = self._twitch.gui.login
-        client_info: ClientInfo = self._twitch._client_type
-        headers = {
-            "Accept": "application/json",
-            "Accept-Encoding": "gzip",
-            "Accept-Language": "en-US",
-            "Cache-Control": "no-cache",
-            "Client-Id": client_info.CLIENT_ID,
-            "Host": "id.twitch.tv",
-            "Origin": str(client_info.CLIENT_URL),
-            "Pragma": "no-cache",
-            "Referer": str(client_info.CLIENT_URL),
-            "User-Agent": client_info.USER_AGENT,
-            "X-Device-Id": self.device_id,
-        }
-        payload = {
-            "client_id": client_info.CLIENT_ID,
-            "scopes": "",  # no scopes needed
-        }
+        # 2026-09-18, GitHub issues #1165/#1166 upstream (DevilXD/TwitchDropsMiner):
+        # Twitch appears to have broken the device-code grant specifically for the
+        # ANDROID_APP client ID today -- unconfirmed community reports (no reactions,
+        # not independently verified) suggest SMARTBOX's client ID still works.
+        # Rebuilt fresh each retry (was built once, outside the loop) so a mid-loop
+        # client-type fallback below actually takes effect on the next attempt.
+        device_code_failures = 0
         while True:
             try:
                 from datetime import datetime, timedelta, timezone
 
                 from src.exceptions import RequestInvalid
 
+                client_info: ClientInfo = self._twitch._client_type
+                headers = {
+                    "Accept": "application/json",
+                    "Accept-Encoding": "gzip",
+                    "Accept-Language": "en-US",
+                    "Cache-Control": "no-cache",
+                    "Client-Id": client_info.CLIENT_ID,
+                    "Host": "id.twitch.tv",
+                    "Origin": str(client_info.CLIENT_URL),
+                    "Pragma": "no-cache",
+                    "Referer": str(client_info.CLIENT_URL),
+                    "User-Agent": client_info.USER_AGENT,
+                    "X-Device-Id": self.device_id,
+                }
+                payload = {
+                    "client_id": client_info.CLIENT_ID,
+                    "scopes": "",  # no scopes needed
+                }
                 now = datetime.now(timezone.utc)
                 async with self._twitch.request(
                     "POST", "https://id.twitch.tv/oauth2/device", headers=headers, data=payload
@@ -123,11 +130,27 @@ class _AuthState:
                     # retry with backoff and log the real reason instead of crashing.
                     if response.status != 200:
                         error_body = await response.text()
+                        device_code_failures += 1
                         logger.error(
                             f"Device code request failed (HTTP {response.status}): "
                             f"{error_body}. This is on Twitch's side, not something this "
                             "app can fix directly -- retrying in 30s."
                         )
+                        # 2026-09-18: after a few straight failures on the CURRENT
+                        # client type, try the community-suggested ANDROID_APP ->
+                        # SMARTBOX fallback from upstream issues #1165/#1166 (see
+                        # this function's own comment above) -- unverified, but this
+                        # only ever triggers on an already-broken login, so it can't
+                        # make a currently-working client type worse. Only switches
+                        # once per login attempt (not every failure) so a genuinely
+                        # broken SMARTBOX doesn't just bounce back and forth forever.
+                        if device_code_failures == 3 and self._twitch._client_type is ClientType.ANDROID_APP:
+                            logger.warning(
+                                "Falling back from ANDROID_APP to SMARTBOX client type "
+                                "after repeated device-code failures (unverified "
+                                "community workaround, see upstream issue #1165)."
+                            )
+                            self._twitch._client_type = ClientType.SMARTBOX
                         await asyncio.sleep(30)
                         continue
                     response_json: JsonType = await response.json()
