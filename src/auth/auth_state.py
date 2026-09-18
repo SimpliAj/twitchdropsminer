@@ -114,6 +114,22 @@ class _AuthState:
                     #     "user_code": "8 chars [A-Z]",
                     #     "verification_uri": "https://www.twitch.tv/activate?device-code=ABCDEFGH"
                     # }
+                    # 2026-09-18, user-reported: Twitch briefly stopped accepting this
+                    # client ID on the device-code endpoint, returning a non-200 error
+                    # body (e.g. {"status":400,"message":"..."}) with no "device_code"
+                    # key -- indexing into it directly raised a bare KeyError, crashing
+                    # the whole client instead of surfacing what Twitch actually said.
+                    # This is a Twitch-side condition this app can't fix by itself, so
+                    # retry with backoff and log the real reason instead of crashing.
+                    if response.status != 200:
+                        error_body = await response.text()
+                        logger.error(
+                            f"Device code request failed (HTTP {response.status}): "
+                            f"{error_body}. This is on Twitch's side, not something this "
+                            "app can fix directly -- retrying in 30s."
+                        )
+                        await asyncio.sleep(30)
+                        continue
                     response_json: JsonType = await response.json()
                     device_code: str = response_json["device_code"]
                     user_code: str = response_json["user_code"]
