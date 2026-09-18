@@ -9,7 +9,13 @@ from typing import TYPE_CHECKING, cast
 import aiohttp
 from yarl import URL
 
-from src.config import COOKIES_PATH
+from src.config import COOKIES_PATH, ClientType
+
+# The device-code / token endpoints only accept certain client_ids (e.g. SmartTV-style
+# clients). This is independent of the client used for browsing/scraping Twitch pages
+# (self._twitch._client_type), which must stay on a client whose CLIENT_URL points at
+# the real www.twitch.tv site.
+LOGIN_CLIENT = ClientType.SMARTBOX
 from src.i18n import _
 from src.utils import CHARS_HEX_LOWER, create_nonce
 
@@ -67,7 +73,7 @@ class _AuthState:
 
     async def _oauth_login(self) -> str:
         """
-        Perform OAuth device code flow authentication.
+        Perform OAuth device code flow authentication with improved error handling.
 
         This implements the OAuth 2.0 Device Authorization Grant flow:
         1. Request device code and user code from Twitch
@@ -77,9 +83,18 @@ class _AuthState:
 
         Returns:
             str: The access token
+            
+        Raises:
+            LoginException: If OAuth flow fails permanently
         """
+        from datetime import datetime, timedelta, timezone
+        from src.exceptions import RequestInvalid, LoginException
+        import json
+
         login_form: LoginForm = self._twitch.gui.login
-        client_info: ClientInfo = self._twitch._client_type
+        # Use the dedicated login client (not self._twitch._client_type) since only
+        # certain client_ids are allowed to use the device-code grant.
+        client_info: ClientInfo = LOGIN_CLIENT
         headers = {
             "Accept": "application/json",
             "Accept-Encoding": "gzip",
@@ -95,43 +110,103 @@ class _AuthState:
         }
         payload = {
             "client_id": client_info.CLIENT_ID,
-            "scopes": "",  # no scopes needed
+            "scopes": "channel_read chat:read user_blocks_edit user_blocks_read user_follows_edit user_read",
         }
+
+        device_code_attempts = 0
+        max_device_code_retries = 3
+
         while True:
+            device_code_attempts += 1
             try:
-                from datetime import datetime, timedelta, timezone
-
-                from src.exceptions import RequestInvalid
-
                 now = datetime.now(timezone.utc)
+                
+                # ============ REQUEST DEVICE CODE ============
+                logger.info(f"Requesting device code from Twitch (attempt {device_code_attempts})...")
                 async with self._twitch.request(
                     "POST", "https://id.twitch.tv/oauth2/device", headers=headers, data=payload
                 ) as response:
-                    # {
-                    #     "device_code": "40 chars [A-Za-z0-9]",
-                    #     "expires_in": 1800,
-                    #     "interval": 5,
-                    #     "user_code": "8 chars [A-Z]",
-                    #     "verification_uri": "https://www.twitch.tv/activate?device-code=ABCDEFGH"
-                    # }
                     response_json: JsonType = await response.json()
-                    device_code: str = response_json["device_code"]
-                    user_code: str = response_json["user_code"]
-                    interval: int = response_json["interval"]
-                    verification_uri: URL = URL(response_json["verification_uri"])
-                    expires_at = now + timedelta(seconds=response_json["expires_in"])
+                    
+                    # === DEBUG: Log response for troubleshooting ===
+                    logger.debug(f"Device code response status: {response.status}")
+                    logger.debug(f"Device code response: {json.dumps(response_json, indent=2)}")
+                    
+                    # === Handle error responses ===
+                    if response.status != 200:
+                        error_code = response_json.get("error", "unknown_error")
+                        error_desc = response_json.get("error_description", "(no description)")
+                        logger.error(f"Twitch OAuth error [{response.status}]: {error_code} - {error_desc}")
+                        
+                        if error_code == "invalid_client":
+                            raise LoginException(
+                                "Invalid Twitch Client ID. Verify Client ID at https://dev.twitch.tv/console/apps"
+                            )
+                        elif error_code == "unauthorized":
+                            raise LoginException(
+                                "Device code flow may be disabled for your app. Check your app settings."
+                            )
+                        elif error_code == "too_many_requests":
+                            logger.warning("Rate limited by Twitch. Waiting 60 seconds before retry...")
+                            await asyncio.sleep(60)
+                            continue
+                        else:
+                            if device_code_attempts < max_device_code_retries:
+                                logger.warning(f"OAuth error, retrying in 10 seconds...")
+                                await asyncio.sleep(10)
+                                continue
+                            else:
+                                raise LoginException(f"Twitch OAuth error: {error_code} - {error_desc}")
+                    
+                    # === Validate response format ===
+                    required_fields = ["device_code", "user_code", "interval", "verification_uri", "expires_in"]
+                    missing_fields = [f for f in required_fields if f not in response_json]
+                    
+                    if missing_fields:
+                        logger.error(f"OAuth response missing required fields: {missing_fields}")
+                        logger.error(f"Response body: {json.dumps(response_json, indent=2)}")
+                        if device_code_attempts < max_device_code_retries:
+                            logger.warning("Invalid response format, retrying in 10 seconds...")
+                            await asyncio.sleep(10)
+                            continue
+                        else:
+                            raise LoginException(
+                                f"Invalid Twitch OAuth response format. Missing: {', '.join(missing_fields)}"
+                            )
+                    
+                    # === Extract fields (now safe) ===
+                    try:
+                        device_code: str = response_json["device_code"]
+                        user_code: str = response_json["user_code"]
+                        interval: int = response_json["interval"]
+                        verification_uri: URL = URL(response_json["verification_uri"])
+                        expires_at = now + timedelta(seconds=response_json["expires_in"])
+                        logger.info(f"✓ Device code obtained: {user_code}")
+                    except (KeyError, TypeError, ValueError) as e:
+                        logger.error(f"Failed to parse OAuth response fields: {e}")
+                        if device_code_attempts < max_device_code_retries:
+                            await asyncio.sleep(10)
+                            continue
+                        else:
+                            raise LoginException(f"Failed to parse OAuth response: {e}")
 
-                # Print the code to the user, open them the activate page so they can type it in
+                # ============ PROMPT USER TO AUTHORIZE ============
                 await login_form.ask_enter_code(verification_uri, user_code)
 
+                # ============ POLL FOR TOKEN ============
                 payload = {
-                    "client_id": self._twitch._client_type.CLIENT_ID,
+                    "client_id": client_info.CLIENT_ID,
                     "device_code": device_code,
                     "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
                 }
+                
+                token_poll_attempts = 0
+                max_poll_attempts = int(response_json["expires_in"] / interval)
+
                 while True:
-                    # sleep first, not like the user is gonna enter the code *that* fast
+                    token_poll_attempts += 1
                     await asyncio.sleep(interval)
+                    
                     async with self._twitch.request(
                         "POST",
                         "https://id.twitch.tv/oauth2/token",
@@ -139,20 +214,37 @@ class _AuthState:
                         data=payload,
                         invalidate_after=expires_at,
                     ) as response:
-                        # 200 means success, 400 means the user haven't entered the code yet
-                        if response.status != 200:
-                            continue
                         response_json = await response.json()
-                        # {
-                        #     "access_token": "40 chars [A-Za-z0-9]",
-                        #     "refresh_token": "40 chars [A-Za-z0-9]",
-                        #     "scope": [...],
-                        #     "token_type": "bearer"
-                        # }
+                        
+                        # 200 = success, 400 = user hasn't authorized yet, other = error
+                        if response.status == 400:
+                            # User hasn't completed authorization, keep polling
+                            if token_poll_attempts > max_poll_attempts:
+                                logger.error("Device code expired before user authorization")
+                                raise RequestInvalid()
+                            continue
+                        
+                        elif response.status == 401:
+                            logger.error(f"Token request returned 401 Unauthorized: {response_json}")
+                            raise RequestInvalid()
+                        
+                        elif response.status != 200:
+                            logger.error(f"Token request returned {response.status}: {response_json}")
+                            raise RequestInvalid()
+                        
+                        # ============ SUCCESS ============
+                        if "access_token" not in response_json:
+                            logger.error(f"Token response missing 'access_token': {response_json}")
+                            raise LoginException("Twitch returned token without access_token field")
+                        
                         self.access_token = cast(str, response_json["access_token"])
+                        logger.info(f"✓ Access token obtained successfully!")
                         return self.access_token
+                        
             except RequestInvalid:
-                # the device_code has expired, request a new code
+                # Device code expired, request a new one
+                logger.warning("Device code invalid/expired, requesting new one...")
+                device_code_attempts = 0
                 continue
 
     def headers(self, *, user_agent: str = "", gql: bool = False) -> JsonType:
@@ -259,8 +351,10 @@ class _AuthState:
                             break
                 else:
                     raise RuntimeError("Login verification failure (step #2)")
-                # ensure the cookie's client ID matches the currently selected client
-                if validate_response["client_id"] == client_info.CLIENT_ID:
+                # ensure the cookie's client ID matches the client actually used to log in
+                # (tokens are always issued under LOGIN_CLIENT's client_id, regardless of
+                # which client is used for browsing/scraping)
+                if validate_response["client_id"] == LOGIN_CLIENT.CLIENT_ID:
                     break
                 # otherwise, we need to delete the entire cookie file and clear the jar
                 logger.info("Cookie client ID mismatch")
