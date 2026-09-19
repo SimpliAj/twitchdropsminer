@@ -9,28 +9,49 @@ from typing import TYPE_CHECKING, cast
 import aiohttp
 from yarl import URL
 
-from src.config import COOKIES_PATH
+from src.config import COOKIES_PATH, ClientType
 from src.i18n import _
 from src.utils import CHARS_HEX_LOWER, create_nonce
 
-# 2026-09-19, GitHub issue #15: v1.5.3 introduced a dedicated LOGIN_CLIENT
-# (ClientType.SMARTBOX) for the device-code/token endpoints, reasoning that
-# they only accept SmartTV-style client_ids and that this was independent
-# of self._twitch._client_type used for browsing/GQL. That assumption was
-# wrong -- a confirmed, reproduced report (39 -> 3 visible campaigns
-# immediately after a SMARTBOX-flow login, server-side confirmed via
-# curl, restored by rolling back to before this change) shows the access
-# token itself gets scoped to whichever client it was minted under at
-# Twitch's end, REGARDLESS of which Client-Id header later GQL requests
-# send. This is the same failure shape as the historical upstream
-# DevilXD/TwitchDropsMiner#264 ("SmartTV login" silently crippling the
-# campaigns GQL query) -- just via token scope instead of the request
-# header. Reverted: back to using self._twitch._client_type (ANDROID_APP)
-# for login too, same as before v1.5.3. This does mean a device-code
-# login can still hit Twitch's ANDROID_APP-side block from #13/#1165/
-# #1166 -- but that fails loudly with a clear retry (v1.5.1's fix, kept
-# below), instead of silently gutting drop-campaign visibility while
-# looking like it succeeded.
+# 2026-09-19, GitHub issue #15 + Discord reports (multiple users completely
+# unable to log in on v1.5.4): the full saga on this constant --
+#   v1.5.0-1.5.2: login used self._twitch._client_type (ANDROID_APP).
+#     Twitch started hard-rejecting ANDROID_APP on the device-code endpoint
+#     around 2026-09-18 -- confirmed by direct curl against
+#     id.twitch.tv/oauth2/device just now: ANDROID_APP's client_id gets a
+#     durable, 100%-reproducible `{"status":400,"message":"invalid
+#     client"}`, not a transient/rate-limit response. Every affected user's
+#     login retries forever and never succeeds.
+#   v1.5.3: switched LOGIN_CLIENT to ClientType.SMARTBOX (confirmed live,
+#     still works for the device-code grant). This let logins succeed
+#     again, but confirmed+reproduced in #15: the resulting access token
+#     gets scoped to SMARTBOX at Twitch's end regardless of which Client-Id
+#     header later GQL requests send, silently limiting visible drop
+#     campaigns (39 -> 3) -- the same failure shape as the historical
+#     upstream DevilXD/TwitchDropsMiner#264 "SmartTV login" issue.
+#   v1.5.4: reverted to ANDROID_APP entirely. This turned out to be worse
+#     for anyone without an already-valid cookie: ANDROID_APP's block is
+#     durable, not transient, so a fresh login now NEVER succeeds at all
+#     (confirmed via Discord reports + a full log showing dozens of
+#     consecutive "invalid client" retries over hours) -- a hard lockout is
+#     worse than SMARTBOX's degraded-but-functional campaign discovery
+#     (the historical #264 thread confirms even a SmartTV-scoped token
+#     still tracks already-in-progress campaigns fine, only NEW campaign
+#     discovery is limited).
+#   v1.5.5 (this): direct curl-tested all four ClientType client_ids
+#     against the real device-code endpoint just now. WEB and ANDROID_APP
+#     both return "invalid client"; MOBILE_WEB and SMARTBOX both actually
+#     work. MOBILE_WEB's client_id (r8s4dac0uhzifbpu9sjdiwzctle17ff) is
+#     ALSO the exact client_id the historical #264 thread found restored
+#     full campaign visibility after SmartTV's got crippled back then --
+#     strong precedent, not just a guess, though not personally verified
+#     end-to-end against a live account (that needs a human completing the
+#     device-code activation). If MOBILE_WEB turns out to have the same
+#     token-scoping problem as SMARTBOX, the next step is a client_id this
+#     app has never tried at all, not cycling back to SMARTBOX or
+#     ANDROID_APP -- both are now conclusively ruled out for one reason or
+#     the other.
+LOGIN_CLIENT = ClientType.MOBILE_WEB
 
 
 if TYPE_CHECKING:
@@ -98,7 +119,7 @@ class _AuthState:
             str: The access token
         """
         login_form: LoginForm = self._twitch.gui.login
-        client_info: ClientInfo = self._twitch._client_type
+        client_info: ClientInfo = LOGIN_CLIENT
         headers = {
             "Accept": "application/json",
             "Accept-Encoding": "gzip",
@@ -291,8 +312,10 @@ class _AuthState:
                             break
                 else:
                     raise RuntimeError("Login verification failure (step #2)")
-                # ensure the cookie's client ID matches the currently selected client
-                if validate_response["client_id"] == client_info.CLIENT_ID:
+                # ensure the cookie's client ID matches the client actually used to log
+                # in -- _oauth_login() always mints its token under LOGIN_CLIENT's
+                # client_id, regardless of which client_info is used for browsing here.
+                if validate_response["client_id"] == LOGIN_CLIENT.CLIENT_ID:
                     break
                 # otherwise, we need to delete the entire cookie file and clear the jar
                 logger.info("Cookie client ID mismatch")
