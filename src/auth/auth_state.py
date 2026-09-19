@@ -237,8 +237,33 @@ class _AuthState:
         if hasattr(self, "device_id"):
             headers["X-Device-Id"] = self.device_id
         if gql:
-            headers["Origin"] = str(client_info.CLIENT_URL)
-            headers["Referer"] = str(client_info.CLIENT_URL)
+            # 2026-09-19, Discord-reported (v1.5.5, thermalux/Stumpn):
+            # "GQLException: Unauthorized: The 'Authorization' token is
+            # invalid" on every GQL call, immediately after a successful
+            # login. Root cause: the Authorization token below is minted
+            # under LOGIN_CLIENT (see its own comment in _oauth_login), but
+            # this branch was sending it alongside Client-Id/Origin/Referer
+            # from self._twitch._client_type (ANDROID_APP) instead --
+            # Twitch's GQL gateway validates that the token and the
+            # Client-Id/Origin/Referer identity it travels with actually
+            # match. SMARTBOX (v1.5.3) hit a milder version of this same
+            # mismatch -- silently limited campaign visibility (#15) rather
+            # than an outright reject -- but MOBILE_WEB's token gets hard-
+            # rejected on the exact same header inconsistency. Every
+            # authenticated (gql=True) header now travels as ONE consistent
+            # identity with the token, matching how a real client actually
+            # behaves (it never mixes headers from two different apps).
+            # GQLClient (see gql_client.py's request()) always passes its
+            # OWN client_type's USER_AGENT as the `user_agent` override
+            # above, which would otherwise leave User-Agent as ANDROID_APP
+            # even after the Client-Id/Origin/Referer below are corrected --
+            # forcing it here too so gql=True always sends one fully
+            # consistent identity, not three matching headers plus a
+            # mismatched fourth.
+            headers["User-Agent"] = LOGIN_CLIENT.USER_AGENT
+            headers["Client-Id"] = LOGIN_CLIENT.CLIENT_ID
+            headers["Origin"] = str(LOGIN_CLIENT.CLIENT_URL)
+            headers["Referer"] = str(LOGIN_CLIENT.CLIENT_URL)
             headers["Authorization"] = f"OAuth {self.access_token}"
         return headers
 

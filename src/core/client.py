@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 import aiohttp
 
 from src.api import GQLClient, HTTPClient
-from src.auth import _AuthState
+from src.auth import LOGIN_CLIENT, _AuthState
 from src.config import (
     GQL_OPERATIONS,
     MAX_CHANNELS,
@@ -797,7 +797,13 @@ class Twitch:
         try:
             auth = await self.get_auth()
             user_id = auth.user_id
-            client_id = self._client_type.CLIENT_ID
+            # 2026-09-19: this Helix call sends the SAME access_token minted
+            # under LOGIN_CLIENT (see auth_state.py's own comment) -- using
+            # self._client_type.CLIENT_ID (ANDROID_APP) here mismatches it,
+            # same root cause as the GQL "Authorization token is invalid"
+            # crash this fixed. Not fatal here (401 already falls back to
+            # GQL below), but was silently always hitting that fallback.
+            client_id = LOGIN_CLIENT.CLIENT_ID
             access_token = auth.access_token
             headers = {
                 "Authorization": f"Bearer {access_token}",
@@ -853,7 +859,13 @@ class Twitch:
         try:
             auth = await self.get_auth()
             user_id = auth.user_id
-            client_id = self._client_type.CLIENT_ID
+            # 2026-09-19: this Helix call sends the SAME access_token minted
+            # under LOGIN_CLIENT (see auth_state.py's own comment) -- using
+            # self._client_type.CLIENT_ID (ANDROID_APP) here mismatches it,
+            # same root cause as the GQL "Authorization token is invalid"
+            # crash this fixed. Not fatal here (401 already falls back to
+            # GQL below), but was silently always hitting that fallback.
+            client_id = LOGIN_CLIENT.CLIENT_ID
             access_token = auth.access_token
             headers = {
                 "Authorization": f"Bearer {access_token}",
