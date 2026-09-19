@@ -9,20 +9,28 @@ from typing import TYPE_CHECKING, cast
 import aiohttp
 from yarl import URL
 
-from src.config import COOKIES_PATH, ClientType
+from src.config import COOKIES_PATH
 from src.i18n import _
 from src.utils import CHARS_HEX_LOWER, create_nonce
 
-# 2026-09-18: the device-code/token endpoints (id.twitch.tv/oauth2/*) only accept
-# certain client_ids (SmartTV-style clients) for this grant type -- independent of
-# whatever self._twitch._client_type is set to for browsing/scraping www.twitch.tv
-# (that one needs its CLIENT_URL to point at the real site, ANDROID_APP normally).
-# Traced today's widespread "KeyError: device_code" reports (this fork's issue #13,
-# upstream DevilXD/TwitchDropsMiner#1165/#1166) to exactly this mismatch -- credit to
-# ThermaLux (github.com/ThermaLux/twitchdropsminer) for identifying and fixing this
-# properly; this replaces the cruder same-day fallback-after-3-failures attempt with
-# ThermaLux's cleaner fix of never using the browsing client for login at all.
-LOGIN_CLIENT = ClientType.SMARTBOX
+# 2026-09-19, GitHub issue #15: v1.5.3 introduced a dedicated LOGIN_CLIENT
+# (ClientType.SMARTBOX) for the device-code/token endpoints, reasoning that
+# they only accept SmartTV-style client_ids and that this was independent
+# of self._twitch._client_type used for browsing/GQL. That assumption was
+# wrong -- a confirmed, reproduced report (39 -> 3 visible campaigns
+# immediately after a SMARTBOX-flow login, server-side confirmed via
+# curl, restored by rolling back to before this change) shows the access
+# token itself gets scoped to whichever client it was minted under at
+# Twitch's end, REGARDLESS of which Client-Id header later GQL requests
+# send. This is the same failure shape as the historical upstream
+# DevilXD/TwitchDropsMiner#264 ("SmartTV login" silently crippling the
+# campaigns GQL query) -- just via token scope instead of the request
+# header. Reverted: back to using self._twitch._client_type (ANDROID_APP)
+# for login too, same as before v1.5.3. This does mean a device-code
+# login can still hit Twitch's ANDROID_APP-side block from #13/#1165/
+# #1166 -- but that fails loudly with a clear retry (v1.5.1's fix, kept
+# below), instead of silently gutting drop-campaign visibility while
+# looking like it succeeded.
 
 
 if TYPE_CHECKING:
@@ -90,10 +98,7 @@ class _AuthState:
             str: The access token
         """
         login_form: LoginForm = self._twitch.gui.login
-        # Use the dedicated login client (see LOGIN_CLIENT's own comment above),
-        # not self._twitch._client_type -- built fresh each retry in case that
-        # ever needs to change, though LOGIN_CLIENT itself is a fixed constant.
-        client_info: ClientInfo = LOGIN_CLIENT
+        client_info: ClientInfo = self._twitch._client_type
         headers = {
             "Accept": "application/json",
             "Accept-Encoding": "gzip",
@@ -286,11 +291,8 @@ class _AuthState:
                             break
                 else:
                     raise RuntimeError("Login verification failure (step #2)")
-                # ensure the cookie's client ID matches the client actually used to log
-                # in -- _oauth_login() always mints its token under LOGIN_CLIENT's
-                # client_id now (see LOGIN_CLIENT's own comment), regardless of which
-                # client_info is used for browsing/scraping here.
-                if validate_response["client_id"] == LOGIN_CLIENT.CLIENT_ID:
+                # ensure the cookie's client ID matches the currently selected client
+                if validate_response["client_id"] == client_info.CLIENT_ID:
                     break
                 # otherwise, we need to delete the entire cookie file and clear the jar
                 logger.info("Cookie client ID mismatch")
