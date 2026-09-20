@@ -38,20 +38,56 @@ from src.utils import CHARS_HEX_LOWER, create_nonce
 #     (the historical #264 thread confirms even a SmartTV-scoped token
 #     still tracks already-in-progress campaigns fine, only NEW campaign
 #     discovery is limited).
-#   v1.5.5 (this): direct curl-tested all four ClientType client_ids
-#     against the real device-code endpoint just now. WEB and ANDROID_APP
-#     both return "invalid client"; MOBILE_WEB and SMARTBOX both actually
-#     work. MOBILE_WEB's client_id (r8s4dac0uhzifbpu9sjdiwzctle17ff) is
-#     ALSO the exact client_id the historical #264 thread found restored
-#     full campaign visibility after SmartTV's got crippled back then --
-#     strong precedent, not just a guess, though not personally verified
-#     end-to-end against a live account (that needs a human completing the
-#     device-code activation). If MOBILE_WEB turns out to have the same
-#     token-scoping problem as SMARTBOX, the next step is a client_id this
-#     app has never tried at all, not cycling back to SMARTBOX or
-#     ANDROID_APP -- both are now conclusively ruled out for one reason or
-#     the other.
-LOGIN_CLIENT = ClientType.MOBILE_WEB
+#   v1.5.5: direct curl-tested all four ClientType client_ids against the
+#     real device-code endpoint. WEB and ANDROID_APP both return "invalid
+#     client"; MOBILE_WEB and SMARTBOX both actually work at that step.
+#     MOBILE_WEB's client_id is ALSO the exact one the historical #264
+#     thread found restored full campaign visibility after SmartTV's got
+#     crippled the same way -- strong precedent, but not verified
+#     end-to-end (needs a human completing device-code activation).
+#   v1.5.6: the login SUCCEEDS with MOBILE_WEB, but confirmed via multiple
+#     independent Discord reports on v1.5.6 itself (not a stale-code
+#     artifact -- the CI build for that exact commit is confirmed to have
+#     shipped): every GQL call, including the very first one
+#     (fetch_inventory), gets a hard "Unauthorized: The 'Authorization'
+#     token is invalid" -- not SMARTBOX's milder "succeeds but limited"
+#     failure, an outright reject. v1.5.6 also made every gql=True header
+#     (Client-Id/Origin/Referer/User-Agent) consistently match LOGIN_CLIENT
+#     instead of mixing in the browsing client's -- that fix is still
+#     correct in principle (a real client never mixes headers from two
+#     apps), but it did NOT rescue MOBILE_WEB: its token is rejected by
+#     GQL regardless of which headers travel with it. That falsifies "the
+#     header mismatch alone" as an explanation for #15's SMARTBOX
+#     degradation too -- v1.5.3 had SMARTBOX's token WITH ANDROID_APP's
+#     mismatched headers and GQL still returned real (if limited) data,
+#     which a hard-reject-on-mismatch theory can't explain. The simpler
+#     read: MOBILE_WEB tokens just aren't authorized for GQL at all, full
+#     stop, independent of headers; SMARTBOX's are, just scope-limited.
+#   v1.5.7 (this): back to SMARTBOX, paired with the still-correct
+#     consistent-header fix from v1.5.6 -- live-tested against a real
+#     account end-to-end (device-code activation completed by a human,
+#     not simulated): login succeeds, GQL succeeds, but eligible-campaign
+#     count dropped from 46 to 5 immediately after the fresh SMARTBOX
+#     login, same shape as #15. Also live-tested going further than the
+#     header fix -- switching self._twitch._client_type (not just
+#     LOGIN_CLIENT) to SMARTBOX entirely, matching upstream
+#     rangermix/TwitchDropsMiner#110's fix exactly (one uniform identity
+#     for device_id extraction AND every GQL header, nothing left on
+#     ANDROID_APP at all) -- result: identical 46 -> 5, no different.
+#     That conclusively rules out "inconsistent identity" as the cause of
+#     the campaign-visibility drop: it's intrinsic to SMARTBOX itself at
+#     Twitch's end, exactly matching the historical #264 finding, not
+#     fixable by any header/identity arrangement this app controls.
+#     Shipping the narrower LOGIN_CLIENT-only decoupling (not the global
+#     client_type swap) since both give identical results but this one
+#     leaves device_id extraction/page-scraping on the far-better-tested
+#     ANDROID_APP path (www.twitch.tv) instead of android.tv.twitch.tv.
+#     Real, accepted trade-off from here: login works, already-in-progress
+#     campaigns keep tracking normally (per #264's own confirmation), new
+#     campaign discovery is reduced -- until Twitch's device-code
+#     restrictions on ANDROID_APP change, not something this app can
+#     engineer further around.
+LOGIN_CLIENT = ClientType.SMARTBOX
 
 
 if TYPE_CHECKING:
