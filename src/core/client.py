@@ -71,7 +71,7 @@ class Twitch:
         self._claim_finalized_drops: set[str] = set()
         self._mnt_triggers: deque[datetime] = deque()
         # Client type and auth
-        self._client_type: ClientInfo = ClientType.ANDROID_APP
+        self._client_type: ClientInfo = ClientType.SMARTBOX
         self._auth_state: _AuthState = _AuthState(self)
         # GUI (will be set by main.py)
         self.gui: WebGUIManager = None  # type: ignore[assignment]

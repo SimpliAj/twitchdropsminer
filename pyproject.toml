@@ -1,6 +1,6 @@
 [project]
 name = "twitch-drops-miner"
-version = "1.5.7"
+version = "1.5.8"
 description = "Automatically mine Twitch drops without downloading stream data"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -24,6 +24,25 @@ dev = [
     "pytest",
     "pytest-asyncio",
     "coverage",
+]
+# Optional, NOT in the default install: real-browser supplemental campaign
+# discovery (src/services/campaign_discovery.py) -- degrades to a no-op
+# without it. Kept separate from `dependencies` because it pulls in a real
+# ~280MB Chromium binary via `playwright install chromium`, and the current
+# Dockerfile's python:3-alpine base can't run Playwright's bundled Chromium
+# at all (needs glibc, alpine ships musl) -- installing this extra alone is
+# not enough to make browser discovery work in the shipped Docker image yet.
+#
+# streamlink>=6.7: src/auth/integrity.py's foundation for minting a real
+# Twitch client-integrity token (TwitchClientIntegrity, ported from
+# rangermix/TwitchDropsMiner#122). NOT wired into the main auth flow yet --
+# see that module's own docstring and RELEASE_NOTES.md for the current,
+# confirmed-live blocker (needs headful Chromium AND a non-datacenter IP;
+# both our test environments failed one or the other). Declared here so
+# anyone experimenting with it doesn't have to guess the dependency.
+browser = [
+    "playwright>=1.61.0",
+    "streamlink>=6.7",
 ]
 
 [build-system]

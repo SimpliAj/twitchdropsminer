@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, SupportsInt, cast
 import aiohttp
 from yarl import URL
 
+from src.config.client_info import ClientType
 from src.config.constants import ONLINE_DELAY, GQLOperation, JsonType, URLType
 from src.config.operations import GQL_OPERATIONS
 from src.exceptions import MinerException, RequestException
@@ -233,7 +234,7 @@ class Channel:
 
     @property
     def url(self) -> URLType:
-        return URLType(f"{self._twitch._client_type.CLIENT_URL}/{self._login}")
+        return URLType(f"{ClientType.WEB.CLIENT_URL}/{self._login}")
 
     @property
     def iid(self) -> str:

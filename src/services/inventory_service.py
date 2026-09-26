@@ -19,6 +19,7 @@ from src.config import GQL_OPERATIONS
 from src.exceptions import ExitRequest, GQLException
 from src.i18n import _
 from src.models import DropsCampaign
+from src.services.campaign_discovery import discover_campaigns_via_browser
 from src.utils import chunk
 
 
@@ -148,6 +149,22 @@ class InventoryService:
             for c in available_list
             if c["status"] in applicable_statuses  # that are currently not expired
         }
+
+        # Supplemental: SMARTBOX's own client-id (used above) sees a reduced
+        # campaign catalog compared to Twitch's real web client (see
+        # campaign_discovery.py's own docstring for the confirmed root
+        # cause). ADDITIVE only -- an id already found above always wins,
+        # this just fills in campaigns SMARTBOX's query never returned at
+        # all. Never raises and returns [] if Playwright isn't installed, so
+        # this is a pure widening, never a regression on a box without it.
+        try:
+            browser_campaigns = await discover_campaigns_via_browser(self._twitch)
+        except Exception as exc:
+            logger.warning(f"Browser-based campaign discovery raised unexpectedly: {exc}")
+            browser_campaigns = []
+        for c in browser_campaigns:
+            if c.get("status") in applicable_statuses and c.get("id") not in available_campaigns:
+                available_campaigns[c["id"]] = c
 
         # fetch detailed data for each campaign, in chunks
         status_update(_.t["gui"]["status"]["fetching_campaigns"])
