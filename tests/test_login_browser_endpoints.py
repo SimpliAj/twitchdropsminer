@@ -32,6 +32,15 @@ class TestBrowserLoginCancelEndpoint(unittest.TestCase):
         self._setup_patcher = patch("src.web.app._is_setup_done", return_value=True)
         self._setup_patcher.start()
         self.addCleanup(self._setup_patcher.stop)
+        # These endpoints are otherwise gated by whatever password/bot-token
+        # happen to be configured on the machine running the suite -- pin
+        # them to "unset" so the test doesn't depend on host state.
+        self._pw_patcher = patch("src.web.app._get_password", return_value="")
+        self._pw_patcher.start()
+        self.addCleanup(self._pw_patcher.stop)
+        self._token_patcher = patch("src.web.app._get_bot_token", return_value="")
+        self._token_patcher.start()
+        self.addCleanup(self._token_patcher.stop)
         self.client = TestClient(app_module.app)
         self.addCleanup(browser_login.set_active_manager, None)
 
@@ -69,6 +78,15 @@ class TestBrowserLoginWebSocketAuth(unittest.TestCase):
         self._setup_patcher = patch("src.web.app._is_setup_done", return_value=True)
         self._setup_patcher.start()
         self.addCleanup(self._setup_patcher.stop)
+        # Pin to "no password/token configured" by default -- individual
+        # tests override with their own patch when they need a password
+        # set, rather than depending on whatever the host machine has.
+        self._pw_patcher = patch("src.web.app._get_password", return_value="")
+        self._pw_patcher.start()
+        self.addCleanup(self._pw_patcher.stop)
+        self._token_patcher = patch("src.web.app._get_bot_token", return_value="")
+        self._token_patcher.start()
+        self.addCleanup(self._token_patcher.stop)
         self.client = TestClient(app_module.app)
         self.addCleanup(browser_login.set_active_manager, None)
 
@@ -209,6 +227,8 @@ class TestBrowserLoginManagerIsSharedAcrossLayers(unittest.IsolatedAsyncioTestCa
         with (
             patch("src.auth.browser_login.BrowserLoginManager", return_value=manager),
             patch("src.web.app._is_setup_done", return_value=True),
+            patch("src.web.app._get_password", return_value=""),
+            patch("src.web.app._get_bot_token", return_value=""),
         ):
             task = asyncio.ensure_future(auth_state._browser_login())
             await asyncio.wait_for(parked.wait(), timeout=5)

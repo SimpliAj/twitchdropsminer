@@ -19,6 +19,10 @@ def test_aggregate_stats(tmp_path, monkeypatch):
     hist_file = _make_history(tmp_path)
     import src.web.app as app_module
     monkeypatch.setattr(app_module, "_DATA_DIR", tmp_path)
+    # _aggregate_stats reads via _get_account_data_dir(), which otherwise
+    # falls back to whatever active_account is configured on the machine
+    # running the suite -- pin it to "no account" so it resolves to _DATA_DIR.
+    monkeypatch.setattr(app_module, "_WEB_CONFIG_FILE", tmp_path / "web_config.json")
 
     result = app_module._aggregate_stats()
     assert result["total_claims"] == 4
@@ -33,6 +37,7 @@ def test_aggregate_stats(tmp_path, monkeypatch):
 def test_aggregate_stats_empty(tmp_path, monkeypatch):
     import src.web.app as app_module
     monkeypatch.setattr(app_module, "_DATA_DIR", tmp_path)
+    monkeypatch.setattr(app_module, "_WEB_CONFIG_FILE", tmp_path / "web_config.json")
     result = app_module._aggregate_stats()
     assert result["total_claims"] == 0
     assert result["by_game"] == []
