@@ -21,6 +21,7 @@ def _fake_manager(port: int = 6993) -> MagicMock:
     manager.cancel = MagicMock()
     manager.start = AsyncMock(return_value=port)
     manager.stop = AsyncMock()
+    manager.inject_manual_cookies = AsyncMock()
     return manager
 
 
@@ -62,6 +63,59 @@ class TestBrowserLoginCancelEndpoint(unittest.TestCase):
         response = self.client.post("/api/login/browser/cancel")
         self.assertEqual(response.status_code, 200)
         manager.cancel.assert_called_once()
+
+
+class TestManualCookieLoginEndpoint(unittest.TestCase):
+    """
+    Fallback for a datacenter IP getting flagged by Twitch's own bot/
+    integrity check regardless of anything this app does: log in on a
+    real device instead, then hand the resulting cookies to the still-open
+    server-side session via this endpoint.
+    """
+
+    def setUp(self):
+        self._setup_patcher = patch("src.web.app._is_setup_done", return_value=True)
+        self._setup_patcher.start()
+        self.addCleanup(self._setup_patcher.stop)
+        self._pw_patcher = patch("src.web.app._get_password", return_value="")
+        self._pw_patcher.start()
+        self.addCleanup(self._pw_patcher.stop)
+        self._token_patcher = patch("src.web.app._get_bot_token", return_value="")
+        self._token_patcher.start()
+        self.addCleanup(self._token_patcher.stop)
+        self.client = TestClient(app_module.app)
+        self.addCleanup(browser_login.set_active_manager, None)
+
+    def test_rejects_a_missing_auth_token(self):
+        browser_login.set_active_manager(_fake_manager())
+        response = self.client.post("/api/login/browser/manual-cookies", json={"auth_token": "  "})
+        self.assertEqual(response.status_code, 400)
+
+    def test_rejects_when_no_login_is_in_progress(self):
+        browser_login.set_active_manager(None)
+        response = self.client.post(
+            "/api/login/browser/manual-cookies", json={"auth_token": "abc123"}
+        )
+        self.assertEqual(response.status_code, 409)
+
+    def test_forwards_cookies_to_the_active_manager(self):
+        manager = _fake_manager()
+        browser_login.set_active_manager(manager)
+        response = self.client.post(
+            "/api/login/browser/manual-cookies",
+            json={"auth_token": " abc123 ", "unique_id": " device-xyz "},
+        )
+        self.assertEqual(response.status_code, 200)
+        manager.inject_manual_cookies.assert_awaited_once_with("abc123", "device-xyz")
+
+    def test_unique_id_defaults_to_empty(self):
+        manager = _fake_manager()
+        browser_login.set_active_manager(manager)
+        response = self.client.post(
+            "/api/login/browser/manual-cookies", json={"auth_token": "abc123"}
+        )
+        self.assertEqual(response.status_code, 200)
+        manager.inject_manual_cookies.assert_awaited_once_with("abc123", "")
 
 
 class TestBrowserLoginWebSocketAuth(unittest.TestCase):

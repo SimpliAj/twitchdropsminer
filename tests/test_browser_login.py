@@ -167,6 +167,47 @@ class TestBrowserLoginManagerWaitForCookie(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(BrowserLoginCancelled):
             await self.manager.wait_for_cookie(timeout=30)
 
+    async def test_inject_manual_cookies_raises_without_a_session(self):
+        with self.assertRaises(RuntimeError):
+            await self.manager.inject_manual_cookies("token123", "device-xyz")
+
+    async def test_inject_manual_cookies_adds_them_to_the_live_context(self):
+        await self.manager.start()
+        await self.manager.inject_manual_cookies("token123", "device-xyz")
+
+        self.mock_context.add_cookies.assert_awaited_once()
+        (cookies,), _ = self.mock_context.add_cookies.call_args
+        by_name = {c["name"]: c for c in cookies}
+        self.assertEqual(by_name["auth-token"]["value"], "token123")
+        self.assertEqual(by_name["auth-token"]["domain"], ".twitch.tv")
+        self.assertEqual(by_name["unique_id"]["value"], "device-xyz")
+
+    async def test_inject_manual_cookies_skips_empty_unique_id(self):
+        await self.manager.start()
+        await self.manager.inject_manual_cookies("token123", "")
+
+        (cookies,), _ = self.mock_context.add_cookies.call_args
+        names = {c["name"] for c in cookies}
+        self.assertEqual(names, {"auth-token"})
+
+    async def test_inject_manual_cookies_is_what_wait_for_cookie_then_sees(self):
+        # The whole point: no separate success path, just a value
+        # wait_for_cookie()'s existing poll loop discovers on its own.
+        await self.manager.start()
+
+        async def add_cookies(cookies):
+            self.mock_context.cookies = AsyncMock(
+                return_value=[{**c, "domain": c["domain"]} for c in cookies]
+            )
+
+        self.mock_context.add_cookies = AsyncMock(side_effect=add_cookies)
+        self.mock_context.cookies = AsyncMock(return_value=[])
+
+        await self.manager.inject_manual_cookies("token123", "device-xyz")
+        result = await self.manager.wait_for_cookie(timeout=5)
+        self.assertEqual(result["auth-token"], "token123")
+        self.assertEqual(result["unique_id"], "device-xyz")
+
 
 class TestBrowserLoginManagerStop(unittest.IsolatedAsyncioTestCase):
     async def test_stop_terminates_all_processes_and_is_idempotent(self):

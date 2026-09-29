@@ -24,7 +24,16 @@
     },
     "browser_login": {
       "instructions": "Log in to Twitch below. This is a real browser session running on the server -- your credentials never leave it.",
-      "cancel": "Cancel login"
+      "cancel": "Cancel login",
+      "manual_summary": "Browser blocked or slow? Paste your session instead",
+      "manual_instructions": "Log in to Twitch normally on your own device, open its browser devtools, find the twitch.tv cookies (Application/Storage > Cookies), and paste their values here.",
+      "manual_auth_token_label": "auth-token cookie",
+      "manual_unique_id_label": "unique_id cookie (optional)",
+      "manual_submit": "Use these cookies",
+      "manual_missing_token": "auth-token is required",
+      "manual_no_session": "No login session is in progress -- open this panel again first",
+      "manual_success": "Cookies accepted, finishing login...",
+      "manual_error": "Failed to submit cookies: {error}"
     }
   },
   "error": {

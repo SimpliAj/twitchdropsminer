@@ -264,6 +264,27 @@ class BrowserLoginManager:
             except asyncio.TimeoutError:
                 continue
 
+    async def inject_manual_cookies(self, auth_token: str, unique_id: str) -> None:
+        """Supply the login cookies directly instead of waiting for them to
+        appear from the in-browser session -- for a user who logged in on
+        their own device (a real residential IP/browser, which Twitch's
+        integrity check treats as an ordinary login, unlike a datacenter
+        VPS) and copied the resulting cookies here. wait_for_cookie()'s
+        poll loop picks these up on its next tick exactly as if the
+        in-browser login had just completed itself, so nothing else about
+        the success path (token validation, persistence, teardown) changes.
+
+        Raises RuntimeError if no session is in progress.
+        """
+        if self._session is None:
+            raise RuntimeError("No browser login session is in progress")
+        cookies = [{"name": COOKIE_NAME, "value": auth_token, "domain": f".{COOKIE_DOMAIN}", "path": "/"}]
+        if unique_id:
+            cookies.append(
+                {"name": DEVICE_ID_COOKIE_NAME, "value": unique_id, "domain": f".{COOKIE_DOMAIN}", "path": "/"}
+            )
+        await self._session.context.add_cookies(cookies)
+
     def cancel(self) -> None:
         """Signal the in-progress attempt (if any) to stop waiting."""
         if self._session is not None:

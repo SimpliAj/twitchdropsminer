@@ -1951,6 +1951,12 @@ function closeBrowserLoginPanel() {
         rfb.disconnect();
     }
     document.getElementById('browser-login-canvas-container').innerHTML = '';
+    const manualStatus = document.getElementById('browser-login-manual-status');
+    if (manualStatus) manualStatus.textContent = '';
+    const manualAuthToken = document.getElementById('browser-login-manual-auth-token');
+    if (manualAuthToken) manualAuthToken.value = '';
+    const manualUniqueId = document.getElementById('browser-login-manual-unique-id');
+    if (manualUniqueId) manualUniqueId.value = '';
 }
 
 async function showBrowserLoginPanel(websocketPath) {
@@ -2889,6 +2895,45 @@ async function cancelBrowserLogin() {
     closeBrowserLoginPanel();
 }
 
+async function submitManualBrowserLoginCookies() {
+    const t = state.translations;
+    const bl = t.login?.browser_login || {};
+    const statusEl = document.getElementById('browser-login-manual-status');
+    const authTokenInput = document.getElementById('browser-login-manual-auth-token');
+    const uniqueIdInput = document.getElementById('browser-login-manual-unique-id');
+    const authToken = authTokenInput ? authTokenInput.value.trim() : '';
+    const uniqueId = uniqueIdInput ? uniqueIdInput.value.trim() : '';
+
+    if (!authToken) {
+        if (statusEl) statusEl.textContent = bl.manual_missing_token || 'auth-token is required';
+        return;
+    }
+
+    try {
+        const response = await fetch(API_BASE + '/api/login/browser/manual-cookies', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ auth_token: authToken, unique_id: uniqueId }),
+        });
+        if (response.status === 409) {
+            if (statusEl) statusEl.textContent = bl.manual_no_session || 'No login session is in progress -- open this panel again first';
+            return;
+        }
+        if (!response.ok) {
+            const detail = await response.json().catch(() => ({}));
+            throw new Error(detail.detail || response.statusText);
+        }
+        if (authTokenInput) authTokenInput.value = '';
+        if (uniqueIdInput) uniqueIdInput.value = '';
+        const successText = bl.manual_success || 'Cookies accepted, finishing login...';
+        if (statusEl) statusEl.textContent = successText;
+    } catch (error) {
+        console.error('Failed to submit manual browser login cookies:', error);
+        const errorTemplate = bl.manual_error || 'Failed to submit cookies: {error}';
+        if (statusEl) statusEl.textContent = errorTemplate.replace('{error}', error.message);
+    }
+}
+
 async function verifyProxy() {
     const proxyInput = document.getElementById('proxy-url');
     const proxyUrl = proxyInput ? proxyInput.value.trim() : '';
@@ -3439,6 +3484,17 @@ function applyTranslations(t) {
 
             const browserLoginCancel = document.getElementById('browser-login-cancel');
             if (browserLoginCancel) browserLoginCancel.textContent = t.login.browser_login.cancel;
+
+            const manualSummary = document.getElementById('browser-login-manual-summary');
+            if (manualSummary) manualSummary.textContent = t.login.browser_login.manual_summary;
+            const manualInstructions = document.getElementById('browser-login-manual-instructions');
+            if (manualInstructions) manualInstructions.textContent = t.login.browser_login.manual_instructions;
+            const manualAuthLabel = document.getElementById('browser-login-manual-auth-token-label');
+            if (manualAuthLabel) manualAuthLabel.textContent = t.login.browser_login.manual_auth_token_label;
+            const manualUniqueLabel = document.getElementById('browser-login-manual-unique-id-label');
+            if (manualUniqueLabel) manualUniqueLabel.textContent = t.login.browser_login.manual_unique_id_label;
+            const manualSubmit = document.getElementById('browser-login-manual-submit');
+            if (manualSubmit) manualSubmit.textContent = t.login.browser_login.manual_submit;
         }
     }
 
@@ -4452,6 +4508,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Login form
     document.getElementById('browser-login-cancel').addEventListener('click', cancelBrowserLogin);
+    document.getElementById('browser-login-manual-submit').addEventListener('click', submitManualBrowserLoginCookies);
 
     // Settings - auto-save on change
     document.getElementById('dark-mode').addEventListener('change', (e) => {
