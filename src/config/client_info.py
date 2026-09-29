@@ -34,42 +34,6 @@ class ClientType:
             "(KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
         ),
     )
-    MOBILE_WEB = ClientInfo(
-        URL("https://m.twitch.tv"),
-        "r8s4dac0uhzifbpu9sjdiwzctle17ff",
-        [
-            # Chrome versioning is done fully on android only,
-            # other platforms only use the major version
-            (
-                "Mozilla/5.0 (Linux; Android 16) AppleWebKit/537.36 "
-                "(KHTML, like Gecko) Chrome/138.0.7204.158 Mobile Safari/537.36"
-            ),
-            (
-                "Mozilla/5.0 (Linux; Android 16; SM-A205U) AppleWebKit/537.36 "
-                "(KHTML, like Gecko) Chrome/138.0.7204.158 Mobile Safari/537.36"
-            ),
-            (
-                "Mozilla/5.0 (Linux; Android 16; SM-A102U) AppleWebKit/537.36 "
-                "(KHTML, like Gecko) Chrome/138.0.7204.158 Mobile Safari/537.36"
-            ),
-            (
-                "Mozilla/5.0 (Linux; Android 16; SM-G960U) AppleWebKit/537.36 "
-                "(KHTML, like Gecko) Chrome/138.0.7204.158 Mobile Safari/537.36"
-            ),
-            (
-                "Mozilla/5.0 (Linux; Android 16; SM-N960U) AppleWebKit/537.36 "
-                "(KHTML, like Gecko) Chrome/138.0.7204.158 Mobile Safari/537.36"
-            ),
-            (
-                "Mozilla/5.0 (Linux; Android 16; LM-Q720) AppleWebKit/537.36 "
-                "(KHTML, like Gecko) Chrome/138.0.7204.158 Mobile Safari/537.36"
-            ),
-            (
-                "Mozilla/5.0 (Linux; Android 16; LM-X420) AppleWebKit/537.36 "
-                "(KHTML, like Gecko) Chrome/138.0.7204.158 Mobile Safari/537.36"
-            ),
-        ],
-    )
     ANDROID_APP = ClientInfo(
         URL("https://www.twitch.tv"),
         "kd1unb4b3q4t58fwlpcbzcbnm76a8fp",
@@ -103,12 +67,4 @@ class ClientType:
                 "tv.twitch.android.app/25.3.0/2503006"
             ),
         ],
-    )
-    SMARTBOX = ClientInfo(
-        URL("https://android.tv.twitch.tv"),
-        "ue6666qo983tsx6so1t0vnawi233wa",
-        (
-            "Mozilla/5.0 (Linux; Android 7.1; Smart Box C1) AppleWebKit/537.36 "
-            "(KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
-        ),
     )
