@@ -1,4 +1,4 @@
-FROM python:3-alpine
+FROM python:3.12-slim
 
 # Build arguments for metadata
 ARG BUILD_DATE
@@ -25,14 +25,33 @@ ENV PYTHONUNBUFFERED=1 \
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
-RUN apk add --no-cache tzdata
+# Install system dependencies:
+# - tzdata: unchanged from before
+# - xvfb: virtual X display the real-browser login runs under (see
+#   src/auth/browser_login.py)
+# - x11vnc: exposes that virtual display over VNC for the dashboard's
+#   embedded noVNC viewer
+# - websockify: bridges x11vnc's raw VNC protocol to a WebSocket noVNC's
+#   JS client can consume directly
+# - Playwright's own --with-deps (below) pulls in Chromium's shared-library
+#   requirements; this base image change (alpine -> slim) is what makes
+#   that possible at all, since Chromium needs glibc and alpine ships musl
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    tzdata \
+    xvfb \
+    x11vnc \
+    websockify \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy project metadata and install dependencies
 COPY pyproject.toml .
 
-# Install Python dependencies
+# Install Python dependencies (playwright is now a base dependency, see
+# pyproject.toml)
 RUN pip install --no-cache-dir .
+
+# Install Playwright's bundled Chromium and its remaining native deps
+RUN playwright install --with-deps chromium
 
 # Copy application code
 COPY main.py ./
@@ -49,15 +68,6 @@ RUN mkdir -p /app/logs && chmod 777 /app/logs
 EXPOSE 8080
 
 # Health check
-# 2026-09-17, GitHub issue #12: ~107 accumulated healthcheck subprocesses
-# were found sleeping on a hung instance. urlopen() here had no per-request
-# timeout of its own, relying entirely on Docker's --timeout=3s to kill the
-# CMD process tree -- a real gap under a genuinely stuck event loop (GC
-# pressure, swap thrashing) where signal delivery to a shelled-out `python
-# -c` subprocess can be less reliable than an in-process timeout. Passing
-# timeout=2 makes the request self-terminate on its own regardless of
-# whether Docker's own enforcement lands, so stale processes can't pile up
-# even if the outer timeout has a gap in some runtime/environment.
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/healthz', timeout=2)" || exit 1
 
