@@ -17,12 +17,14 @@ import subprocess
 import sys
 
 import socketio
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from starlette.middleware.base import BaseHTTPMiddleware
+
+from src.auth import browser_login
 
 import os as _os
 _DATA_DIR = Path(_os.environ.get("TDM_DATA_DIR", str(Path(__file__).parent.parent.parent / "data")))
@@ -544,12 +546,6 @@ async def _auto_resume_mode() -> None:
 
 
 # Pydantic models for API
-class LoginRequest(BaseModel):
-    username: str
-    password: str
-    token: str = ""
-
-
 class ChannelSelectRequest(BaseModel):
     channel_id: int
 
@@ -1305,25 +1301,116 @@ async def get_wanted_items_http():
     return {"wanted_items": gui_manager.get_wanted_game_tree()}
 
 
-@app.post("/api/login")
-async def submit_login(login_data: LoginRequest):
-    """Submit login credentials"""
-    if not gui_manager:
-        raise HTTPException(status_code=503, detail="GUI not initialized")
+# There is deliberately no POST /api/login/browser/start route. The one and
+# only owner of a login attempt is _AuthState._browser_login() (it is what
+# awaits the resulting cookie and feeds it back into the auth flow); it
+# publishes its manager via browser_login.set_active_manager(). A second
+# entry point here would start a Chromium session nobody polls a cookie for,
+# and used to leave this module holding a manager instance completely
+# unrelated to the one the auth flow was driving.
 
-    gui_manager.login.submit_login(login_data.username, login_data.password, login_data.token)
+
+@app.post("/api/login/browser/cancel")
+async def cancel_browser_login():
+    """Cancel the in-progress real-browser login attempt, if any."""
+    manager = browser_login.get_active_manager()
+    if manager is not None:
+        manager.cancel()
     return {"success": True}
 
 
-@app.post("/api/oauth/confirm")
-async def confirm_oauth():
-    """Confirm OAuth code has been entered by user"""
-    if not gui_manager:
-        raise HTTPException(status_code=503, detail="GUI not initialized")
+def _websocket_is_authenticated(websocket: WebSocket) -> bool:
+    """Mirrors PasswordAuthMiddleware's HTTP auth checks (see its dispatch()
+    above) for the one WebSocket route in this app. BaseHTTPMiddleware never
+    runs for `scope["type"] == "websocket"` connections, so every check that
+    middleware does for /api/ routes has to be repeated here explicitly --
+    this route is not implicitly covered by it."""
+    if not _is_setup_done():
+        return False
+    bot_token_header = websocket.headers.get("X-Bot-Token", "")
+    saved_bot_token = _get_bot_token()
+    if saved_bot_token and secrets.compare_digest(bot_token_header, saved_bot_token):
+        return True
+    pw = _get_password()
+    if not pw:
+        return True
+    fleet_pw_header = websocket.headers.get("X-Fleet-Password", "")
+    if fleet_pw_header and secrets.compare_digest(fleet_pw_header, pw):
+        return True
+    session = websocket.cookies.get("__tdm_session", "")
+    return _session_valid(session)
 
-    # Just set the event to signal the user has acknowledged the code
-    gui_manager.login._login_event.set()
-    return {"success": True}
+
+@app.websocket("/api/login/browser/ws")
+async def browser_login_websocket(websocket: WebSocket):
+    """Proxy raw bytes between the dashboard's noVNC client and the local
+    websockify bridge for the in-progress browser login session.
+
+    All checks below run BEFORE accept() -- Starlette's WebSocket.close()
+    is valid pre-accept (it sends a "websocket.close" ASGI message while
+    still in the CONNECTING state, refusing the handshake outright) and
+    never actually establishes a connection with an unauthenticated or
+    cross-origin caller.
+    """
+    origin = websocket.headers.get("origin")
+    host = websocket.headers.get("host")
+    if origin not in (f"http://{host}", f"https://{host}"):
+        await websocket.close(code=1008)
+        return
+    if not _websocket_is_authenticated(websocket):
+        await websocket.close(code=1008)
+        return
+    # The auth flow (src/auth/auth_state.py's _browser_login) publishes the
+    # one manager it is driving here -- this route must never construct or
+    # consult its own.
+    manager = browser_login.get_active_manager()
+    port = manager.websocket_port if manager is not None else None
+    if port is None:
+        await websocket.close(code=4404)
+        return
+
+    await websocket.accept()
+    reader, writer = await asyncio.open_connection("localhost", port)
+
+    async def pump_upstream():
+        try:
+            while True:
+                data = await websocket.receive_bytes()
+                writer.write(data)
+                await writer.drain()
+        except Exception:
+            pass
+
+    async def pump_downstream():
+        try:
+            while True:
+                data = await reader.read(65536)
+                if not data:
+                    break
+                await websocket.send_bytes(data)
+        except Exception:
+            pass
+
+    # FIRST_COMPLETED, not gather: when the client goes away pump_upstream
+    # ends immediately, but pump_downstream stays parked in reader.read()
+    # forever -- x11vnc runs with -forever and sends nothing at all on a
+    # static screen, so a gather() here would hold the handler and its TCP
+    # connection to websockify open until the whole login session is torn
+    # down. The frontend's 2s reconnect loop would then stack up one such
+    # zombie per retry across the 10-minute login window.
+    tasks = [asyncio.create_task(pump_upstream()), asyncio.create_task(pump_downstream())]
+    try:
+        _done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+        for task in pending:
+            task.cancel()
+        if pending:
+            await asyncio.gather(*pending, return_exceptions=True)
+    finally:
+        writer.close()
+        try:
+            await writer.wait_closed()
+        except Exception:
+            pass
 
 
 @app.post("/api/reload")

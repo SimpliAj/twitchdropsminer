@@ -23,6 +23,9 @@ class LoginStatus(TypedDict):
     logging_in: str
     required: str
     waiting_auth: str
+    timed_out: str
+    cancelled: str
+    unavailable: str
 
 
 class LoginMessages(TypedDict):

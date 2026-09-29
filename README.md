@@ -22,7 +22,7 @@ Upstream changes that make sense will continue to be merged when applicable, but
 - 🚀 **Streamless Mining** — Earn drops without streaming video, by sending Twitch watch events directly
 - 🔍 **Automatic Campaign Discovery** — Detects new drop campaigns and switches to them automatically
 - ⚙️ **Auto Channel Switching** — Always mines the best available stream for the highest-priority game with progress remaining
-- 💾 **Persistent Login** — OAuth device-flow login, saved via cookies, survives restarts
+- 💾 **Persistent Login** — Real-browser login captured server-side, saved via cookies, survives restarts
 - 🕹️ **Extraction Console Dashboard** — A from-scratch web UI redesign: a dark, instrument-panel-style control room with a 7-tab layout (Main, Inventory, Channel Points, History, Analytics, Settings, System) plus a Help wiki tab
 - 👥 **Multi-Account Fleet Management** — Run unlimited isolated accounts and manage all of them from one "Manage Accounts" view with live fleet status and bulk actions/settings
 - 💰 **Channel Points Auto-Claimer** — Bonus chests claimed automatically via WebSocket (PubSub) with a 60s polling fallback
@@ -69,6 +69,8 @@ Visit 👉 **<http://localhost:8080>**
 Images are built automatically for `linux/amd64` and `linux/arm64` on every release.
 Also available on GHCR: `ghcr.io/simpliaj/twitchdropsminer:latest`
 
+> ℹ️ **Image size** — the image is noticeably larger than before: it now bundles Playwright's Chromium plus Xvfb/x11vnc/websockify to run the real-browser login server-side, and the base image moved from `python:3-alpine` to `python:3-slim` (Chromium needs glibc, which Alpine's musl doesn't provide).
+
 ### 🔨 Build from Source with Docker
 
 ```bash
@@ -79,14 +81,33 @@ docker compose up -d
 
 ### 🧑‍💻 From Source (without Docker)
 
-Requires Python 3.12+.
+Requires Python 3.12+ **and**, because login now runs a real browser server-side
+(see [Login](#-notes--warnings)), a few system packages the Docker image would
+otherwise install for you:
+
+| Dependency | Why |
+| --- | --- |
+| `xvfb` | virtual X display the login browser runs inside |
+| `x11vnc` | exposes that display so the dashboard can show it |
+| `websockify` | bridges VNC to a WebSocket the browser's noVNC client speaks |
+| `procps` (`pgrep`) | used at startup to clean up leftover login processes |
+| Playwright's Chromium | the actual browser that performs the Twitch login |
 
 ```bash
+# Debian/Ubuntu — adjust for your distro
+sudo apt-get install -y xvfb x11vnc websockify procps
+
 pip install -e .
+playwright install --with-deps chromium
+
 python main.py
 ```
 
 Visit 👉 **<http://localhost:8080>**
+
+> 🔐 **Set a dashboard password before exposing this instance to a network.**
+> The login browser is driven live through the dashboard, so anyone who can
+> reach this port during a login attempt can interact with that browser.
 
 ---
 
@@ -206,7 +227,7 @@ server {
 ## 🌈 Using the Web App
 
 1. Open `http://localhost:8080`
-2. Log in with your Twitch account (OAuth device flow)
+2. On first run (or whenever your session expires), the dashboard shows an embedded live browser view — log in to Twitch right there like you would in any browser tab, including 2FA or CAPTCHA if Twitch asks for it. It's a real browser session running on the server; there's no separate program to install and no device code to type in elsewhere. TDM captures the resulting session automatically once you're logged in.
 3. The miner auto-fetches available campaigns
 4. Go to **Settings → Games to Watch** and select games:
    - **Select Linked** — auto-selects games where your account is linked
@@ -333,7 +354,9 @@ See the [Original Project Credits](#original-project-credits) section for transl
 
 > 💡 **Requirements**
 > Python 3.12+
-> Docker optional but recommended
+> From source: also `xvfb`, `x11vnc`, `websockify`, `procps`, plus
+> `playwright install --with-deps chromium` (see [From Source](#-from-source-without-docker))
+> Docker optional but recommended — the image bundles all of the above
 > Persistent data stored in `/data`
 
 ---

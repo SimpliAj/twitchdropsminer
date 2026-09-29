@@ -166,12 +166,11 @@ lang/                # Translation JSON files (19 languages)
 
 ### Authentication
 
-- Uses OAuth device code flow (user enters code at twitch.tv/activate)
-- Managed by `src/auth/auth_state.py` (`_AuthState` class)
-- Access tokens stored in `cookies.jar` in DATA_DIR
-- Device ID from Twitch's `unique_id` cookie
-- Session ID generated per run
-- Client info defined in `src/config/client_info.py` (presents as Android app with Client-Id and User-Agent spoofing)
+- Real-browser login: a server-side Playwright Chromium session, embedded live in the dashboard via noVNC, replaces the retired OAuth device-code flow (see `docs/superpowers/specs/2026-09-29-server-side-browser-login-design.md`)
+- Managed by `src/auth/auth_state.py` (`_AuthState` class) and `src/auth/browser_login.py` (`BrowserLoginManager`)
+- Access tokens stored in `cookies.jar` in DATA_DIR, exactly as before
+- Device ID from Twitch's `unique_id` cookie, captured from the same real browser session
+- Client info defined in `src/config/client_info.py` — a single real `WEB` identity for both login and browsing (no separate login-vs-browsing client anymore)
 
 ### Drop Mining Mechanism
 
@@ -308,7 +307,10 @@ The application requires:
 
 - Python 3.12+
 - Virtual environment at `env/` (must be activated before running commands)
-- Dependencies from `pyproject.toml` (includes FastAPI, uvicorn, Socket.IO)
+- Dependencies from `pyproject.toml` (includes FastAPI, uvicorn, Socket.IO, Playwright)
+- Playwright's Chromium: `playwright install --with-deps chromium`
+- System packages for the real-browser login: `xvfb`, `x11vnc`, `websockify`,
+  and `procps` (for `pgrep`, used by `sweep_orphaned_processes()` at startup)
 
 Docker deployment:
 
@@ -397,10 +399,12 @@ The application uses a web-based interface accessible via browser:
 
 **Dockerfile:**
 
-- Based on `python:3`
-- Installs dependencies from `pyproject.toml`
+- Based on `python:3.12-slim` (glibc — Chromium cannot run on Alpine's musl)
+- Installs system packages `tzdata xvfb x11vnc websockify procps` for the
+  real-browser login (`procps` provides `pgrep` for the startup orphan sweep)
+- Installs dependencies from `pyproject.toml`, then `playwright install --with-deps chromium`
 - Exposes port 8080
-- Health check on `/api/status`
+- Health check on `/healthz`
 
 **docker-compose.yml:**
 
@@ -414,7 +418,7 @@ The application uses a web-based interface accessible via browser:
 - **WebSocket for real-time** - Socket.IO chosen for reliability (fallback to polling)
 - **Single-page app** - Simpler than full framework (React/Vue), fast load times
 - **Direct Docker support** - Environment detection, proper path handling
-- **OAuth device code flow** - Works great for web-based deployment
+- **Real-browser login, server-side** - a virtual display + embedded noVNC view keeps login itself web-based (no desktop helper program), while avoiding device-code auth's token-scoping problems (issues #15-#18)
 
 ## Project Scope
 

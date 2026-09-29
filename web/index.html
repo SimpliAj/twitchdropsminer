@@ -163,18 +163,10 @@
                 <section class="panel login-panel">
                     <h2>Login</h2>
                     <div id="login-status" class="login-status"></div>
-                    <div id="login-form" style="display: none;">
-                        <form onsubmit="return false;">
-                        <input type="text" id="username" placeholder="Username" autocomplete="username" />
-                        <input type="password" id="password" placeholder="Password" autocomplete="current-password" />
-                        <input type="text" id="2fa-token" placeholder="2FA Token (optional)" />
-                        <button id="login-button">Login</button>
-                        </form>
-                    </div>
-                    <div id="oauth-code-display" style="display: none;">
-                        <p>Enter this code at: <a id="oauth-url" href="#" target="_blank">Twitch Activate</a></p>
-                        <div class="oauth-code" id="oauth-code"></div>
-                        <button id="oauth-confirm">I've entered the code</button>
+                    <div id="browser-login-panel" style="display: none;">
+                        <p id="browser-login-instructions">Log in to Twitch below. This is a real browser session running on the server -- your credentials never leave it.</p>
+                        <div id="browser-login-canvas-container"></div>
+                        <button id="browser-login-cancel">Cancel login</button>
                     </div>
                 </section>
 

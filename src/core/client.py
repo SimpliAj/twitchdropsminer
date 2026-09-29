@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 import aiohttp
 
 from src.api import GQLClient, HTTPClient
-from src.auth import LOGIN_CLIENT, _AuthState
+from src.auth import _AuthState
 from src.config import (
     GQL_OPERATIONS,
     MAX_CHANNELS,
@@ -71,7 +71,13 @@ class Twitch:
         self._claim_finalized_drops: set[str] = set()
         self._mnt_triggers: deque[datetime] = deque()
         # Client type and auth
-        self._client_type: ClientInfo = ClientType.SMARTBOX
+        # 2026-09-29: WEB (not SMARTBOX/ANDROID_APP) -- matches the real
+        # browser session's own identity now that login is a real
+        # www.twitch.tv/login session (see src/auth/browser_login.py), so
+        # there is no login-vs-browsing identity mismatch to work around
+        # anymore (see auth_state.py's headers() for the header side of
+        # this same fix).
+        self._client_type: ClientInfo = ClientType.WEB
         self._auth_state: _AuthState = _AuthState(self)
         # GUI (will be set by main.py)
         self.gui: WebGUIManager = None  # type: ignore[assignment]
@@ -797,13 +803,11 @@ class Twitch:
         try:
             auth = await self.get_auth()
             user_id = auth.user_id
-            # 2026-09-19: this Helix call sends the SAME access_token minted
-            # under LOGIN_CLIENT (see auth_state.py's own comment) -- using
-            # self._client_type.CLIENT_ID (ANDROID_APP) here mismatches it,
-            # same root cause as the GQL "Authorization token is invalid"
-            # crash this fixed. Not fatal here (401 already falls back to
-            # GQL below), but was silently always hitting that fallback.
-            client_id = LOGIN_CLIENT.CLIENT_ID
+            # 2026-09-29: self._client_type is now the SAME identity the
+            # access_token was minted under (a real browser session, see
+            # auth_state.py's _browser_login) -- no separate LOGIN_CLIENT to
+            # reconcile against anymore.
+            client_id = self._client_type.CLIENT_ID
             access_token = auth.access_token
             headers = {
                 "Authorization": f"Bearer {access_token}",
@@ -859,13 +863,11 @@ class Twitch:
         try:
             auth = await self.get_auth()
             user_id = auth.user_id
-            # 2026-09-19: this Helix call sends the SAME access_token minted
-            # under LOGIN_CLIENT (see auth_state.py's own comment) -- using
-            # self._client_type.CLIENT_ID (ANDROID_APP) here mismatches it,
-            # same root cause as the GQL "Authorization token is invalid"
-            # crash this fixed. Not fatal here (401 already falls back to
-            # GQL below), but was silently always hitting that fallback.
-            client_id = LOGIN_CLIENT.CLIENT_ID
+            # 2026-09-29: self._client_type is now the SAME identity the
+            # access_token was minted under (a real browser session, see
+            # auth_state.py's _browser_login) -- no separate LOGIN_CLIENT to
+            # reconcile against anymore.
+            client_id = self._client_type.CLIENT_ID
             access_token = auth.access_token
             headers = {
                 "Authorization": f"Bearer {access_token}",

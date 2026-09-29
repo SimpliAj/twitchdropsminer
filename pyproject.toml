@@ -15,6 +15,7 @@ dependencies = [
     "pydantic>=2.7.0",
     "python-multipart>=0.0.9",
     "coverage>=7.3.1",
+    "playwright>=1.61.0",
 ]
 
 [project.optional-dependencies]
@@ -24,22 +25,15 @@ dev = [
     "pytest",
     "pytest-asyncio",
     "coverage",
+    "httpx",
 ]
-# Optional, NOT in the default install: real-browser supplemental campaign
-# discovery (src/services/campaign_discovery.py) -- degrades to a no-op
-# without it. Kept separate from `dependencies` because it pulls in a real
-# ~280MB Chromium binary via `playwright install chromium`, and the current
-# Dockerfile's python:3-alpine base can't run Playwright's bundled Chromium
-# at all (needs glibc, alpine ships musl) -- installing this extra alone is
-# not enough to make browser discovery work in the shipped Docker image yet.
-#
-# streamlink>=6.7: src/auth/integrity.py's foundation for minting a real
-# Twitch client-integrity token (TwitchClientIntegrity, ported from
-# rangermix/TwitchDropsMiner#122). NOT wired into the main auth flow yet --
-# see that module's own docstring and RELEASE_NOTES.md for the current,
-# confirmed-live blocker (needs headful Chromium AND a non-datacenter IP;
-# both our test environments failed one or the other). Declared here so
-# anyone experimenting with it doesn't have to guess the dependency.
+# Playwright itself is now a base dependency (see `dependencies` above) --
+# required for the real-browser login flow (src/auth/browser_login.py).
+# This extra is now unrelated to whether Playwright is installed; it only
+# gates src/services/campaign_discovery.py's SUPPLEMENTAL campaign
+# discovery (merges additional campaigns into the primary login-derived
+# list). Kept separate since that module is a nice-to-have, not required
+# for the app to function.
 browser = [
     "playwright>=1.61.0",
     "streamlink>=6.7",

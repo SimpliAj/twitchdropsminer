@@ -828,6 +828,57 @@ body.dark-mode #manual-mode-badge {
     color: var(--ore);
 }
 
+/* ---------- Embedded real-browser login (noVNC) ----------
+   The remote framebuffer is 1280x800 (see BrowserLoginManager's Xvfb args).
+   noVNC scales it down to fit (scaleViewport, set in connectBrowserLoginRfb),
+   but the container still has to be constrained and clipped or a canvas that
+   size would push the whole dashboard grid sideways. */
+#browser-login-panel {
+    margin-top: 14px;
+}
+
+#browser-login-instructions {
+    color: var(--ink-dim);
+    font-size: 13px;
+    margin-bottom: 10px;
+}
+
+#browser-login-canvas-container {
+    width: 100%;
+    max-width: 100%;
+    aspect-ratio: 1280 / 800;
+    max-height: 70vh;
+    overflow: hidden;
+    background: var(--panel-raised);
+    border: 1px solid var(--seam);
+    border-radius: var(--r-md);
+}
+
+#browser-login-canvas-container canvas {
+    display: block;
+    max-width: 100%;
+}
+
+#browser-login-cancel {
+    margin-top: 10px;
+    padding: 10px 16px;
+    background: var(--panel-raised);
+    color: var(--ink);
+    border: 1px solid var(--seam-strong);
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    font-family: var(--font-display);
+    font-weight: 600;
+    transition: filter 0.15s, transform 0.1s;
+}
+
+#browser-login-cancel:hover { filter: brightness(1.15); transform: translateY(-1px); }
+
+@media (max-width: 768px) {
+    #browser-login-canvas-container { max-height: 50vh; }
+    #browser-login-cancel { width: 100%; }
+}
+
 /* ==========================================================================
    DROP PROGRESS — Signature: the extraction seam
    ========================================================================== */

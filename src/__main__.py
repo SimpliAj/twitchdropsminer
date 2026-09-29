@@ -73,6 +73,21 @@ if __name__ == "__main__":
             f"Minimum refresh interval: {settings.minimum_refresh_interval_minutes} minutes"
         )
 
+        from src.auth.browser_login import sweep_orphaned_processes
+
+        # Best-effort housekeeping only: this shells out to pgrep, which does
+        # not exist on Windows and is absent from Debian slim images without
+        # procps. A missing binary (FileNotFoundError) or any other failure
+        # here must never stop the dashboard from booting.
+        try:
+            killed = await sweep_orphaned_processes()
+            if killed:
+                logger.warning(
+                    f"Cleaned up {killed} orphaned browser-login process(es) from a previous run"
+                )
+        except Exception as exc:
+            logger.warning(f"Could not sweep orphaned browser-login processes: {exc}")
+
         exit_status = 0
         client = Twitch(settings)
 

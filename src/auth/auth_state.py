@@ -7,87 +7,10 @@ import logging
 from typing import TYPE_CHECKING, cast
 
 import aiohttp
-from yarl import URL
 
-from src.config import COOKIES_PATH, ClientType
+from src.config import COOKIES_PATH
 from src.i18n import _
 from src.utils import CHARS_HEX_LOWER, create_nonce
-
-# 2026-09-19, GitHub issue #15 + Discord reports (multiple users completely
-# unable to log in on v1.5.4): the full saga on this constant --
-#   v1.5.0-1.5.2: login used self._twitch._client_type (ANDROID_APP).
-#     Twitch started hard-rejecting ANDROID_APP on the device-code endpoint
-#     around 2026-09-18 -- confirmed by direct curl against
-#     id.twitch.tv/oauth2/device just now: ANDROID_APP's client_id gets a
-#     durable, 100%-reproducible `{"status":400,"message":"invalid
-#     client"}`, not a transient/rate-limit response. Every affected user's
-#     login retries forever and never succeeds.
-#   v1.5.3: switched LOGIN_CLIENT to ClientType.SMARTBOX (confirmed live,
-#     still works for the device-code grant). This let logins succeed
-#     again, but confirmed+reproduced in #15: the resulting access token
-#     gets scoped to SMARTBOX at Twitch's end regardless of which Client-Id
-#     header later GQL requests send, silently limiting visible drop
-#     campaigns (39 -> 3) -- the same failure shape as the historical
-#     upstream DevilXD/TwitchDropsMiner#264 "SmartTV login" issue.
-#   v1.5.4: reverted to ANDROID_APP entirely. This turned out to be worse
-#     for anyone without an already-valid cookie: ANDROID_APP's block is
-#     durable, not transient, so a fresh login now NEVER succeeds at all
-#     (confirmed via Discord reports + a full log showing dozens of
-#     consecutive "invalid client" retries over hours) -- a hard lockout is
-#     worse than SMARTBOX's degraded-but-functional campaign discovery
-#     (the historical #264 thread confirms even a SmartTV-scoped token
-#     still tracks already-in-progress campaigns fine, only NEW campaign
-#     discovery is limited).
-#   v1.5.5: direct curl-tested all four ClientType client_ids against the
-#     real device-code endpoint. WEB and ANDROID_APP both return "invalid
-#     client"; MOBILE_WEB and SMARTBOX both actually work at that step.
-#     MOBILE_WEB's client_id is ALSO the exact one the historical #264
-#     thread found restored full campaign visibility after SmartTV's got
-#     crippled the same way -- strong precedent, but not verified
-#     end-to-end (needs a human completing device-code activation).
-#   v1.5.6: the login SUCCEEDS with MOBILE_WEB, but confirmed via multiple
-#     independent Discord reports on v1.5.6 itself (not a stale-code
-#     artifact -- the CI build for that exact commit is confirmed to have
-#     shipped): every GQL call, including the very first one
-#     (fetch_inventory), gets a hard "Unauthorized: The 'Authorization'
-#     token is invalid" -- not SMARTBOX's milder "succeeds but limited"
-#     failure, an outright reject. v1.5.6 also made every gql=True header
-#     (Client-Id/Origin/Referer/User-Agent) consistently match LOGIN_CLIENT
-#     instead of mixing in the browsing client's -- that fix is still
-#     correct in principle (a real client never mixes headers from two
-#     apps), but it did NOT rescue MOBILE_WEB: its token is rejected by
-#     GQL regardless of which headers travel with it. That falsifies "the
-#     header mismatch alone" as an explanation for #15's SMARTBOX
-#     degradation too -- v1.5.3 had SMARTBOX's token WITH ANDROID_APP's
-#     mismatched headers and GQL still returned real (if limited) data,
-#     which a hard-reject-on-mismatch theory can't explain. The simpler
-#     read: MOBILE_WEB tokens just aren't authorized for GQL at all, full
-#     stop, independent of headers; SMARTBOX's are, just scope-limited.
-#   v1.5.7 (this): back to SMARTBOX, paired with the still-correct
-#     consistent-header fix from v1.5.6 -- live-tested against a real
-#     account end-to-end (device-code activation completed by a human,
-#     not simulated): login succeeds, GQL succeeds, but eligible-campaign
-#     count dropped from 46 to 5 immediately after the fresh SMARTBOX
-#     login, same shape as #15. Also live-tested going further than the
-#     header fix -- switching self._twitch._client_type (not just
-#     LOGIN_CLIENT) to SMARTBOX entirely, matching upstream
-#     rangermix/TwitchDropsMiner#110's fix exactly (one uniform identity
-#     for device_id extraction AND every GQL header, nothing left on
-#     ANDROID_APP at all) -- result: identical 46 -> 5, no different.
-#     That conclusively rules out "inconsistent identity" as the cause of
-#     the campaign-visibility drop: it's intrinsic to SMARTBOX itself at
-#     Twitch's end, exactly matching the historical #264 finding, not
-#     fixable by any header/identity arrangement this app controls.
-#     Shipping the narrower LOGIN_CLIENT-only decoupling (not the global
-#     client_type swap) since both give identical results but this one
-#     leaves device_id extraction/page-scraping on the far-better-tested
-#     ANDROID_APP path (www.twitch.tv) instead of android.tv.twitch.tv.
-#     Real, accepted trade-off from here: login works, already-in-progress
-#     campaigns keep tracking normally (per #264's own confirmation), new
-#     campaign discovery is reduced -- until Twitch's device-code
-#     restrictions on ANDROID_APP change, not something this app can
-#     engineer further around.
-LOGIN_CLIENT = ClientType.SMARTBOX
 
 
 if TYPE_CHECKING:
@@ -98,13 +21,17 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("TwitchDrops")
 
+# How long to wait before offering a fresh login browser after an attempt
+# timed out, was cancelled, or could not start at all (see _browser_login).
+BROWSER_LOGIN_RETRY_DELAY_SEC = 5.0
+
 
 class _AuthState:
     """
     Manages authentication state including tokens, session, and login flow.
 
     This class handles:
-    - OAuth device code flow for authentication
+    - Real-browser login flow for authentication
     - Access token validation and management
     - Session and device ID management
     - Cookie persistence
@@ -141,108 +68,86 @@ class _AuthState:
         )
         self._logged_in.clear()
 
-    async def _oauth_login(self) -> str:
+    async def _browser_login(self) -> str:
         """
-        Perform OAuth device code flow authentication.
+        Perform a real-browser Twitch login, replacing the retired OAuth
+        device-code flow (see docs/superpowers/specs/
+        2026-09-29-server-side-browser-login-design.md for why: device-code's
+        only still-working client IDs either got GQL-rejected outright or
+        scoped to a degraded campaign-visibility tier, intrinsic to how the
+        token was minted).
 
-        This implements the OAuth 2.0 Device Authorization Grant flow:
-        1. Request device code and user code from Twitch
-        2. Display code to user for entry at twitch.tv/activate
-        3. Poll token endpoint until user completes authorization
-        4. Return access token
+        Drives a BrowserLoginManager: starts a real (non-headless) Chromium
+        under a virtual display, surfaces its live view to the dashboard via
+        the noVNC bridge (see src/web/app.py's /api/login/browser/* routes),
+        and waits for the user to complete the real twitch.tv/login flow
+        (credentials, 2FA, CAPTCHA -- all handled live by the user, never by
+        this app). Always tears the manager down afterward, success or not.
+
+        The manager is published as browser_login.get_active_manager() for
+        the lifetime of each attempt, because the web layer's WS proxy and
+        cancel routes have to act on the very same instance this method is
+        awaiting -- they used to own a second, unrelated one, which meant the
+        noVNC panel could never actually reach the browser being driven here.
+
+        Never lets a failed attempt escape: a timeout, an explicit cancel or
+        a missing system dependency all surface as dashboard status and are
+        retried with a fresh browser, rather than propagating out through
+        validate() -> client.run() into __main__'s fatal handler (which would
+        kill the whole process and leave the user with no way back in short
+        of restarting the container).
 
         Returns:
-            str: The access token
+            str: The access token (from the captured auth-token cookie)
         """
+        from src.auth import browser_login
+        from src.auth.browser_login import (
+            BrowserLoginCancelled,
+            BrowserLoginManager,
+            BrowserLoginTimeout,
+            BrowserLoginUnavailable,
+        )
+
         login_form: LoginForm = self._twitch.gui.login
-        client_info: ClientInfo = LOGIN_CLIENT
-        headers = {
-            "Accept": "application/json",
-            "Accept-Encoding": "gzip",
-            "Accept-Language": "en-US",
-            "Cache-Control": "no-cache",
-            "Client-Id": client_info.CLIENT_ID,
-            "Host": "id.twitch.tv",
-            "Origin": str(client_info.CLIENT_URL),
-            "Pragma": "no-cache",
-            "Referer": str(client_info.CLIENT_URL),
-            "User-Agent": client_info.USER_AGENT,
-            "X-Device-Id": self.device_id,
-        }
-        payload = {
-            "client_id": client_info.CLIENT_ID,
-            "scopes": "",  # no scopes needed
-        }
         while True:
+            manager = BrowserLoginManager()
+            browser_login.set_active_manager(manager)
             try:
-                from datetime import datetime, timedelta, timezone
+                websocket_port = await manager.start()
+                await login_form.start_browser_login(websocket_port)
+                cookies = await manager.wait_for_cookie()
+                self.device_id = cookies["unique_id"] or self.device_id
+                self.access_token = cookies["auth-token"]
+                return self.access_token
+            except BrowserLoginTimeout:
+                logger.warning("Browser login timed out; a new session will be offered")
+                self._update_login_status(
+                    login_form, "timed_out", "Login timed out - starting a new login session..."
+                )
+            except BrowserLoginCancelled:
+                logger.info("Browser login cancelled; a new session will be offered")
+                self._update_login_status(
+                    login_form, "cancelled", "Login cancelled - starting a new login session..."
+                )
+            except BrowserLoginUnavailable as exc:
+                logger.error(f"Browser login unavailable: {exc}")
+                self._update_login_status(
+                    login_form,
+                    "unavailable",
+                    "Login browser could not start - check that Chromium, Xvfb, x11vnc "
+                    "and websockify are installed. Retrying...",
+                )
+            finally:
+                browser_login.set_active_manager(None)
+                await manager.stop()
+            await asyncio.sleep(BROWSER_LOGIN_RETRY_DELAY_SEC)
 
-                from src.exceptions import RequestInvalid
-
-                now = datetime.now(timezone.utc)
-                async with self._twitch.request(
-                    "POST", "https://id.twitch.tv/oauth2/device", headers=headers, data=payload
-                ) as response:
-                    # {
-                    #     "device_code": "40 chars [A-Za-z0-9]",
-                    #     "expires_in": 1800,
-                    #     "interval": 5,
-                    #     "user_code": "8 chars [A-Z]",
-                    #     "verification_uri": "https://www.twitch.tv/activate?device-code=ABCDEFGH"
-                    # }
-                    # 2026-09-18, user-reported (this fork's issue #13-adjacent bug
-                    # reports, upstream DevilXD/TwitchDropsMiner#1165/#1166): a non-200
-                    # error body (no "device_code" key) used to get indexed into
-                    # directly, crashing with a bare KeyError instead of surfacing what
-                    # Twitch actually said. Surface it and retry with backoff instead.
-                    if response.status != 200:
-                        error_body = await response.text()
-                        logger.error(
-                            f"Device code request failed (HTTP {response.status}): "
-                            f"{error_body}. Retrying in 30s."
-                        )
-                        await asyncio.sleep(30)
-                        continue
-                    response_json: JsonType = await response.json()
-                    device_code: str = response_json["device_code"]
-                    user_code: str = response_json["user_code"]
-                    interval: int = response_json["interval"]
-                    verification_uri: URL = URL(response_json["verification_uri"])
-                    expires_at = now + timedelta(seconds=response_json["expires_in"])
-
-                # Print the code to the user, open them the activate page so they can type it in
-                await login_form.ask_enter_code(verification_uri, user_code)
-
-                payload = {
-                    "client_id": client_info.CLIENT_ID,
-                    "device_code": device_code,
-                    "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
-                }
-                while True:
-                    # sleep first, not like the user is gonna enter the code *that* fast
-                    await asyncio.sleep(interval)
-                    async with self._twitch.request(
-                        "POST",
-                        "https://id.twitch.tv/oauth2/token",
-                        headers=headers,
-                        data=payload,
-                        invalidate_after=expires_at,
-                    ) as response:
-                        # 200 means success, 400 means the user haven't entered the code yet
-                        if response.status != 200:
-                            continue
-                        response_json = await response.json()
-                        # {
-                        #     "access_token": "40 chars [A-Za-z0-9]",
-                        #     "refresh_token": "40 chars [A-Za-z0-9]",
-                        #     "scope": [...],
-                        #     "token_type": "bearer"
-                        # }
-                        self.access_token = cast(str, response_json["access_token"])
-                        return self.access_token
-            except RequestInvalid:
-                # the device_code has expired, request a new code
-                continue
+    @staticmethod
+    def _update_login_status(login_form: LoginForm, key: str, fallback: str) -> None:
+        """Push a login status to the dashboard, tolerating language files
+        that predate the key (only English.json is guaranteed to carry every
+        one -- the translator does no English fallback merging)."""
+        login_form.update(_.t["login"]["status"].get(key, fallback), None)
 
     def headers(self, *, user_agent: str = "", gql: bool = False) -> JsonType:
         """
@@ -273,33 +178,11 @@ class _AuthState:
         if hasattr(self, "device_id"):
             headers["X-Device-Id"] = self.device_id
         if gql:
-            # 2026-09-19, Discord-reported (v1.5.5, thermalux/Stumpn):
-            # "GQLException: Unauthorized: The 'Authorization' token is
-            # invalid" on every GQL call, immediately after a successful
-            # login. Root cause: the Authorization token below is minted
-            # under LOGIN_CLIENT (see its own comment in _oauth_login), but
-            # this branch was sending it alongside Client-Id/Origin/Referer
-            # from self._twitch._client_type (ANDROID_APP) instead --
-            # Twitch's GQL gateway validates that the token and the
-            # Client-Id/Origin/Referer identity it travels with actually
-            # match. SMARTBOX (v1.5.3) hit a milder version of this same
-            # mismatch -- silently limited campaign visibility (#15) rather
-            # than an outright reject -- but MOBILE_WEB's token gets hard-
-            # rejected on the exact same header inconsistency. Every
-            # authenticated (gql=True) header now travels as ONE consistent
-            # identity with the token, matching how a real client actually
-            # behaves (it never mixes headers from two different apps).
-            # GQLClient (see gql_client.py's request()) always passes its
-            # OWN client_type's USER_AGENT as the `user_agent` override
-            # above, which would otherwise leave User-Agent as ANDROID_APP
-            # even after the Client-Id/Origin/Referer below are corrected --
-            # forcing it here too so gql=True always sends one fully
-            # consistent identity, not three matching headers plus a
-            # mismatched fourth.
-            headers["User-Agent"] = LOGIN_CLIENT.USER_AGENT
-            headers["Client-Id"] = LOGIN_CLIENT.CLIENT_ID
-            headers["Origin"] = str(LOGIN_CLIENT.CLIENT_URL)
-            headers["Referer"] = str(LOGIN_CLIENT.CLIENT_URL)
+            # Login and browsing now share one real identity (ClientType.WEB
+            # -- see src/core/client.py's _client_type), captured directly
+            # from the real browser session (src/auth/browser_login.py), so
+            # there is no separate login-client identity to reconcile headers
+            # against anymore.
             headers["Authorization"] = f"OAuth {self.access_token}"
         return headers
 
@@ -351,7 +234,7 @@ class _AuthState:
                 for _invalid_token_attempt in range(2):
                     cookie = jar.filter_cookies(client_info.CLIENT_URL)
                     if "auth-token" not in cookie:
-                        self.access_token = await self._oauth_login()
+                        self.access_token = await self._browser_login()
                         cookie["auth-token"] = self.access_token
                     elif not hasattr(self, "access_token"):
                         logger.info("Restoring session from cookie")
@@ -374,9 +257,9 @@ class _AuthState:
                 else:
                     raise RuntimeError("Login verification failure (step #2)")
                 # ensure the cookie's client ID matches the client actually used to log
-                # in -- _oauth_login() always mints its token under LOGIN_CLIENT's
-                # client_id, regardless of which client_info is used for browsing here.
-                if validate_response["client_id"] == LOGIN_CLIENT.CLIENT_ID:
+                # in -- _browser_login() mints its token from the real browser session,
+                # which is the same client_info used for browsing here.
+                if validate_response["client_id"] == client_info.CLIENT_ID:
                     break
                 # otherwise, we need to delete the entire cookie file and clear the jar
                 logger.info("Cookie client ID mismatch")
