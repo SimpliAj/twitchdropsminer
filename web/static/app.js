@@ -375,21 +375,16 @@ socket.on('drop_update', (data) => {
 });
 
 socket.on('login_required', () => {
-    showLoginForm();
+    // No-op on its own now -- browser_login_ready (below) is what actually
+    // shows the panel, once the server-side session is ready to view.
 });
 
-socket.on('oauth_code_required', (data) => {
-    showOAuthCode(data.url, data.code);
+socket.on('browser_login_ready', (data) => {
+    showBrowserLoginPanel(data.websocket_path);
 });
 
 socket.on('login_status', (data) => {
     updateLoginStatus(data);
-});
-
-socket.on('login_clear', (data) => {
-    if (data.login) document.getElementById('username').value = '';
-    if (data.password) document.getElementById('password').value = '';
-    if (data.token) document.getElementById('2fa-token').value = '';
 });
 
 socket.on('settings_updated', (data) => {
@@ -1936,16 +1931,51 @@ function autoCleanWantedQueue() {
     }
 }
 
-function showLoginForm() {
-    document.getElementById('login-form').style.display = 'block';
-    document.getElementById('oauth-code-display').style.display = 'none';
+let browserLoginRfb = null;
+
+function closeBrowserLoginPanel() {
+    document.getElementById('browser-login-panel').style.display = 'none';
+    // Null out BEFORE disconnect() so the 'disconnect' event handler (see
+    // connectBrowserLoginRfb) sees browserLoginRfb === null and does not
+    // schedule a reconnect for a close WE initiated.
+    const rfb = browserLoginRfb;
+    browserLoginRfb = null;
+    if (rfb) {
+        rfb.disconnect();
+    }
+    document.getElementById('browser-login-canvas-container').innerHTML = '';
 }
 
-function showOAuthCode(url, code) {
-    document.getElementById('login-form').style.display = 'none';
-    document.getElementById('oauth-code-display').style.display = 'block';
-    document.getElementById('oauth-url').href = url;
-    document.getElementById('oauth-code').textContent = code;
+async function showBrowserLoginPanel(websocketPath) {
+    document.getElementById('browser-login-panel').style.display = 'block';
+    await connectBrowserLoginRfb(websocketPath);
+}
+
+async function connectBrowserLoginRfb(websocketPath) {
+    const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const url = `${proto}//${window.location.host}${websocketPath}`;
+    const { default: RFB } = await import('/static/vendor/novnc/core/rfb.js');
+    browserLoginRfb = new RFB(document.getElementById('browser-login-canvas-container'), url);
+    // A network blip must not abandon the login -- reconnect to the same
+    // websockify bridge (the server-side Chromium session is untouched by
+    // a WebSocket drop) as long as the panel is still open. Only a real
+    // login_status success (see updateLoginStatus) or an explicit cancel
+    // (see cancelBrowserLogin) calls closeBrowserLoginPanel, which nulls
+    // browserLoginRfb out first -- that null check is what stops this from
+    // reconnecting after either of those.
+    //
+    // Any connection failure (bad Origin, bad auth, no login session in
+    // progress, or a real network drop) surfaces here identically as a
+    // generic 'disconnect' -- there is no reliable distinguishable close
+    // code to branch on, so we always just retry.
+    browserLoginRfb.addEventListener('disconnect', () => {
+        if (browserLoginRfb === null) return;
+        setTimeout(() => {
+            if (document.getElementById('browser-login-panel').style.display === 'block') {
+                connectBrowserLoginRfb(websocketPath);
+            }
+        }, 2000);
+    });
 }
 
 function updateLoginStatus(data) {
@@ -1956,8 +1986,7 @@ function updateLoginStatus(data) {
         const name = data.user_login || String(data.user_id);
         statusEl.innerHTML = `<span style="color:var(--success-color);font-weight:600;">✓ @${name}</span>`;
         statusEl.removeAttribute('translation-key');
-        document.getElementById('login-form').style.display = 'none';
-        document.getElementById('oauth-code-display').style.display = 'none';
+        closeBrowserLoginPanel();
         if (loginPanel) loginPanel.classList.add('is-logged-in');
     } else {
         const loggedOut = t.login?.status?.logged_out || 'Not logged in';
@@ -1965,8 +1994,8 @@ function updateLoginStatus(data) {
         statusEl.setAttribute('translation-key', 'logged_out');
         statusEl.style.color = 'var(--text-secondary)';
         if (loginPanel) loginPanel.classList.remove('is-logged-in');
-        if (data.oauth_pending) {
-            showOAuthCode(data.oauth_pending.url, data.oauth_pending.code);
+        if (data.browser_login_ready) {
+            showBrowserLoginPanel(data.browser_login_ready.websocket_path);
         }
     }
 }
@@ -2831,38 +2860,13 @@ async function exitManualMode() {
     }
 }
 
-async function submitLogin() {
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-    const token = document.getElementById('2fa-token').value;
-
+async function cancelBrowserLogin() {
     try {
-        await fetch(API_BASE + '/api/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password, token })
-        });
+        await fetch(API_BASE + '/api/login/browser/cancel', { method: 'POST' });
     } catch (error) {
-        console.error('Failed to submit login:', error);
+        console.error('Failed to cancel browser login:', error);
     }
-}
-
-async function confirmOAuth() {
-    // Signal that OAuth code has been entered
-    try {
-        await fetch(API_BASE + '/api/oauth/confirm', {
-            method: 'POST'
-        });
-        // Hide the OAuth form and show waiting message
-        document.getElementById('oauth-code-display').style.display = 'none';
-        const t = state.translations;
-        const waitingAuth = t.login?.status?.waiting_auth || 'Waiting for authentication...';
-        const loginStatus = document.getElementById('login-status');
-        loginStatus.textContent = waitingAuth;
-        loginStatus.setAttribute('translation-key', 'waiting_auth');
-    } catch (error) {
-        console.error('Failed to confirm OAuth:', error);
-    }
+    closeBrowserLoginPanel();
 }
 
 async function verifyProxy() {
@@ -4418,8 +4422,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Login form
-    document.getElementById('login-button').addEventListener('click', submitLogin);
-    document.getElementById('oauth-confirm').addEventListener('click', confirmOAuth);
+    document.getElementById('browser-login-cancel').addEventListener('click', cancelBrowserLogin);
 
     // Settings - auto-save on change
     document.getElementById('dark-mode').addEventListener('change', (e) => {
