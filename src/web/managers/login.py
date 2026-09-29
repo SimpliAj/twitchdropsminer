@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from src.i18n import _
@@ -14,95 +13,48 @@ if TYPE_CHECKING:
     from src.web.managers.broadcaster import WebSocketBroadcaster
 
 
-@dataclass
-class LoginData:
-    """Container for login credentials submitted by the user."""
-
-    username: str
-    password: str
-    token: str
-
-
 class LoginFormManager:
-    """Manages login form and OAuth authentication flow in the web interface.
+    """Manages the real-browser login flow's UI state in the web interface.
 
-    Handles both traditional username/password login and OAuth device code flow,
-    coordinating between the web client and the Twitch authentication system.
+    Coordinates between the web client (which embeds a noVNC view of the
+    server-side browser -- see src/auth/browser_login.py) and _AuthState's
+    _browser_login(), which drives that browser and waits for the resulting
+    session cookie.
     """
 
     def __init__(self, broadcaster: WebSocketBroadcaster, manager: WebGUIManager):
         self._broadcaster = broadcaster
         self._manager = manager
-        self._login_event = asyncio.Event()
-        self._login_data: LoginData | None = None
         self._status = _.t["login"]["status"]["logged_out"]
         self._user_id: int | None = None
         self._user_login: str | None = None
-        self._oauth_pending: dict[str, str] | None = (
-            None  # Store OAuth code for late-connecting clients
-        )
-
-    def clear(self, login: bool = False, password: bool = False, token: bool = False):
-        """Clear login form fields on the client side.
-
-        Args:
-            login: Clear the login/username field
-            password: Clear the password field
-            token: Clear the 2FA token field
-        """
-        asyncio.create_task(
-            self._broadcaster.emit(
-                "login_clear", {"login": login, "password": password, "token": token}
-            )
-        )
+        self._browser_login_websocket_port: int | None = None
 
     def update(self, status: str, user_id: int | None, user_login: str | None = None):
         self._status = status
         self._user_id = user_id
         self._user_login = user_login
+        self._browser_login_websocket_port = None
         asyncio.create_task(
-            self._broadcaster.emit("login_status", {"status": status, "user_id": user_id, "user_login": user_login})
+            self._broadcaster.emit(
+                "login_status", {"status": status, "user_id": user_id, "user_login": user_login}
+            )
         )
 
-    async def ask_enter_code(self, page_url, user_code: str):
-        """Request OAuth device code entry from the user.
-
-        Displays the activation URL and code to the user, waiting for them
-        to complete the OAuth flow on Twitch's website.
-
-        Args:
-            page_url: URL where user should enter the code (e.g., twitch.tv/activate)
-            user_code: The device code to enter
+    async def start_browser_login(self, websocket_port: int) -> None:
+        """Tell connected dashboards a real-browser login session is ready
+        to be viewed/interacted with, at the given local websockify port
+        (the actual browser-facing WebSocket path is /api/login/browser/ws,
+        see src/web/app.py -- this port is only used server-side to proxy
+        into it).
         """
+        self._browser_login_websocket_port = websocket_port
         self.update(_.t["login"]["status"]["required"], None)
-        self._login_event.clear()
-        # Store OAuth code for late-connecting clients
-        self._oauth_pending = {"url": str(page_url), "code": user_code}
-        await self._broadcaster.emit("oauth_code_required", self._oauth_pending)
-        # Wait for user to confirm code entry (will be cancelled on shutdown)
-        await self._login_event.wait()
-        # Clear OAuth state after confirmation
-        self._oauth_pending = None
-
-    def submit_login(self, username: str, password: str, token: str = ""):
-        """Submit login credentials (called by webapp when user submits form).
-
-        Args:
-            username: Twitch username or email
-            password: Account password
-            token: Optional 2FA token
-        """
-        self._login_data = LoginData(username, password, token)
-        self._login_event.set()
+        await self._broadcaster.emit("browser_login_ready", {"websocket_path": "/api/login/browser/ws"})
 
     def get_status(self) -> dict[str, Any]:
-        """Get current login status for client synchronization.
-
-        Returns:
-            Dictionary with status, user_id, and optional oauth_pending data
-        """
+        """Get current login status for client synchronization."""
         result: dict[str, Any] = {"status": self._status, "user_id": self._user_id, "user_login": self._user_login}
-        # Include OAuth code if pending
-        if self._oauth_pending:
-            result["oauth_pending"] = self._oauth_pending
+        if self._browser_login_websocket_port is not None:
+            result["browser_login_ready"] = {"websocket_path": "/api/login/browser/ws"}
         return result

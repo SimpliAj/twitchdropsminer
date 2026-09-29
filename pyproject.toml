@@ -25,6 +25,7 @@ dev = [
     "pytest",
     "pytest-asyncio",
     "coverage",
+    "httpx",
 ]
 # Playwright itself is now a base dependency (see `dependencies` above) --
 # required for the real-browser login flow (src/auth/browser_login.py).

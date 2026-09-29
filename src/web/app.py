@@ -17,12 +17,14 @@ import subprocess
 import sys
 
 import socketio
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from starlette.middleware.base import BaseHTTPMiddleware
+
+from src.auth.browser_login import BrowserLoginManager
 
 import os as _os
 _DATA_DIR = Path(_os.environ.get("TDM_DATA_DIR", str(Path(__file__).parent.parent.parent / "data")))
@@ -488,6 +490,7 @@ socket_app = socketio.ASGIApp(sio, app)
 gui_manager: WebGUIManager | None = None
 twitch_client: Twitch | None = None
 _server_instance: uvicorn.Server | None = None
+_browser_login_manager: BrowserLoginManager | None = None
 
 
 def set_managers(gui: WebGUIManager, twitch: Twitch):
@@ -544,12 +547,6 @@ async def _auto_resume_mode() -> None:
 
 
 # Pydantic models for API
-class LoginRequest(BaseModel):
-    username: str
-    password: str
-    token: str = ""
-
-
 class ChannelSelectRequest(BaseModel):
     channel_id: int
 
@@ -1305,25 +1302,66 @@ async def get_wanted_items_http():
     return {"wanted_items": gui_manager.get_wanted_game_tree()}
 
 
-@app.post("/api/login")
-async def submit_login(login_data: LoginRequest):
-    """Submit login credentials"""
+@app.post("/api/login/browser/start")
+async def start_browser_login():
+    """Start a real-browser Twitch login attempt."""
     if not gui_manager:
         raise HTTPException(status_code=503, detail="GUI not initialized")
 
-    gui_manager.login.submit_login(login_data.username, login_data.password, login_data.token)
+    global _browser_login_manager
+    if _browser_login_manager is not None and _browser_login_manager.in_progress:
+        raise HTTPException(status_code=409, detail="A login attempt is already in progress")
+
+    _browser_login_manager = BrowserLoginManager()
+    try:
+        websocket_port = await _browser_login_manager.start()
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Failed to start browser login: {exc}") from exc
+    await gui_manager.login.start_browser_login(websocket_port)
+    return {"success": True, "websocket_path": "/api/login/browser/ws"}
+
+
+@app.post("/api/login/browser/cancel")
+async def cancel_browser_login():
+    """Cancel the in-progress real-browser login attempt, if any."""
+    if _browser_login_manager is not None:
+        _browser_login_manager.cancel()
     return {"success": True}
 
 
-@app.post("/api/oauth/confirm")
-async def confirm_oauth():
-    """Confirm OAuth code has been entered by user"""
-    if not gui_manager:
-        raise HTTPException(status_code=503, detail="GUI not initialized")
+@app.websocket("/api/login/browser/ws")
+async def browser_login_websocket(websocket: WebSocket):
+    """Proxy raw bytes between the dashboard's noVNC client and the local
+    websockify bridge for the in-progress browser login session."""
+    await websocket.accept()
+    if _browser_login_manager is None or not _browser_login_manager.in_progress:
+        await websocket.close(code=4404)
+        return
 
-    # Just set the event to signal the user has acknowledged the code
-    gui_manager.login._login_event.set()
-    return {"success": True}
+    port = _browser_login_manager._session.websocket_port  # type: ignore[union-attr]
+    reader, writer = await asyncio.open_connection("localhost", port)
+
+    async def pump_upstream():
+        try:
+            while True:
+                data = await websocket.receive_bytes()
+                writer.write(data)
+                await writer.drain()
+        except Exception:
+            pass
+
+    async def pump_downstream():
+        try:
+            while True:
+                data = await reader.read(65536)
+                if not data:
+                    break
+                await websocket.send_bytes(data)
+        except Exception:
+            pass
+
+    await asyncio.gather(pump_upstream(), pump_downstream(), return_exceptions=True)
+    writer.close()
 
 
 @app.post("/api/reload")
