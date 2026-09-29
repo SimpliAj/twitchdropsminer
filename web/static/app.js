@@ -3411,6 +3411,15 @@ function applyTranslations(t) {
             const oauthConfirmBtn = document.getElementById('oauth-confirm');
             if (oauthConfirmBtn) oauthConfirmBtn.textContent = t.gui.login.oauth_confirm;
         }
+
+        // Update real-browser login panel text
+        if (t.login?.browser_login) {
+            const browserLoginInstructions = document.getElementById('browser-login-instructions');
+            if (browserLoginInstructions) browserLoginInstructions.textContent = t.login.browser_login.instructions;
+
+            const browserLoginCancel = document.getElementById('browser-login-cancel');
+            if (browserLoginCancel) browserLoginCancel.textContent = t.login.browser_login.cancel;
+        }
     }
 
     // Update Progress section
