@@ -156,11 +156,11 @@ class BrowserLoginManager:
                     "x11vnc",
                     "-display", f":{display_number}",
                     "-rfbport", str(vnc_port),
-                    "-nopw", "-forever", "-shared", "-quiet",
+                    "-localhost", "-nopw", "-forever", "-shared", "-quiet",
                 ]
             )
             websockify_process = await _start_tagged_process(
-                ["websockify", str(websocket_port), f"localhost:{vnc_port}"]
+                ["websockify", f"127.0.0.1:{websocket_port}", f"127.0.0.1:{vnc_port}"]
             )
         except Exception as exc:
             await browser.close()
