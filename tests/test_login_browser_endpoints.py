@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from fastapi.testclient import TestClient
+from starlette.websockets import WebSocketDisconnect
 
 from src.web import app as app_module
 
@@ -55,6 +56,58 @@ class TestBrowserLoginEndpoints(unittest.TestCase):
             response = self.client.post("/api/login/browser/cancel")
             self.assertEqual(response.status_code, 200)
             instance.cancel.assert_called_once()
+
+
+class TestBrowserLoginWebSocketAuth(unittest.TestCase):
+    """
+    Regression coverage for a reviewer-flagged Critical finding: unlike every
+    HTTP route, this WebSocket is not covered by PasswordAuthMiddleware (a
+    BaseHTTPMiddleware, which never runs for scope["type"] == "websocket"),
+    so the route itself must reject a mismatched Origin and an unauthenticated
+    caller before ever accepting the connection or touching the in-progress
+    browser-login session it would otherwise proxy into unconditionally.
+    """
+
+    def setUp(self):
+        self._setup_patcher = patch("src.web.app._is_setup_done", return_value=True)
+        self._setup_patcher.start()
+        self.addCleanup(self._setup_patcher.stop)
+        self.client = TestClient(app_module.app)
+
+    def test_rejects_missing_or_mismatched_origin(self):
+        with (
+            self.assertRaises(WebSocketDisconnect) as ctx,
+            self.client.websocket_connect("/api/login/browser/ws"),
+        ):
+            pass
+        self.assertEqual(ctx.exception.code, 1008)
+
+    def test_rejects_when_password_set_and_no_valid_session_or_token(self):
+        with (
+            patch("src.web.app._get_password", return_value="hunter2"),
+            self.assertRaises(WebSocketDisconnect) as ctx,
+            self.client.websocket_connect(
+                "/api/login/browser/ws",
+                headers={"origin": "http://testserver", "host": "testserver"},
+            ),
+        ):
+            pass
+        self.assertEqual(ctx.exception.code, 1008)
+
+    def test_allows_matching_origin_with_no_password_set_through_to_the_in_progress_gate(self):
+        # No password configured and origin matches host -- auth passes, so
+        # the connection reaches the next gate (in-progress check) instead
+        # of being rejected for Origin/auth reasons (1008).
+        with (
+            patch("src.web.app._browser_login_manager", None),
+            self.assertRaises(WebSocketDisconnect) as ctx,
+            self.client.websocket_connect(
+                "/api/login/browser/ws",
+                headers={"origin": "http://testserver", "host": "testserver"},
+            ),
+        ):
+            pass
+        self.assertEqual(ctx.exception.code, 4404)
 
 
 if __name__ == "__main__":

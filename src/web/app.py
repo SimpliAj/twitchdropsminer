@@ -1329,15 +1329,52 @@ async def cancel_browser_login():
     return {"success": True}
 
 
+def _websocket_is_authenticated(websocket: WebSocket) -> bool:
+    """Mirrors PasswordAuthMiddleware's HTTP auth checks (see its dispatch()
+    above) for the one WebSocket route in this app. BaseHTTPMiddleware never
+    runs for `scope["type"] == "websocket"` connections, so every check that
+    middleware does for /api/ routes has to be repeated here explicitly --
+    this route is not implicitly covered by it."""
+    if not _is_setup_done():
+        return False
+    bot_token_header = websocket.headers.get("X-Bot-Token", "")
+    saved_bot_token = _get_bot_token()
+    if saved_bot_token and secrets.compare_digest(bot_token_header, saved_bot_token):
+        return True
+    pw = _get_password()
+    if not pw:
+        return True
+    fleet_pw_header = websocket.headers.get("X-Fleet-Password", "")
+    if fleet_pw_header and secrets.compare_digest(fleet_pw_header, pw):
+        return True
+    session = websocket.cookies.get("__tdm_session", "")
+    return _session_valid(session)
+
+
 @app.websocket("/api/login/browser/ws")
 async def browser_login_websocket(websocket: WebSocket):
     """Proxy raw bytes between the dashboard's noVNC client and the local
-    websockify bridge for the in-progress browser login session."""
-    await websocket.accept()
+    websockify bridge for the in-progress browser login session.
+
+    All checks below run BEFORE accept() -- Starlette's WebSocket.close()
+    is valid pre-accept (it sends a "websocket.close" ASGI message while
+    still in the CONNECTING state, refusing the handshake outright) and
+    never actually establishes a connection with an unauthenticated or
+    cross-origin caller.
+    """
+    origin = websocket.headers.get("origin")
+    host = websocket.headers.get("host")
+    if origin not in (f"http://{host}", f"https://{host}"):
+        await websocket.close(code=1008)
+        return
+    if not _websocket_is_authenticated(websocket):
+        await websocket.close(code=1008)
+        return
     if _browser_login_manager is None or not _browser_login_manager.in_progress:
         await websocket.close(code=4404)
         return
 
+    await websocket.accept()
     port = _browser_login_manager._session.websocket_port  # type: ignore[union-attr]
     reader, writer = await asyncio.open_connection("localhost", port)
 
