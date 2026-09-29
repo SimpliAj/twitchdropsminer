@@ -813,9 +813,18 @@ from src.auth.auth_state import _AuthState
 class TestBrowserLoginIntegration(unittest.IsolatedAsyncioTestCase):
     async def test_browser_login_returns_access_token_from_manager(self):
         mock_twitch = MagicMock()
+        mock_twitch.gui.login.start_browser_login = AsyncMock()
         auth_state = _AuthState(mock_twitch)
 
-        with patch("src.auth.auth_state.BrowserLoginManager") as MockManager:
+        # _browser_login() does `from src.auth.browser_login import
+        # BrowserLoginManager` INSIDE the method (a local import, to avoid
+        # a circular import between auth_state.py and browser_login.py) --
+        # patch it at its origin (src.auth.browser_login), not at
+        # src.auth.auth_state, since that name is never a module-level
+        # attribute of auth_state.py. The local import re-resolves the
+        # module's current attribute at call time, so patching the origin
+        # before calling _browser_login() works correctly.
+        with patch("src.auth.browser_login.BrowserLoginManager") as MockManager:
             instance = MockManager.return_value
             instance.start = AsyncMock(return_value=6990)
             instance.wait_for_cookie = AsyncMock(
@@ -832,9 +841,10 @@ class TestBrowserLoginIntegration(unittest.IsolatedAsyncioTestCase):
 
     async def test_browser_login_stops_manager_even_on_failure(self):
         mock_twitch = MagicMock()
+        mock_twitch.gui.login.start_browser_login = AsyncMock()
         auth_state = _AuthState(mock_twitch)
 
-        with patch("src.auth.auth_state.BrowserLoginManager") as MockManager:
+        with patch("src.auth.browser_login.BrowserLoginManager") as MockManager:
             instance = MockManager.return_value
             instance.start = AsyncMock(return_value=6990)
             instance.wait_for_cookie = AsyncMock(side_effect=RuntimeError("timed out"))
@@ -1097,6 +1107,10 @@ class TestBrowserLoginEndpoints(unittest.TestCase):
         self.client = TestClient(app_module.app)
         app_module.gui_manager = MagicMock()
         app_module.gui_manager.login = MagicMock()
+        # The real endpoint awaits gui_manager.login.start_browser_login(...)
+        # -- a plain MagicMock call result isn't awaitable, so this specific
+        # attribute needs to be an AsyncMock.
+        app_module.gui_manager.login.start_browser_login = AsyncMock()
         self._manager_patcher = patch("src.web.app._browser_login_manager", None)
         self._manager_patcher.start()
         self.addCleanup(self._manager_patcher.stop)
