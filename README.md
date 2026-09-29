@@ -81,14 +81,33 @@ docker compose up -d
 
 ### 🧑‍💻 From Source (without Docker)
 
-Requires Python 3.12+.
+Requires Python 3.12+ **and**, because login now runs a real browser server-side
+(see [Login](#-notes--warnings)), a few system packages the Docker image would
+otherwise install for you:
+
+| Dependency | Why |
+| --- | --- |
+| `xvfb` | virtual X display the login browser runs inside |
+| `x11vnc` | exposes that display so the dashboard can show it |
+| `websockify` | bridges VNC to a WebSocket the browser's noVNC client speaks |
+| `procps` (`pgrep`) | used at startup to clean up leftover login processes |
+| Playwright's Chromium | the actual browser that performs the Twitch login |
 
 ```bash
+# Debian/Ubuntu — adjust for your distro
+sudo apt-get install -y xvfb x11vnc websockify procps
+
 pip install -e .
+playwright install --with-deps chromium
+
 python main.py
 ```
 
 Visit 👉 **<http://localhost:8080>**
+
+> 🔐 **Set a dashboard password before exposing this instance to a network.**
+> The login browser is driven live through the dashboard, so anyone who can
+> reach this port during a login attempt can interact with that browser.
 
 ---
 
@@ -335,7 +354,9 @@ See the [Original Project Credits](#original-project-credits) section for transl
 
 > 💡 **Requirements**
 > Python 3.12+
-> Docker optional but recommended
+> From source: also `xvfb`, `x11vnc`, `websockify`, `procps`, plus
+> `playwright install --with-deps chromium` (see [From Source](#-from-source-without-docker))
+> Docker optional but recommended — the image bundles all of the above
 > Persistent data stored in `/data`
 
 ---

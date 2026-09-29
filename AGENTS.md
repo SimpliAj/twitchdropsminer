@@ -307,7 +307,10 @@ The application requires:
 
 - Python 3.12+
 - Virtual environment at `env/` (must be activated before running commands)
-- Dependencies from `pyproject.toml` (includes FastAPI, uvicorn, Socket.IO)
+- Dependencies from `pyproject.toml` (includes FastAPI, uvicorn, Socket.IO, Playwright)
+- Playwright's Chromium: `playwright install --with-deps chromium`
+- System packages for the real-browser login: `xvfb`, `x11vnc`, `websockify`,
+  and `procps` (for `pgrep`, used by `sweep_orphaned_processes()` at startup)
 
 Docker deployment:
 
@@ -396,10 +399,12 @@ The application uses a web-based interface accessible via browser:
 
 **Dockerfile:**
 
-- Based on `python:3`
-- Installs dependencies from `pyproject.toml`
+- Based on `python:3.12-slim` (glibc — Chromium cannot run on Alpine's musl)
+- Installs system packages `tzdata xvfb x11vnc websockify procps` for the
+  real-browser login (`procps` provides `pgrep` for the startup orphan sweep)
+- Installs dependencies from `pyproject.toml`, then `playwright install --with-deps chromium`
 - Exposes port 8080
-- Health check on `/api/status`
+- Health check on `/healthz`
 
 **docker-compose.yml:**
 

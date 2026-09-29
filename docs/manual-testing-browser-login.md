@@ -14,14 +14,27 @@ src/web/app.py's browser-login routes, or web/static/app.js's login panel.
       2FA if your account has it), confirm the dashboard transitions to
       logged-in and campaigns load with full visibility (not the old
       SMARTBOX-degraded ~5-10 count).
+- [ ] **Panel appears for a dashboard opened late**: start the app with an
+      empty data dir and do NOT open the dashboard yet. Wait ~30s, then
+      open it for the first time. The browser-login panel must be there
+      (it comes from `/api/status`'s `browser_login_ready`, not only from
+      the live Socket.IO event).
 - [ ] **Cancel mid-login**: start a login, click "Cancel login" before
-      completing it. Confirm the panel closes, and check `ps aux` on the
-      host/container for any lingering `Xvfb`/`chromium`/`x11vnc`/
-      `websockify` process (there should be none within a few seconds).
+      completing it. Confirm the app keeps running, the dashboard reports
+      the cancellation and a fresh login browser is offered a few seconds
+      later, and check `ps aux` on the host/container for any lingering
+      `Xvfb`/`chromium`/`x11vnc`/`websockify` process from the cancelled
+      attempt (there should be none within a few seconds).
 - [ ] **Timeout with no user action**: start a login and leave it alone
       for the full timeout window (10 minutes). Confirm the dashboard
-      shows an error/timed-out state and the same zombie-process check
-      above stays clean.
+      shows a timed-out state, the process does NOT exit, a fresh login
+      browser is offered, and the same zombie-process check above stays
+      clean.
+- [ ] **Display slots are reused**: cancel/time out several logins in a
+      row in one container. Confirm `ls /tmp/.X9*-lock` does not
+      accumulate entries and that the 11th attempt still works (the old
+      behaviour burned one of 10 reserved display numbers per attempt and
+      then failed permanently).
 - [ ] **Network blip during an active noVNC session**: start a login,
       open the browser devtools Network tab, and manually throttle/kill
       the WebSocket connection (or briefly disable networking on the
@@ -35,7 +48,13 @@ src/web/app.py's browser-login routes, or web/static/app.js's login panel.
       "Cleaned up N orphaned browser-login process(es)" line (or confirm
       via `ps aux` that no Xvfb/x11vnc/websockify from the killed
       container survived).
-- [ ] **Two dashboard tabs, both trigger login**: open the dashboard in
-      two browser tabs while logged out, trigger login from both.
-      Confirm the second gets a clear "already in progress" error rather
-      than a second Chromium session.
+- [ ] **Two dashboard tabs open at once**: open the dashboard in two
+      browser tabs while logged out. Both must show the SAME live browser
+      session (there is only one login attempt system-wide, owned by the
+      auth flow -- there is no manual "start login" endpoint), and
+      completing the login in either tab must log both in.
+- [ ] **No handler leak on disconnect**: with a login in progress, close
+      and reopen the dashboard tab a dozen times over a minute. Confirm
+      the server's connection count to the local websockify port stays
+      at roughly one (`ss -tnp | grep 699` inside the container) rather
+      than growing with each reconnect.
