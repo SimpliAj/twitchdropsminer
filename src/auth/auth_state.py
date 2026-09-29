@@ -21,6 +21,10 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("TwitchDrops")
 
+# How long to wait before offering a fresh login browser after an attempt
+# timed out, was cancelled, or could not start at all (see _browser_login).
+BROWSER_LOGIN_RETRY_DELAY_SEC = 5.0
+
 
 class _AuthState:
     """
@@ -80,22 +84,70 @@ class _AuthState:
         (credentials, 2FA, CAPTCHA -- all handled live by the user, never by
         this app). Always tears the manager down afterward, success or not.
 
+        The manager is published as browser_login.get_active_manager() for
+        the lifetime of each attempt, because the web layer's WS proxy and
+        cancel routes have to act on the very same instance this method is
+        awaiting -- they used to own a second, unrelated one, which meant the
+        noVNC panel could never actually reach the browser being driven here.
+
+        Never lets a failed attempt escape: a timeout, an explicit cancel or
+        a missing system dependency all surface as dashboard status and are
+        retried with a fresh browser, rather than propagating out through
+        validate() -> client.run() into __main__'s fatal handler (which would
+        kill the whole process and leave the user with no way back in short
+        of restarting the container).
+
         Returns:
             str: The access token (from the captured auth-token cookie)
         """
-        from src.auth.browser_login import BrowserLoginManager
+        from src.auth import browser_login
+        from src.auth.browser_login import (
+            BrowserLoginCancelled,
+            BrowserLoginManager,
+            BrowserLoginTimeout,
+            BrowserLoginUnavailable,
+        )
 
         login_form: LoginForm = self._twitch.gui.login
-        manager = BrowserLoginManager()
-        try:
-            websocket_port = await manager.start()
-            await login_form.start_browser_login(websocket_port)
-            cookies = await manager.wait_for_cookie()
-            self.device_id = cookies["unique_id"] or self.device_id
-            self.access_token = cookies["auth-token"]
-            return self.access_token
-        finally:
-            await manager.stop()
+        while True:
+            manager = BrowserLoginManager()
+            browser_login.set_active_manager(manager)
+            try:
+                websocket_port = await manager.start()
+                await login_form.start_browser_login(websocket_port)
+                cookies = await manager.wait_for_cookie()
+                self.device_id = cookies["unique_id"] or self.device_id
+                self.access_token = cookies["auth-token"]
+                return self.access_token
+            except BrowserLoginTimeout:
+                logger.warning("Browser login timed out; a new session will be offered")
+                self._update_login_status(
+                    login_form, "timed_out", "Login timed out - starting a new login session..."
+                )
+            except BrowserLoginCancelled:
+                logger.info("Browser login cancelled; a new session will be offered")
+                self._update_login_status(
+                    login_form, "cancelled", "Login cancelled - starting a new login session..."
+                )
+            except BrowserLoginUnavailable as exc:
+                logger.error(f"Browser login unavailable: {exc}")
+                self._update_login_status(
+                    login_form,
+                    "unavailable",
+                    "Login browser could not start - check that Chromium, Xvfb, x11vnc "
+                    "and websockify are installed. Retrying...",
+                )
+            finally:
+                browser_login.set_active_manager(None)
+                await manager.stop()
+            await asyncio.sleep(BROWSER_LOGIN_RETRY_DELAY_SEC)
+
+    @staticmethod
+    def _update_login_status(login_form: LoginForm, key: str, fallback: str) -> None:
+        """Push a login status to the dashboard, tolerating language files
+        that predate the key (only English.json is guaranteed to carry every
+        one -- the translator does no English fallback merging)."""
+        login_form.update(_.t["login"]["status"].get(key, fallback), None)
 
     def headers(self, *, user_agent: str = "", gql: bool = False) -> JsonType:
         """

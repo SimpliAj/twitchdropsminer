@@ -24,8 +24,8 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import re
 import signal
-import socket
 import time
 from dataclasses import dataclass, field
 
@@ -50,6 +50,29 @@ DISPLAY_NUMBER_RANGE_START = 90
 DISPLAY_NUMBER_RANGE_SIZE = 10
 VNC_PORT_RANGE_START = 5990
 WEBSOCKIFY_PORT_RANGE_START = 6990
+
+
+# The single in-progress login attempt's manager, or None when no login is
+# running. There is at most one attempt system-wide at a time (_AuthState
+# serializes them behind its own lock around _browser_login()), and every
+# consumer -- the auth flow that drives it, the WS proxy route that streams
+# its screen, the cancel route that aborts it -- must see the SAME instance,
+# or the feature silently half-works. Set/cleared exclusively by
+# _AuthState._browser_login(); read via get_active_manager().
+_active_manager: BrowserLoginManager | None = None
+
+
+def get_active_manager() -> BrowserLoginManager | None:
+    """The currently in-progress login session's manager, if any. There is
+    at most one login attempt system-wide at a time (see _AuthState's own
+    lock around _browser_login())."""
+    return _active_manager
+
+
+def set_active_manager(manager: BrowserLoginManager | None) -> None:
+    """Publish (or clear) the one in-progress login attempt's manager."""
+    global _active_manager
+    _active_manager = manager
 
 
 class BrowserLoginTimeout(Exception):
@@ -94,6 +117,15 @@ class BrowserLoginManager:
     @property
     def in_progress(self) -> bool:
         return self._session is not None
+
+    @property
+    def websocket_port(self) -> int | None:
+        """The local websockify TCP port of the in-progress session, or None
+        if no session is active. Reading this instead of reaching into
+        ._session avoids a TOCTOU crash when stop() lands between an
+        in_progress check and the port read."""
+        session = self._session
+        return session.websocket_port if session is not None else None
 
     async def start(self) -> int:
         """Start a new login attempt: virtual display, real Chromium
@@ -250,6 +282,7 @@ class BrowserLoginManager:
             logger.warning(f"Error stopping browser login's playwright: {exc}")
         for proc in (session.websockify_process, session.x11vnc_process, session.xvfb_process):
             _terminate_process_group(proc)
+        _release_display_number(session.display_number)
         logger.info(f"Browser login session on display :{session.display_number} torn down")
 
 
@@ -262,6 +295,24 @@ def _find_free_display_number() -> int:
         if not os.path.exists(f"/tmp/.X{candidate}-lock"):
             return candidate
     raise BrowserLoginUnavailable("No free virtual display number in the reserved range")
+
+
+def _release_display_number(display_number: int) -> None:
+    """Remove the X lock file and socket for a display whose Xvfb is gone.
+
+    _terminate_process_group() SIGKILLs Xvfb, which therefore never gets to
+    clean up its own /tmp/.X<n>-lock, and /tmp survives container restarts --
+    so without this every attempt (successful, cancelled or timed out) would
+    permanently burn one of the DISPLAY_NUMBER_RANGE_SIZE reserved slots that
+    _find_free_display_number() picks from, eventually making login
+    impossible. Best-effort: never raises."""
+    for path in (f"/tmp/.X{display_number}-lock", f"/tmp/.X11-unix/X{display_number}"):
+        try:
+            os.unlink(path)
+        except FileNotFoundError:
+            pass
+        except OSError as exc:
+            logger.warning(f"Could not remove stale X file {path}: {exc}")
 
 
 async def _wait_for_display(display_number: int, timeout: float = 5.0) -> None:
@@ -310,30 +361,47 @@ async def sweep_orphaned_processes() -> int:
 
     Returns the number of processes killed.
     """
+    display_prefix = DISPLAY_NUMBER_RANGE_START // 10
     vnc_port_prefix = VNC_PORT_RANGE_START // 10
     websockify_port_prefix = WEBSOCKIFY_PORT_RANGE_START // 10
+    last_digit = DISPLAY_NUMBER_RANGE_SIZE - 1
     patterns = [
-        rf"Xvfb :(9[0-{DISPLAY_NUMBER_RANGE_SIZE - 1}])\b",
-        rf"x11vnc .*-rfbport {vnc_port_prefix}[0-{DISPLAY_NUMBER_RANGE_SIZE - 1}]\b",
-        rf"websockify {websockify_port_prefix}[0-{DISPLAY_NUMBER_RANGE_SIZE - 1}]\b",
+        rf"Xvfb :{display_prefix}[0-{last_digit}]\b",
+        rf"x11vnc .*-rfbport {vnc_port_prefix}[0-{last_digit}]\b",
+        # start() invokes websockify as
+        # `websockify 127.0.0.1:<ws port> 127.0.0.1:<vnc port>` (the
+        # loopback-only binding fix) -- a pattern expecting a bare port
+        # number as the first argument matches nothing at all.
+        rf"websockify 127\.0\.0\.1:{websockify_port_prefix}[0-{last_digit}]\b",
     ]
+    # Display numbers whose Xvfb we killed: their /tmp/.X<n>-lock outlives the
+    # SIGKILL and would otherwise keep _find_free_display_number() from ever
+    # reusing the slot (see _release_display_number).
+    swept_displays: set[int] = set()
     killed = 0
     for pattern in patterns:
         proc = await asyncio.create_subprocess_exec(
-            "pgrep", "-f", pattern,
+            # -a prints "<pid> <full command line>", so an Xvfb match also
+            # tells us which display number to free below.
+            "pgrep", "-af", pattern,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.DEVNULL,
         )
         stdout, _ = await proc.communicate()
         for line in stdout.decode().splitlines():
-            line = line.strip()
-            if not line.isdigit():
+            pid_text, _, cmdline = line.strip().partition(" ")
+            if not pid_text.isdigit():
                 continue
-            pid = int(line)
+            pid = int(pid_text)
             try:
                 os.kill(pid, signal.SIGKILL)
-                killed += 1
-                logger.info(f"Killed orphaned browser-login process pid {pid} (matched {pattern!r})")
             except ProcessLookupError:
-                pass
+                continue
+            killed += 1
+            logger.info(f"Killed orphaned browser-login process pid {pid} (matched {pattern!r})")
+            display_match = re.search(rf"Xvfb :({display_prefix}[0-{last_digit}])\b", cmdline)
+            if display_match is not None:
+                swept_displays.add(int(display_match.group(1)))
+    for display_number in swept_displays:
+        _release_display_number(display_number)
     return killed

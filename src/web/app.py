@@ -24,7 +24,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from src.auth.browser_login import BrowserLoginManager
+from src.auth import browser_login
 
 import os as _os
 _DATA_DIR = Path(_os.environ.get("TDM_DATA_DIR", str(Path(__file__).parent.parent.parent / "data")))
@@ -490,7 +490,6 @@ socket_app = socketio.ASGIApp(sio, app)
 gui_manager: WebGUIManager | None = None
 twitch_client: Twitch | None = None
 _server_instance: uvicorn.Server | None = None
-_browser_login_manager: BrowserLoginManager | None = None
 
 
 def set_managers(gui: WebGUIManager, twitch: Twitch):
@@ -1302,30 +1301,21 @@ async def get_wanted_items_http():
     return {"wanted_items": gui_manager.get_wanted_game_tree()}
 
 
-@app.post("/api/login/browser/start")
-async def start_browser_login():
-    """Start a real-browser Twitch login attempt."""
-    if not gui_manager:
-        raise HTTPException(status_code=503, detail="GUI not initialized")
-
-    global _browser_login_manager
-    if _browser_login_manager is not None and _browser_login_manager.in_progress:
-        raise HTTPException(status_code=409, detail="A login attempt is already in progress")
-
-    _browser_login_manager = BrowserLoginManager()
-    try:
-        websocket_port = await _browser_login_manager.start()
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Failed to start browser login: {exc}") from exc
-    await gui_manager.login.start_browser_login(websocket_port)
-    return {"success": True, "websocket_path": "/api/login/browser/ws"}
+# There is deliberately no POST /api/login/browser/start route. The one and
+# only owner of a login attempt is _AuthState._browser_login() (it is what
+# awaits the resulting cookie and feeds it back into the auth flow); it
+# publishes its manager via browser_login.set_active_manager(). A second
+# entry point here would start a Chromium session nobody polls a cookie for,
+# and used to leave this module holding a manager instance completely
+# unrelated to the one the auth flow was driving.
 
 
 @app.post("/api/login/browser/cancel")
 async def cancel_browser_login():
     """Cancel the in-progress real-browser login attempt, if any."""
-    if _browser_login_manager is not None:
-        _browser_login_manager.cancel()
+    manager = browser_login.get_active_manager()
+    if manager is not None:
+        manager.cancel()
     return {"success": True}
 
 
@@ -1370,12 +1360,16 @@ async def browser_login_websocket(websocket: WebSocket):
     if not _websocket_is_authenticated(websocket):
         await websocket.close(code=1008)
         return
-    if _browser_login_manager is None or not _browser_login_manager.in_progress:
+    # The auth flow (src/auth/auth_state.py's _browser_login) publishes the
+    # one manager it is driving here -- this route must never construct or
+    # consult its own.
+    manager = browser_login.get_active_manager()
+    port = manager.websocket_port if manager is not None else None
+    if port is None:
         await websocket.close(code=4404)
         return
 
     await websocket.accept()
-    port = _browser_login_manager._session.websocket_port  # type: ignore[union-attr]
     reader, writer = await asyncio.open_connection("localhost", port)
 
     async def pump_upstream():
@@ -1397,8 +1391,26 @@ async def browser_login_websocket(websocket: WebSocket):
         except Exception:
             pass
 
-    await asyncio.gather(pump_upstream(), pump_downstream(), return_exceptions=True)
-    writer.close()
+    # FIRST_COMPLETED, not gather: when the client goes away pump_upstream
+    # ends immediately, but pump_downstream stays parked in reader.read()
+    # forever -- x11vnc runs with -forever and sends nothing at all on a
+    # static screen, so a gather() here would hold the handler and its TCP
+    # connection to websockify open until the whole login session is torn
+    # down. The frontend's 2s reconnect loop would then stack up one such
+    # zombie per retry across the 10-minute login window.
+    tasks = [asyncio.create_task(pump_upstream()), asyncio.create_task(pump_downstream())]
+    try:
+        _done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+        for task in pending:
+            task.cancel()
+        if pending:
+            await asyncio.gather(*pending, return_exceptions=True)
+    finally:
+        writer.close()
+        try:
+            await writer.wait_closed()
+        except Exception:
+            pass
 
 
 @app.post("/api/reload")

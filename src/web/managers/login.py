@@ -48,8 +48,14 @@ class LoginFormManager:
         see src/web/app.py -- this port is only used server-side to proxy
         into it).
         """
-        self._browser_login_websocket_port = websocket_port
+        # update() clears _browser_login_websocket_port (every other status
+        # transition means the login panel is gone), so the port has to be
+        # set AFTER it -- otherwise get_status() never reports
+        # browser_login_ready and only a dashboard that happened to already
+        # be connected when the Socket.IO event fired would ever show the
+        # panel. On a fresh install nobody is connected yet at this point.
         self.update(_.t["login"]["status"]["required"], None)
+        self._browser_login_websocket_port = websocket_port
         await self._broadcaster.emit("browser_login_ready", {"websocket_path": "/api/login/browser/ws"})
 
     def get_status(self) -> dict[str, Any]:

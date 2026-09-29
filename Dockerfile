@@ -33,6 +33,9 @@ WORKDIR /app
 #   embedded noVNC viewer
 # - websockify: bridges x11vnc's raw VNC protocol to a WebSocket noVNC's
 #   JS client can consume directly
+# - procps: provides pgrep, which sweep_orphaned_processes() shells out to on
+#   every startup. Debian slim images do NOT ship it, and without it that
+#   sweep raises FileNotFoundError.
 # - Playwright's own --with-deps (below) pulls in Chromium's shared-library
 #   requirements; this base image change (alpine -> slim) is what makes
 #   that possible at all, since Chromium needs glibc and alpine ships musl
@@ -41,6 +44,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     xvfb \
     x11vnc \
     websockify \
+    procps \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy project metadata and install dependencies

@@ -17,7 +17,10 @@
       "logged_out": "Logged out",
       "logging_in": "Logging in...",
       "required": "Login required",
-      "waiting_auth": "Waiting for authentication..."
+      "waiting_auth": "Waiting for authentication...",
+      "timed_out": "Login timed out - starting a new login session...",
+      "cancelled": "Login cancelled - starting a new login session...",
+      "unavailable": "Login browser could not start - check that Chromium, Xvfb, x11vnc and websockify are installed. Retrying..."
     },
     "browser_login": {
       "instructions": "Log in to Twitch below. This is a real browser session running on the server -- your credentials never leave it.",
