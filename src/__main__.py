@@ -73,6 +73,14 @@ if __name__ == "__main__":
             f"Minimum refresh interval: {settings.minimum_refresh_interval_minutes} minutes"
         )
 
+        from src.auth.browser_login import sweep_orphaned_processes
+
+        killed = await sweep_orphaned_processes()
+        if killed:
+            logger.warning(
+                f"Cleaned up {killed} orphaned browser-login process(es) from a previous run"
+            )
+
         exit_status = 0
         client = Twitch(settings)
 
