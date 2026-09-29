@@ -1932,8 +1932,15 @@ function autoCleanWantedQueue() {
 }
 
 let browserLoginRfb = null;
+// Bumped every time the panel is closed or re-opened. A stale RFB's async
+// 'disconnect' event can land after a newer one has already been wired up
+// (the auth flow re-offers a fresh browser after a timeout/cancel, and a
+// socket reconnect re-delivers browser_login_ready), and without this the
+// old handler would schedule a reconnect on top of the live session.
+let browserLoginGeneration = 0;
 
 function closeBrowserLoginPanel() {
+    browserLoginGeneration++;
     document.getElementById('browser-login-panel').style.display = 'none';
     // Null out BEFORE disconnect() so the 'disconnect' event handler (see
     // connectBrowserLoginRfb) sees browserLoginRfb === null and does not
@@ -1947,15 +1954,25 @@ function closeBrowserLoginPanel() {
 }
 
 async function showBrowserLoginPanel(websocketPath) {
+    // Tear down any previous session's RFB first -- this is re-entered on a
+    // socket reconnect and after the auth flow retries a timed-out or
+    // cancelled login, and two live RFBs on one canvas is never right.
+    closeBrowserLoginPanel();
     document.getElementById('browser-login-panel').style.display = 'block';
     await connectBrowserLoginRfb(websocketPath);
 }
 
 async function connectBrowserLoginRfb(websocketPath) {
+    const generation = browserLoginGeneration;
     const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const url = `${proto}//${window.location.host}${websocketPath}`;
     const { default: RFB } = await import('/static/vendor/novnc/core/rfb.js');
     browserLoginRfb = new RFB(document.getElementById('browser-login-canvas-container'), url);
+    // The server-side display is 1280x800 (see BrowserLoginManager's Xvfb
+    // invocation) and noVNC defaults scaleViewport to false, which would
+    // render the framebuffer at full native size and blow the dashboard
+    // layout out on anything narrower -- phones especially.
+    browserLoginRfb.scaleViewport = true;
     // A network blip must not abandon the login -- reconnect to the same
     // websockify bridge (the server-side Chromium session is untouched by
     // a WebSocket drop) as long as the panel is still open. Only a real
@@ -1969,9 +1986,12 @@ async function connectBrowserLoginRfb(websocketPath) {
     // generic 'disconnect' -- there is no reliable distinguishable close
     // code to branch on, so we always just retry.
     browserLoginRfb.addEventListener('disconnect', () => {
-        if (browserLoginRfb === null) return;
+        if (browserLoginRfb === null || generation !== browserLoginGeneration) return;
         setTimeout(() => {
-            if (document.getElementById('browser-login-panel').style.display === 'block') {
+            if (
+                generation === browserLoginGeneration
+                && document.getElementById('browser-login-panel').style.display === 'block'
+            ) {
                 connectBrowserLoginRfb(websocketPath);
             }
         }, 2000);
