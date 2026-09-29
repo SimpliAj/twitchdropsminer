@@ -185,6 +185,17 @@ class BrowserLoginManager:
 
         try:
             context = await browser.new_context()
+            # Playwright's CDP automation flag makes navigator.webdriver
+            # true regardless of headless/headful, which is what actually
+            # triggers Twitch's "Your browser is not currently supported"
+            # banner on the real login form (confirmed live: with this,
+            # the same login page renders normally). This is cosmetic --
+            # it just presents as an ordinary Chromium tab to the page's
+            # own JS, the same as a real browser -- not a change to
+            # Twitch's server-side login flow itself.
+            await context.add_init_script(
+                "Object.defineProperty(navigator, 'webdriver', { get: () => undefined });"
+            )
             page = await context.new_page()
             await page.goto(LOGIN_URL, wait_until="domcontentloaded")
         except Exception as exc:
