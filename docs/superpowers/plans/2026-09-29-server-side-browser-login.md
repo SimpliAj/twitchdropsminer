@@ -549,27 +549,54 @@ class BrowserLoginManager:
             _terminate_process_group(xvfb_process)
             raise BrowserLoginUnavailable(f"Failed to launch Chromium: {exc}") from exc
 
-        context = await browser.new_context()
-        page = await context.new_page()
-        await page.goto(LOGIN_URL, wait_until="domcontentloaded")
+        try:
+            context = await browser.new_context()
+            page = await context.new_page()
+            await page.goto(LOGIN_URL, wait_until="domcontentloaded")
+        except Exception as exc:
+            await browser.close()
+            await playwright.stop()
+            _terminate_process_group(xvfb_process)
+            raise BrowserLoginUnavailable(f"Failed to navigate to Twitch login page: {exc}") from exc
 
+        # -localhost / binding the websockify source port to 127.0.0.1
+        # explicitly: without these, x11vnc's -nopw session (and the
+        # websocket bridge to it) would listen on EVERY interface, not
+        # just loopback -- anyone reaching this host's network at all
+        # could connect a VNC client directly to a password-less,
+        # in-progress Twitch login session, bypassing this app's own
+        # auth (the FastAPI /api/login/browser/ws route, Task 5)
+        # entirely. Both processes must stay loopback-only; only the
+        # app's own authenticated WebSocket route is allowed to reach
+        # them, by proxying over localhost itself.
         try:
             x11vnc_process = await _start_tagged_process(
                 [
                     "x11vnc",
                     "-display", f":{display_number}",
                     "-rfbport", str(vnc_port),
-                    "-nopw", "-forever", "-shared", "-quiet",
+                    "-localhost", "-nopw", "-forever", "-shared", "-quiet",
                 ]
-            )
-            websockify_process = await _start_tagged_process(
-                ["websockify", str(websocket_port), f"localhost:{vnc_port}"]
             )
         except Exception as exc:
             await browser.close()
             await playwright.stop()
             _terminate_process_group(xvfb_process)
-            raise BrowserLoginUnavailable(f"Failed to start VNC bridge: {exc}") from exc
+            raise BrowserLoginUnavailable(f"Failed to start x11vnc: {exc}") from exc
+
+        try:
+            websockify_process = await _start_tagged_process(
+                ["websockify", f"127.0.0.1:{websocket_port}", f"127.0.0.1:{vnc_port}"]
+            )
+        except Exception as exc:
+            # x11vnc already started successfully above -- must be killed
+            # too, or it leaks (detached via start_new_session=True in
+            # _start_tagged_process).
+            _terminate_process_group(x11vnc_process)
+            await browser.close()
+            await playwright.stop()
+            _terminate_process_group(xvfb_process)
+            raise BrowserLoginUnavailable(f"Failed to start websockify: {exc}") from exc
 
         self._session = _BrowserLoginSession(
             display_number=display_number,
@@ -699,10 +726,12 @@ async def sweep_orphaned_processes() -> int:
 
     Returns the number of processes killed.
     """
+    vnc_port_prefix = VNC_PORT_RANGE_START // 10
+    websockify_port_prefix = WEBSOCKIFY_PORT_RANGE_START // 10
     patterns = [
         rf"Xvfb :(9[0-{DISPLAY_NUMBER_RANGE_SIZE - 1}])\b",
-        rf"x11vnc .*-rfbport {VNC_PORT_RANGE_START}",
-        rf"websockify {WEBSOCKIFY_PORT_RANGE_START}",
+        rf"x11vnc .*-rfbport {vnc_port_prefix}[0-{DISPLAY_NUMBER_RANGE_SIZE - 1}]\b",
+        rf"websockify {websockify_port_prefix}[0-{DISPLAY_NUMBER_RANGE_SIZE - 1}]\b",
     ]
     killed = 0
     for pattern in patterns:
