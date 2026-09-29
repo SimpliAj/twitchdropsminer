@@ -29,10 +29,10 @@ WORKDIR /app
 # - tzdata: unchanged from before
 # - xvfb: virtual X display the real-browser login runs under (see
 #   src/auth/browser_login.py)
-# - x11vnc: exposes that virtual display over VNC for the dashboard's
-#   embedded noVNC viewer
-# - websockify: bridges x11vnc's raw VNC protocol to a WebSocket noVNC's
-#   JS client can consume directly
+# - x11vnc: exposes that virtual display over VNC; src/web/app.py's WS
+#   route proxies raw bytes between it and the dashboard's embedded noVNC
+#   JS client directly (no separate websockify process -- that route
+#   already does the WS<->raw-TCP framing job websockify would otherwise do)
 # - procps: provides pgrep, which sweep_orphaned_processes() shells out to on
 #   every startup. Debian slim images do NOT ship it, and without it that
 #   sweep raises FileNotFoundError.
@@ -43,7 +43,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tzdata \
     xvfb \
     x11vnc \
-    websockify \
     procps \
     && rm -rf /var/lib/apt/lists/*
 

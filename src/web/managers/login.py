@@ -43,8 +43,8 @@ class LoginFormManager:
 
     async def start_browser_login(self, websocket_port: int) -> None:
         """Tell connected dashboards a real-browser login session is ready
-        to be viewed/interacted with, at the given local websockify port
-        (the actual browser-facing WebSocket path is /api/login/browser/ws,
+        to be viewed/interacted with, at the given local x11vnc port (the
+        actual browser-facing WebSocket path is /api/login/browser/ws,
         see src/web/app.py -- this port is only used server-side to proxy
         into it).
         """

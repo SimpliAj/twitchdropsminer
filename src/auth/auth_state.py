@@ -134,8 +134,8 @@ class _AuthState:
                 self._update_login_status(
                     login_form,
                     "unavailable",
-                    "Login browser could not start - check that Chromium, Xvfb, x11vnc "
-                    "and websockify are installed. Retrying...",
+                    "Login browser could not start - check that Chromium, Xvfb and x11vnc "
+                    "are installed. Retrying...",
                 )
             finally:
                 browser_login.set_active_manager(None)

@@ -12,9 +12,14 @@ gets.
 
 This module owns exactly one login attempt's lifecycle at a time: launch a
 virtual X display (Xvfb), a real (non-headless) Chromium inside it via
-Playwright, an x11vnc server exposing that display, and a websockify
-bridge so a browser-based noVNC client can drive it interactively. The
-caller (src/auth/auth_state.py's _browser_login) awaits wait_for_cookie()
+Playwright, and an x11vnc server exposing that display so a browser-based
+noVNC client can drive it interactively. src/web/app.py's WS route speaks
+the noVNC/WebSocket side to the browser itself and relays raw bytes to/from
+x11vnc's plain VNC port directly -- no separate websockify process sits in
+between (websockify's own job, WS<->raw-TCP framing, is that route's job
+too; chaining a second one in front of x11vnc only added a redundant hop
+that expects its own WS handshake and drops a raw TCP client instantly).
+The caller (src/auth/auth_state.py's _browser_login) awaits wait_for_cookie()
 for the resulting session cookie, then always calls stop() regardless of
 outcome.
 """
@@ -49,7 +54,6 @@ CHROMIUM_LAUNCH_TIMEOUT_SEC = 30
 DISPLAY_NUMBER_RANGE_START = 90
 DISPLAY_NUMBER_RANGE_SIZE = 10
 VNC_PORT_RANGE_START = 5990
-WEBSOCKIFY_PORT_RANGE_START = 6990
 
 
 # The single in-progress login attempt's manager, or None when no login is
@@ -84,8 +88,8 @@ class BrowserLoginCancelled(Exception):
 
 
 class BrowserLoginUnavailable(Exception):
-    """Required system dependencies (Xvfb/Chromium/x11vnc/websockify) are
-    missing or failed to start."""
+    """Required system dependencies (Xvfb/Chromium/x11vnc) are missing or
+    failed to start."""
 
 
 @dataclass
@@ -99,7 +103,6 @@ class _BrowserLoginSession:
     context: BrowserContext
     xvfb_process: asyncio.subprocess.Process
     x11vnc_process: asyncio.subprocess.Process
-    websockify_process: asyncio.subprocess.Process
     cancelled: asyncio.Event = field(default_factory=asyncio.Event)
 
 
@@ -120,18 +123,21 @@ class BrowserLoginManager:
 
     @property
     def websocket_port(self) -> int | None:
-        """The local websockify TCP port of the in-progress session, or None
-        if no session is active. Reading this instead of reaching into
-        ._session avoids a TOCTOU crash when stop() lands between an
-        in_progress check and the port read."""
+        """x11vnc's local raw-VNC TCP port for the in-progress session, or
+        None if no session is active -- named for what src/web/app.py's WS
+        route does with it (proxies it to a noVNC WebSocket client), not
+        for the protocol spoken on the port itself, which is plain VNC.
+        Reading this instead of reaching into ._session avoids a TOCTOU
+        crash when stop() lands between an in_progress check and the port
+        read."""
         session = self._session
         return session.websocket_port if session is not None else None
 
     async def start(self) -> int:
         """Start a new login attempt: virtual display, real Chromium
-        navigated to the Twitch login page, VNC + websocket bridge.
+        navigated to the Twitch login page, VNC server.
 
-        Returns the local websockify TCP port the caller should proxy (see
+        Returns the local raw-VNC TCP port the caller should proxy (see
         src/web/app.py's WS /api/login/browser/ws) for a noVNC client.
 
         Raises RuntimeError if a session is already in progress, or
@@ -144,7 +150,6 @@ class BrowserLoginManager:
         display_number = _find_free_display_number()
         offset = display_number - DISPLAY_NUMBER_RANGE_START
         vnc_port = VNC_PORT_RANGE_START + offset
-        websocket_port = WEBSOCKIFY_PORT_RANGE_START + offset
 
         xvfb_process = await _start_tagged_process(
             ["Xvfb", f":{display_number}", "-screen", "0", "1280x800x24"]
@@ -203,29 +208,17 @@ class BrowserLoginManager:
             _terminate_process_group(xvfb_process)
             raise BrowserLoginUnavailable(f"Failed to start x11vnc: {exc}") from exc
 
-        try:
-            websockify_process = await _start_tagged_process(
-                ["websockify", f"127.0.0.1:{websocket_port}", f"127.0.0.1:{vnc_port}"]
-            )
-        except Exception as exc:
-            _terminate_process_group(x11vnc_process)
-            await browser.close()
-            await playwright.stop()
-            _terminate_process_group(xvfb_process)
-            raise BrowserLoginUnavailable(f"Failed to start websockify: {exc}") from exc
-
         self._session = _BrowserLoginSession(
             display_number=display_number,
-            websocket_port=websocket_port,
+            websocket_port=vnc_port,
             playwright=playwright,
             browser=browser,
             context=context,
             xvfb_process=xvfb_process,
             x11vnc_process=x11vnc_process,
-            websockify_process=websockify_process,
         )
-        logger.info(f"Browser login session started on display :{display_number}, ws port {websocket_port}")
-        return websocket_port
+        logger.info(f"Browser login session started on display :{display_number}, vnc port {vnc_port}")
+        return vnc_port
 
     async def wait_for_cookie(self, timeout: float = DEFAULT_TIMEOUT_SEC) -> dict[str, str]:
         """Poll the live browser context's cookies until a real auth-token
@@ -280,7 +273,7 @@ class BrowserLoginManager:
             await session.playwright.stop()
         except Exception as exc:
             logger.warning(f"Error stopping browser login's playwright: {exc}")
-        for proc in (session.websockify_process, session.x11vnc_process, session.xvfb_process):
+        for proc in (session.x11vnc_process, session.xvfb_process):
             _terminate_process_group(proc)
         _release_display_number(session.display_number)
         logger.info(f"Browser login session on display :{session.display_number} torn down")
@@ -354,25 +347,19 @@ def _terminate_process_group(proc: asyncio.subprocess.Process) -> None:
 
 
 async def sweep_orphaned_processes() -> int:
-    """Kill any Xvfb/x11vnc/websockify processes left over from a previous
-    run (crash or deploy mid-login), recognized by the reserved
-    display/port ranges this module always uses. Safe to call on every
-    app startup, including a clean one (finds nothing, returns 0).
+    """Kill any Xvfb/x11vnc processes left over from a previous run (crash
+    or deploy mid-login), recognized by the reserved display/port ranges
+    this module always uses. Safe to call on every app startup, including
+    a clean one (finds nothing, returns 0).
 
     Returns the number of processes killed.
     """
     display_prefix = DISPLAY_NUMBER_RANGE_START // 10
     vnc_port_prefix = VNC_PORT_RANGE_START // 10
-    websockify_port_prefix = WEBSOCKIFY_PORT_RANGE_START // 10
     last_digit = DISPLAY_NUMBER_RANGE_SIZE - 1
     patterns = [
         rf"Xvfb :{display_prefix}[0-{last_digit}]\b",
         rf"x11vnc .*-rfbport {vnc_port_prefix}[0-{last_digit}]\b",
-        # start() invokes websockify as
-        # `websockify 127.0.0.1:<ws port> 127.0.0.1:<vnc port>` (the
-        # loopback-only binding fix) -- a pattern expecting a bare port
-        # number as the first argument matches nothing at all.
-        rf"websockify 127\.0\.0\.1:{websockify_port_prefix}[0-{last_digit}]\b",
     ]
     # Display numbers whose Xvfb we killed: their /tmp/.X<n>-lock outlives the
     # SIGKILL and would otherwise keep _find_free_display_number() from ever

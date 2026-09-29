@@ -1343,8 +1343,8 @@ def _websocket_is_authenticated(websocket: WebSocket) -> bool:
 
 @app.websocket("/api/login/browser/ws")
 async def browser_login_websocket(websocket: WebSocket):
-    """Proxy raw bytes between the dashboard's noVNC client and the local
-    websockify bridge for the in-progress browser login session.
+    """Proxy raw bytes between the dashboard's noVNC client and the
+    in-progress browser login session's local x11vnc port.
 
     All checks below run BEFORE accept() -- Starlette's WebSocket.close()
     is valid pre-accept (it sends a "websocket.close" ASGI message while
@@ -1395,7 +1395,7 @@ async def browser_login_websocket(websocket: WebSocket):
     # ends immediately, but pump_downstream stays parked in reader.read()
     # forever -- x11vnc runs with -forever and sends nothing at all on a
     # static screen, so a gather() here would hold the handler and its TCP
-    # connection to websockify open until the whole login session is torn
+    # connection to x11vnc open until the whole login session is torn
     # down. The frontend's 2s reconnect loop would then stack up one such
     # zombie per retry across the 10-minute login window.
     tasks = [asyncio.create_task(pump_upstream()), asyncio.create_task(pump_downstream())]

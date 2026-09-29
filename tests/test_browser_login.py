@@ -171,7 +171,7 @@ class TestBrowserLoginManagerWaitForCookie(unittest.IsolatedAsyncioTestCase):
 class TestBrowserLoginManagerStop(unittest.IsolatedAsyncioTestCase):
     async def test_stop_terminates_all_processes_and_is_idempotent(self):
         manager = BrowserLoginManager()
-        procs = [_mock_process(), _mock_process(), _mock_process()]
+        procs = [_mock_process(), _mock_process()]
         proc_iter = iter(procs)
 
         with (
@@ -196,35 +196,31 @@ class TestBrowserLoginManagerStop(unittest.IsolatedAsyncioTestCase):
 
             await manager.stop()
             self.assertFalse(manager.in_progress)
-            self.assertEqual(mock_terminate.call_count, 3)
+            self.assertEqual(mock_terminate.call_count, 2)
             mock_browser.close.assert_awaited_once()
 
             # idempotent: calling again does nothing and doesn't raise
             await manager.stop()
-            self.assertEqual(mock_terminate.call_count, 3)
+            self.assertEqual(mock_terminate.call_count, 2)
 
 
 class TestSweepOrphanedProcesses(unittest.IsolatedAsyncioTestCase):
     """
     sweep_orphaned_processes() had no coverage at all, which is how a real
-    regression survived two review rounds: the websockify argv changed to
-    `websockify 127.0.0.1:<port> 127.0.0.1:<port>` (loopback-only binding)
-    while the sweep kept looking for a bare port number as the first
-    argument, so orphaned websockify processes were never swept again.
-
-    These command lines are exactly what BrowserLoginManager.start()
-    generates -- see its Xvfb/x11vnc/websockify argv lists.
+    regression survived two review rounds: the pattern for one tracked
+    process type changed while the sweep kept looking for the old form, so
+    that process type was never swept again. Pin the patterns against the
+    exact command lines BrowserLoginManager.start() generates -- see its
+    Xvfb/x11vnc argv lists -- so a similar drift fails a test immediately.
     """
 
     OURS = {
         4001: "Xvfb :90 -screen 0 1280x800x24",
         4002: "x11vnc -display :90 -rfbport 5990 -localhost -nopw -forever -shared -quiet",
-        4003: "websockify 127.0.0.1:6990 127.0.0.1:5990",
     }
     NOT_OURS = {
         5001: "Xvfb :0 -screen 0 1920x1080x24",
         5002: "x11vnc -display :0 -rfbport 5900 -localhost",
-        5003: "websockify 127.0.0.1:8080 127.0.0.1:5900",
         5004: "/usr/bin/python3 main.py",
     }
 
@@ -259,9 +255,6 @@ class TestSweepOrphanedProcesses(unittest.IsolatedAsyncioTestCase):
         killed_pids = {call.args[0] for call in mock_kill.call_args_list}
         self.assertEqual(killed_pids, set(self.OURS))
         self.assertEqual(killed, len(self.OURS))
-        # The websockify orphan in particular: the pre-fix pattern
-        # (`websockify 699[0-9]`) matched none of these command lines.
-        self.assertIn(4003, killed_pids)
         # SIGKILL leaves /tmp/.X90-lock behind, which would otherwise burn
         # that display slot permanently.
         mock_release.assert_called_once_with(90)

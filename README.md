@@ -69,7 +69,7 @@ Visit 👉 **<http://localhost:8080>**
 Images are built automatically for `linux/amd64` and `linux/arm64` on every release.
 Also available on GHCR: `ghcr.io/simpliaj/twitchdropsminer:latest`
 
-> ℹ️ **Image size** — the image is noticeably larger than before: it now bundles Playwright's Chromium plus Xvfb/x11vnc/websockify to run the real-browser login server-side, and the base image moved from `python:3-alpine` to `python:3-slim` (Chromium needs glibc, which Alpine's musl doesn't provide).
+> ℹ️ **Image size** — the image is noticeably larger than before: it now bundles Playwright's Chromium plus Xvfb/x11vnc to run the real-browser login server-side, and the base image moved from `python:3-alpine` to `python:3-slim` (Chromium needs glibc, which Alpine's musl doesn't provide).
 
 ### 🔨 Build from Source with Docker
 
@@ -88,14 +88,13 @@ otherwise install for you:
 | Dependency | Why |
 | --- | --- |
 | `xvfb` | virtual X display the login browser runs inside |
-| `x11vnc` | exposes that display so the dashboard can show it |
-| `websockify` | bridges VNC to a WebSocket the browser's noVNC client speaks |
+| `x11vnc` | exposes that display; the dashboard's noVNC client is bridged to it directly by the app itself |
 | `procps` (`pgrep`) | used at startup to clean up leftover login processes |
 | Playwright's Chromium | the actual browser that performs the Twitch login |
 
 ```bash
 # Debian/Ubuntu — adjust for your distro
-sudo apt-get install -y xvfb x11vnc websockify procps
+sudo apt-get install -y xvfb x11vnc procps
 
 pip install -e .
 playwright install --with-deps chromium
@@ -354,7 +353,7 @@ See the [Original Project Credits](#original-project-credits) section for transl
 
 > 💡 **Requirements**
 > Python 3.12+
-> From source: also `xvfb`, `x11vnc`, `websockify`, `procps`, plus
+> From source: also `xvfb`, `x11vnc`, `procps`, plus
 > `playwright install --with-deps chromium` (see [From Source](#-from-source-without-docker))
 > Docker optional but recommended — the image bundles all of the above
 > Persistent data stored in `/data`

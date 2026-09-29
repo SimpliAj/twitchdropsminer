@@ -23,7 +23,7 @@ src/web/app.py's browser-login routes, or web/static/app.js's login panel.
       completing it. Confirm the app keeps running, the dashboard reports
       the cancellation and a fresh login browser is offered a few seconds
       later, and check `ps aux` on the host/container for any lingering
-      `Xvfb`/`chromium`/`x11vnc`/`websockify` process from the cancelled
+      `Xvfb`/`chromium`/`x11vnc` process from the cancelled
       attempt (there should be none within a few seconds).
 - [ ] **Timeout with no user action**: start a login and leave it alone
       for the full timeout window (10 minutes). Confirm the dashboard
@@ -46,7 +46,7 @@ src/web/app.py's browser-login routes, or web/static/app.js's login panel.
       the container (`docker kill`, not a graceful stop) mid-login.
       Restart it and check the startup log for a
       "Cleaned up N orphaned browser-login process(es)" line (or confirm
-      via `ps aux` that no Xvfb/x11vnc/websockify from the killed
+      via `ps aux` that no Xvfb/x11vnc from the killed
       container survived).
 - [ ] **Two dashboard tabs open at once**: open the dashboard in two
       browser tabs while logged out. Both must show the SAME live browser
@@ -55,6 +55,6 @@ src/web/app.py's browser-login routes, or web/static/app.js's login panel.
       completing the login in either tab must log both in.
 - [ ] **No handler leak on disconnect**: with a login in progress, close
       and reopen the dashboard tab a dozen times over a minute. Confirm
-      the server's connection count to the local websockify port stays
-      at roughly one (`ss -tnp | grep 699` inside the container) rather
+      the server's connection count to the local x11vnc port stays
+      at roughly one (`ss -tnp | grep 599` inside the container) rather
       than growing with each reconnect.
