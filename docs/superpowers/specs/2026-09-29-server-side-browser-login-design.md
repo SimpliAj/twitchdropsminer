@@ -114,11 +114,33 @@ login panel component that mounts the `RFB` client against the WebSocket
 URL from `/api/login/browser/start`, with a visible Cancel button and
 status line.
 
-Dockerfile / `pyproject.toml`: add `playwright` (Python) as a dependency
-plus `playwright install chromium --with-deps` in the image build step;
-add `xvfb`, `x11vnc`, and `websockify` (or `novnc`'s bundled websockify)
-as system packages. Expect a meaningfully larger image — document this in
-the README's Docker section per AGENTS.md's "update README" rule.
+Dockerfile / `pyproject.toml`: the current `Dockerfile` base is
+`python:3-alpine` (musl libc) — Playwright's bundled Chromium needs glibc
+and cannot run there at all (already documented in `pyproject.toml`'s
+comment on the existing optional Playwright dependency used by
+`src/services/campaign_discovery.py`). Base image changes to
+`python:3-slim` (Debian, glibc). Add `playwright` (Python) as a base
+(non-optional) dependency plus `playwright install chromium --with-deps`
+in the image build step; add `xvfb`, `x11vnc`, and `websockify` (or
+`novnc`'s bundled websockify) as system packages via `apt-get` (replacing
+the current `apk add`). Expect a meaningfully larger image — document
+this in the README's Docker section per AGENTS.md's "update README" rule.
+
+Feasibility spike (2026-09-29, run on this project's own Hetzner VPS
+host, same hosting class as `campaign_discovery.py`'s "VPS #1" that
+previously hung): headful Playwright Chromium under Xvfb launched in
+0.5s and loaded `https://www.twitch.tv/login` in 0.6s (HTTP 200, real
+login form rendered, no CAPTCHA/integrity block). This does not reproduce
+`campaign_discovery.py`'s documented VPS failure modes (Chromium hanging
+before opening its CDP port; Twitch's `/integrity` endpoint 429ing
+datacenter IPs) — that module's integrity check is a stricter,
+separate gate tied to the drops-dashboard GQL query specifically, not
+the plain login page this design depends on. Still genuinely possible
+some hosts behave like `campaign_discovery.py`'s "VPS #1" (hung
+Chromium) — Task 1 of the implementation plan includes an explicit,
+scriptable version of this same check so a deploy can self-diagnose
+that specific failure mode with a clear error rather than hanging
+silently.
 
 ## Data flow
 
