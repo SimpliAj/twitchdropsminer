@@ -55,7 +55,10 @@ services:
     volumes:
       - ./data:/app/data
     environment:
-      - TZ=Europe/Vienna           # Set your timezone
+      - TZ=Europe/Vienna           # Set this to where you actually are -- the real-browser
+                                    # login uses it, and a mismatch (e.g. a VPS defaulting to
+                                    # UTC) gets the login page rejected by Twitch as "not
+                                    # currently supported"
       - WEB_PASSWORD=yourpassword  # Optional: lock the dashboard
     restart: always
 ```
@@ -357,6 +360,15 @@ See the [Original Project Credits](#original-project-credits) section for transl
 > `playwright install --with-deps chromium` (see [From Source](#-from-source-without-docker))
 > Docker optional but recommended — the image bundles all of the above
 > Persistent data stored in `/data`
+
+> ⚠️ **Twitch login shows "Your browser is not currently supported"**
+> Set `TZ` to your real timezone (see the Docker examples above) and restart. A VPS/container
+> defaulting to UTC with no `TZ` set is the most common cause -- Twitch's login page rejects
+> the mismatch between the browser's reported timezone and the account's usual one. If it's
+> still happening after setting `TZ` correctly, Twitch's own bot/integrity check may be
+> temporarily flagging that IP (common on datacenter/VPS IP ranges); use the "paste your
+> session" fallback in the login panel instead -- log in on your own device normally and
+> paste the resulting `auth-token`/`unique_id` cookies there.
 
 ---
 

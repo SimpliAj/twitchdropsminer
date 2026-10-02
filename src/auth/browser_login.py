@@ -184,7 +184,18 @@ class BrowserLoginManager:
             raise BrowserLoginUnavailable(f"Failed to launch Chromium: {exc}") from exc
 
         try:
-            context = await browser.new_context()
+            # A container/VPS defaults to UTC (or whatever the host happens
+            # to run), which mismatches the real timezone of wherever the
+            # account normally logs in from -- rangermix's team hit this
+            # exact "Your browser is not currently supported" rejection
+            # with their own containerized Twitch login and documented TZ
+            # as the fix (github.com/rangermix/TwitchDropsMiner issue
+            # #148). Reuse the same TZ env var Docker users already set
+            # for the whole container for this reason, passed through
+            # Playwright's own timezone_id (reliably changes what the
+            # page's JS sees, unlike hoping Chromium's ICU/V8 picks up an
+            # OS-level TZ change on a running process).
+            context = await browser.new_context(timezone_id=os.environ.get("TZ") or None)
             # Playwright's CDP automation flag makes navigator.webdriver
             # true regardless of headless/headful, which is what actually
             # triggers Twitch's "Your browser is not currently supported"
