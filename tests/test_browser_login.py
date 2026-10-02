@@ -221,7 +221,9 @@ class TestBrowserLoginManagerStop(unittest.IsolatedAsyncioTestCase):
                 new=AsyncMock(side_effect=lambda argv: next(proc_iter)),
             ),
             patch("src.auth.browser_login._wait_for_display", new=AsyncMock()),
-            patch("src.auth.browser_login._terminate_process_group") as mock_terminate,
+            patch(
+                "src.auth.browser_login._terminate_process_group_gracefully", new=AsyncMock()
+            ) as mock_terminate,
             patch("src.auth.browser_login._release_display_number"),
         ):
             mock_context = AsyncMock()
@@ -286,9 +288,18 @@ class TestSweepOrphanedProcesses(unittest.IsolatedAsyncioTestCase):
 
     async def test_kills_our_own_orphans_and_frees_their_display_slot(self):
         table = {**self.OURS, **self.NOT_OURS}
+
+        def kill_side_effect(pid, sig):
+            # The SIGTERM itself succeeds; the liveness check (signal 0)
+            # that follows finds the process already gone -- same as a
+            # real orphan actually dying, and keeps this test from
+            # burning the real grace-period sleep waiting it out.
+            if sig == 0:
+                raise ProcessLookupError()
+
         with (
             patch("asyncio.create_subprocess_exec", new=self._fake_pgrep(table)),
-            patch("src.auth.browser_login.os.kill") as mock_kill,
+            patch("src.auth.browser_login.os.kill", side_effect=kill_side_effect) as mock_kill,
             patch("src.auth.browser_login._release_display_number") as mock_release,
         ):
             killed = await sweep_orphaned_processes()

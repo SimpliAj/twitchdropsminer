@@ -316,8 +316,13 @@ class BrowserLoginManager:
             await session.playwright.stop()
         except Exception as exc:
             logger.warning(f"Error stopping browser login's playwright: {exc}")
+        # Graceful (SIGTERM, brief grace period) before SIGKILL -- x11vnc
+        # needs the chance to release its SysV shm segment on exit, see
+        # _terminate_process_group_gracefully's docstring. Xvfb torn down
+        # the same way for consistency, though it isn't the one observed
+        # leaking.
         for proc in (session.x11vnc_process, session.xvfb_process):
-            _terminate_process_group(proc)
+            await _terminate_process_group_gracefully(proc)
         _release_display_number(session.display_number)
         logger.info(f"Browser login session on display :{session.display_number} torn down")
 
@@ -389,6 +394,38 @@ def _terminate_process_group(proc: asyncio.subprocess.Process) -> None:
         logger.warning(f"Error terminating process group for pid {proc.pid}: {exc}")
 
 
+async def _terminate_process_group_gracefully(
+    proc: asyncio.subprocess.Process, grace_sec: float = 2.0
+) -> None:
+    """Like _terminate_process_group, but SIGTERM first with a short grace
+    period before SIGKILL. x11vnc (and Xvfb) own SysV shared-memory
+    segments (the X MIT-SHM extension) that only get released by their own
+    exit-time cleanup -- unlike regular memory/fds, the kernel does NOT
+    reclaim these on SIGKILL, so a hard kill leaks one segment per
+    session, invisibly, until the system-wide shmmni cap (often 4096) is
+    hit and EVERY future x11vnc start fails with 'shmget: No space left on
+    device' (reproduced live: after enough restarts tonight, this is
+    exactly what silently broke the next login attempt). Best-effort --
+    never raises."""
+    if proc.returncode is not None:
+        return
+    try:
+        pgid = os.getpgid(proc.pid)
+    except ProcessLookupError:
+        return
+    try:
+        os.killpg(pgid, signal.SIGTERM)
+        await asyncio.wait_for(proc.wait(), timeout=grace_sec)
+        return
+    except asyncio.TimeoutError:
+        pass
+    except (ProcessLookupError, PermissionError):
+        return
+    except Exception as exc:
+        logger.warning(f"Error sending SIGTERM to process group for pid {proc.pid}: {exc}")
+    _terminate_process_group(proc)
+
+
 async def sweep_orphaned_processes() -> int:
     """Kill any Xvfb/x11vnc processes left over from a previous run (crash
     or deploy mid-login), recognized by the reserved display/port ranges
@@ -424,7 +461,20 @@ async def sweep_orphaned_processes() -> int:
                 continue
             pid = int(pid_text)
             try:
-                os.kill(pid, signal.SIGKILL)
+                # SIGTERM first, same reasoning as
+                # _terminate_process_group_gracefully: x11vnc needs the
+                # chance to release its SysV shm segment on exit, or it
+                # leaks until the system-wide shmmni cap is hit and every
+                # future x11vnc start fails outright.
+                os.kill(pid, signal.SIGTERM)
+                for _ in range(10):
+                    await asyncio.sleep(0.2)
+                    try:
+                        os.kill(pid, 0)
+                    except ProcessLookupError:
+                        break
+                else:
+                    os.kill(pid, signal.SIGKILL)
             except ProcessLookupError:
                 continue
             killed += 1
