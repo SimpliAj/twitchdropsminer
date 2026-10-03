@@ -50,6 +50,9 @@ services:
   twitch-drops-miner:
     image: gitsimpliaj/twitch-drops-miner:latest
     container_name: twitch-drops-miner
+    init: true              # proper PID 1 for the Xvfb/x11vnc/Chromium subprocess tree
+    stop_grace_period: 30s  # let it shut down cleanly instead of SIGKILLing too early
+    shm_size: 256m          # avoids an unrelated Chromium "Aw, Snap!" crash
     ports:
       - "8080:8080"
     volumes:
@@ -147,6 +150,9 @@ Run unlimited fully independent miner processes at once — each with its own po
 services:
   tdm-account1:
     build: .
+    init: true
+    stop_grace_period: 30s
+    shm_size: 256m
     ports:
       - "8080:8080"
     volumes:
@@ -161,6 +167,9 @@ services:
 
   tdm-account2:
     build: .
+    init: true
+    stop_grace_period: 30s
+    shm_size: 256m
     ports:
       - "8082:8082"
     volumes:

@@ -3,6 +3,17 @@ services:
     build: .
     container_name: twitch-drops-miner
     image: twitch-drops-miner:latest
+    # init: proper PID 1 (signal forwarding/zombie reaping) for the
+    # Xvfb/x11vnc/Chromium subprocess tree the real-browser login spawns.
+    # stop_grace_period: give it real time to shut down cleanly -- x11vnc
+    # is terminated gracefully (SIGTERM first) specifically so it can
+    # release its shared-memory segment; a too-short default timeout
+    # defeats that and leaks it anyway (see README's troubleshooting).
+    # shm_size: Docker's default /dev/shm (64MB) is often too small for
+    # Chromium and causes an unrelated "Aw, Snap!" renderer crash.
+    init: true
+    stop_grace_period: 30s
+    shm_size: 256m
     ports:
       - "8080:8080"
     volumes:
@@ -10,6 +21,8 @@ services:
       - ./data:/app/data
       - ./logs:/app/logs
     environment:
-      # Set timezone (optional, defaults to UTC)
+      # Set to your real timezone -- the real-browser login uses it, and a
+      # mismatch (e.g. the UTC default) gets the login page rejected by
+      # Twitch as "not currently supported"
       - TZ=Australia/Sydney
     restart: unless-stopped
