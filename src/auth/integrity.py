@@ -24,6 +24,7 @@ shared 2026-09-26.
 from __future__ import annotations
 
 import asyncio
+import glob
 import logging
 import os
 import shutil
@@ -54,7 +55,21 @@ FAILURE_COOLDOWN = timedelta(minutes=5)
 
 
 def chromium_path() -> str:
-    return os.environ.get("TDM_CHROMIUM_PATH", "/usr/bin/chromium")
+    explicit = os.environ.get("TDM_CHROMIUM_PATH")
+    if explicit:
+        return explicit
+    # Reuse Playwright's own bundled Chromium -- already installed for the
+    # real-browser login (see src/auth/browser_login.py) -- instead of
+    # requiring a second, separate ~280MB system Chromium package. Globbed
+    # rather than hardcoded since the versioned cache directory name
+    # (chromium-<build>) changes on every Playwright browser update;
+    # sorted so a host with more than one cached version picks the newest.
+    candidates = sorted(
+        glob.glob(os.path.expanduser("~/.cache/ms-playwright/chromium-*/chrome-linux64/chrome"))
+    )
+    if candidates:
+        return candidates[-1]
+    return "/usr/bin/chromium"
 
 
 def headless() -> bool:

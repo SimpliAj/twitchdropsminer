@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, cast
 
 import aiohttp
@@ -46,6 +47,12 @@ class _AuthState:
         self.session_id: str
         self.access_token: str
         self.client_version: str
+        # Client-Integrity token cache (see _ensure_integrity_token) -- these
+        # three, unlike the attrs above, always exist (never deleted), since
+        # they track a renewable cache rather than "are we logged in".
+        self._integrity_token: str | None = None
+        self._integrity_expires_at: datetime | None = None
+        self._integrity_failed_until: datetime | None = None
 
     def _hasattrs(self, *attrs: str) -> bool:
         """Check if all specified attributes exist."""
@@ -187,6 +194,15 @@ class _AuthState:
             # there is no separate login-client identity to reconcile headers
             # against anymore.
             headers["Authorization"] = f"OAuth {self.access_token}"
+            # See _ensure_integrity_token: ClientType.WEB's dropCampaigns
+            # query is rejected outright without this. Omitted (not a hard
+            # requirement here) when acquisition hasn't succeeded yet or is
+            # in its failure cooldown -- the request still goes out and
+            # fails the same "failed integrity check" way it always did
+            # without this, not worse, and self-heals once a token is
+            # acquired.
+            if self._integrity_token is not None:
+                headers["Client-Integrity"] = self._integrity_token
         return headers
 
     async def validate(self):
@@ -279,6 +295,47 @@ class _AuthState:
             jar.update_cookies(cookie, client_info.CLIENT_URL)
             jar.save(COOKIES_PATH)
         self._logged_in.set()
+        await self._ensure_integrity_token()
+
+    async def _ensure_integrity_token(self) -> None:
+        """Keep a Client-Integrity token cached and fresh for headers().
+
+        ClientType.WEB -- the real browser session's own identity, used for
+        every GQL request since _browser_login() replaced device-code login
+        -- gets hard-rejected with "failed integrity check" on dropCampaigns
+        specifically, unlike the SMARTBOX identity used before it (see
+        src/services/campaign_discovery.py's docstring, written before this
+        switch). A token only a real browser's JS challenge can produce is
+        the actual fix; src/auth/integrity.py already implements acquiring
+        one (ported from upstream), it just was never called anywhere.
+
+        Best-effort and silent on failure (matching integrity.py's own
+        documented "never raise" philosophy, and because this runs on every
+        validate() call, including ones with nothing to do): GQL requests
+        proceed without the header if acquisition fails, which still fails
+        dropCampaigns the same way it did before this existed -- no worse
+        than before, and self-heals once acquisition starts succeeding.
+        """
+        if not self._hasattrs("access_token", "device_id"):
+            return
+        from src.auth import integrity
+
+        now = datetime.now(timezone.utc)
+        if self._integrity_token is not None and self._integrity_expires_at is not None:
+            if now < self._integrity_expires_at - integrity.RENEW_MARGIN:
+                return  # still fresh
+        if self._integrity_failed_until is not None and now < self._integrity_failed_until:
+            return  # don't hammer a failing acquisition every single GQL request
+        logger.info(
+            "Acquiring a Client-Integrity token (drives a real headful Chromium, "
+            f"can take up to {int(integrity.SUBPROCESS_TIMEOUT)}s)..."
+        )
+        result = await integrity.acquire(self.access_token, self.device_id)
+        if result is None:
+            self._integrity_failed_until = now + integrity.FAILURE_COOLDOWN
+            return
+        self._integrity_token, self._integrity_expires_at = result
+        self._integrity_failed_until = None
 
     def invalidate(self):
         """Invalidate the current access token."""
