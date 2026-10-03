@@ -1491,6 +1491,25 @@ async def trigger_restart():
     return {"success": True}
 
 
+@app.post("/api/auth/logout-twitch")
+async def logout_twitch():
+    """Forget the saved Twitch session and restart for a fresh login. Only
+    removes the Twitch cookie jar -- the dashboard password, settings, and
+    drop history are untouched. Same mechanism /api/accounts/add already
+    relies on for a fresh account (no cookies.jar -> _AuthState._validate()
+    naturally falls through to _browser_login() on the next start)."""
+    from src.config import COOKIES_PATH
+
+    COOKIES_PATH.unlink(missing_ok=True)
+
+    async def _restart():
+        await asyncio.sleep(1)
+        _restart_self()
+
+    asyncio.create_task(_restart())
+    return {"success": True}
+
+
 @app.post("/api/self-update")
 async def self_update():
     """Pull latest code from GitHub and restart — detects Docker vs PM2"""

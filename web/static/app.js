@@ -3764,6 +3764,12 @@ function applyTranslations(t) {
         if (systemSessionDesc) systemSessionDesc.textContent = sys.session_desc;
         const systemLogoutBtn = document.getElementById('system-logout-btn');
         if (systemLogoutBtn) systemLogoutBtn.textContent = sys.logout_btn;
+        const systemTwitchLogoutHeader = document.getElementById('system-twitch-logout-header');
+        if (systemTwitchLogoutHeader) systemTwitchLogoutHeader.textContent = sys.twitch_logout_header;
+        const systemTwitchLogoutDesc = document.getElementById('system-twitch-logout-desc');
+        if (systemTwitchLogoutDesc) systemTwitchLogoutDesc.textContent = sys.twitch_logout_desc;
+        const systemTwitchLogoutBtn = document.getElementById('system-twitch-logout-btn');
+        if (systemTwitchLogoutBtn) systemTwitchLogoutBtn.textContent = sys.twitch_logout_btn;
     }
 
     // Update Analytics tab
@@ -4840,6 +4846,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('system-logout-btn')?.addEventListener('click', () => {
         window.location.href = '/__auth_logout';
+    });
+
+    document.getElementById('system-twitch-logout-btn')?.addEventListener('click', async () => {
+        const t = state.translations;
+        const sys = t.gui?.system || {};
+        const status = document.getElementById('system-status');
+        if (!confirm(sys.twitch_logout_confirm || 'Log out of Twitch? The miner will restart and ask you to log in again.')) return;
+        try {
+            await fetch(API_BASE + '/api/auth/logout-twitch', { method: 'POST' });
+            if (status) {
+                status.textContent = sys.twitch_logout_ok || 'Twitch session cleared — restarting for a fresh login...';
+                status.className = 'system-status success';
+            }
+        } catch (e) {
+            if (status) { status.textContent = 'Error: ' + e.message; status.className = 'system-status error'; }
+        }
     });
 
     document.getElementById('download-logs-btn')?.addEventListener('click', () => {

@@ -345,7 +345,12 @@
       "logout_btn": "Logout",
       "reload_ok": "Campaigns reload triggered.",
       "restart_confirm": "Restart the miner? PM2 will restart it automatically.",
-      "restart_ok": "Miner stopping — will restart via PM2 in a few seconds."
+      "restart_ok": "Miner stopping — will restart via PM2 in a few seconds.",
+      "twitch_logout_header": "Twitch Account",
+      "twitch_logout_desc": "Forget the saved Twitch session and start a fresh login (noVNC browser or paste-your-session). Your dashboard password and other settings are kept.",
+      "twitch_logout_btn": "Log out of Twitch",
+      "twitch_logout_confirm": "Log out of Twitch? The miner will restart and ask you to log in again.",
+      "twitch_logout_ok": "Twitch session cleared — restarting for a fresh login..."
     },
     "analytics": {
       "stats_header": "Drop Statistics",
