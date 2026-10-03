@@ -11,6 +11,7 @@ from src.auth.browser_login import (
     COOKIE_POLL_INTERVAL_SEC,
     DISPLAY_NUMBER_RANGE_START,
     _detect_real_display,
+    _resolve_timezone_id,
     sweep_orphaned_processes,
 )
 
@@ -162,6 +163,38 @@ class TestDetectRealDisplay(unittest.TestCase):
             patch("src.auth.browser_login.os.path.exists", return_value=True),
         ):
             self.assertEqual(_detect_real_display(), 0)
+
+
+class TestResolveTimezoneId(unittest.TestCase):
+    """
+    A malformed TZ env var reported live as a PERMANENT lockout: Playwright
+    rejects an invalid timezone_id at new_page() time, and since the env
+    var never changes between retries, every single attempt failed with
+    the identical error forever (reported as literal braces in the value,
+    "{Europe/Berlin}" -- a mangled deployment config, not something this
+    app wrote). _resolve_timezone_id must degrade to "no override" instead
+    of ever feeding Playwright something it will always reject.
+    """
+
+    def test_none_when_unset(self):
+        with patch.dict("os.environ", {}, clear=True):
+            self.assertIsNone(_resolve_timezone_id())
+
+    def test_none_when_empty_or_whitespace(self):
+        with patch.dict("os.environ", {"TZ": "   "}, clear=True):
+            self.assertIsNone(_resolve_timezone_id())
+
+    def test_valid_iana_zone_passes_through(self):
+        with patch.dict("os.environ", {"TZ": "Europe/Berlin"}, clear=True):
+            self.assertEqual(_resolve_timezone_id(), "Europe/Berlin")
+
+    def test_none_for_a_mangled_value_with_stray_braces(self):
+        with patch.dict("os.environ", {"TZ": "{Europe/Berlin}"}, clear=True):
+            self.assertIsNone(_resolve_timezone_id())
+
+    def test_none_for_garbage_that_is_not_a_zone_at_all(self):
+        with patch.dict("os.environ", {"TZ": "not-a-real-timezone"}, clear=True):
+            self.assertIsNone(_resolve_timezone_id())
 
 
 class TestBrowserLoginManagerWaitForCookie(unittest.IsolatedAsyncioTestCase):

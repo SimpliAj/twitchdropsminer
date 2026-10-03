@@ -32,6 +32,7 @@ import os
 import re
 import signal
 import time
+import zoneinfo
 from dataclasses import dataclass, field
 
 from playwright.async_api import Browser, BrowserContext, Playwright, async_playwright
@@ -231,7 +232,11 @@ class BrowserLoginManager:
             # page's JS sees, unlike hoping Chromium's ICU/V8 picks up an
             # OS-level TZ change on a running process). Harmless on a real
             # desktop display too, where it's already correct anyway.
-            context = await browser.new_context(timezone_id=os.environ.get("TZ") or None)
+            # Validated first (_resolve_timezone_id) -- an invalid value
+            # passed straight through used to make every single retry fail
+            # identically forever, since Playwright rejects a bad
+            # timezone_id at new_page() and the env var never changes.
+            context = await browser.new_context(timezone_id=_resolve_timezone_id())
             # Playwright's CDP automation flag makes navigator.webdriver
             # true regardless of headless/headful, which is what actually
             # triggers Twitch's "Your browser is not currently supported"
@@ -375,6 +380,32 @@ class BrowserLoginManager:
         if session.xvfb_process is not None:
             _release_display_number(session.display_number)
         logger.info(f"Browser login session on display :{session.display_number} torn down")
+
+
+def _resolve_timezone_id() -> str | None:
+    """The TZ env var, validated against the IANA tz database, or None if
+    it's unset/empty/malformed.
+
+    A bad value here used to be fatal and permanent: Playwright rejects an
+    invalid timezone_id at new_page() time, which previously surfaced as
+    BrowserLoginUnavailable on every single retry forever (the value never
+    changes, so neither does the outcome) -- reported live as "{Europe/
+    Berlin}" (literal braces and all) from a host whose deployment config
+    had mangled the env var. Validating here means a malformed TZ degrades
+    to "no override" (UTC) instead of permanently blocking login.
+    """
+    tz = os.environ.get("TZ", "").strip()
+    if not tz:
+        return None
+    try:
+        zoneinfo.ZoneInfo(tz)
+    except (zoneinfo.ZoneInfoNotFoundError, ValueError):
+        logger.warning(
+            f"TZ env var {tz!r} is not a valid IANA timezone -- ignoring it for the "
+            "login browser (login will proceed without a timezone override)"
+        )
+        return None
+    return tz
 
 
 def _detect_real_display() -> int | None:
