@@ -58,6 +58,14 @@ class LoginFormManager:
         self._browser_login_websocket_port = websocket_port
         await self._broadcaster.emit("browser_login_ready", {"websocket_path": "/api/login/browser/ws"})
 
+    async def start_browser_login_on_real_display(self) -> None:
+        """Like start_browser_login, but for a login window that opened
+        directly on the host's own real desktop display (see
+        BrowserLoginManager._detect_real_display) instead of a virtual one
+        proxied over noVNC -- there's no panel to show, just a status
+        telling the user where to look."""
+        self.update(_.t["login"]["browser_login"]["on_real_display"], None)
+
     def get_status(self) -> dict[str, Any]:
         """Get current login status for client synchronization."""
         result: dict[str, Any] = {"status": self._status, "user_id": self._user_id, "user_login": self._user_login}

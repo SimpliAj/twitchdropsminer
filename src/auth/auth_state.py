@@ -114,7 +114,10 @@ class _AuthState:
             browser_login.set_active_manager(manager)
             try:
                 websocket_port = await manager.start()
-                await login_form.start_browser_login(websocket_port)
+                if websocket_port is not None:
+                    await login_form.start_browser_login(websocket_port)
+                else:
+                    await login_form.start_browser_login_on_real_display()
                 cookies = await manager.wait_for_cookie()
                 self.device_id = cookies["unique_id"] or self.device_id
                 self.access_token = cookies["auth-token"]

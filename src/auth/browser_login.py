@@ -94,15 +94,23 @@ class BrowserLoginUnavailable(Exception):
 
 @dataclass
 class _BrowserLoginSession:
-    """Internal handle for one in-progress login attempt."""
+    """Internal handle for one in-progress login attempt.
+
+    websocket_port/xvfb_process/x11vnc_process are None when the attempt
+    is running on a real, already-available desktop display instead of a
+    virtual one we spun up ourselves (see _detect_real_display) -- there's
+    nothing to proxy into a noVNC client because the login window is
+    directly visible on the host's own screen, not any process we need to
+    track for teardown.
+    """
 
     display_number: int
-    websocket_port: int
+    websocket_port: int | None
     playwright: Playwright
     browser: Browser
     context: BrowserContext
-    xvfb_process: asyncio.subprocess.Process
-    x11vnc_process: asyncio.subprocess.Process
+    xvfb_process: asyncio.subprocess.Process | None
+    x11vnc_process: asyncio.subprocess.Process | None
     cancelled: asyncio.Event = field(default_factory=asyncio.Event)
 
 
@@ -133,12 +141,20 @@ class BrowserLoginManager:
         session = self._session
         return session.websocket_port if session is not None else None
 
-    async def start(self) -> int:
-        """Start a new login attempt: virtual display, real Chromium
-        navigated to the Twitch login page, VNC server.
+    async def start(self) -> int | None:
+        """Start a new login attempt.
+
+        If a real desktop display is already available (a home/NAS
+        deployment with DISPLAY passed through, not a headless VPS -- see
+        _detect_real_display), pops up an ordinary visible Chromium window
+        there directly: no Xvfb/x11vnc/noVNC involved, the user just looks
+        at their own screen. Otherwise falls back to a virtual display
+        proxied to the dashboard over noVNC, same as always.
 
         Returns the local raw-VNC TCP port the caller should proxy (see
-        src/web/app.py's WS /api/login/browser/ws) for a noVNC client.
+        src/web/app.py's WS /api/login/browser/ws) for a noVNC client, or
+        None when the login window opened on a real display instead --
+        there is nothing to proxy.
 
         Raises RuntimeError if a session is already in progress, or
         BrowserLoginUnavailable if any required process/binary fails to
@@ -147,10 +163,15 @@ class BrowserLoginManager:
         if self._session is not None:
             raise RuntimeError("A browser login session is already in progress")
 
+        real_display = _detect_real_display()
+        if real_display is not None:
+            logger.info(f"Real desktop display :{real_display} detected; opening Chromium there directly")
+            return await self._start_on_display(real_display, xvfb_process=None)
         display_number = _find_free_display_number()
-        offset = display_number - DISPLAY_NUMBER_RANGE_START
-        vnc_port = VNC_PORT_RANGE_START + offset
+        xvfb_process = await self._spawn_xvfb_on(display_number)
+        return await self._start_on_display(display_number, xvfb_process=xvfb_process)
 
+    async def _spawn_xvfb_on(self, display_number: int) -> asyncio.subprocess.Process:
         xvfb_process = await _start_tagged_process(
             ["Xvfb", f":{display_number}", "-screen", "0", "1280x800x24"]
         )
@@ -159,14 +180,28 @@ class BrowserLoginManager:
         except Exception as exc:
             _terminate_process_group(xvfb_process)
             raise BrowserLoginUnavailable(f"Xvfb display :{display_number} never came up: {exc}") from exc
+        return xvfb_process
 
+    async def _start_on_display(
+        self, display_number: int, xvfb_process: asyncio.subprocess.Process | None
+    ) -> int | None:
+        """Shared by both start() paths from here on: launch Chromium
+        against `display_number` (already up either way -- a real desktop
+        or the Xvfb _spawn_xvfb_on already waited for) and, only when
+        xvfb_process is not None (the virtual-display path), also start
+        x11vnc and report its port. `xvfb_process` doubles as the flag for
+        which path this is."""
         env = dict(os.environ)
         env["DISPLAY"] = f":{display_number}"
+
+        def cleanup_xvfb() -> None:
+            if xvfb_process is not None:
+                _terminate_process_group(xvfb_process)
 
         try:
             playwright = await async_playwright().start()
         except Exception as exc:
-            _terminate_process_group(xvfb_process)
+            cleanup_xvfb()
             raise BrowserLoginUnavailable(f"Failed to start Playwright: {exc}") from exc
 
         try:
@@ -180,7 +215,7 @@ class BrowserLoginManager:
             )
         except Exception as exc:
             await playwright.stop()
-            _terminate_process_group(xvfb_process)
+            cleanup_xvfb()
             raise BrowserLoginUnavailable(f"Failed to launch Chromium: {exc}") from exc
 
         try:
@@ -194,7 +229,8 @@ class BrowserLoginManager:
             # for the whole container for this reason, passed through
             # Playwright's own timezone_id (reliably changes what the
             # page's JS sees, unlike hoping Chromium's ICU/V8 picks up an
-            # OS-level TZ change on a running process).
+            # OS-level TZ change on a running process). Harmless on a real
+            # desktop display too, where it's already correct anyway.
             context = await browser.new_context(timezone_id=os.environ.get("TZ") or None)
             # Playwright's CDP automation flag makes navigator.webdriver
             # true regardless of headless/headful, which is what actually
@@ -212,23 +248,28 @@ class BrowserLoginManager:
         except Exception as exc:
             await browser.close()
             await playwright.stop()
-            _terminate_process_group(xvfb_process)
+            cleanup_xvfb()
             raise BrowserLoginUnavailable(f"Failed to navigate to Twitch login page: {exc}") from exc
 
-        try:
-            x11vnc_process = await _start_tagged_process(
-                [
-                    "x11vnc",
-                    "-display", f":{display_number}",
-                    "-rfbport", str(vnc_port),
-                    "-localhost", "-nopw", "-forever", "-shared", "-quiet",
-                ]
-            )
-        except Exception as exc:
-            await browser.close()
-            await playwright.stop()
-            _terminate_process_group(xvfb_process)
-            raise BrowserLoginUnavailable(f"Failed to start x11vnc: {exc}") from exc
+        vnc_port: int | None = None
+        x11vnc_process: asyncio.subprocess.Process | None = None
+        if xvfb_process is not None:
+            offset = display_number - DISPLAY_NUMBER_RANGE_START
+            vnc_port = VNC_PORT_RANGE_START + offset
+            try:
+                x11vnc_process = await _start_tagged_process(
+                    [
+                        "x11vnc",
+                        "-display", f":{display_number}",
+                        "-rfbport", str(vnc_port),
+                        "-localhost", "-nopw", "-forever", "-shared", "-quiet",
+                    ]
+                )
+            except Exception as exc:
+                await browser.close()
+                await playwright.stop()
+                cleanup_xvfb()
+                raise BrowserLoginUnavailable(f"Failed to start x11vnc: {exc}") from exc
 
         self._session = _BrowserLoginSession(
             display_number=display_number,
@@ -239,7 +280,10 @@ class BrowserLoginManager:
             xvfb_process=xvfb_process,
             x11vnc_process=x11vnc_process,
         )
-        logger.info(f"Browser login session started on display :{display_number}, vnc port {vnc_port}")
+        if vnc_port is not None:
+            logger.info(f"Browser login session started on display :{display_number}, vnc port {vnc_port}")
+        else:
+            logger.info(f"Browser login session started on real display :{display_number}")
         return vnc_port
 
     async def wait_for_cookie(self, timeout: float = DEFAULT_TIMEOUT_SEC) -> dict[str, str]:
@@ -320,11 +364,45 @@ class BrowserLoginManager:
         # needs the chance to release its SysV shm segment on exit, see
         # _terminate_process_group_gracefully's docstring. Xvfb torn down
         # the same way for consistency, though it isn't the one observed
-        # leaking.
+        # leaking. Both are None on a real-display session (see
+        # _detect_real_display) -- there's nothing of ours to kill, and
+        # critically, _release_display_number must NOT run below either:
+        # that display is the host's own real desktop, not one we created,
+        # and deleting its live X11 socket/lock would break it.
         for proc in (session.x11vnc_process, session.xvfb_process):
-            await _terminate_process_group_gracefully(proc)
-        _release_display_number(session.display_number)
+            if proc is not None:
+                await _terminate_process_group_gracefully(proc)
+        if session.xvfb_process is not None:
+            _release_display_number(session.display_number)
         logger.info(f"Browser login session on display :{session.display_number} torn down")
+
+
+def _detect_real_display() -> int | None:
+    """If a real desktop display is already available -- a home/NAS
+    deployment with a desktop environment and DISPLAY passed through to
+    the container (or running directly on a machine with one), not a
+    headless VPS -- return its number so start() can pop up an ordinary
+    visible Chromium window there directly, skipping Xvfb/x11vnc/noVNC
+    entirely (the same real-browser-on-a-real-device signal rangermix's
+    now-abandoned desktop helper was built around, but with nothing extra
+    to download or run -- it's already the same machine). None if nothing
+    usable is found, which is the common case on a VPS.
+    """
+    display_env = os.environ.get("DISPLAY", "").strip()
+    if not display_env.startswith(":"):
+        return None
+    try:
+        number = int(display_env[1:].split(".", 1)[0])
+    except ValueError:
+        return None
+    if DISPLAY_NUMBER_RANGE_START <= number < DISPLAY_NUMBER_RANGE_START + DISPLAY_NUMBER_RANGE_SIZE:
+        # One of our own reserved virtual displays (e.g. a crashed previous
+        # attempt's DISPLAY leaking into this process's environment) --
+        # never treat that as a real desktop.
+        return None
+    if not os.path.exists(f"/tmp/.X11-unix/X{number}"):
+        return None
+    return number
 
 
 def _find_free_display_number() -> int:

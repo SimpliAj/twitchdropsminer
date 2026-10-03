@@ -33,6 +33,31 @@ class TestBrowserLoginIntegration(unittest.IsolatedAsyncioTestCase):
             instance.wait_for_cookie.assert_awaited_once()
             instance.stop.assert_awaited_once()
 
+    async def test_browser_login_on_a_real_display_skips_the_websocket_path(self):
+        # manager.start() returning None means the login window opened
+        # directly on a real desktop display (see
+        # BrowserLoginManager._detect_real_display) -- there is no noVNC
+        # port to tell the dashboard about, so a different LoginForm
+        # method has to be the one called.
+        mock_twitch = MagicMock()
+        mock_twitch.gui.login.start_browser_login = AsyncMock()
+        mock_twitch.gui.login.start_browser_login_on_real_display = AsyncMock()
+        auth_state = _AuthState(mock_twitch)
+
+        with patch("src.auth.browser_login.BrowserLoginManager") as MockManager:
+            instance = MockManager.return_value
+            instance.start = AsyncMock(return_value=None)
+            instance.wait_for_cookie = AsyncMock(
+                return_value={"auth-token": "real-token-value", "unique_id": "device-abc"}
+            )
+            instance.stop = AsyncMock()
+
+            token = await auth_state._browser_login()
+
+            self.assertEqual(token, "real-token-value")
+            mock_twitch.gui.login.start_browser_login_on_real_display.assert_awaited_once()
+            mock_twitch.gui.login.start_browser_login.assert_not_awaited()
+
     async def test_browser_login_stops_manager_even_on_failure(self):
         mock_twitch = MagicMock()
         mock_twitch.gui.login.start_browser_login = AsyncMock()

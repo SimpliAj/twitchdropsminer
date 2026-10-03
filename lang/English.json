@@ -33,7 +33,8 @@
       "manual_missing_token": "auth-token is required",
       "manual_no_session": "No login session is in progress -- open this panel again first",
       "manual_success": "Cookies accepted, finishing login...",
-      "manual_error": "Failed to submit cookies: {error}"
+      "manual_error": "Failed to submit cookies: {error}",
+      "on_real_display": "A browser window has opened on this machine's own desktop -- complete the Twitch login there."
     }
   },
   "error": {

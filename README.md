@@ -361,6 +361,13 @@ See the [Original Project Credits](#original-project-credits) section for transl
 > Docker optional but recommended — the image bundles all of the above
 > Persistent data stored in `/data`
 
+> 🖥️ **Home/NAS setups with a real desktop**
+> If the machine running TDM already has a real X display available (and `DISPLAY` is passed
+> through, e.g. a NAS/PC with a desktop environment), the Twitch login opens as an ordinary
+> visible Chromium window right there instead of the dashboard's noVNC panel -- no extra
+> setup needed, it's detected automatically. This also sidesteps the VPS issues below
+> entirely, since it's the same kind of real device/IP Twitch expects.
+
 > ⚠️ **Twitch login shows "Your browser is not currently supported"**
 > Set `TZ` to your real timezone (see the Docker examples above) and restart. A VPS/container
 > defaulting to UTC with no `TZ` set is the most common cause -- Twitch's login page rejects

@@ -9,6 +9,8 @@ from src.auth.browser_login import (
     BrowserLoginTimeout,
     BrowserLoginUnavailable,
     COOKIE_POLL_INTERVAL_SEC,
+    DISPLAY_NUMBER_RANGE_START,
+    _detect_real_display,
     sweep_orphaned_processes,
 )
 
@@ -75,6 +77,21 @@ class TestBrowserLoginManagerStart(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(RuntimeError):
             await self.manager.start()
 
+    async def test_opens_directly_on_a_detected_real_display(self):
+        start_process_mock = AsyncMock(side_effect=lambda argv: _mock_process())
+        with (
+            patch("src.auth.browser_login._detect_real_display", return_value=7),
+            patch("src.auth.browser_login._start_tagged_process", new=start_process_mock),
+        ):
+            port = await self.manager.start()
+
+        self.assertIsNone(port)
+        self.assertIsNone(self.manager.websocket_port)
+        self.assertTrue(self.manager.in_progress)
+        # Neither Xvfb nor x11vnc should ever be spawned for this path.
+        start_process_mock.assert_not_called()
+        self.mock_browser.new_context.assert_awaited_once()
+
     async def test_chromium_launch_failure_raises_unavailable(self):
         # Reconfigure the chromium.launch mock (already patched in setUp) to raise
         with patch(
@@ -92,6 +109,59 @@ class TestBrowserLoginManagerStart(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(BrowserLoginUnavailable):
                 await manager.start()
             self.assertFalse(manager.in_progress)
+
+
+class TestDetectRealDisplay(unittest.TestCase):
+    """
+    start() opens an ordinary visible Chromium window directly on a real
+    desktop display when one is already available (home/NAS deployments
+    with DISPLAY passed through), instead of spinning up Xvfb/x11vnc/noVNC
+    -- the same "real browser on a real device" signal Twitch's integrity
+    check wants, with nothing extra to download or run since it's already
+    the same machine. _detect_real_display is the gate for that path, so
+    it must never mistake one of our own virtual displays, or a stale
+    DISPLAY pointing at nothing, for a real one.
+    """
+
+    def test_none_when_display_env_unset(self):
+        with patch.dict("os.environ", {}, clear=True):
+            self.assertIsNone(_detect_real_display())
+
+    def test_none_when_display_env_is_not_a_display_string(self):
+        with patch.dict("os.environ", {"DISPLAY": "not-a-display"}, clear=True):
+            self.assertIsNone(_detect_real_display())
+
+    def test_none_for_our_own_reserved_virtual_display_range(self):
+        # e.g. a crashed previous attempt's DISPLAY leaking into this
+        # process's own environment -- must never be treated as real.
+        reserved = f":{DISPLAY_NUMBER_RANGE_START}"
+        with (
+            patch.dict("os.environ", {"DISPLAY": reserved}, clear=True),
+            patch("src.auth.browser_login.os.path.exists", return_value=True),
+        ):
+            self.assertIsNone(_detect_real_display())
+
+    def test_none_when_no_matching_x11_socket_exists(self):
+        with (
+            patch.dict("os.environ", {"DISPLAY": ":0"}, clear=True),
+            patch("src.auth.browser_login.os.path.exists", return_value=False),
+        ):
+            self.assertIsNone(_detect_real_display())
+
+    def test_returns_the_display_number_when_a_real_socket_exists(self):
+        with (
+            patch.dict("os.environ", {"DISPLAY": ":0"}, clear=True),
+            patch("src.auth.browser_login.os.path.exists", return_value=True) as mock_exists,
+        ):
+            self.assertEqual(_detect_real_display(), 0)
+            mock_exists.assert_called_once_with("/tmp/.X11-unix/X0")
+
+    def test_handles_a_screen_suffix_like_colon_zero_dot_zero(self):
+        with (
+            patch.dict("os.environ", {"DISPLAY": ":0.0"}, clear=True),
+            patch("src.auth.browser_login.os.path.exists", return_value=True),
+        ):
+            self.assertEqual(_detect_real_display(), 0)
 
 
 class TestBrowserLoginManagerWaitForCookie(unittest.IsolatedAsyncioTestCase):
@@ -245,6 +315,37 @@ class TestBrowserLoginManagerStop(unittest.IsolatedAsyncioTestCase):
             # idempotent: calling again does nothing and doesn't raise
             await manager.stop()
             self.assertEqual(mock_terminate.call_count, 2)
+
+    async def test_stop_on_a_real_display_session_touches_no_virtual_display_state(self):
+        # There is no Xvfb/x11vnc to kill, and critically, the real
+        # display's own live X11 socket/lock must never be deleted --
+        # unlike a virtual display we created, it's the host's actual
+        # desktop.
+        manager = BrowserLoginManager()
+        mock_context = AsyncMock()
+        mock_context.new_page = AsyncMock(return_value=AsyncMock())
+        mock_browser = AsyncMock()
+        mock_browser.new_context = AsyncMock(return_value=mock_context)
+        mock_playwright_instance = AsyncMock()
+        mock_playwright_instance.chromium.launch = AsyncMock(return_value=mock_browser)
+        mock_cm = AsyncMock()
+        mock_cm.start = AsyncMock(return_value=mock_playwright_instance)
+
+        with (
+            patch("src.auth.browser_login._detect_real_display", return_value=7),
+            patch("src.auth.browser_login.async_playwright", return_value=mock_cm),
+            patch(
+                "src.auth.browser_login._terminate_process_group_gracefully", new=AsyncMock()
+            ) as mock_terminate,
+            patch("src.auth.browser_login._release_display_number") as mock_release,
+        ):
+            await manager.start()
+            await manager.stop()
+
+        self.assertFalse(manager.in_progress)
+        mock_terminate.assert_not_called()
+        mock_release.assert_not_called()
+        mock_browser.close.assert_awaited_once()
 
 
 class TestSweepOrphanedProcesses(unittest.IsolatedAsyncioTestCase):
