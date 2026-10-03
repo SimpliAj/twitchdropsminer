@@ -3481,6 +3481,8 @@ function applyTranslations(t) {
         if (t.login?.browser_login) {
             const browserLoginInstructions = document.getElementById('browser-login-instructions');
             if (browserLoginInstructions) browserLoginInstructions.textContent = t.login.browser_login.instructions;
+            const browserLoginVpsWarning = document.getElementById('browser-login-vps-warning');
+            if (browserLoginVpsWarning) browserLoginVpsWarning.textContent = t.login.browser_login.vps_warning;
 
             const browserLoginCancel = document.getElementById('browser-login-cancel');
             if (browserLoginCancel) browserLoginCancel.textContent = t.login.browser_login.cancel;

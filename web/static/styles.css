@@ -843,6 +843,16 @@ body.dark-mode #manual-mode-badge {
     margin-bottom: 10px;
 }
 
+#browser-login-vps-warning {
+    color: var(--warning-color, #f0ad4e);
+    font-size: 13px;
+    margin-bottom: 10px;
+    padding: 8px 10px;
+    border: 1px solid var(--warning-color, #f0ad4e);
+    border-radius: var(--r-md);
+    background: color-mix(in srgb, var(--warning-color, #f0ad4e) 12%, transparent);
+}
+
 #browser-login-canvas-container {
     width: 100%;
     max-width: 100%;

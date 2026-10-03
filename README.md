@@ -368,14 +368,15 @@ See the [Original Project Credits](#original-project-credits) section for transl
 > setup needed, it's detected automatically. This also sidesteps the VPS issues below
 > entirely, since it's the same kind of real device/IP Twitch expects.
 
-> ⚠️ **Twitch login shows "Your browser is not currently supported"**
-> Set `TZ` to your real timezone (see the Docker examples above) and restart. A VPS/container
-> defaulting to UTC with no `TZ` set is the most common cause -- Twitch's login page rejects
-> the mismatch between the browser's reported timezone and the account's usual one. If it's
-> still happening after setting `TZ` correctly, Twitch's own bot/integrity check may be
-> temporarily flagging that IP (common on datacenter/VPS IP ranges); use the "paste your
-> session" fallback in the login panel instead -- log in on your own device normally and
-> paste the resulting `auth-token`/`unique_id` cookies there.
+> 🚫 **The in-dashboard browser login does not reliably work on a VPS**
+> Twitch's own bot/integrity check routinely flags datacenter IP ranges and shows "Your
+> browser is not currently supported" on the login page, independent of anything this app
+> does -- setting `TZ` correctly (see the Docker examples above) fixes one specific cause of
+> that banner, but a flagged VPS IP can still fail. **If you're hosting on a VPS, use the
+> "paste your session" fallback in the login panel instead of the embedded browser**: log in
+> to Twitch normally on your own device, then paste the resulting `auth-token`/`unique_id`
+> cookies there. That's the supported path for VPS hosting -- don't rely on the noVNC panel
+> working there.
 
 ---
 
