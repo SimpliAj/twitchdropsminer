@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, cast
 
 import aiohttp
@@ -25,6 +25,10 @@ logger = logging.getLogger("TwitchDrops")
 # How long to wait before offering a fresh login browser after an attempt
 # timed out, was cancelled, or could not start at all (see _browser_login).
 BROWSER_LOGIN_RETRY_DELAY_SEC = 5.0
+
+# Client-Integrity token cache policy (see _ensure_integrity_token).
+INTEGRITY_RENEW_MARGIN = timedelta(minutes=15)  # renew early so a GQL request never races the expiry
+INTEGRITY_FAILURE_COOLDOWN = timedelta(minutes=5)  # don't hammer a failing acquisition every GQL request
 
 
 class _AuthState:
@@ -128,6 +132,12 @@ class _AuthState:
                 cookies = await manager.wait_for_cookie()
                 self.device_id = cookies["unique_id"] or self.device_id
                 self.access_token = cookies["auth-token"]
+                # Free: the login page's own navigation already triggered
+                # Twitch's integrity check (see browser_login._capture_
+                # integrity_token), so there's no separate acquisition
+                # needed right now -- only later, on renewal, does
+                # _ensure_integrity_token mint a fresh one standalone.
+                self._adopt_integrity_token(await manager.captured_integrity_token())
                 return self.access_token
             except BrowserLoginTimeout:
                 logger.warning("Browser login timed out; a new session will be offered")
@@ -297,6 +307,16 @@ class _AuthState:
         self._logged_in.set()
         await self._ensure_integrity_token()
 
+    def _adopt_integrity_token(self, result: tuple[str, datetime] | None) -> None:
+        """Common bookkeeping for a Client-Integrity acquisition attempt,
+        however it was obtained (captured live during login, or minted
+        standalone by _ensure_integrity_token). None means it failed."""
+        if result is None:
+            self._integrity_failed_until = datetime.now(timezone.utc) + INTEGRITY_FAILURE_COOLDOWN
+            return
+        self._integrity_token, self._integrity_expires_at = result
+        self._integrity_failed_until = None
+
     async def _ensure_integrity_token(self) -> None:
         """Keep a Client-Integrity token cached and fresh for headers().
 
@@ -306,11 +326,23 @@ class _AuthState:
         specifically, unlike the SMARTBOX identity used before it (see
         src/services/campaign_discovery.py's docstring, written before this
         switch). A token only a real browser's JS challenge can produce is
-        the actual fix; src/auth/integrity.py already implements acquiring
-        one (ported from upstream), it just was never called anywhere.
+        the actual fix.
 
-        Best-effort and silent on failure (matching integrity.py's own
-        documented "never raise" philosophy, and because this runs on every
+        _browser_login() already adopts whatever got captured live during
+        the interactive login's own navigation (see browser_login.
+        _capture_integrity_token) via _adopt_integrity_token, so this is
+        mainly the ongoing RENEWAL path once that one expires --
+        browser_login.acquire_integrity_token() mints a fresh one the same
+        way (a real, throwaway Chromium session, authenticated with the
+        already-saved cookies, no interactive login needed). Previously
+        used a streamlink-based approach (src/auth/integrity.py) instead;
+        that one's headful Chromium never opened its own CDP debug port in
+        this environment even after patching --no-sandbox into its launch
+        args (confirmed by direct testing), while this module's identical
+        Playwright-based launch configuration is the one already proven to
+        work (it's what the real login itself runs on).
+
+        Best-effort and silent on failure (because this runs on every
         validate() call, including ones with nothing to do): GQL requests
         proceed without the header if acquisition fails, which still fails
         dropCampaigns the same way it did before this existed -- no worse
@@ -318,24 +350,17 @@ class _AuthState:
         """
         if not self._hasattrs("access_token", "device_id"):
             return
-        from src.auth import integrity
+        from src.auth import browser_login
 
         now = datetime.now(timezone.utc)
         if self._integrity_token is not None and self._integrity_expires_at is not None:
-            if now < self._integrity_expires_at - integrity.RENEW_MARGIN:
+            if now < self._integrity_expires_at - INTEGRITY_RENEW_MARGIN:
                 return  # still fresh
         if self._integrity_failed_until is not None and now < self._integrity_failed_until:
             return  # don't hammer a failing acquisition every single GQL request
-        logger.info(
-            "Acquiring a Client-Integrity token (drives a real headful Chromium, "
-            f"can take up to {int(integrity.SUBPROCESS_TIMEOUT)}s)..."
-        )
-        result = await integrity.acquire(self.access_token, self.device_id)
-        if result is None:
-            self._integrity_failed_until = now + integrity.FAILURE_COOLDOWN
-            return
-        self._integrity_token, self._integrity_expires_at = result
-        self._integrity_failed_until = None
+        logger.info("Renewing the Client-Integrity token (drives a real, throwaway Chromium)...")
+        result = await browser_login.acquire_integrity_token(self.access_token, self.device_id)
+        self._adopt_integrity_token(result)
 
     def invalidate(self):
         """Invalidate the current access token."""

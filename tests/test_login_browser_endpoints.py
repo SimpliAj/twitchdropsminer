@@ -22,6 +22,7 @@ def _fake_manager(port: int = 6993) -> MagicMock:
     manager.start = AsyncMock(return_value=port)
     manager.stop = AsyncMock()
     manager.inject_manual_cookies = AsyncMock()
+    manager.captured_integrity_token = AsyncMock(return_value=None)
     return manager
 
 

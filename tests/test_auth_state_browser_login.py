@@ -1,4 +1,5 @@
 import unittest
+from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from src.auth.auth_state import _AuthState
@@ -25,6 +26,7 @@ class TestBrowserLoginIntegration(unittest.IsolatedAsyncioTestCase):
                 return_value={"auth-token": "real-token-value", "unique_id": "device-abc"}
             )
             instance.stop = AsyncMock()
+            instance.captured_integrity_token = AsyncMock(return_value=None)
 
             token = await auth_state._browser_login()
 
@@ -32,6 +34,29 @@ class TestBrowserLoginIntegration(unittest.IsolatedAsyncioTestCase):
             instance.start.assert_awaited_once()
             instance.wait_for_cookie.assert_awaited_once()
             instance.stop.assert_awaited_once()
+
+    async def test_browser_login_adopts_the_token_captured_live_during_login(self):
+        # The login page's own navigation already triggers Twitch's
+        # integrity check (see browser_login._capture_integrity_token) --
+        # no separate acquisition needed right after a successful login.
+        mock_twitch = MagicMock()
+        mock_twitch.gui.login.start_browser_login = AsyncMock()
+        auth_state = _AuthState(mock_twitch)
+        expiry = datetime.now(timezone.utc) + timedelta(hours=4)
+
+        with patch("src.auth.browser_login.BrowserLoginManager") as MockManager:
+            instance = MockManager.return_value
+            instance.start = AsyncMock(return_value=6990)
+            instance.wait_for_cookie = AsyncMock(
+                return_value={"auth-token": "real-token-value", "unique_id": "device-abc"}
+            )
+            instance.stop = AsyncMock()
+            instance.captured_integrity_token = AsyncMock(return_value=("itok-live", expiry))
+
+            await auth_state._browser_login()
+
+        self.assertEqual(auth_state._integrity_token, "itok-live")
+        self.assertEqual(auth_state._integrity_expires_at, expiry)
 
     async def test_browser_login_on_a_real_display_skips_the_websocket_path(self):
         # manager.start() returning None means the login window opened
@@ -51,6 +76,7 @@ class TestBrowserLoginIntegration(unittest.IsolatedAsyncioTestCase):
                 return_value={"auth-token": "real-token-value", "unique_id": "device-abc"}
             )
             instance.stop = AsyncMock()
+            instance.captured_integrity_token = AsyncMock(return_value=None)
 
             token = await auth_state._browser_login()
 

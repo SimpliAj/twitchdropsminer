@@ -27,6 +27,8 @@ outcome.
 from __future__ import annotations
 
 import asyncio
+import base64
+import json
 import logging
 import os
 import re
@@ -34,6 +36,7 @@ import signal
 import time
 import zoneinfo
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone
 
 from playwright.async_api import Browser, BrowserContext, Playwright, async_playwright
 
@@ -112,6 +115,12 @@ class _BrowserLoginSession:
     context: BrowserContext
     xvfb_process: asyncio.subprocess.Process | None
     x11vnc_process: asyncio.subprocess.Process | None
+    # Started right before the login page navigation (see _capture_integrity_
+    # token); by the time an interactive login actually succeeds, the user
+    # has taken far longer than this task's own short internal timeout, so
+    # it's always done by then -- awaited once via
+    # BrowserLoginManager.captured_integrity_token.
+    integrity_capture_task: asyncio.Task | None = None
     cancelled: asyncio.Event = field(default_factory=asyncio.Event)
 
 
@@ -180,6 +189,14 @@ class BrowserLoginManager:
             await _wait_for_display(display_number)
         except Exception as exc:
             _terminate_process_group(xvfb_process)
+            # Without this, a display number this call claimed (see
+            # _find_free_display_number's caller) stays permanently burned
+            # on every failure -- confirmed live: ten straight failures
+            # (one per reserved slot) exhausts the whole range, and every
+            # subsequent attempt then fails immediately with "No free
+            # virtual display number in the reserved range", forever,
+            # until the process is restarted.
+            _release_display_number(display_number)
             raise BrowserLoginUnavailable(f"Xvfb display :{display_number} never came up: {exc}") from exc
         return xvfb_process
 
@@ -198,6 +215,12 @@ class BrowserLoginManager:
         def cleanup_xvfb() -> None:
             if xvfb_process is not None:
                 _terminate_process_group(xvfb_process)
+                # Same leak as _spawn_xvfb_on's own failure path (see its
+                # comment): every one of these downstream failure branches
+                # (Playwright/Chromium/navigation/x11vnc) also claimed this
+                # display number and must release it too, or it's
+                # permanently gone the same way.
+                _release_display_number(display_number)
 
         try:
             playwright = await async_playwright().start()
@@ -249,6 +272,10 @@ class BrowserLoginManager:
                 "Object.defineProperty(navigator, 'webdriver', { get: () => undefined });"
             )
             page = await context.new_page()
+            # Attached before goto, not after -- Twitch's own JS fires this
+            # on a normal page load (confirmed live), and a response that
+            # arrives before the listener exists is simply missed.
+            integrity_capture_task = asyncio.ensure_future(_capture_integrity_token(page))
             await page.goto(LOGIN_URL, wait_until="domcontentloaded")
         except Exception as exc:
             await browser.close()
@@ -284,6 +311,7 @@ class BrowserLoginManager:
             context=context,
             xvfb_process=xvfb_process,
             x11vnc_process=x11vnc_process,
+            integrity_capture_task=integrity_capture_task,
         )
         if vnc_port is not None:
             logger.info(f"Browser login session started on display :{display_number}, vnc port {vnc_port}")
@@ -323,6 +351,24 @@ class BrowserLoginManager:
                 raise BrowserLoginCancelled()
             except asyncio.TimeoutError:
                 continue
+
+    async def captured_integrity_token(self) -> tuple[str, datetime] | None:
+        """The Client-Integrity token captured from this session's own
+        login-page navigation (see _capture_integrity_token), if one
+        arrived -- call this once, after wait_for_cookie() has already
+        succeeded (so the capture task, started right before the login
+        navigation, has had the entire interactive login's duration to
+        finish its own short internal timeout). None if no session is
+        active, nothing was captured, or capture itself failed for any
+        reason -- never raises."""
+        session = self._session
+        if session is None or session.integrity_capture_task is None:
+            return None
+        try:
+            return await session.integrity_capture_task
+        except Exception as exc:
+            logger.warning(f"Integrity token capture task failed: {exc}")
+            return None
 
     async def inject_manual_cookies(self, auth_token: str, unique_id: str) -> None:
         """Supply the login cookies directly instead of waiting for them to
@@ -406,6 +452,150 @@ def _resolve_timezone_id() -> str | None:
         )
         return None
     return tz
+
+
+INTEGRITY_CAPTURE_TIMEOUT_SEC = 15.0
+INTEGRITY_DEFAULT_TTL = timedelta(hours=4)
+
+
+def _decode_jwt_expiry(token: str) -> datetime:
+    """The Client-Integrity token's own real expiry (its JWT "exp" claim),
+    or a conservative default if it isn't a decodable JWT for any reason.
+    No signature verification -- we only need the expiry we were already
+    handed by Twitch over a connection we made ourselves, not to validate
+    authenticity of something a third party gave us."""
+    try:
+        payload_b64 = token.split(".")[1]
+        padded = payload_b64 + "=" * (-len(payload_b64) % 4)
+        payload = json.loads(base64.urlsafe_b64decode(padded))
+        if "exp" in payload:
+            return datetime.fromtimestamp(payload["exp"], timezone.utc)
+    except Exception:
+        pass
+    return datetime.now(timezone.utc) + INTEGRITY_DEFAULT_TTL
+
+
+async def _capture_integrity_token(page) -> tuple[str, datetime] | None:
+    """Watch `page` for the Client-Integrity token Twitch's own JS mints by
+    POSTing to gql.twitch.tv/integrity -- confirmed live to fire on a
+    normal twitch.tv page load, real browser or not. Call this BEFORE
+    navigating (goto), not after, or the response may already have come
+    and gone. Returns (token, expiry) or None if nothing arrived within
+    INTEGRITY_CAPTURE_TIMEOUT_SEC.
+    """
+    captured: dict[str, str] = {}
+
+    async def on_response(response) -> None:
+        if "token" in captured:
+            return
+        if "gql.twitch.tv" not in response.url or not response.url.rstrip("/").endswith("/integrity"):
+            return
+        try:
+            data = await response.json()
+        except Exception:
+            return
+        token = data.get("token")
+        if token:
+            captured["token"] = token
+
+    page.on("response", on_response)
+    try:
+        deadline = time.monotonic() + INTEGRITY_CAPTURE_TIMEOUT_SEC
+        while "token" not in captured and time.monotonic() < deadline:
+            await asyncio.sleep(0.1)
+    finally:
+        page.remove_listener("response", on_response)
+
+    token = captured.get("token")
+    if not token:
+        return None
+    return token, _decode_jwt_expiry(token)
+
+
+async def acquire_integrity_token(auth_token: str, device_id: str) -> tuple[str, datetime] | None:
+    """Mint a fresh Client-Integrity token using a real, throwaway Chromium
+    session authenticated with the already-logged-in account's own
+    cookies -- no interactive login needed, just the same launch
+    configuration BrowserLoginManager.start() already uses successfully
+    for the real thing.
+
+    Replaces the old streamlink-based approach (formerly src/auth/
+    integrity.py): that one's headful Chromium never opened its own CDP
+    debug port in this environment, confirmed by direct testing, even
+    after patching --no-sandbox into its launch args. This module's own
+    Playwright-based Chromium launch is the one already proven to work
+    reliably here (it's what the real-browser login itself runs on), so
+    reuse that instead of a separate toolchain for the identical "drive a
+    real browser past Twitch's integrity check" problem.
+
+    Best-effort: returns None on any failure (never raises) -- the caller
+    (_AuthState._ensure_integrity_token) already treats a missing token as
+    "proceed without the header, try again later", exactly as it did for
+    the old approach's failures.
+    """
+    real_display = _detect_real_display()
+    xvfb_process: asyncio.subprocess.Process | None = None
+    display_number: int
+    if real_display is not None:
+        display_number = real_display
+    else:
+        display_number = _find_free_display_number()
+        try:
+            xvfb_process = await _start_tagged_process(
+                ["Xvfb", f":{display_number}", "-screen", "0", "1280x800x24"]
+            )
+            await _wait_for_display(display_number)
+        except Exception as exc:
+            logger.warning(f"Integrity token acquisition: Xvfb display :{display_number} never came up: {exc}")
+            if xvfb_process is not None:
+                _terminate_process_group(xvfb_process)
+            return None
+
+    env = dict(os.environ)
+    env["DISPLAY"] = f":{display_number}"
+    playwright: Playwright | None = None
+    browser: Browser | None = None
+    try:
+        try:
+            playwright = await async_playwright().start()
+            browser = await asyncio.wait_for(
+                playwright.chromium.launch(
+                    headless=False,
+                    args=["--no-sandbox", "--disable-dev-shm-usage"],
+                    env=env,
+                ),
+                timeout=CHROMIUM_LAUNCH_TIMEOUT_SEC,
+            )
+        except Exception as exc:
+            logger.warning(f"Integrity token acquisition: failed to launch Chromium: {exc}")
+            return None
+
+        try:
+            context = await browser.new_context(timezone_id=_resolve_timezone_id())
+            await context.add_init_script(
+                "Object.defineProperty(navigator, 'webdriver', { get: () => undefined });"
+            )
+            cookies = [{"name": COOKIE_NAME, "value": auth_token, "domain": f".{COOKIE_DOMAIN}", "path": "/"}]
+            if device_id:
+                cookies.append(
+                    {"name": DEVICE_ID_COOKIE_NAME, "value": device_id, "domain": f".{COOKIE_DOMAIN}", "path": "/"}
+                )
+            await context.add_cookies(cookies)
+            page = await context.new_page()
+            capture_task = asyncio.ensure_future(_capture_integrity_token(page))
+            await page.goto("https://www.twitch.tv/drops/campaigns", wait_until="domcontentloaded")
+            return await capture_task
+        except Exception as exc:
+            logger.warning(f"Integrity token acquisition: failed during page capture: {exc}")
+            return None
+    finally:
+        if browser is not None:
+            await browser.close()
+        if playwright is not None:
+            await playwright.stop()
+        if xvfb_process is not None:
+            await _terminate_process_group_gracefully(xvfb_process)
+            _release_display_number(display_number)
 
 
 def _detect_real_display() -> int | None:

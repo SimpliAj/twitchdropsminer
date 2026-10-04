@@ -28,15 +28,21 @@ dev = [
     "httpx",
 ]
 # Playwright itself is now a base dependency (see `dependencies` above) --
-# required for the real-browser login flow (src/auth/browser_login.py).
-# This extra is now unrelated to whether Playwright is installed; it only
-# gates src/services/campaign_discovery.py's SUPPLEMENTAL campaign
-# discovery (merges additional campaigns into the primary login-derived
-# list). Kept separate since that module is a nice-to-have, not required
-# for the app to function.
+# required for the real-browser login flow (src/auth/browser_login.py,
+# which also now mints Client-Integrity tokens the same way -- see
+# acquire_integrity_token). This extra is now unrelated to whether
+# Playwright is installed; it only gates src/services/campaign_discovery.py's
+# SUPPLEMENTAL campaign discovery (merges additional campaigns into the
+# primary login-derived list). Kept separate since that module is a
+# nice-to-have, not required for the app to function.
+#
+# streamlink used to be listed here too, for the now-deleted src/auth/
+# integrity.py (replaced by browser_login.acquire_integrity_token -- that
+# approach's headful Chromium never opened its own CDP debug port in this
+# environment, confirmed by direct testing, even after patching
+# --no-sandbox into its launch args).
 browser = [
     "playwright>=1.61.0",
-    "streamlink>=6.7",
 ]
 
 [build-system]

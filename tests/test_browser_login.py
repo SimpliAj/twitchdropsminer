@@ -490,6 +490,66 @@ class TestDisplayNumberSlotIsReleased(unittest.IsolatedAsyncioTestCase):
         )
 
 
+class TestStartReleasesDisplayNumberOnFailure(unittest.IsolatedAsyncioTestCase):
+    """
+    Regression test for a production outage: start()'s own failure paths
+    (Xvfb never coming up, Chromium failing to launch, navigation failing,
+    x11vnc failing to start) never released the display number they'd
+    just claimed -- only stop()'s happy-path teardown did. Ten consecutive
+    failures (one per DISPLAY_NUMBER_RANGE_SIZE slot) permanently exhausts
+    the whole reserved range, after which every future attempt fails
+    immediately with "No free virtual display number in the reserved
+    range", forever, confirmed live with the real pm2 process stuck in
+    exactly that state.
+    """
+
+    async def test_xvfb_never_coming_up_still_releases_the_display_number(self):
+        with (
+            patch("src.auth.browser_login._find_free_display_number", return_value=93),
+            patch(
+                "src.auth.browser_login._start_tagged_process",
+                new=AsyncMock(side_effect=lambda argv: _mock_process()),
+            ),
+            patch(
+                "src.auth.browser_login._wait_for_display",
+                new=AsyncMock(side_effect=TimeoutError("never came up")),
+            ),
+            patch("src.auth.browser_login._terminate_process_group"),
+            patch("src.auth.browser_login._release_display_number") as mock_release,
+        ):
+            manager = BrowserLoginManager()
+            with self.assertRaises(BrowserLoginUnavailable):
+                await manager.start()
+
+        mock_release.assert_called_once_with(93)
+
+    async def test_chromium_launch_failure_still_releases_the_display_number(self):
+        with (
+            patch("src.auth.browser_login._find_free_display_number", return_value=94),
+            patch(
+                "src.auth.browser_login._start_tagged_process",
+                new=AsyncMock(side_effect=lambda argv: _mock_process()),
+            ),
+            patch("src.auth.browser_login._wait_for_display", new=AsyncMock()),
+            patch("src.auth.browser_login._terminate_process_group"),
+            patch("src.auth.browser_login._release_display_number") as mock_release,
+            patch("src.auth.browser_login.async_playwright") as mock_async_playwright,
+        ):
+            mock_playwright_instance = AsyncMock()
+            mock_playwright_instance.chromium.launch = AsyncMock(
+                side_effect=RuntimeError("no chromium binary")
+            )
+            mock_cm = AsyncMock()
+            mock_cm.start = AsyncMock(return_value=mock_playwright_instance)
+            mock_async_playwright.return_value = mock_cm
+
+            manager = BrowserLoginManager()
+            with self.assertRaises(BrowserLoginUnavailable):
+                await manager.start()
+
+        mock_release.assert_called_once_with(94)
+
+
 class TestWebsocketPortProperty(unittest.IsolatedAsyncioTestCase):
     async def test_is_none_when_no_session_is_active(self):
         self.assertIsNone(BrowserLoginManager().websocket_port)
