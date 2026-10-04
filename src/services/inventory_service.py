@@ -102,6 +102,29 @@ class InventoryService:
         """
         try:
             await self._fetch_inventory()
+        except GQLException as exc:
+            # "failed integrity check" / IntegrityCheckFailed on dropCampaigns:
+            # ClientType.WEB's GQL requests need a real Client-Integrity token
+            # (see _AuthState._ensure_integrity_token) that a browser JS
+            # challenge mints; acquisition can fail or not have completed yet
+            # (slow, or environment-specific -- headful Chromium opening its
+            # CDP debug port is known-unreliable on some virtualized hosts,
+            # see src/services/campaign_discovery.py's own docstring).
+            # Letting this escape used to crash the entire miner outright on
+            # every single occurrence (reported live: right after a fresh,
+            # successful login, before anything else got a chance to run) --
+            # treat it the same as the already-handled "currentUser is None"
+            # transient case instead: log and let the periodic reload (the
+            # finally: below reschedules it regardless) retry later, once a
+            # token is acquired or the next attempt simply succeeds.
+            if "IntegrityCheckFailed" in str(exc):
+                logger.warning(
+                    "Inventory fetch failed Twitch's integrity check -- will retry on the "
+                    "next scheduled reload instead of crashing. This is expected until a "
+                    "Client-Integrity token has been acquired (see the startup/login logs)."
+                )
+            else:
+                raise
         finally:
             # Always reschedule the maintenance heartbeat, even if the fetch above
             # raised partway through. It used to only be re-armed on a clean finish,
