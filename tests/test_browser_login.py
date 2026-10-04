@@ -1,6 +1,7 @@
 import asyncio
 import re
 import unittest
+from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from src.auth.browser_login import (
@@ -214,10 +215,10 @@ class TestBrowserLoginManagerWaitForCookie(unittest.IsolatedAsyncioTestCase):
 
         self.mock_context = AsyncMock()
         self.mock_context.cookies = AsyncMock(return_value=[])
-        mock_page = AsyncMock()
+        self.mock_page = AsyncMock()
         mock_browser = AsyncMock()
         mock_browser.new_context = AsyncMock(return_value=self.mock_context)
-        self.mock_context.new_page = AsyncMock(return_value=mock_page)
+        self.mock_context.new_page = AsyncMock(return_value=self.mock_page)
         mock_playwright_instance = AsyncMock()
         mock_playwright_instance.chromium.launch = AsyncMock(return_value=mock_browser)
         mock_cm = AsyncMock()
@@ -270,46 +271,39 @@ class TestBrowserLoginManagerWaitForCookie(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(BrowserLoginCancelled):
             await self.manager.wait_for_cookie(timeout=30)
 
-    async def test_inject_manual_cookies_raises_without_a_session(self):
-        with self.assertRaises(RuntimeError):
-            await self.manager.inject_manual_cookies("token123", "device-xyz")
-
-    async def test_inject_manual_cookies_adds_them_to_the_live_context(self):
+    async def test_captured_integrity_token_navigates_then_captures(self):
+        # Deliberately not captured off the anonymous login-page load: a
+        # real human's actual login (credentials, 2FA, CAPTCHA) can easily
+        # run past a short capture window, and a token minted before any
+        # account is attached to the session is a different, weaker thing
+        # than one minted for the account these GQL requests actually need
+        # it for -- call this only after wait_for_cookie() has succeeded.
         await self.manager.start()
-        await self.manager.inject_manual_cookies("token123", "device-xyz")
+        expiry = datetime.now(timezone.utc) + timedelta(hours=4)
+        with patch(
+            "src.auth.browser_login._capture_integrity_token",
+            new=AsyncMock(return_value=("itok", expiry)),
+        ) as mock_capture:
+            result = await self.manager.captured_integrity_token()
 
-        self.mock_context.add_cookies.assert_awaited_once()
-        (cookies,), _ = self.mock_context.add_cookies.call_args
-        by_name = {c["name"]: c for c in cookies}
-        self.assertEqual(by_name["auth-token"]["value"], "token123")
-        self.assertEqual(by_name["auth-token"]["domain"], ".twitch.tv")
-        self.assertEqual(by_name["unique_id"]["value"], "device-xyz")
+        # goto() was already called once by start() itself (the anonymous
+        # LOGIN_URL navigation) -- this checks the most recent call, this
+        # method's own navigation to the now-authenticated campaigns page.
+        self.mock_page.goto.assert_awaited_with(
+            "https://www.twitch.tv/drops/campaigns", wait_until="domcontentloaded"
+        )
+        mock_capture.assert_awaited_once_with(self.mock_page)
+        self.assertEqual(result, ("itok", expiry))
 
-    async def test_inject_manual_cookies_skips_empty_unique_id(self):
+    async def test_captured_integrity_token_none_without_a_session(self):
+        result = await self.manager.captured_integrity_token()
+        self.assertIsNone(result)
+
+    async def test_captured_integrity_token_none_when_navigation_fails(self):
         await self.manager.start()
-        await self.manager.inject_manual_cookies("token123", "")
-
-        (cookies,), _ = self.mock_context.add_cookies.call_args
-        names = {c["name"] for c in cookies}
-        self.assertEqual(names, {"auth-token"})
-
-    async def test_inject_manual_cookies_is_what_wait_for_cookie_then_sees(self):
-        # The whole point: no separate success path, just a value
-        # wait_for_cookie()'s existing poll loop discovers on its own.
-        await self.manager.start()
-
-        async def add_cookies(cookies):
-            self.mock_context.cookies = AsyncMock(
-                return_value=[{**c, "domain": c["domain"]} for c in cookies]
-            )
-
-        self.mock_context.add_cookies = AsyncMock(side_effect=add_cookies)
-        self.mock_context.cookies = AsyncMock(return_value=[])
-
-        await self.manager.inject_manual_cookies("token123", "device-xyz")
-        result = await self.manager.wait_for_cookie(timeout=5)
-        self.assertEqual(result["auth-token"], "token123")
-        self.assertEqual(result["unique_id"], "device-xyz")
+        self.mock_page.goto = AsyncMock(side_effect=RuntimeError("navigation failed"))
+        result = await self.manager.captured_integrity_token()
+        self.assertIsNone(result)
 
 
 class TestBrowserLoginManagerStop(unittest.IsolatedAsyncioTestCase):

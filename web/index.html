@@ -165,19 +165,9 @@
                     <div id="login-status" class="login-status"></div>
                     <div id="browser-login-panel" style="display: none;">
                         <p id="browser-login-instructions">Log in to Twitch below. This is a real browser session running on the server -- your credentials never leave it.</p>
-                        <p id="browser-login-vps-warning">Hosting on a VPS? Twitch's own bot detection often blocks this. Use "Paste your session" below instead of waiting on this to work.</p>
+                        <p id="browser-login-vps-warning">Hosting on a VPS? Twitch's own bot detection often blocks this -- see the README for details.</p>
                         <div id="browser-login-canvas-container"></div>
                         <button id="browser-login-cancel">Cancel login</button>
-                        <details id="browser-login-manual-section">
-                            <summary id="browser-login-manual-summary">Browser blocked or slow? Paste your session instead</summary>
-                            <p id="browser-login-manual-instructions">Log in to Twitch normally on your own device, open its browser devtools, find the twitch.tv cookies (Application/Storage &gt; Cookies), and paste their values here.</p>
-                            <label for="browser-login-manual-auth-token" id="browser-login-manual-auth-token-label">auth-token cookie</label>
-                            <input type="text" id="browser-login-manual-auth-token" autocomplete="off">
-                            <label for="browser-login-manual-unique-id" id="browser-login-manual-unique-id-label">unique_id cookie (optional)</label>
-                            <input type="text" id="browser-login-manual-unique-id" autocomplete="off">
-                            <button id="browser-login-manual-submit">Use these cookies</button>
-                            <p id="browser-login-manual-status"></p>
-                        </details>
                     </div>
                 </section>
 

@@ -38,7 +38,7 @@ import zoneinfo
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 
-from playwright.async_api import Browser, BrowserContext, Playwright, async_playwright
+from playwright.async_api import Browser, BrowserContext, Page, Playwright, async_playwright
 
 logger = logging.getLogger("TwitchDrops")
 
@@ -113,14 +113,9 @@ class _BrowserLoginSession:
     playwright: Playwright
     browser: Browser
     context: BrowserContext
+    page: Page
     xvfb_process: asyncio.subprocess.Process | None
     x11vnc_process: asyncio.subprocess.Process | None
-    # Started right before the login page navigation (see _capture_integrity_
-    # token); by the time an interactive login actually succeeds, the user
-    # has taken far longer than this task's own short internal timeout, so
-    # it's always done by then -- awaited once via
-    # BrowserLoginManager.captured_integrity_token.
-    integrity_capture_task: asyncio.Task | None = None
     cancelled: asyncio.Event = field(default_factory=asyncio.Event)
 
 
@@ -272,10 +267,6 @@ class BrowserLoginManager:
                 "Object.defineProperty(navigator, 'webdriver', { get: () => undefined });"
             )
             page = await context.new_page()
-            # Attached before goto, not after -- Twitch's own JS fires this
-            # on a normal page load (confirmed live), and a response that
-            # arrives before the listener exists is simply missed.
-            integrity_capture_task = asyncio.ensure_future(_capture_integrity_token(page))
             await page.goto(LOGIN_URL, wait_until="domcontentloaded")
         except Exception as exc:
             await browser.close()
@@ -309,9 +300,9 @@ class BrowserLoginManager:
             playwright=playwright,
             browser=browser,
             context=context,
+            page=page,
             xvfb_process=xvfb_process,
             x11vnc_process=x11vnc_process,
-            integrity_capture_task=integrity_capture_task,
         )
         if vnc_port is not None:
             logger.info(f"Browser login session started on display :{display_number}, vnc port {vnc_port}")
@@ -353,43 +344,31 @@ class BrowserLoginManager:
                 continue
 
     async def captured_integrity_token(self) -> tuple[str, datetime] | None:
-        """The Client-Integrity token captured from this session's own
-        login-page navigation (see _capture_integrity_token), if one
-        arrived -- call this once, after wait_for_cookie() has already
-        succeeded (so the capture task, started right before the login
-        navigation, has had the entire interactive login's duration to
-        finish its own short internal timeout). None if no session is
-        active, nothing was captured, or capture itself failed for any
-        reason -- never raises."""
+        """The Client-Integrity token for this session's now-authenticated
+        account, captured by navigating the session's own already-open
+        page to a page that needs one -- call this once, after
+        wait_for_cookie() has already succeeded (so there's an actual
+        account to navigate as). Deliberately NOT captured earlier, off
+        the anonymous login-page load itself: that would race a real
+        human's login time (credentials, 2FA, CAPTCHA can easily run past
+        a short capture window) and a token minted before any account was
+        attached to the session is a different, weaker thing than one
+        minted for the authenticated account these GQL requests actually
+        need it for.
+
+        None if no session is active or nothing arrived in time -- never
+        raises."""
         session = self._session
-        if session is None or session.integrity_capture_task is None:
+        if session is None:
             return None
         try:
-            return await session.integrity_capture_task
-        except Exception as exc:
-            logger.warning(f"Integrity token capture task failed: {exc}")
-            return None
-
-    async def inject_manual_cookies(self, auth_token: str, unique_id: str) -> None:
-        """Supply the login cookies directly instead of waiting for them to
-        appear from the in-browser session -- for a user who logged in on
-        their own device (a real residential IP/browser, which Twitch's
-        integrity check treats as an ordinary login, unlike a datacenter
-        VPS) and copied the resulting cookies here. wait_for_cookie()'s
-        poll loop picks these up on its next tick exactly as if the
-        in-browser login had just completed itself, so nothing else about
-        the success path (token validation, persistence, teardown) changes.
-
-        Raises RuntimeError if no session is in progress.
-        """
-        if self._session is None:
-            raise RuntimeError("No browser login session is in progress")
-        cookies = [{"name": COOKIE_NAME, "value": auth_token, "domain": f".{COOKIE_DOMAIN}", "path": "/"}]
-        if unique_id:
-            cookies.append(
-                {"name": DEVICE_ID_COOKIE_NAME, "value": unique_id, "domain": f".{COOKIE_DOMAIN}", "path": "/"}
+            await session.page.goto(
+                "https://www.twitch.tv/drops/campaigns", wait_until="domcontentloaded"
             )
-        await self._session.context.add_cookies(cookies)
+        except Exception as exc:
+            logger.warning(f"Integrity token capture: failed to navigate to the campaigns page: {exc}")
+            return None
+        return await _capture_integrity_token(session.page)
 
     def cancel(self) -> None:
         """Signal the in-progress attempt (if any) to stop waiting."""

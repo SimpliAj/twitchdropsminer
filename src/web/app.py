@@ -1319,29 +1319,6 @@ async def cancel_browser_login():
     return {"success": True}
 
 
-class ManualCookieLoginRequest(BaseModel):
-    auth_token: str
-    unique_id: str = ""
-
-
-@app.post("/api/login/browser/manual-cookies")
-async def submit_manual_browser_login_cookies(body: ManualCookieLoginRequest):
-    """Fallback for the noVNC login: a user who logged into Twitch normally
-    on their own device (a real residential IP/browser) pastes the
-    resulting auth-token/unique_id cookies here instead of typing
-    credentials into the server-side Chromium session -- see
-    BrowserLoginManager.inject_manual_cookies for why (datacenter IPs get
-    flagged by Twitch's own bot/integrity check regardless of anything
-    this app does).
-    """
-    auth_token = body.auth_token.strip()
-    if not auth_token:
-        raise HTTPException(status_code=400, detail="auth-token is required")
-    manager = browser_login.get_active_manager()
-    if manager is None or not manager.in_progress:
-        raise HTTPException(status_code=409, detail="No login attempt is in progress")
-    await manager.inject_manual_cookies(auth_token, body.unique_id.strip())
-    return {"success": True}
 
 
 def _websocket_is_authenticated(websocket: WebSocket) -> bool:

@@ -381,11 +381,9 @@ See the [Original Project Credits](#original-project-credits) section for transl
 > Twitch's own bot/integrity check routinely flags datacenter IP ranges and shows "Your
 > browser is not currently supported" on the login page, independent of anything this app
 > does -- setting `TZ` correctly (see the Docker examples above) fixes one specific cause of
-> that banner, but a flagged VPS IP can still fail. **If you're hosting on a VPS, use the
-> "paste your session" fallback in the login panel instead of the embedded browser**: log in
-> to Twitch normally on your own device, then paste the resulting `auth-token`/`unique_id`
-> cookies there. That's the supported path for VPS hosting -- don't rely on the noVNC panel
-> working there.
+> that banner, but a flagged VPS IP can still fail, and there isn't a reliable workaround for
+> that part. **Home/NAS hosting is the supported path** -- a real desktop, or a Docker host
+> with no bot-reputation problem on its IP, is what this login flow is built for.
 
 ---
 
