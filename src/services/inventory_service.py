@@ -20,6 +20,7 @@ from src.exceptions import ExitRequest, GQLException
 from src.i18n import _
 from src.models import DropsCampaign
 from src.services.campaign_discovery import discover_campaigns_via_browser
+from src.services.public_catalog import fetch_public_campaigns
 from src.utils import chunk
 
 
@@ -161,17 +162,32 @@ class InventoryService:
         inventory_data: dict[str, JsonType] = {c["id"]: c for c in ongoing_campaigns}
 
         # fetch general available campaigns data (campaigns)
-        response = await self._twitch.gql_request(GQL_OPERATIONS["Campaigns"])
-        current_user = response["data"]["currentUser"]
-        if current_user is None:
-            raise GQLException("Campaigns query returned currentUser=None (transient Twitch-side error)")
-        available_list: list[JsonType] = current_user["dropCampaigns"] or []
         applicable_statuses = ("ACTIVE", "UPCOMING")
-        available_campaigns: dict[str, JsonType] = {
-            c["id"]: c
-            for c in available_list
-            if c["status"] in applicable_statuses  # that are currently not expired
-        }
+        available_campaigns: dict[str, JsonType] = {}
+        try:
+            response = await self._twitch.gql_request(GQL_OPERATIONS["Campaigns"])
+            current_user = response["data"]["currentUser"]
+            if current_user is None:
+                raise GQLException(
+                    "Campaigns query returned currentUser=None (transient Twitch-side error)"
+                )
+            available_list: list[JsonType] = current_user["dropCampaigns"] or []
+            available_campaigns = {
+                c["id"]: c
+                for c in available_list
+                if c["status"] in applicable_statuses  # that are currently not expired
+            }
+        except GQLException as exc:
+            if "IntegrityCheckFailed" not in str(exc):
+                raise
+            # The account-bound campaign list is integrity-gated, but the list
+            # itself needs no account: take ids from the public feed and let
+            # the CampaignDetails queries below fill in the rest.
+            logger.warning("Campaigns query failed the integrity check, using the public drops feed")
+            public = await fetch_public_campaigns(await self._twitch.get_session())
+            available_campaigns = {c["id"]: c for c in public}
+            if not available_campaigns and not inventory_data:
+                raise
 
         # Supplemental: SMARTBOX's own client-id (used above) sees a reduced
         # campaign catalog compared to Twitch's real web client (see
