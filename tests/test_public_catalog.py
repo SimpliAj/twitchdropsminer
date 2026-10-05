@@ -70,3 +70,11 @@ class TestInventoryFallback(unittest.IsolatedAsyncioTestCase):
         service = InventoryService(self._twitch(GQLException("service error")))
         with self.assertRaises(GQLException):
             await service._fetch_inventory()
+
+
+class TestHardening(unittest.TestCase):
+    def test_bad_ids_dropped(self):
+        p = {"lastUpdatedAt": "2026-10-05T11:59:00Z",
+             "data": [{"rewards": [{"id": 5, "status": "ACTIVE"}, {"id": "x" * 500, "status": "ACTIVE"},
+                                   {"id": "ok", "status": "ACTIVE"}]}]}
+        self.assertEqual([c["id"] for c in parse_catalog(p, NOW)], ["ok"])

@@ -9,6 +9,7 @@ CampaignDetails queries fill in the rest. Never raises.
 
 from __future__ import annotations
 
+import json
 import logging
 from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, Any
@@ -26,6 +27,8 @@ logger = logging.getLogger("TwitchDrops")
 CATALOG_URL = "https://twitch-drops-api.sunkwi.com/v2/drops"
 MAX_CAMPAIGNS = 2000
 MAX_AGE = timedelta(minutes=30)
+MAX_BODY_BYTES = 8 * 1024 * 1024
+MAX_ID_LEN = 128
 
 
 def parse_catalog(payload: Any, now: datetime | None = None) -> list[JsonType]:
@@ -42,7 +45,11 @@ def parse_catalog(payload: Any, now: datetime | None = None) -> list[JsonType]:
         for group in payload["data"]:
             for reward in group.get("rewards") or []:
                 cid, status = reward.get("id"), reward.get("status")
-                if cid and status in ("ACTIVE", "UPCOMING"):
+                if (
+                    isinstance(cid, str)
+                    and 0 < len(cid) <= MAX_ID_LEN
+                    and status in ("ACTIVE", "UPCOMING")
+                ):
                     found[cid] = {"id": cid, "status": status}
                 if len(found) >= MAX_CAMPAIGNS:
                     return list(found.values())
@@ -52,13 +59,21 @@ def parse_catalog(payload: Any, now: datetime | None = None) -> list[JsonType]:
         return []
 
 
-async def fetch_public_campaigns(session: aiohttp.ClientSession) -> list[JsonType]:
+async def fetch_public_campaigns(
+    session: aiohttp.ClientSession, proxy: str | None = None
+) -> list[JsonType]:
     try:
-        async with session.get(CATALOG_URL, timeout=aiohttp.ClientTimeout(total=20)) as resp:
+        async with session.get(
+            CATALOG_URL, timeout=aiohttp.ClientTimeout(total=20), proxy=proxy or None
+        ) as resp:
             if resp.status != 200:
                 logger.warning(f"Public drops feed returned HTTP {resp.status}")
                 return []
-            payload = await resp.json(content_type=None)
+            body = await resp.content.read(MAX_BODY_BYTES + 1)
+            if len(body) > MAX_BODY_BYTES:
+                logger.warning("Public drops feed response too large, ignoring it")
+                return []
+            payload = json.loads(body)
     except Exception as exc:
         logger.warning(f"Public drops feed unavailable: {exc}")
         return []

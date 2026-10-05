@@ -184,7 +184,9 @@ class InventoryService:
             # itself needs no account: take ids from the public feed and let
             # the CampaignDetails queries below fill in the rest.
             logger.warning("Campaigns query failed the integrity check, using the public drops feed")
-            public = await fetch_public_campaigns(await self._twitch.get_session())
+            public = await fetch_public_campaigns(
+                await self._twitch.get_session(), self._twitch.settings.proxy
+            )
             available_campaigns = {c["id"]: c for c in public}
             if not available_campaigns and not inventory_data:
                 raise
