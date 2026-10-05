@@ -1319,6 +1319,24 @@ async def cancel_browser_login():
     return {"success": True}
 
 
+@app.post("/api/login/device-code/start")
+async def start_device_code_login():
+    """Switch to the device-code login (no browser needed)."""
+    if twitch_client is None:
+        raise HTTPException(status_code=503, detail="Not initialized")
+    twitch_client._auth_state.request_device_code_login()
+    return {"success": True}
+
+
+@app.post("/api/login/device-code/cancel")
+async def cancel_device_code_login():
+    """Abandon a pending device code and go back to the browser login."""
+    if twitch_client is None:
+        raise HTTPException(status_code=503, detail="Not initialized")
+    twitch_client._auth_state.request_browser_login()
+    return {"success": True}
+
+
 class HelperSessionRequest(BaseModel):
     auth_token: str
     unique_id: str = ""

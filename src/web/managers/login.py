@@ -29,12 +29,14 @@ class LoginFormManager:
         self._user_id: int | None = None
         self._user_login: str | None = None
         self._browser_login_websocket_port: int | None = None
+        self._device_code: dict[str, str] | None = None
 
     def update(self, status: str, user_id: int | None, user_login: str | None = None):
         self._status = status
         self._user_id = user_id
         self._user_login = user_login
         self._browser_login_websocket_port = None
+        self._device_code = None
         asyncio.create_task(
             self._broadcaster.emit(
                 "login_status", {"status": status, "user_id": user_id, "user_login": user_login}
@@ -58,6 +60,12 @@ class LoginFormManager:
         self._browser_login_websocket_port = websocket_port
         await self._broadcaster.emit("browser_login_ready", {"websocket_path": "/api/login/browser/ws"})
 
+    async def ask_enter_code(self, url: str, code: str) -> None:
+        """Show the device-code login: the user enters `code` at `url` on any device."""
+        self.update(_.t["login"]["status"]["waiting_auth"], None)
+        self._device_code = {"url": url, "code": code}
+        await self._broadcaster.emit("device_code_ready", self._device_code)
+
     async def start_browser_login_on_real_display(self) -> None:
         """Like start_browser_login, but for a login window that opened
         directly on the host's own real desktop display (see
@@ -71,4 +79,6 @@ class LoginFormManager:
         result: dict[str, Any] = {"status": self._status, "user_id": self._user_id, "user_login": self._user_login}
         if self._browser_login_websocket_port is not None:
             result["browser_login_ready"] = {"websocket_path": "/api/login/browser/ws"}
+        if self._device_code is not None:
+            result["device_code"] = self._device_code
         return result

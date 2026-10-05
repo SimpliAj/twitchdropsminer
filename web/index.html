@@ -169,6 +169,13 @@
                         <div id="browser-login-canvas-container"></div>
                         <button id="browser-login-cancel">Cancel login</button>
                     </div>
+                    <button id="device-code-start" class="secondary-btn" style="display: none;">Browser login not working? Log in with a code instead</button>
+                    <div id="device-code-panel" style="display: none;">
+                        <p id="device-code-prompt">Open this page on any device and enter the code:</p>
+                        <p><a id="device-code-url" href="#" target="_blank" rel="noopener"></a></p>
+                        <div class="oauth-code" id="device-code-value"></div>
+                        <button id="device-code-back" class="secondary-btn">Back to browser login</button>
+                    </div>
                 </section>
 
                 <!-- Channel Points Display -->

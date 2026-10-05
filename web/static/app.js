@@ -387,6 +387,10 @@ socket.on('login_status', (data) => {
     updateLoginStatus(data);
 });
 
+socket.on('device_code_ready', (data) => {
+    showDeviceCodePanel(data.url, data.code);
+});
+
 socket.on('settings_updated', (data) => {
     updateSettingsUI(data);
 });
@@ -1998,6 +2002,46 @@ async function connectBrowserLoginRfb(websocketPath) {
     });
 }
 
+function loginText(key, fallback) {
+    return state.translations?.login?.browser_login?.[key] || fallback;
+}
+
+function showDeviceCodePanel(url, code) {
+    closeBrowserLoginPanel();
+    document.getElementById('device-code-start').style.display = 'none';
+    document.getElementById('device-code-panel').style.display = 'block';
+    document.getElementById('device-code-prompt').textContent =
+        loginText('device_code_prompt', 'Open this page on any device and enter the code:');
+    document.getElementById('device-code-back').textContent =
+        loginText('device_code_back', 'Back to browser login');
+    const link = document.getElementById('device-code-url');
+    // only ever link to Twitch itself
+    link.href = /^https:\/\/(www\.)?twitch\.tv\//.test(url) ? url : 'https://www.twitch.tv/activate';
+    link.textContent = link.href;
+    document.getElementById('device-code-value').textContent = code;
+}
+
+function hideDeviceCodePanel() {
+    document.getElementById('device-code-panel').style.display = 'none';
+}
+
+async function startDeviceCodeLogin() {
+    try {
+        await fetch(API_BASE + '/api/login/device-code/start', { method: 'POST' });
+    } catch (error) {
+        console.error('Failed to switch to device-code login:', error);
+    }
+}
+
+async function cancelDeviceCodeLogin() {
+    hideDeviceCodePanel();
+    try {
+        await fetch(API_BASE + '/api/login/device-code/cancel', { method: 'POST' });
+    } catch (error) {
+        console.error('Failed to go back to browser login:', error);
+    }
+}
+
 function updateLoginStatus(data) {
     const statusEl = document.getElementById('login-status');
     const loginPanel = document.querySelector('.login-panel');
@@ -2007,6 +2051,8 @@ function updateLoginStatus(data) {
         statusEl.innerHTML = `<span style="color:var(--success-color);font-weight:600;">✓ @${name}</span>`;
         statusEl.removeAttribute('translation-key');
         closeBrowserLoginPanel();
+        hideDeviceCodePanel();
+        document.getElementById('device-code-start').style.display = 'none';
         if (loginPanel) loginPanel.classList.add('is-logged-in');
     } else {
         const loggedOut = t.login?.status?.logged_out || 'Not logged in';
@@ -2014,6 +2060,15 @@ function updateLoginStatus(data) {
         statusEl.setAttribute('translation-key', 'logged_out');
         statusEl.style.color = 'var(--text-secondary)';
         if (loginPanel) loginPanel.classList.remove('is-logged-in');
+        if (data.device_code) {
+            showDeviceCodePanel(data.device_code.url, data.device_code.code);
+        } else {
+            hideDeviceCodePanel();
+            const startBtn = document.getElementById('device-code-start');
+            startBtn.textContent = loginText(
+                'device_code_use_instead', 'Browser login not working? Log in with a code instead');
+            startBtn.style.display = 'block';
+        }
         if (data.browser_login_ready) {
             showBrowserLoginPanel(data.browser_login_ready.websocket_path);
         }
@@ -4460,6 +4515,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Login form
     document.getElementById('browser-login-cancel').addEventListener('click', cancelBrowserLogin);
+    document.getElementById('device-code-start').addEventListener('click', startDeviceCodeLogin);
+    document.getElementById('device-code-back').addEventListener('click', cancelDeviceCodeLogin);
 
     // Settings - auto-save on change
     document.getElementById('dark-mode').addEventListener('change', (e) => {

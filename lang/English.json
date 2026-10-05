@@ -26,7 +26,10 @@
       "instructions": "Log in to Twitch below. This is a real browser session running on the server -- your credentials never leave it.",
       "vps_warning": "Hosting on a VPS? Twitch's own bot detection often blocks this -- run scripts/tdm_login_helper.py from your own device instead (see the README).",
       "cancel": "Cancel login",
-      "on_real_display": "A browser window has opened on this machine's own desktop -- complete the Twitch login there."
+      "on_real_display": "A browser window has opened on this machine's own desktop -- complete the Twitch login there.",
+      "device_code_use_instead": "Browser login not working? Log in with a code instead",
+      "device_code_prompt": "Open this page on any device and enter the code:",
+      "device_code_back": "Back to browser login"
     }
   },
   "error": {

@@ -377,12 +377,20 @@ See the [Original Project Credits](#original-project-credits) section for transl
 > setup needed, it's detected automatically. This also sidesteps the VPS issues below
 > entirely, since it's the same kind of real device/IP Twitch expects.
 
+> 🔑 **Code login (works in Docker / headless home-labs, no browser needed)**
+> If the embedded browser login shows "Your browser is not currently supported", click
+> **"Browser login not working? Log in with a code instead"** in the dashboard's Login panel
+> (or start the container with `TDM_LOGIN_METHOD=device_code`). TDM shows a code; open
+> twitch.tv/activate on any device (phone, PC) and enter it. This is the recommended login
+> for Docker/NAS setups. The campaign list is then completed from a public community feed,
+> so you still see all campaigns. "Back to browser login" returns to the other method.
+
 > 🚫 **The in-dashboard browser login does not reliably work on a VPS**
 > Twitch's own bot/integrity check routinely flags datacenter IP ranges and shows "Your
 > browser is not currently supported" on the login page, independent of anything this app
 > does -- setting `TZ` correctly (see the Docker examples above) fixes one specific cause of
 > that banner, but a flagged VPS IP can still fail. If that's you, use the **login helper**
-> instead (below) rather than waiting on the embedded browser to work.
+> instead (below) or the **code login** (above) rather than waiting on the embedded browser to work.
 
 > 🖥️ **Login helper script (for VPS hosting, or whenever the embedded login doesn't work)**
 > `scripts/tdm_login_helper.py` logs in with your own, already-installed Google Chrome on

@@ -4,13 +4,15 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, cast
 
 import aiohttp
 
-from src.config import COOKIES_PATH
+from src.config import COOKIES_PATH, ClientType
 from src.i18n import _
+from src.exceptions import RequestInvalid
 from src.utils import CHARS_HEX_LOWER, create_nonce
 
 
@@ -29,6 +31,14 @@ BROWSER_LOGIN_RETRY_DELAY_SEC = 5.0
 # Client-Integrity token cache policy (see _ensure_integrity_token).
 INTEGRITY_RENEW_MARGIN = timedelta(minutes=15)  # renew early so a GQL request never races the expiry
 INTEGRITY_FAILURE_COOLDOWN = timedelta(minutes=5)  # don't hammer a failing acquisition every GQL request
+
+
+class DeviceCodeRequested(Exception):
+    """The user asked for the device-code login while a browser login was running."""
+
+
+class BrowserLoginRequested(Exception):
+    """The user asked to go back to the browser login while a device code was pending."""
 
 
 class _AuthState:
@@ -57,6 +67,14 @@ class _AuthState:
         self._integrity_token: str | None = None
         self._integrity_expires_at: datetime | None = None
         self._integrity_failed_until: datetime | None = None
+        # Which login method to use. Device-code (SMARTBOX identity) needs no
+        # browser at all, so it works in Docker / headless home-labs where the
+        # embedded browser login is rejected. Chosen via the dashboard or the
+        # TDM_LOGIN_METHOD=device_code env var.
+        self._device_code_requested: bool = (
+            os.environ.get("TDM_LOGIN_METHOD", "").strip().lower() == "device_code"
+        )
+        self._device_code_cancel = asyncio.Event()
 
     def _hasattrs(self, *attrs: str) -> bool:
         """Check if all specified attributes exist."""
@@ -78,6 +96,110 @@ class _AuthState:
             "client_version",
         )
         self._logged_in.clear()
+
+    def request_device_code_login(self) -> None:
+        """Switch the pending login over to the device-code flow."""
+        from src.auth import browser_login
+
+        self._device_code_requested = True
+        manager = browser_login.get_active_manager()
+        if manager is not None:
+            manager.cancel()
+
+    def request_browser_login(self) -> None:
+        """Abandon a pending device code and go back to the browser login."""
+        self._device_code_requested = False
+        self._device_code_cancel.set()
+
+    async def _acquire_token(self) -> str:
+        """Run whichever login method is currently selected, switching on request."""
+        while True:
+            if not self._device_code_requested:
+                self._twitch.set_client_type(ClientType.WEB)
+                try:
+                    return await self._browser_login()
+                except DeviceCodeRequested:
+                    continue
+            self._twitch.set_client_type(ClientType.SMARTBOX)
+            self._device_code_cancel.clear()
+            try:
+                return await self._device_code_login()
+            except BrowserLoginRequested:
+                continue
+
+    async def _device_code_login(self) -> str:
+        """OAuth device-code flow under the SMARTBOX identity: Twitch shows a
+        code, the user confirms it on twitch.tv/activate (any device)."""
+        login_form: LoginForm = self._twitch.gui.login
+        client_info: ClientInfo = ClientType.SMARTBOX
+        headers = {
+            "Accept": "application/json",
+            "Accept-Encoding": "gzip",
+            "Accept-Language": "en-US",
+            "Cache-Control": "no-cache",
+            "Client-Id": client_info.CLIENT_ID,
+            "Host": "id.twitch.tv",
+            "Origin": str(client_info.CLIENT_URL),
+            "Pragma": "no-cache",
+            "Referer": str(client_info.CLIENT_URL),
+            "User-Agent": client_info.USER_AGENT,
+            "X-Device-Id": self.device_id,
+        }
+        while True:
+            try:
+                now = datetime.now(timezone.utc)
+                async with self._twitch.request(
+                    "POST",
+                    "https://id.twitch.tv/oauth2/device",
+                    headers=headers,
+                    data={"client_id": client_info.CLIENT_ID, "scopes": ""},
+                ) as response:
+                    if response.status != 200:
+                        error_body = await response.text()
+                        logger.error(
+                            f"Device code request failed (HTTP {response.status}): "
+                            f"{error_body}. Retrying in 30s."
+                        )
+                        await self._sleep_or_switch(30)
+                        continue
+                    response_json: JsonType = await response.json()
+                    device_code: str = response_json["device_code"]
+                    user_code: str = response_json["user_code"]
+                    interval: int = response_json["interval"]
+                    verification_uri = str(response_json["verification_uri"])
+                    expires_at = now + timedelta(seconds=response_json["expires_in"])
+
+                await login_form.ask_enter_code(verification_uri, user_code)
+
+                payload = {
+                    "client_id": client_info.CLIENT_ID,
+                    "device_code": device_code,
+                    "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
+                }
+                while True:
+                    await self._sleep_or_switch(interval)
+                    async with self._twitch.request(
+                        "POST",
+                        "https://id.twitch.tv/oauth2/token",
+                        headers=headers,
+                        data=payload,
+                        invalidate_after=expires_at,
+                    ) as response:
+                        # 200 = success, 400 = the user hasn't entered the code yet
+                        if response.status != 200:
+                            continue
+                        response_json = await response.json()
+                        self.access_token = cast(str, response_json["access_token"])
+                        return self.access_token
+            except RequestInvalid:
+                continue  # the code expired, ask for a new one
+
+    async def _sleep_or_switch(self, seconds: float) -> None:
+        try:
+            await asyncio.wait_for(self._device_code_cancel.wait(), timeout=seconds)
+        except asyncio.TimeoutError:
+            return
+        raise BrowserLoginRequested()
 
     async def _browser_login(self) -> str:
         """
@@ -145,6 +267,8 @@ class _AuthState:
                     login_form, "timed_out", "Login timed out - starting a new login session..."
                 )
             except BrowserLoginCancelled:
+                if self._device_code_requested:
+                    raise DeviceCodeRequested() from None
                 logger.info("Browser login cancelled; a new session will be offered")
                 self._update_login_status(
                     login_form, "cancelled", "Login cancelled - starting a new login session..."
@@ -240,6 +364,13 @@ class _AuthState:
         if not self._hasattrs("device_id", "access_token", "user_id"):
             session = await self._twitch.get_session()
             jar = cast(aiohttp.CookieJar, session.cookie_jar)
+            # A session saved by the device-code login lives under the SMARTBOX
+            # identity -- pick it back up instead of treating it as a mismatch.
+            if (
+                "auth-token" in jar.filter_cookies(ClientType.SMARTBOX.CLIENT_URL)
+                and "auth-token" not in jar.filter_cookies(ClientType.WEB.CLIENT_URL)
+            ):
+                self._twitch.set_client_type(ClientType.SMARTBOX)
             client_info: ClientInfo = self._twitch._client_type
         if not self._hasattrs("device_id"):
             async with self._twitch.request(
@@ -263,7 +394,9 @@ class _AuthState:
                 for _invalid_token_attempt in range(2):
                     cookie = jar.filter_cookies(client_info.CLIENT_URL)
                     if "auth-token" not in cookie:
-                        self.access_token = await self._browser_login()
+                        self.access_token = await self._acquire_token()
+                        client_info = self._twitch._client_type
+                        cookie = jar.filter_cookies(client_info.CLIENT_URL)
                         cookie["auth-token"] = self.access_token
                     elif not hasattr(self, "access_token"):
                         logger.info("Restoring session from cookie")
@@ -290,6 +423,22 @@ class _AuthState:
                 # which is the same client_info used for browsing here.
                 if validate_response["client_id"] == client_info.CLIENT_ID:
                     break
+                # a token minted under the other known identity is still good --
+                # switch to that identity instead of throwing the session away
+                other = next(
+                    (
+                        c
+                        for c in (ClientType.WEB, ClientType.SMARTBOX)
+                        if c.CLIENT_ID == validate_response["client_id"]
+                    ),
+                    None,
+                )
+                if other is not None:
+                    logger.info("Cookie belongs to the other client identity, switching to it")
+                    self._twitch.set_client_type(other)
+                    client_info = other
+                    jar.update_cookies({"auth-token": self.access_token}, client_info.CLIENT_URL)
+                    continue
                 # otherwise, we need to delete the entire cookie file and clear the jar
                 logger.info("Cookie client ID mismatch")
                 jar.clear()
@@ -350,6 +499,8 @@ class _AuthState:
         """
         if not self._hasattrs("access_token", "device_id"):
             return
+        if self._twitch._client_type is ClientType.SMARTBOX:
+            return  # the integrity gate only applies to the WEB identity
         from src.auth import browser_login
 
         now = datetime.now(timezone.utc)

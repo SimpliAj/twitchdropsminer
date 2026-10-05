@@ -68,3 +68,11 @@ class ClientType:
             ),
         ],
     )
+    SMARTBOX = ClientInfo(
+        URL("https://android.tv.twitch.tv"),
+        "ue6666qo983tsx6so1t0vnawi233wa",
+        (
+            "Mozilla/5.0 (Linux; Android 7.1; Smart Box C1) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
+        ),
+    )

@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any
 from dateutil.parser import isoparse
 
 from src.api import GQLClient
-from src.config import GQL_OPERATIONS
+from src.config import GQL_OPERATIONS, ClientType
 from src.exceptions import ExitRequest, GQLException
 from src.i18n import _
 from src.models import DropsCampaign
@@ -177,6 +177,14 @@ class InventoryService:
                 for c in available_list
                 if c["status"] in applicable_statuses  # that are currently not expired
             }
+            if self._twitch._client_type is ClientType.SMARTBOX:
+                # device-code logins only get a reduced dropCampaigns list;
+                # the public feed fills in the rest (additive, existing ids win)
+                public = await fetch_public_campaigns(
+                    await self._twitch.get_session(), self._twitch.settings.proxy
+                )
+                for c in public:
+                    available_campaigns.setdefault(c["id"], c)
         except GQLException as exc:
             if "IntegrityCheckFailed" not in str(exc):
                 raise

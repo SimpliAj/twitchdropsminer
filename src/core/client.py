@@ -127,6 +127,19 @@ class Twitch:
         if self._gql_client is None:
             self._gql_client = GQLClient(self._http_client, self._auth_state, self._client_type)
 
+    def set_client_type(self, client_type: ClientInfo) -> None:
+        """Switch the identity used for every request (browser login runs as WEB,
+        device-code login as SMARTBOX -- a token only works under the identity
+        that minted it)."""
+        self._client_type = client_type
+        if self._http_client is not None:
+            self._http_client._client_type = client_type
+            session = self._http_client._session
+            if session is not None and not session.closed:
+                session.headers["User-Agent"] = client_type.USER_AGENT
+        if self._gql_client is not None:
+            self._gql_client._client_type = client_type
+
     async def get_session(self):
         """
         Get the HTTP session (for backward compatibility).
