@@ -10,10 +10,10 @@ a real residential IP and a real browser, the same thing Twitch expects
 from any other logged-in user -- and sends the resulting session to your
 TDM instance automatically once you've logged in.
 
-Requirements: Python 3.10+, Google Chrome installed, and the `playwright`
+Requirements: Python 3.10+, Google Chrome or Microsoft Edge installed, and the `playwright`
 and `requests` packages (`pip install playwright requests` is enough --
 `playwright install` is NOT needed, this uses your own installed Chrome,
-not Playwright's bundled one).
+not Playwright's bundled one; pass --browser edge|chromium to pick another).
 
 Usage:
     python tdm_login_helper.py --url http://localhost:8080
@@ -82,21 +82,43 @@ def submit_session(base_url: str, password: str | None, auth_token: str, unique_
     response.raise_for_status()
 
 
+# Tried in order. "chrome"/"msedge" are the user's own installed browsers (a
+# real residential-IP, real-profile browser is the whole point); None is
+# Playwright's bundled Chromium, only present after `playwright install
+# chromium` -- last resort, since it's the least "ordinary" of the three.
+BROWSER_CHANNELS = {"chrome": "chrome", "edge": "msedge", "chromium": None}
+
+
+def launch_browser(playwright, preferred: str | None):
+    order = [preferred] if preferred else list(BROWSER_CHANNELS)
+    errors = []
+    for name in order:
+        try:
+            return playwright.chromium.launch(channel=BROWSER_CHANNELS[name], headless=False)
+        except Exception as exc:
+            errors.append(f"  {name}: {str(exc).splitlines()[0]}")
+    print(
+        "Could not start a browser. Install Google Chrome or Microsoft Edge on this "
+        "device (or run `playwright install chromium` as a last resort).\nTried:\n"
+        + "\n".join(errors),
+        file=sys.stderr,
+    )
+    return None
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--url", required=True, help="Your TDM instance's address, e.g. http://localhost:8080")
     parser.add_argument("--password", default=None, help="TDM dashboard password, if one is set")
+    parser.add_argument(
+        "--browser", choices=sorted(BROWSER_CHANNELS), default=None,
+        help="Force a specific browser instead of trying chrome, then edge, then chromium",
+    )
     args = parser.parse_args()
 
     with sync_playwright() as playwright:
-        try:
-            browser = playwright.chromium.launch(channel="chrome", headless=False)
-        except Exception as exc:
-            print(
-                f"Failed to launch Google Chrome: {exc}\n"
-                "Make sure Google Chrome (not just Chromium) is installed on this device.",
-                file=sys.stderr,
-            )
+        browser = launch_browser(playwright, args.browser)
+        if browser is None:
             return 1
 
         try:

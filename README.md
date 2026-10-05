@@ -388,8 +388,8 @@ See the [Original Project Credits](#original-project-credits) section for transl
 > `scripts/tdm_login_helper.py` logs in with your own, already-installed Google Chrome on
 > your own device -- a real residential IP and a real browser, same as any other logged-in
 > Twitch user -- and sends the resulting session to your TDM instance automatically. Needs
-> Python 3.10+ and Chrome on the device you run it on (not the server); `playwright install`
-> is **not** needed, it uses your own Chrome, not a bundled one.
+> Python 3.10+ and Chrome or Edge on the device you run it on (not the server); `playwright install`
+> is **not** needed, it uses your own browser, not a bundled one (`--browser edge|chromium` to pick).
 > ```bash
 > pip install playwright requests
 > python tdm_login_helper.py --url http://localhost:8080          # or your TDM's real address
