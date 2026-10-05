@@ -370,6 +370,30 @@ class BrowserLoginManager:
             return None
         return await _capture_integrity_token(session.page)
 
+    async def inject_session_from_helper(self, auth_token: str, unique_id: str) -> None:
+        """Supply the login cookies directly instead of waiting for them to
+        appear from the in-browser session -- for the login helper script
+        (scripts/tdm_login_helper.py): it drives the user's own real,
+        already-installed Chrome on their own device (a real residential
+        IP/browser, which Twitch's integrity check treats as an ordinary
+        login, unlike this app's own server-side Chromium on a flagged
+        datacenter IP) and POSTs the resulting cookies here automatically.
+        wait_for_cookie()'s poll loop picks these up on its next tick
+        exactly as if the in-browser login had just completed itself, so
+        nothing else about the success path (token validation,
+        persistence, teardown) changes.
+
+        Raises RuntimeError if no session is in progress.
+        """
+        if self._session is None:
+            raise RuntimeError("No browser login session is in progress")
+        cookies = [{"name": COOKIE_NAME, "value": auth_token, "domain": f".{COOKIE_DOMAIN}", "path": "/"}]
+        if unique_id:
+            cookies.append(
+                {"name": DEVICE_ID_COOKIE_NAME, "value": unique_id, "domain": f".{COOKIE_DOMAIN}", "path": "/"}
+            )
+        await self._session.context.add_cookies(cookies)
+
     def cancel(self) -> None:
         """Signal the in-progress attempt (if any) to stop waiting."""
         if self._session is not None:

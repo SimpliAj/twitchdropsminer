@@ -1319,6 +1319,32 @@ async def cancel_browser_login():
     return {"success": True}
 
 
+class HelperSessionRequest(BaseModel):
+    auth_token: str
+    unique_id: str = ""
+
+
+@app.post("/api/login/browser/helper-session")
+async def submit_helper_session(body: HelperSessionRequest):
+    """For scripts/tdm_login_helper.py: Twitch's own bot/integrity check
+    routinely flags datacenter IPs regardless of anything this app does on
+    its own server-side Chromium, so the helper logs in with the user's
+    real, already-installed browser on their own device instead and POSTs
+    the resulting cookies here -- see BrowserLoginManager.
+    inject_session_from_helper. Authenticated the same way every other
+    /api/ route is (PasswordAuthMiddleware): the helper needs either the
+    dashboard password (X-Fleet-Password) or no password at all if the
+    dashboard has none set.
+    """
+    auth_token = body.auth_token.strip()
+    if not auth_token:
+        raise HTTPException(status_code=400, detail="auth-token is required")
+    manager = browser_login.get_active_manager()
+    if manager is None or not manager.in_progress:
+        raise HTTPException(status_code=409, detail="No login attempt is in progress")
+    await manager.inject_session_from_helper(auth_token, body.unique_id.strip())
+    return {"success": True}
+
 
 
 def _websocket_is_authenticated(websocket: WebSocket) -> bool:

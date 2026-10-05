@@ -381,9 +381,23 @@ See the [Original Project Credits](#original-project-credits) section for transl
 > Twitch's own bot/integrity check routinely flags datacenter IP ranges and shows "Your
 > browser is not currently supported" on the login page, independent of anything this app
 > does -- setting `TZ` correctly (see the Docker examples above) fixes one specific cause of
-> that banner, but a flagged VPS IP can still fail, and there isn't a reliable workaround for
-> that part. **Home/NAS hosting is the supported path** -- a real desktop, or a Docker host
-> with no bot-reputation problem on its IP, is what this login flow is built for.
+> that banner, but a flagged VPS IP can still fail. If that's you, use the **login helper**
+> instead (below) rather than waiting on the embedded browser to work.
+
+> 🖥️ **Login helper script (for VPS hosting, or whenever the embedded login doesn't work)**
+> `scripts/tdm_login_helper.py` logs in with your own, already-installed Google Chrome on
+> your own device -- a real residential IP and a real browser, same as any other logged-in
+> Twitch user -- and sends the resulting session to your TDM instance automatically. Needs
+> Python 3.10+ and Chrome on the device you run it on (not the server); `playwright install`
+> is **not** needed, it uses your own Chrome, not a bundled one.
+> ```bash
+> pip install playwright requests
+> python tdm_login_helper.py --url http://localhost:8080          # or your TDM's real address
+> # add --password yourpassword if your dashboard has one set (WEB_PASSWORD)
+> ```
+> Open your TDM dashboard first (it starts a login attempt automatically whenever one's
+> needed) and run the script while that's showing -- it opens a real Chrome window for you
+> to log in, then does the rest on its own.
 
 ---
 

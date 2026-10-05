@@ -24,7 +24,7 @@
     },
     "browser_login": {
       "instructions": "Log in to Twitch below. This is a real browser session running on the server -- your credentials never leave it.",
-      "vps_warning": "Hosting on a VPS? Twitch's own bot detection often blocks this -- see the README for details.",
+      "vps_warning": "Hosting on a VPS? Twitch's own bot detection often blocks this -- run scripts/tdm_login_helper.py from your own device instead (see the README).",
       "cancel": "Cancel login",
       "on_real_display": "A browser window has opened on this machine's own desktop -- complete the Twitch login there."
     }
