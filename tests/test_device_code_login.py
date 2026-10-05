@@ -89,3 +89,18 @@ class TestSmartboxFeedMerge(unittest.IsolatedAsyncioTestCase):
             await service._fetch_inventory()
         (chunk_arg,), _kw = service.fetch_campaigns.call_args
         self.assertEqual(sorted(k for k, _v in chunk_arg), ["a", "b"])
+
+
+class TestAskEnterCode(unittest.IsolatedAsyncioTestCase):
+    async def test_code_travels_in_the_status_event(self):
+        from src.web.managers.login import LoginFormManager
+
+        broadcaster = MagicMock()
+        broadcaster.emit = AsyncMock()
+        mgr = LoginFormManager(broadcaster, MagicMock())
+        await mgr.ask_enter_code("https://www.twitch.tv/activate", "ABCD")
+        broadcaster.emit.assert_awaited_once()
+        event, payload = broadcaster.emit.await_args.args
+        self.assertEqual(event, "login_status")
+        self.assertEqual(payload["device_code"]["code"], "ABCD")
+        self.assertEqual(mgr.get_status()["device_code"]["code"], "ABCD")

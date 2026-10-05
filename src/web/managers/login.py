@@ -61,10 +61,19 @@ class LoginFormManager:
         await self._broadcaster.emit("browser_login_ready", {"websocket_path": "/api/login/browser/ws"})
 
     async def ask_enter_code(self, url: str, code: str) -> None:
-        """Show the device-code login: the user enters `code` at `url` on any device."""
-        self.update(_.t["login"]["status"]["waiting_auth"], None)
+        """Show the device-code login: the user enters `code` at `url` on any device.
+
+        One login_status event carries the code itself -- a separate event raced
+        with the plain status update and the dashboard could end up hiding it."""
+        self._status = _.t["login"]["status"]["waiting_auth"]
+        self._user_id = None
+        self._user_login = None
+        self._browser_login_websocket_port = None
         self._device_code = {"url": url, "code": code}
-        await self._broadcaster.emit("device_code_ready", self._device_code)
+        await self._broadcaster.emit(
+            "login_status",
+            {"status": self._status, "user_id": None, "user_login": None, "device_code": self._device_code},
+        )
 
     async def start_browser_login_on_real_display(self) -> None:
         """Like start_browser_login, but for a login window that opened
