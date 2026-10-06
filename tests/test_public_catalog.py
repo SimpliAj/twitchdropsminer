@@ -196,3 +196,46 @@ class TestLinkStates(unittest.TestCase):
         self.assertTrue(campaign_from_feed(linked, states)["self"]["isAccountConnected"])
         self.assertFalse(campaign_from_feed(unlinked, states)["self"]["isAccountConnected"])
         self.assertFalse(campaign_from_feed(unknown, states)["self"]["isAccountConnected"])
+
+
+class TestFeedIsUntrusted(unittest.TestCase):
+    def _parse(self, rec):
+        p = {"lastUpdatedAt": "2026-10-05T11:59:00Z", "data": [{"rewards": [rec]}]}
+        return parse_catalog(p, NOW)
+
+    def test_script_urls_are_dropped_not_passed_to_the_dashboard(self):
+        rec = _rec("a")
+        rec["accountLinkURL"] = "javascript:alert(1)"
+        rec["game"]["boxArtURL"] = "data:text/html,x"
+        rec["timeBasedDrops"][0]["benefitEdges"] = [
+            {"benefit": {"id": "b", "name": "n", "distributionType": "BADGE",
+                         "imageAssetURL": "javascript:alert(1)"}}]
+        out = self._parse(rec)[0]
+        self.assertEqual(out["accountLinkURL"], "")
+        self.assertEqual(out["game"]["boxArtURL"], "")
+        self.assertEqual(out["timeBasedDrops"][0]["benefitEdges"][0]["benefit"]["imageAssetURL"], "")
+
+    def test_forged_account_state_is_stripped(self):
+        rec = _rec("a")
+        rec["self"] = {"isAccountConnected": True}
+        rec["timeBasedDrops"][0]["self"] = {"isClaimed": True, "dropInstanceID": "x", "currentMinutesWatched": 9999}
+        out = self._parse(rec)[0]
+        self.assertNotIn("self", out)
+        self.assertNotIn("self", out["timeBasedDrops"][0])
+
+    def test_bad_channel_name_or_oversize_rejects_the_record(self):
+        rec = _rec("a")
+        rec["allow"] = {"isEnabled": True, "channels": [{"id": "1", "name": "../evil?x=1"}]}
+        self.assertEqual(self._parse(rec), [])
+        big = _rec("b")
+        big["timeBasedDrops"] = big["timeBasedDrops"] * 500
+        self.assertEqual(self._parse(big), [])
+        weird = _rec("c")
+        weird["name"] = "x" * 5000
+        self.assertEqual(self._parse(weird), [])
+
+    def test_extra_keys_are_not_copied(self):
+        rec = _rec("a")
+        rec["__proto__"] = {"x": 1}
+        rec["description"] = "<script>"
+        self.assertNotIn("description", self._parse(rec)[0])

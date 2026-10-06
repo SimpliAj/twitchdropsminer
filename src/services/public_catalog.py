@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
@@ -29,32 +30,123 @@ CATALOG_URL = "https://twitch-drops-api.sunkwi.com/v2/drops"
 MAX_CAMPAIGNS = 2000
 MAX_AGE = timedelta(minutes=30)
 MAX_BODY_BYTES = 8 * 1024 * 1024
-MAX_ID_LEN = 128
 
 
-def _usable(record: Any) -> bool:
-    """True if the record has everything DropsCampaign / TimedDrop read from it."""
+_ID_RE = re.compile(r"^[A-Za-z0-9_.:\-]{1,200}$")
+_LOGIN_RE = re.compile(r"^[A-Za-z0-9_]{1,25}$")
+_TEXT_MAX = 300
+_URL_MAX = 500
+_MAX_DROPS = 200
+_MAX_BENEFITS = 30
+_MAX_CHANNELS = 2000
+_MAX_GROUPS = 2000
+_DISTRIBUTION_TYPES = ("BADGE", "EMOTE", "DIRECT_ENTITLEMENT")
+
+
+def _text(value: Any) -> str:
+    if not isinstance(value, str) or not value or len(value) > _TEXT_MAX:
+        raise ValueError("bad text")
+    return value
+
+
+def _ident(value: Any) -> str:
+    if not isinstance(value, str) or not _ID_RE.match(value):
+        raise ValueError("bad id")
+    return value
+
+
+def _https_url(value: Any) -> str:
+    """Only plain https URLs reach the dashboard (no javascript:/data: links or images)."""
+    if isinstance(value, str) and len(value) <= _URL_MAX and value.startswith("https://"):
+        return value
+    return ""
+
+
+def _date(value: Any) -> str:
+    isoparse(value)
+    return value
+
+
+def _clean(record: Any) -> JsonType | None:
+    """Copy only the fields the miner reads, validated; None if anything is off.
+
+    The feed is a third party's data: nothing is passed through as-is, so it
+    cannot smuggle in account state (`self`), script URLs or oversized values."""
     try:
-        if not (isinstance(record["name"], str) and str(int(record["game"]["id"]))):
-            return False
-        isoparse(record["startAt"])
-        isoparse(record["endAt"])
-        if not isinstance((record.get("allow") or {}).get("channels") or [], list):
-            return False
+        status = record["status"]
+        if status not in ("ACTIVE", "UPCOMING"):
+            return None
+        allow = record.get("allow") or {}
+        channels = allow.get("channels") or []
         drops = record["timeBasedDrops"]
-        if not isinstance(drops, list):
-            return False
+        if len(channels) > _MAX_CHANNELS or len(drops) > _MAX_DROPS:
+            return None
+        game = record["game"]
+        cleaned: JsonType = {
+            "id": _ident(record["id"]),
+            "status": status,
+            "name": _text(record["name"]),
+            "game": {
+                "id": str(int(game["id"])),
+                "displayName": _text(game.get("displayName") or game.get("name")),
+                "slug": game.get("slug") if _ID_RE.match(str(game.get("slug", ""))) else "",
+                "boxArtURL": _https_url(game.get("boxArtURL")),
+            },
+            "startAt": _date(record["startAt"]),
+            "endAt": _date(record["endAt"]),
+            "accountLinkURL": _https_url(record.get("accountLinkURL")),
+            "detailsURL": _https_url(record.get("detailsURL")),
+            "allow": {
+                "isEnabled": bool(allow.get("isEnabled", True)),
+                "channels": [
+                    {
+                        "id": str(int(ch["id"])),
+                        "name": ch["name"] if _LOGIN_RE.match(ch["name"]) else _fail(),
+                        "displayName": str(ch.get("displayName") or ch["name"])[:50],
+                    }
+                    for ch in channels
+                ],
+            },
+            "timeBasedDrops": [],
+        }
         for drop in drops:
-            if not (isinstance(drop["id"], str) and isinstance(drop["name"], str)):
-                return False
-            isoparse(drop["startAt"])
-            isoparse(drop["endAt"])
-            int(drop["requiredMinutesWatched"])
-            if not isinstance(drop["benefitEdges"] or [], list):
-                return False
-        return True
+            benefits = drop["benefitEdges"] or []
+            preconditions = drop.get("preconditionDrops") or []
+            if len(benefits) > _MAX_BENEFITS or len(preconditions) > _MAX_DROPS:
+                return None
+            minutes = int(drop["requiredMinutesWatched"])
+            if not 0 <= minutes <= 100_000:
+                return None
+            cleaned["timeBasedDrops"].append(
+                {
+                    "id": _ident(drop["id"]),
+                    "name": _text(drop["name"]),
+                    "startAt": _date(drop["startAt"]),
+                    "endAt": _date(drop["endAt"]),
+                    "requiredMinutesWatched": minutes,
+                    "preconditionDrops": [{"id": _ident(pre["id"])} for pre in preconditions] or None,
+                    "benefitEdges": [
+                        {
+                            "benefit": {
+                                "id": _ident(edge["benefit"]["id"]),
+                                "name": _text(edge["benefit"]["name"]),
+                                "distributionType": edge["benefit"].get("distributionType")
+                                if edge["benefit"].get("distributionType") in _DISTRIBUTION_TYPES
+                                else "UNKNOWN",
+                                "imageAssetURL": _https_url(edge["benefit"].get("imageAssetURL")),
+                            }
+                        }
+                        for edge in benefits
+                    ],
+                }
+            )
+        return cleaned
     except (KeyError, TypeError, ValueError, AttributeError):
-        return False
+        return None
+
+
+def _fail() -> Any:
+    raise ValueError("bad value")
 
 
 def _link_key(url: Any) -> str:
@@ -108,16 +200,14 @@ def parse_catalog(payload: Any, now: datetime | None = None) -> list[JsonType]:
             logger.warning(f"Public drops feed is stale (last update {updated.isoformat()})")
             return []
         found: dict[str, JsonType] = {}
-        for group in payload["data"]:
+        groups = payload["data"]
+        if not isinstance(groups, list) or len(groups) > _MAX_GROUPS:
+            raise ValueError("unexpected number of groups")
+        for group in groups:
             for reward in group.get("rewards") or []:
-                cid, status = reward.get("id"), reward.get("status")
-                if (
-                    isinstance(cid, str)
-                    and 0 < len(cid) <= MAX_ID_LEN
-                    and status in ("ACTIVE", "UPCOMING")
-                    and _usable(reward)
-                ):
-                    found[cid] = reward
+                cleaned = _clean(reward)
+                if cleaned is not None:
+                    found[cleaned["id"]] = cleaned
                 if len(found) >= MAX_CAMPAIGNS:
                     return list(found.values())
         return list(found.values())
