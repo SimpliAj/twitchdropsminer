@@ -400,7 +400,7 @@ See the [Original Project Credits](#original-project-credits) section for transl
 > is **not** needed, it uses your own browser, not a bundled one (`--browser edge|chromium` to pick).
 > ```bash
 > pip install playwright requests
-> python tdm_login_helper.py --url http://localhost:8080          # or your TDM's real address
+> python tdm_login_helper.py --url http://localhost:8080          # use the address of the machine TDM runs on, e.g. http://192.168.1.10:8080 -- "localhost" only works if TDM runs on the same PC
 > # add --password yourpassword if your dashboard has one set (WEB_PASSWORD)
 > ```
 > Open your TDM dashboard first (it starts a login attempt automatically whenever one's

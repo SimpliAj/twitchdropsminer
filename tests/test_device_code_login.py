@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from src.auth.auth_state import BrowserLoginRequested, DeviceCodeRequested, _AuthState
 from src.config import ClientType
 from src.services.inventory_service import InventoryService
+from tests.test_public_catalog import _rec
 
 
 class TestLoginSwitching(unittest.IsolatedAsyncioTestCase):
@@ -78,12 +79,13 @@ class TestSmartboxFeedMerge(unittest.IsolatedAsyncioTestCase):
         twitch.gql_request = AsyncMock(side_effect=[inv, camp])
         twitch.get_session = AsyncMock(return_value=MagicMock())
         twitch._mnt_triggers = []
+        twitch.gui.inv.add_campaign = AsyncMock()
         twitch._drops, twitch._campaigns = {}, {}
         service = InventoryService(twitch)
         service.fetch_campaigns = AsyncMock(return_value={})
         with (
             patch("src.services.inventory_service.fetch_public_campaigns",
-                  AsyncMock(return_value=[{"id": "a", "status": "ACTIVE"}, {"id": "b", "status": "ACTIVE"}])),
+                  AsyncMock(return_value=[_rec("a"), _rec("b")])),
             patch("src.services.inventory_service.discover_campaigns_via_browser", AsyncMock(return_value=[])),
         ):
             await service._fetch_inventory()

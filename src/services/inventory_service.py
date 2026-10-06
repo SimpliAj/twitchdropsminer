@@ -20,7 +20,7 @@ from src.exceptions import ExitRequest, GQLException
 from src.i18n import _
 from src.models import DropsCampaign
 from src.services.campaign_discovery import discover_campaigns_via_browser
-from src.services.public_catalog import fetch_public_campaigns
+from src.services.public_catalog import campaign_from_feed, fetch_public_campaigns, link_states
 from src.utils import chunk
 
 
@@ -82,10 +82,23 @@ class InventoryService:
             response_list_raw if isinstance(response_list_raw, list) else [response_list_raw]
         )
 
-        fetched_data: dict[str, JsonType] = {
-            (campaign_data := response_json["data"]["user"]["dropCampaign"])["id"]: campaign_data
-            for response_json in response_list
-        }
+        # Twitch answers "dropCampaign": null for a campaign this account may not
+        # see (the public feed lists everyone's campaigns) -- skip those instead
+        # of crashing the whole inventory fetch.
+        fetched_data: dict[str, JsonType] = {}
+        for response_json in response_list:
+            user = (response_json.get("data") or {}).get("user")
+            campaign_data = user.get("dropCampaign") if user else None
+            if campaign_data is not None:
+                fetched_data[campaign_data["id"]] = campaign_data
+        campaign_ids = {cid: v for cid, v in campaign_ids.items() if cid in fetched_data}
+        if len(fetched_data) < len(response_list):
+            logger.info(
+                f"CampaignDetails: {len(fetched_data)} of {len(response_list)} campaigns "
+                f"available to this account (rest returned null)"
+            )
+            if not fetched_data:
+                logger.debug(f"CampaignDetails sample response: {str(response_list[0])[:400]}")
 
         return GQLClient.merge_data(campaign_ids, fetched_data)
 
@@ -164,6 +177,7 @@ class InventoryService:
         # fetch general available campaigns data (campaigns)
         applicable_statuses = ("ACTIVE", "UPCOMING")
         available_campaigns: dict[str, JsonType] = {}
+        public_records: dict[str, JsonType] = {}
         try:
             response = await self._twitch.gql_request(GQL_OPERATIONS["Campaigns"])
             current_user = response["data"]["currentUser"]
@@ -184,6 +198,7 @@ class InventoryService:
                     await self._twitch.get_session(), self._twitch.settings.proxy
                 )
                 for c in public:
+                    public_records[c["id"]] = c
                     available_campaigns.setdefault(c["id"], c)
         except GQLException as exc:
             if "IntegrityCheckFailed" not in str(exc):
@@ -195,7 +210,8 @@ class InventoryService:
             public = await fetch_public_campaigns(
                 await self._twitch.get_session(), self._twitch.settings.proxy
             )
-            available_campaigns = {c["id"]: c for c in public}
+            public_records = {c["id"]: c for c in public}
+            available_campaigns = dict(public_records)
             if not available_campaigns and not inventory_data:
                 raise
 
@@ -242,6 +258,24 @@ class InventoryService:
             for task in fetch_campaigns_tasks:
                 task.cancel()
             raise
+
+        # Twitch no longer answers the account-bound campaign queries for some
+        # identities (dropCampaigns/CampaignDetails come back null), but the public
+        # feed carries the full campaign data: use it for every campaign that has
+        # no details yet, letting real inventory (progress) data win when merged.
+        states = link_states(inventory["gameEventDrops"])
+        for campaign_id, record in public_records.items():
+            existing = inventory_data.get(campaign_id)
+            if existing is not None and "allow" in existing:
+                continue
+            forged = campaign_from_feed(record, states)
+            try:
+                inventory_data[campaign_id] = (
+                    GQLClient.merge_data(existing, forged) if existing else forged
+                )
+            except Exception as exc:
+                logger.warning(f"Could not merge feed data for campaign {campaign_id}: {exc}")
+                inventory_data[campaign_id] = existing or forged
 
         # filter out invalid campaigns
         for campaign_id in list(inventory_data.keys()):

@@ -10,12 +10,26 @@ from src.services.public_catalog import fetch_public_campaigns, parse_catalog
 NOW = datetime(2026, 10, 5, 12, 0, tzinfo=timezone.utc)
 
 
+def _rec(cid, status="ACTIVE"):
+    return {
+        "id": cid, "status": status, "name": f"camp {cid}",
+        "game": {"id": "66170", "displayName": "Warframe"},
+        "startAt": "2026-10-05T10:00:00Z", "endAt": "2026-10-06T10:00:00Z",
+        "allow": {"isEnabled": True, "channels": []},
+        "timeBasedDrops": [{
+            "id": f"d{cid}", "name": "drop", "startAt": "2026-10-05T10:00:00Z",
+            "endAt": "2026-10-06T10:00:00Z", "requiredMinutesWatched": 30,
+            "preconditionDrops": None, "benefitEdges": [],
+        }],
+    }
+
+
 def _payload(updated="2026-10-05T11:59:00Z"):
     return {
         "lastUpdatedAt": updated,
         "data": [
-            {"rewards": [{"id": "a", "status": "ACTIVE"}, {"id": "b", "status": "EXPIRED"}]},
-            {"rewards": [{"id": "c", "status": "UPCOMING"}, {"id": "a", "status": "ACTIVE"}]},
+            {"rewards": [_rec("a"), _rec("b", "EXPIRED")]},
+            {"rewards": [_rec("c", "UPCOMING"), _rec("a")]},
             {},
         ],
     }
@@ -49,6 +63,7 @@ class TestInventoryFallback(unittest.IsolatedAsyncioTestCase):
         twitch.gql_request = AsyncMock(side_effect=[inv, campaigns_exc])
         twitch.get_session = AsyncMock(return_value=MagicMock())
         twitch._mnt_triggers = []
+        twitch.gui.inv.add_campaign = AsyncMock()
         twitch._drops, twitch._campaigns = {}, {}
         return twitch
 
@@ -58,7 +73,7 @@ class TestInventoryFallback(unittest.IsolatedAsyncioTestCase):
         service.fetch_campaigns = AsyncMock(return_value={})
         with (
             patch("src.services.inventory_service.fetch_public_campaigns",
-                  AsyncMock(return_value=[{"id": "a", "status": "ACTIVE"}])),
+                  AsyncMock(return_value=[_rec("a")])),
             patch("src.services.inventory_service.discover_campaigns_via_browser",
                   AsyncMock(return_value=[])),
         ):
@@ -75,6 +90,109 @@ class TestInventoryFallback(unittest.IsolatedAsyncioTestCase):
 class TestHardening(unittest.TestCase):
     def test_bad_ids_dropped(self):
         p = {"lastUpdatedAt": "2026-10-05T11:59:00Z",
-             "data": [{"rewards": [{"id": 5, "status": "ACTIVE"}, {"id": "x" * 500, "status": "ACTIVE"},
-                                   {"id": "ok", "status": "ACTIVE"}]}]}
+             "data": [{"rewards": [{**_rec("z"), "id": 5}, _rec("x" * 500),
+                                   _rec("ok"), {"id": "bad", "status": "ACTIVE"}]}]}
         self.assertEqual([c["id"] for c in parse_catalog(p, NOW)], ["ok"])
+
+
+class _FakeContent:
+    def __init__(self, data):
+        self._data = data
+
+    async def iter_chunked(self, n):
+        for i in range(0, len(self._data), 7):  # tiny chunks, like a real stream
+            yield self._data[i:i + 7]
+
+
+class _FakeResp:
+    status = 200
+
+    def __init__(self, data):
+        self.content = _FakeContent(data)
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *a):
+        return False
+
+
+class TestChunkedBody(unittest.IsolatedAsyncioTestCase):
+    async def test_body_split_over_many_chunks_is_read_completely(self):
+        import json
+        from datetime import datetime, timezone
+
+        payload = _payload(datetime.now(timezone.utc).isoformat())
+        session = MagicMock()
+        session.get.return_value = _FakeResp(json.dumps(payload).encode())
+        ids = [c["id"] for c in await fetch_public_campaigns(session)]
+        self.assertEqual(sorted(ids), ["a", "c"])
+
+
+class TestNullCampaignDetails(unittest.IsolatedAsyncioTestCase):
+    async def test_null_dropcampaign_is_skipped_not_fatal(self):
+        twitch = MagicMock()
+        twitch.get_auth = AsyncMock(return_value=MagicMock(user_id=1))
+        full = {"id": "a", "game": {"id": "g"}}
+        twitch.gql_request = AsyncMock(return_value=[
+            {"data": {"user": {"dropCampaign": full}}},
+            {"data": {"user": {"dropCampaign": None}}},
+            {"data": {"user": None}},
+        ])
+        service = InventoryService(twitch)
+        out = await service.fetch_campaigns([("a", {"id": "a", "status": "ACTIVE"}),
+                                             ("b", {"id": "b", "status": "ACTIVE"}),
+                                             ("c", {"id": "c", "status": "ACTIVE"})])
+        self.assertEqual(list(out), ["a"])
+
+
+class TestFeedBecomesCampaign(unittest.IsolatedAsyncioTestCase):
+    async def test_feed_record_builds_a_drops_campaign(self):
+        twitch = MagicMock()
+        twitch.gui.status.update = MagicMock()
+        twitch._client_type = object()
+        twitch.settings.proxy = ""
+        inv = {"data": {"currentUser": {"inventory": {"dropCampaignsInProgress": [], "gameEventDrops": []}}}}
+        twitch.gql_request = AsyncMock(side_effect=[inv, GQLException("IntegrityCheckFailed")])
+        twitch.get_session = AsyncMock(return_value=MagicMock())
+        twitch._mnt_triggers = []
+        twitch.gui.inv.add_campaign = AsyncMock()
+        twitch._drops, twitch._campaigns = {}, {}
+        service = InventoryService(twitch)
+        service.fetch_campaigns = AsyncMock(return_value={})  # details come back null
+        with (
+            patch("src.services.inventory_service.fetch_public_campaigns", AsyncMock(return_value=[_rec("a")])),
+            patch("src.services.inventory_service.discover_campaigns_via_browser", AsyncMock(return_value=[])),
+        ):
+            await service._fetch_inventory()
+        self.assertEqual([c.id for c in twitch._campaigns.values()] or list(twitch._campaigns), ["a"])
+
+
+class TestAllowNormalised(unittest.TestCase):
+    def test_missing_channels_key_is_filled(self):
+        from src.services.public_catalog import campaign_from_feed
+
+        rec = _rec("a")
+        rec["allow"] = {"isEnabled": True}
+        self.assertEqual(campaign_from_feed(rec)["allow"]["channels"], [])
+        rec.pop("allow")
+        self.assertEqual(campaign_from_feed(rec)["allow"]["channels"], [])
+
+
+class TestLinkStates(unittest.TestCase):
+    def test_link_state_comes_from_reward_history_not_a_guess(self):
+        from src.services.public_catalog import campaign_from_feed, link_states
+
+        history = [
+            {"requiredAccountLink": "https://link.smite2.com/", "isConnected": True},
+            {"requiredAccountLink": "https://other.example/link", "isConnected": False},
+            {"requiredAccountLink": None, "isConnected": True},
+        ]
+        states = link_states(history)
+        linked, unlinked, unknown = _rec("a"), _rec("b"), _rec("c")
+        linked["accountLinkURL"] = "https://link.smite2.com"
+        unlinked["accountLinkURL"] = "https://other.example/link/"
+        unknown["accountLinkURL"] = "https://never-seen.example/"
+        self.assertTrue(campaign_from_feed(linked, states)["self"]["isAccountConnected"])
+        self.assertFalse(campaign_from_feed(unlinked, states)["self"]["isAccountConnected"])
+        self.assertFalse(campaign_from_feed(unknown, states)["self"]["isAccountConnected"])
