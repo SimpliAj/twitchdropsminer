@@ -179,7 +179,8 @@ def campaign_from_feed(record: JsonType, states: dict[str, bool] | None = None) 
     keep their real state -- inventory data wins when merged (InventoryService)."""
     forged = dict(record)
     forged.setdefault("accountLinkURL", "")
-    forged["self"] = {"isAccountConnected": bool((states or {}).get(_link_key(record.get("accountLinkURL")), False))}
+    known = (states or {}).get(_link_key(record.get("accountLinkURL")))
+    forged["self"] = {"isAccountConnected": bool(known), "linkStateUnknown": known is None}
     allow = record.get("allow") or {}
     forged["allow"] = {"isEnabled": allow.get("isEnabled", True), "channels": allow.get("channels") or []}
     forged["timeBasedDrops"] = [

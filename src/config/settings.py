@@ -30,6 +30,7 @@ default_settings = {
     "games_to_watch": [],
     "language": DEFAULT_LANG,
     "inventory_list_view": False,
+    "allow_unknown_link": False,
     "inventory_filters": {
         "game_name_search": [],
         "show_active": False,
@@ -92,6 +93,7 @@ class Settings:
     games_to_watch: list[str]
     language: str
     inventory_list_view: bool
+    allow_unknown_link: bool
     inventory_filters: InventoryFilters
     minimum_refresh_interval_minutes: int
     mining_benefits: dict[str, bool]

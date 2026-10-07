@@ -1734,7 +1734,9 @@ function renderInventory() {
         );
 
         // Linked/not linked badge — only show "Link Account" if linking is actually required
-        const linkStatusBadge = campaign.linked
+        const linkStatusBadge = campaign.link_assumed
+            ? makeElement('span', { class: 'campaign-badge linked', title: 'Link state unknown - mining because "Mine unverified links" is on' }, 'LINK UNVERIFIED')
+            : campaign.linked
             ? makeElement('span', { class: 'campaign-badge linked', title: inv.linked_badge_title || 'Account is linked' }, inv.linked_badge || 'LINKED')
             : campaign.has_badge_or_emote
                 ? null  // badge/emote campaigns don't need account linking
@@ -2081,6 +2083,8 @@ function updateSettingsUI(settings) {
     document.getElementById('dark-mode').checked = settings.dark_mode || false;
     const listViewToggle = document.getElementById('inventory-list-view');
     if (listViewToggle) listViewToggle.checked = settings.inventory_list_view || false;
+    const unknownLinkToggle = document.getElementById('allow-unknown-link');
+    if (unknownLinkToggle) unknownLinkToggle.checked = settings.allow_unknown_link || false;
     applyInventoryViewMode(settings.inventory_list_view || false);
     document.getElementById('connection-quality').value = settings.connection_quality || 1;
     document.getElementById('minimum-refresh-interval').value = settings.minimum_refresh_interval_minutes || 30;
@@ -3240,6 +3244,7 @@ async function _saveSettingsNow() {
         games_to_watch: state.settings.games_to_watch || [],
         inventory_filters: getInventoryFilters(),
         inventory_list_view: document.getElementById('inventory-list-view')?.checked || false,
+        allow_unknown_link: document.getElementById('allow-unknown-link')?.checked || false,
         mining_benefits: {
             "DIRECT_ENTITLEMENT": document.getElementById('mining-benefit-item')?.checked,
             "BADGE": document.getElementById('mining-benefit-badge')?.checked,
@@ -4597,6 +4602,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const toggle = document.getElementById('help-subnav-toggle');
             if (toggle) toggle.checked = false;
         });
+    });
+    document.getElementById('allow-unknown-link')?.addEventListener('change', (e) => {
+        state.settings.allow_unknown_link = e.target.checked;
+        saveSettings();
     });
     document.getElementById('inventory-list-view')?.addEventListener('change', (e) => {
         state.settings.inventory_list_view = e.target.checked;

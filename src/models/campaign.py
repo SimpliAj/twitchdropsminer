@@ -32,6 +32,9 @@ class DropsCampaign:
         self.name: str = data["name"]
         self.game: Game = Game(data["game"])
         self.linked: bool = data["self"]["isAccountConnected"]
+        # Set for campaigns whose link state could not be determined (they come
+        # from the public feed, which knows nothing about the account).
+        self.link_unknown: bool = bool(data["self"].get("linkStateUnknown", False))
         self.link_url: str = data["accountLinkURL"]
         # campaign's image actually comes from the game object
         # we use regex to get rid of the dimensions part (ex. ".../game_id-285x380.jpg")
@@ -83,7 +86,16 @@ class DropsCampaign:
 
     @property
     def eligible(self) -> bool:
-        return self.linked or self.has_badge_or_emote
+        return self.linked or self.link_assumed or self.has_badge_or_emote
+
+    @property
+    def link_assumed(self) -> bool:
+        """Unknown link state, and the user chose to mine such campaigns anyway."""
+        return (
+            self.link_unknown
+            and not self.linked
+            and bool(getattr(self._twitch.settings, "allow_unknown_link", False))
+        )
 
     @property
     def ignored(self) -> bool:

@@ -239,3 +239,35 @@ class TestFeedIsUntrusted(unittest.TestCase):
         rec["__proto__"] = {"x": 1}
         rec["description"] = "<script>"
         self.assertNotIn("description", self._parse(rec)[0])
+
+
+class TestUnknownLink(unittest.TestCase):
+    def _campaign(self, allow, states, url="https://never-seen.example/"):
+        from src.models.campaign import DropsCampaign
+        from src.services.public_catalog import campaign_from_feed
+
+        twitch = MagicMock()
+        twitch.settings.allow_unknown_link = allow
+        rec = _rec("a")
+        rec["accountLinkURL"] = url
+        return DropsCampaign(twitch, campaign_from_feed(rec, states), {})
+
+    def test_unknown_is_not_eligible_by_default(self):
+        c = self._campaign(False, {})
+        self.assertTrue(c.link_unknown)
+        self.assertFalse(c.eligible)
+
+    def test_unknown_becomes_eligible_when_the_user_allows_it(self):
+        c = self._campaign(True, {})
+        self.assertTrue(c.eligible)
+        self.assertTrue(c.link_assumed)
+
+    def test_known_unlinked_stays_ineligible_even_when_allowed(self):
+        c = self._campaign(True, {"never-seen.example": False})
+        self.assertFalse(c.link_unknown)
+        self.assertFalse(c.eligible)
+
+    def test_known_linked_is_eligible(self):
+        c = self._campaign(False, {"never-seen.example": True})
+        self.assertTrue(c.eligible)
+        self.assertFalse(c.link_assumed)

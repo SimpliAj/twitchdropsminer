@@ -559,6 +559,7 @@ class SettingsUpdate(BaseModel):
     minimum_refresh_interval_minutes: int | None = None
     inventory_filters: dict | None = None
     inventory_list_view: bool | None = None
+    allow_unknown_link: bool | None = None
     mining_benefits: dict[str, bool] | None = None
     claim_channel_points: bool | None = None
     idle_channels: list[str] | None = None
