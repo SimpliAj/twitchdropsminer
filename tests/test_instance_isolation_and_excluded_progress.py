@@ -1,11 +1,12 @@
 import asyncio
+import os
 import subprocess
 import sys
 from types import SimpleNamespace
 
 
 def _cookie_name(port):
-    env = {"PATH": "/usr/bin:/bin"}
+    env = {k: v for k, v in os.environ.items() if k != "TDM_PORT"}
     if port is not None:
         env["TDM_PORT"] = str(port)
     out = subprocess.run(
