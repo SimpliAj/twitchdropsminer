@@ -58,6 +58,7 @@ default_settings = {
     "idle_parallel": True,
     "idle_use_followed": False,
     "preferred_games": [],
+    "priority_list_only": True,
     "scheduler_enabled": False,
     "scheduler_start": "22:00",
     "scheduler_stop": "08:00",
@@ -103,6 +104,7 @@ class Settings:
     idle_parallel: bool
     idle_use_followed: bool
     preferred_games: list[str]
+    priority_list_only: bool
     scheduler_enabled: bool
     scheduler_start: str
     scheduler_stop: str

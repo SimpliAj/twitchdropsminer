@@ -246,6 +246,8 @@
       "idle_parallel_help": "Earn channel points from multiple channels at the same time when idle.",
       "preferred_games": "⭐ Preferred Games",
       "preferred_games_help": "Games that are always watched — even without active drop campaigns. Auto-connects when a campaign appears. Never auto-removed.",
+      "priority_list_only": "Priority list only",
+      "priority_list_only_help": "When off, any other game with an active drop campaign is mined whenever none of your priority or preferred games is live. Your list always comes first.",
       "webhook_missing": "No webhook URL set.",
       "push_blocked": "Browser notifications are blocked. Please allow them in your browser settings (click the lock icon in the address bar) and reload the page.",
       "predictions": {

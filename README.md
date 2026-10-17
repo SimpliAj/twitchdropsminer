@@ -18,7 +18,7 @@ An independently maintained fork of [rangermix/TwitchDropsMiner](https://github.
 ## ✨ Features
 
 - 🚀 **Streamless mining** — earns drops without streaming video
-- 🔍 **Automatic campaigns** — finds new campaigns, picks the best live channel, claims drops instantly
+- 🔍 **Automatic campaigns** — finds new campaigns, picks the best live channel, claims drops instantly; optionally falls back to any other game with drops when nothing on your priority list is live
 - 🕹️ **Admin-style dashboard** — sidebar navigation on desktop, bottom bar on phones, light & dark mode, 19 languages
 - 🔑 **Simple, safe login** — a normal browser window on your own PC; nothing remote-controlled for Twitch to reject
 - 👥 **Multi-account** — unlimited isolated accounts, a fleet view with bulk actions and settings

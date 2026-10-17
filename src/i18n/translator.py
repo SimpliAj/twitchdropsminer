@@ -212,6 +212,8 @@ class GUISettingsOptional(TypedDict, total=False):
     predictions: dict[str, str]
     preferred_games: str
     preferred_games_help: str
+    priority_list_only: str
+    priority_list_only_help: str
     proxy_empty: str
     proxy_verifying: str
     push_blocked: str

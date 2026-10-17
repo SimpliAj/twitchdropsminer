@@ -649,6 +649,11 @@
                     <section class="settings-section">
                         <h2 data-i18n="gui.settings.preferred_games">⭐ Preferred Games</h2>
                         <p class="help-text" data-i18n="gui.settings.preferred_games_help">Games that are always watched — even without active drop campaigns. Auto-connects when a campaign appears. Never auto-removed.</p>
+                        <label class="toggle-label" style="margin-bottom:10px;">
+                            <input type="checkbox" id="priority-list-only" onchange="saveSettings()">
+                            <span data-i18n="gui.settings.priority_list_only">Priority list only</span>
+                            <span class="help-text" style="display:block;margin-top:2px;font-size:0.8em;" data-i18n="gui.settings.priority_list_only_help">When off, any other game with an active drop campaign is mined whenever none of your priority or preferred games is live. Your list always comes first.</span>
+                        </label>
                         <div style="display:flex;gap:8px;margin-bottom:8px;position:relative;">
                             <div style="position:relative;flex:1;">
                                 <input type="text" id="preferred-game-input" placeholder="Type to search games..." data-i18n-placeholder="gui.inventory.filters.search_placeholder" autocomplete="off" style="width:100%;box-sizing:border-box;">

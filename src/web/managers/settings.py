@@ -136,6 +136,9 @@ class SettingsManager:
         self.check_and_update_setting(
             "preferred_games", settings_data.get("preferred_games")
         )
+        should_trigger_update |= self.check_and_update_setting(
+            "priority_list_only", settings_data.get("priority_list_only"), True
+        )
         self.check_and_update_setting("scheduler_enabled", settings_data.get("scheduler_enabled"))
         self.check_and_update_setting("scheduler_start", settings_data.get("scheduler_start"))
         self.check_and_update_setting("scheduler_stop", settings_data.get("scheduler_stop"))

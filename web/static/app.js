@@ -2137,6 +2137,9 @@ function updateSettingsUI(settings) {
     const idleParallelEl = document.getElementById('idle-parallel');
     if (idleParallelEl) idleParallelEl.checked = settings.idle_parallel !== false;
 
+    const priorityListOnlyEl = document.getElementById('priority-list-only');
+    if (priorityListOnlyEl) priorityListOnlyEl.checked = settings.priority_list_only !== false;
+
     renderPreferredGames(settings.preferred_games || []);
     renderPreferredWaiting();
 
@@ -3238,6 +3241,7 @@ async function _saveSettingsNow() {
         idle_use_followed: document.getElementById('idle-use-followed')?.checked ?? false,
         idle_parallel: document.getElementById('idle-parallel')?.checked ?? true,
         preferred_games: state.settings.preferred_games || [],
+        priority_list_only: document.getElementById('priority-list-only')?.checked ?? true,
         auto_add_excluded_games: state.settings.auto_add_excluded_games || [],
         drop_name_blacklist: (document.getElementById('drop-blacklist-input')?.value || '')
             .split(',').map(s => s.trim()).filter(Boolean),
