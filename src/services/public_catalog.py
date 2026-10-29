@@ -289,5 +289,7 @@ async def fetch_public_campaigns(
                     _not_before = time.monotonic() + _retry_after(resp)
         except Exception as exc:
             logger.warning(f"Public drops feed unavailable: {exc}")
-    # rate limited or failed: an older cached copy still beats an empty list (parse_catalog rejects stale data)
+    # rate limited or failed: an older cached copy still beats an empty list (parse_catalog rejects stale data);
+    # re-read it, another instance on this host may have just fetched the feed we were refused
+    cached = _read_cache() or cached
     return parse_catalog(cached[0]) if cached is not None else []
