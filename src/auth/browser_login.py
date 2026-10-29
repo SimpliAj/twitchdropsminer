@@ -7,8 +7,9 @@ on a headless host it opens nothing and waits for the login helper
 See docs/superpowers/specs/2026-10-14-simple-login-design.md.
 
 Integrity tokens (acquire_integrity_token): a throwaway plain Chrome, under
-Xvfb on headless hosts, loads a Twitch page with the session cookies set and
-the token is read from the page's own /integrity response.
+Xvfb on headless hosts, loads only Twitch's bot-check SDK into an empty page
+and calls /integrity from there -- or, with TDM_INTEGRITY_HELPER_URL set,
+another machine does that (src/auth/integrity_helper.py).
 """
 
 from __future__ import annotations
@@ -26,9 +27,11 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 
+import aiohttp
 from playwright.async_api import async_playwright
 
 from src.auth.plain_chrome import PlainChrome
+from src.config.client_info import ClientType
 
 
 logger = logging.getLogger("TwitchDrops")
@@ -41,9 +44,19 @@ _IS_WINDOWS = os.name == "nt"
 DEFAULT_TIMEOUT_SEC = 600  # 10 minutes
 COOKIE_POLL_INTERVAL_SEC = 1.5
 CHROMIUM_LAUNCH_TIMEOUT_SEC = 30
-# Minting loads the full twitch.tv page in a fresh profile; a Raspberry Pi 3B+
-# needed over 30s for that (confirmed live), so this is generous on purpose.
-INTEGRITY_MINT_TIMEOUT_SEC = 90
+# A Raspberry Pi 3B+ needs about a minute for a mint (confirmed live).
+INTEGRITY_MINT_TIMEOUT_SEC = 120
+# Any tiny www.twitch.tv document gives the SDK the right origin.
+INTEGRITY_SDK_PAGE = "https://www.twitch.tv/robots.txt"
+INTEGRITY_SDK_URL = (
+    "https://k.twitchcdn.net/149e9513-01fa-4fb0-aad4-566afd725d1b/"
+    "2d206a39-8ed7-437e-a3be-862e0f06eea3/p.js"
+)
+# Hosts whose own browser Twitch won't trust (a Raspberry Pi's Chromium gets
+# tokens that always fail) can have another machine mint for them; see
+# src/auth/integrity_helper.py.
+INTEGRITY_HELPER_URL_ENV = "TDM_INTEGRITY_HELPER_URL"
+INTEGRITY_HELPER_KEY_ENV = "TDM_INTEGRITY_HELPER_KEY"
 
 # Reserved ranges for this feature's own display/port numbers, used both to
 # pick a free one at start() and to recognize this app's own leftover
@@ -203,13 +216,43 @@ def _decode_jwt_expiry(token: str) -> datetime:
 
 
 async def acquire_integrity_token(auth_token: str, device_id: str) -> tuple[str, datetime] | None:
-    """Mint a fresh Client-Integrity token in a throwaway plain Chrome (see
-    _mint_integrity_token_plain), under Xvfb when this host has no desktop.
+    """Mint a fresh Client-Integrity token: through the integrity helper when
+    TDM_INTEGRITY_HELPER_URL is set, else in a throwaway plain Chrome here.
 
     Best-effort: returns None on any failure (never raises) -- the caller
     (_AuthState._ensure_integrity_token) treats a missing token as "proceed
     without the header, try again later".
     """
+    helper_url = os.environ.get(INTEGRITY_HELPER_URL_ENV, "").strip()
+    if helper_url:
+        return await _mint_via_helper(helper_url, auth_token, device_id)
+    return await mint_integrity_token_locally(auth_token, device_id)
+
+
+async def _mint_via_helper(helper_url: str, auth_token: str, device_id: str) -> tuple[str, datetime] | None:
+    headers = {"Authorization": f"Bearer {os.environ.get(INTEGRITY_HELPER_KEY_ENV, '').strip()}"}
+    timeout = aiohttp.ClientTimeout(total=INTEGRITY_MINT_TIMEOUT_SEC + 60)
+    try:
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.post(
+                f"{helper_url.rstrip('/')}/mint",
+                json={"auth_token": auth_token, "device_id": device_id},
+                headers=headers,
+            ) as response:
+                if response.status != 200:
+                    logger.warning(f"Integrity helper answered HTTP {response.status}")
+                    return None
+                data = await response.json()
+        logger.info("Client-Integrity token received from the integrity helper")
+        return data["token"], datetime.fromtimestamp(data["expires_at"], timezone.utc)
+    except Exception as exc:
+        logger.warning(f"Integrity helper unreachable: {type(exc).__name__}")
+        return None
+
+
+async def mint_integrity_token_locally(auth_token: str, device_id: str) -> tuple[str, datetime] | None:
+    """Mint in a throwaway plain Chrome (see _mint_integrity_token_plain),
+    under Xvfb when this host has no desktop. Never raises."""
     real_display = _detect_real_display()
     xvfb_process: asyncio.subprocess.Process | None = None
     display_number: int
@@ -270,78 +313,82 @@ async def _plain_chrome_binary() -> str:
 
 
 
-def _session_cookies(auth_token: str, device_id: str) -> list[dict]:
-    """Session cookies for a plain Chrome to start out logged in. auth-token
-    must NOT be httpOnly (Twitch's own isn't): the page's JS reads it, and
-    without it the page stays anonymous and mints an anonymous integrity
-    token that fails dropCampaign the same way no token does."""
-    cookies = [{"name": COOKIE_NAME, "value": auth_token, "domain": f".{COOKIE_DOMAIN}",
-                "path": "/", "secure": True}]
-    if device_id:
-        cookies.append({"name": DEVICE_ID_COOKIE_NAME, "value": device_id,
-                        "domain": f".{COOKIE_DOMAIN}", "path": "/", "secure": True})
-    return cookies
+_SDK_MINT_JS = """async function(headers, sdk) {
+  return await new Promise(resolve => {
+    const deadline = setTimeout(() => resolve({failure: 'sdk_timeout'}), %d);
+    const finish = value => { clearTimeout(deadline); resolve(value); };
+    document.addEventListener('kpsdk-load', () => window.KPSDK.configure([
+      {protocol: 'https:', method: 'POST', domain: 'gql.twitch.tv', path: '/integrity'}
+    ]), {once: true});
+    document.addEventListener('kpsdk-ready', async () => {
+      try {
+        const r = await window.fetch('https://gql.twitch.tv/integrity', {
+          method: 'POST', headers, body: null, credentials: 'omit', mode: 'cors'});
+        finish({status: r.status, data: await r.json()});
+      } catch (e) { finish({failure: 'integrity_fetch'}); }
+    }, {once: true});
+    const script = document.createElement('script');
+    script.onerror = () => finish({failure: 'sdk_script'});
+    script.src = sdk;
+    document.body.appendChild(script);
+  });
+}""" % (INTEGRITY_MINT_TIMEOUT_SEC * 1000)
 
 
 async def _mint_integrity_token_plain(
     binary: str, env: dict[str, str], auth_token: str, device_id: str
 ) -> tuple[str, datetime] | None:
-    """Mint a Client-Integrity token in a plain, non-automated Chrome.
+    """Mint a Client-Integrity token in a plain, non-Playwright Chrome.
 
-    Tokens minted in a Playwright-driven browser come back but are rejected
-    on dropCampaign ("failed integrity check") -- confirmed live, with any
-    headers and either Chromium build -- while one minted by the same
-    account in a plain Chrome passes, even with the app's own GQL headers.
-    So: start Chrome normally with a throwaway profile and a debug port,
-    set the session cookies browser-side, and only read network traffic
-    (CDP Network domain, no Runtime/JS injection) to pick up Twitch's own
-    /integrity response.
+    /integrity sits behind Kasada's bot check. Instead of the whole twitch.tv
+    app (slow and heavy on a Pi), only Kasada's SDK is loaded, into
+    twitch.tv's robots.txt -- the approach rangermix/TwitchDropsMiner uses --
+    then /integrity is called from the page with this session's token and
+    device id. The token is bound to the account and the device id, not to
+    the IP, session id or user agent (confirmed live 2026-10-29).
     """
     chrome = PlainChrome(binary, "about:blank", env, no_sandbox=_needs_no_sandbox(), quiet=True)
     await chrome.start()
     try:
-        await chrome.call("Storage.setCookies", {"cookies": _session_cookies(auth_token, device_id)})
         targets = (await chrome.call("Target.getTargets"))["result"]["targetInfos"]
         target = next(t for t in targets if t["type"] == "page")
         session = (
             await chrome.call("Target.attachToTarget", {"targetId": target["targetId"], "flatten": True})
         )["result"]["sessionId"]
-        await chrome.call("Network.enable", {}, session)
-        await chrome.call("Page.navigate", {"url": "https://www.twitch.tv/drops/campaigns"}, session)
-
-        integrity_requests: set[str] = set()
-        authorized = False
         started = time.monotonic()
         deadline = started + INTEGRITY_MINT_TIMEOUT_SEC
-        while time.monotonic() < deadline:
-            try:
-                event = await chrome.next_event(timeout=max(deadline - time.monotonic(), 0.1))
-            except asyncio.TimeoutError:
-                break
-            method, params = event.get("method"), event.get("params", {})
-            if method == "Network.requestWillBeSent":
-                request = params["request"]
-                if request["url"].startswith("https://gql.twitch.tv/integrity") and request.get("method") == "POST":
-                    integrity_requests.add(params["requestId"])
-                    # An anonymous page (no Authorization) mints a token
-                    # that fails dropCampaign -- worth seeing in the log.
-                    authorized = any(k.lower() == "authorization" for k in request.get("headers", {}))
-            elif method == "Network.loadingFinished" and params.get("requestId") in integrity_requests:
-                body = await chrome.call("Network.getResponseBody", {"requestId": params["requestId"]}, session)
-                token = json.loads(body.get("result", {}).get("body") or "{}").get("token")
-                if token:
-                    logger.info(
-                        f"Client-Integrity token minted in {time.monotonic() - started:.0f}s "
-                        f"(page logged in: {authorized})"
-                    )
-                    return token, _decode_jwt_expiry(token)
-        logger.warning(
-            f"Integrity token acquisition: no token within {INTEGRITY_MINT_TIMEOUT_SEC}s "
-            f"(integrity request seen: {bool(integrity_requests)})"
-        )
-        return None
+        await chrome.call("Page.enable", {}, session)
+        await chrome.call("Page.navigate", {"url": INTEGRITY_SDK_PAGE}, session)
+        while (await chrome.next_event(timeout=max(deadline - time.monotonic(), 0.1))).get("method") != (
+            "Page.loadEventFired"
+        ):
+            pass
+        page = await chrome.call("Runtime.evaluate", {"expression": "globalThis"}, session)
+        headers = {"authorization": f"OAuth {auth_token}", "client-id": ClientType.WEB.CLIENT_ID}
+        if device_id:
+            headers["x-device-id"] = device_id
+        reply = await chrome.call("Runtime.callFunctionOn", {
+            "objectId": page["result"]["result"]["objectId"],
+            "functionDeclaration": _SDK_MINT_JS,
+            "arguments": [{"value": headers}, {"value": INTEGRITY_SDK_URL}],
+            "awaitPromise": True, "returnByValue": True,
+        }, session, timeout=max(deadline - time.monotonic(), 1))
+        value = reply.get("result", {}).get("result", {}).get("value") or {}
+        data = value.get("data") or {}
+        token = data.get("token")
+        if value.get("status") != 200 or not token:
+            logger.warning(
+                f"Integrity token acquisition: no token ({value.get('failure') or value.get('status')})"
+            )
+            return None
+        logger.info(f"Client-Integrity token minted in {time.monotonic() - started:.0f}s")
+        expiration = data.get("expiration")
+        if isinstance(expiration, (int, float)):
+            return token, datetime.fromtimestamp(expiration / 1000, timezone.utc)
+        return token, _decode_jwt_expiry(token)
     finally:
         await chrome.close()
+
 
 def _detect_real_display() -> int | None:
     """If a real desktop display is already available -- a home/NAS
