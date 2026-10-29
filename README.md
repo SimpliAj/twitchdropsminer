@@ -106,6 +106,23 @@ The session is saved, so you only log in again when Twitch ends it.
 
 Each account has its own data folder (`data/accounts/<name>/`). Add, switch and rename accounts in **Settings → System**; **Manage Accounts** in the sidebar shows the whole fleet with bulk actions and shared settings. For fully separate processes per account (one port each, e.g. `/acc2/` behind Nginx), see the [Multi-Account wiki page](../../wiki/Multi-Account).
 
+## 🍓 Raspberry Pi / ARM: integrity helper
+
+Twitch only lets drops be claimed (and campaign details be read) with a Client-Integrity token from a browser it trusts. TDM mints one itself in a throwaway Chrome/Chromium, which works on normal PCs and x86 servers, but a Raspberry Pi's Chromium only ever gets tokens Twitch rejects. Let another machine on your LAN or VPN (e.g. your PC, a NAS or a VPS via Tailscale) mint for it; it needs Chrome or Chromium and a TDM checkout:
+
+```bash
+# on the helper machine, bound to its LAN/VPN address (never a public one)
+TDM_INTEGRITY_HELPER_KEY=<long random secret> python -m src.auth.integrity_helper --host <LAN/VPN IP> --port 8099
+```
+
+```bash
+# on the Pi, in TDM's environment
+TDM_INTEGRITY_HELPER_URL=http://<LAN/VPN IP>:8099
+TDM_INTEGRITY_HELPER_KEY=<the same secret>
+```
+
+Your Twitch session is sent to the helper for each mint (about every 16 h), so only point TDM at a machine you own; plain `http://` is only accepted for LAN and Tailscale addresses. Without a helper, drops Twitch won't let TDM claim show up under **Claim manually** on the dashboard.
+
 ## 🤖 Discord
 
 [➕ Add the bot](https://discord.com/oauth2/authorize?client_id=1513555081218359506&permissions=84992&integration_type=0&scope=bot), then **Settings → Discord Bot → Generate code** and run `/link <dashboard-url> <code>` in Discord. `/setchannel drops`, `/setchannel points` and `/dashboard` set up notifications and a live embed. Prefer no bot? Add webhook URLs in Settings instead. Details: [Discord Bot](../../wiki/Discord-Bot), [Discord Webhook](../../wiki/Discord-Webhook).
