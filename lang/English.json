@@ -549,6 +549,9 @@
       "badge_claim_now": "⚡ Claim now",
       "badge_claim_manual": "⚠ Claim manually",
       "badge_claim_manual_title": "Twitch requires an integrity check for this drop — claim it yourself in your Twitch drops inventory",
+      "manual_claim_header": "⚠ Ready to claim manually ({n})",
+      "manual_claim_hint": "Twitch requires a check this miner can't pass — claim these yourself",
+      "manual_claim_button": "Open Twitch inventory",
       "badge_percent_left": "{pct}% · {mins}min left",
       "badge_sub_only": "🔒 Sub only"
     },

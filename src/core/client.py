@@ -31,7 +31,7 @@ from src.i18n import _
 from src.models.campaign import DropsCampaign
 from src.models.channel import Channel
 from src.services.channel_service import ChannelService
-from src.services.drop_history import finalize_drop_claim
+from src.services.drop_history import finalize_drop_claim, finalize_manual_claim
 from src.services.health_monitor_service import HealthMonitorService
 from src.services.inventory_service import InventoryService
 from src.services.irc_service import IRCService
@@ -508,6 +508,8 @@ class Twitch:
                             ):
                                 logger.info(f"Generating synthetic claim_id for completed drop: {drop.id}")
                                 await drop.generate_claim()
+                            if finalize_manual_claim(self, campaign, drop):
+                                continue
                             if drop.can_claim:
                                 claimed = await drop.claim()
                                 if claimed:

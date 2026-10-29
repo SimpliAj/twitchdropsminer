@@ -297,7 +297,7 @@ async def _mint_integrity_token_plain(
     (CDP Network domain, no Runtime/JS injection) to pick up Twitch's own
     /integrity response.
     """
-    chrome = PlainChrome(binary, "about:blank", env, no_sandbox=_needs_no_sandbox())
+    chrome = PlainChrome(binary, "about:blank", env, no_sandbox=_needs_no_sandbox(), quiet=True)
     await chrome.start()
     try:
         await chrome.call("Storage.setCookies", {"cookies": _session_cookies(auth_token, device_id)})

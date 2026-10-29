@@ -29,6 +29,7 @@ BROWSER_LOGIN_RETRY_DELAY_SEC = 5.0
 # Client-Integrity token cache policy (see _ensure_integrity_token).
 INTEGRITY_RENEW_MARGIN = timedelta(minutes=15)  # renew early so a GQL request never races the expiry
 INTEGRITY_FAILURE_COOLDOWN = timedelta(minutes=5)  # don't hammer a failing acquisition every GQL request
+INTEGRITY_FAILURE_COOLDOWN_MAX = timedelta(hours=6)  # consecutive failures double the cooldown up to this
 
 
 class _AuthState:
@@ -58,6 +59,7 @@ class _AuthState:
         self._integrity_expires_at: datetime | None = None
         self._integrity_failed_until: datetime | None = None
         self._integrity_minted_at: datetime | None = None
+        self._integrity_failures = 0  # consecutive failed acquisitions / quickly rejected tokens
         # serializes renewals: concurrent validate() calls would each launch a Chromium
         self._integrity_lock = asyncio.Lock()
 
@@ -286,11 +288,23 @@ class _AuthState:
         however it was obtained (captured live during login, or minted
         standalone by _ensure_integrity_token). None means it failed."""
         if result is None:
-            self._integrity_failed_until = datetime.now(timezone.utc) + INTEGRITY_FAILURE_COOLDOWN
+            self._start_integrity_cooldown(datetime.now(timezone.utc))
             return
+        if self._integrity_token is not None:
+            self._integrity_failures = 0  # the previous token lived until its expiry
         self._integrity_token, self._integrity_expires_at = result
         self._integrity_failed_until = None
         self._integrity_minted_at = datetime.now(timezone.utc)
+
+    def _start_integrity_cooldown(self, since: datetime) -> None:
+        """Back off 5 min, 10, 20, ... (capped) while acquisition keeps failing."""
+        delay = min(INTEGRITY_FAILURE_COOLDOWN * 2 ** min(self._integrity_failures, 10), INTEGRITY_FAILURE_COOLDOWN_MAX)
+        self._integrity_failures += 1
+        self._integrity_failed_until = since + delay
+        logger.info(
+            f"Client-Integrity failed {self._integrity_failures}x in a row; "
+            f"next attempt after {self._integrity_failed_until:%H:%M:%S} UTC"
+        )
 
     def reject_integrity_token(self) -> None:
         """Twitch answered IntegrityCheckFailed despite the cached token: drop
@@ -304,7 +318,10 @@ class _AuthState:
         self._integrity_token = None
         self._integrity_expires_at = None
         if self._integrity_minted_at is not None:
-            self._integrity_failed_until = self._integrity_minted_at + INTEGRITY_FAILURE_COOLDOWN
+            if datetime.now(timezone.utc) - self._integrity_minted_at > INTEGRITY_FAILURE_COOLDOWN:
+                self._integrity_failures = 0  # it worked for a while, so this isn't a streak
+            else:
+                self._start_integrity_cooldown(self._integrity_minted_at)
         logger.warning("Client-Integrity token was rejected by Twitch; it will be renewed")
 
     async def _ensure_integrity_token(self) -> None:

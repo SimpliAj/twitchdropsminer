@@ -395,6 +395,9 @@ class GUICampaignModalOptional(TypedDict, total=False):
     badge_sub_only: str
     badge_claim_manual: str
     badge_claim_manual_title: str
+    manual_claim_header: str
+    manual_claim_hint: str
+    manual_claim_button: str
 
 
 class GUICampaignModal(GUICampaignModalOptional):

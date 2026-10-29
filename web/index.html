@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap">
-    <link rel="stylesheet" href="/static/styles.css?v=20261018a">
+    <link rel="stylesheet" href="/static/styles.css?v=20261029b">
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
 
@@ -90,6 +90,16 @@
 
         <!-- Main Tab -->
         <div id="main-tab" class="tab-content active">
+            <section class="panel manual-claim-panel" id="manual-claim-panel" hidden>
+                <div class="manual-claim-head">
+                    <div>
+                        <h2 id="manual-claim-title">&#x26A0; Ready to claim manually</h2>
+                        <p id="manual-claim-hint">Twitch requires a check this miner can't pass &#x2014; claim these yourself</p>
+                    </div>
+                    <a class="btn btn-primary" id="manual-claim-btn" href="https://www.twitch.tv/drops/inventory" target="_blank" rel="noopener">Open Twitch inventory</a>
+                </div>
+                <div class="manual-claim-list" id="manual-claim-list"></div>
+            </section>
             <div class="main-grid">
                 <!-- Stats Widget -->
                 <section class="panel stats-panel">
@@ -1432,7 +1442,7 @@ TDM_PORT=8080 WEB_PASSWORD=mysecretpassword pm2 start main.py --name twitchdrops
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" integrity="sha384-e6nUZLBkQ86NJ6TVVKAeSaK8jWa3NhkYWZFomE39AvDbQWeie9PlQqM3pmYW5d1g" crossorigin="anonymous"></script>
-    <script src="/static/app.js?v=20261029a"></script>
+    <script src="/static/app.js?v=20261029b"></script>
 </body>
 
 </html>

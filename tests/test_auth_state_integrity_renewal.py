@@ -140,3 +140,44 @@ class TestHeadersIncludeClientIntegrity(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestIntegrityBackoff(unittest.TestCase):
+    def _minutes_until_retry(self, auth_state, since):
+        return (auth_state._integrity_failed_until - since).total_seconds() / 60
+
+    def test_failed_acquisitions_back_off_exponentially_up_to_cap(self):
+        auth_state = _auth_state_with_identity()
+        delays = []
+        for _ in range(12):
+            before = datetime.now(timezone.utc)
+            auth_state._adopt_integrity_token(None)
+            delays.append(round(self._minutes_until_retry(auth_state, before)))
+        self.assertEqual(delays[:4], [5, 10, 20, 40])
+        self.assertEqual(delays[-1], 360)
+
+    def test_quickly_rejected_fresh_tokens_back_off(self):
+        auth_state = _auth_state_with_identity()
+        expiry = datetime.now(timezone.utc) + timedelta(hours=4)
+        for expected in (5, 10):
+            auth_state._adopt_integrity_token(("itok", expiry))
+            minted = auth_state._integrity_minted_at
+            auth_state.reject_integrity_token()
+            self.assertEqual(round(self._minutes_until_retry(auth_state, minted)), expected)
+
+    def test_token_that_lived_long_resets_the_streak(self):
+        auth_state = _auth_state_with_identity()
+        auth_state._adopt_integrity_token(None)
+        auth_state._adopt_integrity_token(None)
+        auth_state._adopt_integrity_token(("itok", datetime.now(timezone.utc) + timedelta(hours=4)))
+        auth_state._integrity_minted_at = datetime.now(timezone.utc) - timedelta(minutes=30)
+        auth_state.reject_integrity_token()
+        self.assertEqual(auth_state._integrity_failures, 0)
+
+    def test_renewal_after_plain_expiry_resets_the_streak(self):
+        auth_state = _auth_state_with_identity()
+        auth_state._adopt_integrity_token(None)
+        auth_state._adopt_integrity_token(("itok-1", datetime.now(timezone.utc) + timedelta(hours=4)))
+        self.assertEqual(auth_state._integrity_failures, 1)
+        auth_state._adopt_integrity_token(("itok-2", datetime.now(timezone.utc) + timedelta(hours=4)))
+        self.assertEqual(auth_state._integrity_failures, 0)

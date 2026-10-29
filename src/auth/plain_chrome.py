@@ -11,11 +11,59 @@ the Network/Page domains -- never Runtime / JS injection -- is not flagged
 from __future__ import annotations
 
 import asyncio
+import os
 import shutil
 import socket
 import tempfile
+import time
+from pathlib import Path
 
 import aiohttp
+
+
+STALE_TMP_AGE_SEC = 2 * 3600
+_STALE_TMP_PATTERNS = ("tdm-chrome-*", "org.chromium.Chromium.*", ".org.chromium.Chromium.*")
+
+
+def is_stale_tmp_entry(mtime: float, owner_uid: int, now: float, uid: int | None) -> bool:
+    """Old enough (a concurrent instance's live profile is always fresh) and ours."""
+    return now - mtime > STALE_TMP_AGE_SEC and (uid is None or owner_uid == uid)
+
+
+def _paths_in_use() -> str:
+    """All running processes' command lines joined (Linux /proc only, else empty)."""
+    parts = []
+    for cmdline in Path("/proc").glob("[0-9]*/cmdline"):
+        try:
+            parts.append(cmdline.read_bytes().replace(b"\0", b" ").decode(errors="ignore"))
+        except OSError:
+            continue
+    return "\n".join(parts)
+
+
+def sweep_stale_chrome_tmp() -> int:
+    """Delete leftover Chromium profile/temp entries in the temp dir that a
+    crashed or killed run left behind. Returns how many were removed."""
+    uid = os.getuid() if hasattr(os, "getuid") else None
+    now = time.time()
+    removed = 0
+    in_use = _paths_in_use()
+    for pattern in _STALE_TMP_PATTERNS:
+        for path in Path(tempfile.gettempdir()).glob(pattern):
+            if str(path) in in_use:
+                continue  # e.g. another instance's login browser left open for hours
+            try:
+                st = path.lstat()
+                if not is_stale_tmp_entry(st.st_mtime, st.st_uid, now, uid):
+                    continue
+                if path.is_dir() and not path.is_symlink():
+                    shutil.rmtree(path, ignore_errors=True)
+                else:
+                    path.unlink()
+                removed += 1
+            except OSError:
+                continue
+    return removed
 
 
 def free_port() -> int:
@@ -26,12 +74,19 @@ def free_port() -> int:
 
 class PlainChrome:
     def __init__(
-        self, binary: str, url: str, env: dict[str, str] | None = None, *, no_sandbox: bool = False
+        self,
+        binary: str,
+        url: str,
+        env: dict[str, str] | None = None,
+        *,
+        no_sandbox: bool = False,
+        quiet: bool = False,
     ) -> None:
         self._binary = binary
         self._url = url
         self._env = env
         self._no_sandbox = no_sandbox
+        self._quiet = quiet
         self._proc: asyncio.subprocess.Process | None = None
         self._http: aiohttp.ClientSession | None = None
         self._ws: aiohttp.ClientWebSocketResponse | None = None
@@ -51,6 +106,12 @@ class PlainChrome:
     async def start(self, timeout: float = 30.0) -> None:
         port = free_port()
         self._profile_dir = tempfile.mkdtemp(prefix="tdm-chrome-")
+        # Chromium's own temp files (component-updater downloads, unpackers)
+        # follow TMPDIR, so they go away with the profile instead of piling
+        # up in a RAM-backed /tmp.
+        chrome_tmp = os.path.join(self._profile_dir, "tmp")
+        os.makedirs(chrome_tmp, exist_ok=True)
+        env = {**(self._env if self._env is not None else os.environ), "TMPDIR": chrome_tmp}
         args = [
             self._binary,
             *(["--no-sandbox"] if self._no_sandbox else []),
@@ -58,11 +119,17 @@ class PlainChrome:
             f"--remote-debugging-port={port}",
             "--no-first-run",
             "--no-default-browser-check",
+            "--disable-component-update",
+            *(
+                ["--disable-background-networking", "--disable-sync", "--no-pings"]
+                if self._quiet
+                else []
+            ),
             self._url,
         ]
         try:
             self._proc = await asyncio.create_subprocess_exec(
-                *args, env=self._env, stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL
+                *args, env=env, stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL
             )
             self._http = aiohttp.ClientSession()
             loop = asyncio.get_running_loop()
@@ -115,20 +182,22 @@ class PlainChrome:
     async def close(self) -> None:
         ws, http, proc, profile_dir = self._ws, self._http, self._proc, self._profile_dir
         self._ws = self._http = self._profile_dir = None
-        if ws is not None and not ws.closed:
-            try:
-                self._next_id += 1
-                await ws.send_json({"id": self._next_id, "method": "Browser.close", "params": {}})
-            except Exception:
-                pass
-            await ws.close()
-        if http is not None:
-            await http.close()
-        if proc is not None and proc.returncode is None:
-            try:
-                await asyncio.wait_for(proc.wait(), 5)
-            except asyncio.TimeoutError:
-                proc.kill()
-                await proc.wait()
-        if profile_dir is not None:
-            shutil.rmtree(profile_dir, ignore_errors=True)
+        try:
+            if ws is not None and not ws.closed:
+                try:
+                    self._next_id += 1
+                    await ws.send_json({"id": self._next_id, "method": "Browser.close", "params": {}})
+                except Exception:
+                    pass
+                await ws.close()
+            if http is not None:
+                await http.close()
+            if proc is not None and proc.returncode is None:
+                try:
+                    await asyncio.wait_for(proc.wait(), 5)
+                except asyncio.TimeoutError:
+                    proc.kill()
+                    await proc.wait()
+        finally:
+            if profile_dir is not None:
+                shutil.rmtree(profile_dir, ignore_errors=True)

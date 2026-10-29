@@ -2753,3 +2753,23 @@ body.dark-mode .tab-button.active { color: var(--glitch-glow); }
     .qc-btn:hover { transform: none; }
     .campaign-card:hover { transform: none; }
 }
+
+/* ---------- Main tab: drops Twitch only lets the user claim by hand ---------- */
+.manual-claim-panel {
+    margin-bottom: 20px;
+    border-color: rgba(255, 159, 28, 0.5);
+    background: rgba(255, 159, 28, 0.08);
+}
+.manual-claim-panel[hidden] { display: none; }
+.manual-claim-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.manual-claim-head h2 { margin: 0 0 4px; color: #C86A00; }
+.manual-claim-head p { margin: 0; color: var(--ink-dim); font-size: 14px; }
+.manual-claim-head .btn-primary { width: auto; text-decoration: none; white-space: nowrap; }
+.manual-claim-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.manual-claim-item {
+    display: flex; align-items: center; gap: 10px; padding: 8px 12px; min-width: 0;
+    background: var(--panel); border: 1px solid var(--seam); border-radius: var(--r-lg);
+}
+.manual-claim-item img { width: 40px; height: 40px; object-fit: contain; flex-shrink: 0; }
+.manual-claim-item div { display: flex; flex-direction: column; min-width: 0; }
+.manual-claim-item span { font-size: 13px; opacity: 0.8; }

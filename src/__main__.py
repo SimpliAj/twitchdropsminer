@@ -97,6 +97,15 @@ if __name__ == "__main__":
         except Exception as exc:
             logger.warning(f"Could not sweep orphaned browser-login processes: {exc}")
 
+        try:
+            from src.auth.plain_chrome import sweep_stale_chrome_tmp
+
+            removed = sweep_stale_chrome_tmp()
+            if removed:
+                logger.info(f"Removed {removed} stale Chromium temp entries from a previous run")
+        except Exception as exc:
+            logger.warning(f"Could not sweep stale Chromium temp entries: {exc}")
+
         exit_status = 0
         client = Twitch(settings)
 

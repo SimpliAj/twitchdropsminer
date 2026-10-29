@@ -105,6 +105,18 @@ def finalize_drop_claim(twitch: Twitch, campaign: DropsCampaign, drop: TimedDrop
     })
 
 
+def finalize_manual_claim(twitch: Twitch, campaign: DropsCampaign, drop: TimedDrop) -> bool:
+    """A drop that was integrity-blocked and now shows as claimed in a fresh
+    inventory was claimed by hand: stop tracking the block and record it."""
+    from src.models.drop import _blocked_claims
+
+    if not drop.is_claimed or _blocked_claims.pop(drop.id, None) is None:
+        return False
+    logger.info(f"Drop {drop.name} ({drop.id}) was claimed manually")
+    finalize_drop_claim(twitch, campaign, drop)
+    return True
+
+
 def notify_manual_claim(twitch: Twitch, campaign: DropsCampaign, drop: TimedDrop) -> None:
     """One Discord message per drop and process when Twitch's integrity check
     blocks the auto-claim, so the user knows to claim it by hand."""

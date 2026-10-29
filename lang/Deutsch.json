@@ -521,6 +521,9 @@
       "badge_claim_now": "⚡ Jetzt einlösen",
       "badge_claim_manual": "⚠ Manuell einlösen",
       "badge_claim_manual_title": "Twitch verlangt für diesen Drop eine Integritätsprüfung — löse ihn selbst in deinem Twitch-Drops-Inventar ein",
+      "manual_claim_header": "⚠ Manuell einzulösen ({n})",
+      "manual_claim_hint": "Twitch verlangt eine Prüfung, die dieser Miner nicht bestehen kann — löse diese Drops selbst ein",
+      "manual_claim_button": "Twitch-Inventar öffnen",
       "badge_percent_left": "{pct}% · noch {mins} Min.",
       "badge_sub_only": "🔒 Nur mit Abo"
     },

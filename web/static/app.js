@@ -1702,7 +1702,51 @@ function applyInventoryViewMode(listView) {
     document.getElementById('inventory-grid')?.classList.toggle('list-view', listView);
 }
 
+function renderManualClaims() {
+    const panel = document.getElementById('manual-claim-panel');
+    if (!panel) return;
+    const cm = state.translations?.gui?.campaign_modal || {};
+    const items = [];
+    Object.values(state.campaigns).forEach(c => {
+        (c.drops || []).forEach(d => {
+            if (d.claim_blocked && !d.is_claimed) items.push({ game: c.game_name, drop: d });
+        });
+    });
+    panel.hidden = items.length === 0;
+    if (!items.length) return;
+    document.getElementById('manual-claim-title').textContent =
+        (cm.manual_claim_header || '⚠ Ready to claim manually ({n})').replace('{n}', items.length);
+    document.getElementById('manual-claim-hint').textContent =
+        cm.manual_claim_hint || "Twitch requires a check this miner can't pass — claim these yourself";
+    document.getElementById('manual-claim-btn').textContent = cm.manual_claim_button || 'Open Twitch inventory';
+    const list = document.getElementById('manual-claim-list');
+    list.replaceChildren();
+    items.forEach(({ game, drop }) => {
+        const row = document.createElement('div');
+        row.className = 'manual-claim-item';
+        const benefits = drop.benefits || [];
+        const imgUrl = benefits.map(b => b.image_url).find(u => typeof u === 'string' && u.startsWith('https://'));
+        if (imgUrl) {
+            const img = document.createElement('img');
+            img.src = imgUrl;
+            img.alt = '';
+            img.loading = 'lazy';
+            row.appendChild(img);
+        }
+        const text = document.createElement('div');
+        const title = document.createElement('strong');
+        title.textContent = game || '';
+        const sub = document.createElement('span');
+        const rewards = benefits.map(b => b.name).filter(Boolean).join(', ');
+        sub.textContent = rewards && rewards !== drop.name ? `${drop.name} — ${rewards}` : drop.name;
+        text.append(title, sub);
+        row.appendChild(text);
+        list.appendChild(row);
+    });
+}
+
 function renderInventory() {
+    renderManualClaims();
     const container = document.getElementById('inventory-grid');
     container.innerHTML = '';
     applyInventoryViewMode(state.settings.inventory_list_view || false);

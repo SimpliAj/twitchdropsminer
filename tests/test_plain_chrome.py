@@ -80,3 +80,37 @@ class TestPlainChrome(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(RuntimeError):
                 await chrome.start(timeout=2)
         self.assertFalse(chrome.alive)
+
+
+class TestStaleTmpFilter(unittest.TestCase):
+    def test_age_and_ownership(self):
+        from src.auth.plain_chrome import STALE_TMP_AGE_SEC, is_stale_tmp_entry
+
+        now = 1_000_000.0
+        old = now - STALE_TMP_AGE_SEC - 1
+        self.assertTrue(is_stale_tmp_entry(old, 1000, now, 1000))
+        self.assertFalse(is_stale_tmp_entry(now - 60, 1000, now, 1000))  # fresh: another instance
+        self.assertFalse(is_stale_tmp_entry(old, 0, now, 1000))  # someone else's
+        self.assertTrue(is_stale_tmp_entry(old, 0, now, None))  # no uid (Windows)
+
+    def test_sweep_removes_only_old_matching_entries(self):
+        import os
+        import tempfile
+        import time
+        from pathlib import Path
+
+        from src.auth.plain_chrome import STALE_TMP_AGE_SEC, sweep_stale_chrome_tmp
+
+        with tempfile.TemporaryDirectory() as tmp, patch("tempfile.gettempdir", return_value=tmp):
+            old = Path(tmp, "tdm-chrome-old")
+            fresh = Path(tmp, "tdm-chrome-fresh")
+            unrelated = Path(tmp, "other-old")
+            chromium = Path(tmp, "org.chromium.Chromium.abc")
+            for d in (old, fresh, unrelated, chromium):
+                d.mkdir()
+            past = time.time() - STALE_TMP_AGE_SEC - 60
+            for d in (old, unrelated, chromium):
+                os.utime(d, (past, past))
+            self.assertEqual(sweep_stale_chrome_tmp(), 2)
+            self.assertFalse(old.exists() or chromium.exists())
+            self.assertTrue(fresh.exists() and unrelated.exists())

@@ -121,3 +121,37 @@ class TestPortResolution(unittest.TestCase):
         self.assertEqual(name({"PORT": "8080"}), "TDM.log")
         self.assertEqual(name({"PORT": "9090"}), "TDM-9090.log")
         self.assertEqual(name({"TDM_PORT": "8082", "PORT": "9090"}), "TDM-8082.log")
+
+
+class TestFinalizeManualClaim(unittest.TestCase):
+    def setUp(self):
+        drop_module._blocked_claims.clear()
+        self.addCleanup(drop_module._blocked_claims.clear)
+
+    def _run(self, is_claimed, blocked):
+        drop, twitch = _make_drop()
+        drop.is_claimed = is_claimed
+        twitch._claim_finalized_drops = set()
+        if blocked:
+            drop_module._blocked_claims[drop.id] = 1.0
+        with patch("src.services.drop_history.save_drop_claim") as save, \
+                patch("src.services.drop_history._send_drop_webhook"):
+            result = drop_history.finalize_manual_claim(twitch, drop.campaign, drop)
+        return drop, result, save
+
+    def test_blocked_drop_now_claimed_is_recorded_and_unblocked(self):
+        drop, result, save = self._run(is_claimed=True, blocked=True)
+        self.assertTrue(result)
+        save.assert_called_once()
+        self.assertNotIn(drop.id, drop_module._blocked_claims)
+
+    def test_still_unclaimed_stays_blocked(self):
+        drop, result, save = self._run(is_claimed=False, blocked=True)
+        self.assertFalse(result)
+        save.assert_not_called()
+        self.assertIn(drop.id, drop_module._blocked_claims)
+
+    def test_claimed_but_never_blocked_is_ignored(self):
+        _, result, save = self._run(is_claimed=True, blocked=False)
+        self.assertFalse(result)
+        save.assert_not_called()
