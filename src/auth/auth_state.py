@@ -347,7 +347,7 @@ class _AuthState:
         async with self._integrity_lock:
             if not self._integrity_renewal_due():
                 return  # another caller renewed it while we waited
-            logger.info("Renewing the Client-Integrity token (drives a real, throwaway Chromium)...")
+            logger.info("Renewing the Client-Integrity token...")
             result = await browser_login.acquire_integrity_token(self.access_token, self.device_id)
             self._adopt_integrity_token(result)
 

@@ -17,6 +17,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import contextlib
+import ipaddress
 import json
 import logging
 import os
@@ -29,6 +30,7 @@ from datetime import datetime, timedelta, timezone
 
 import aiohttp
 from playwright.async_api import async_playwright
+from yarl import URL
 
 from src.auth.plain_chrome import PlainChrome
 from src.config.client_info import ClientType
@@ -229,7 +231,25 @@ async def acquire_integrity_token(auth_token: str, device_id: str) -> tuple[str,
     return await mint_integrity_token_locally(auth_token, device_id)
 
 
+def _helper_url_is_safe(helper_url: str) -> bool:
+    """The auth token goes along, so plain http only within loopback, a LAN
+    or a VPN (Tailscale's 100.64.0.0/10 is WireGuard-encrypted)."""
+    url = URL(helper_url)
+    if url.scheme == "https":
+        return True
+    if url.scheme != "http" or not url.host:
+        return False
+    try:
+        ip = ipaddress.ip_address(url.host)
+    except ValueError:
+        return url.host == "localhost" or url.host.endswith(".ts.net")
+    return ip.is_loopback or ip.is_private or ip in ipaddress.ip_network("100.64.0.0/10")
+
+
 async def _mint_via_helper(helper_url: str, auth_token: str, device_id: str) -> tuple[str, datetime] | None:
+    if not _helper_url_is_safe(helper_url):
+        logger.warning(f"{INTEGRITY_HELPER_URL_ENV} must be https:// outside a LAN or VPN; not sending the session there")
+        return None
     headers = {"Authorization": f"Bearer {os.environ.get(INTEGRITY_HELPER_KEY_ENV, '').strip()}"}
     timeout = aiohttp.ClientTimeout(total=INTEGRITY_MINT_TIMEOUT_SEC + 60)
     try:

@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from src.auth.browser_login import (
     _decode_jwt_expiry,
-    _session_cookies,
+    _helper_url_is_safe,
     acquire_integrity_token,
 )
 
@@ -46,22 +46,6 @@ class TestDecodeJwtExpiry(unittest.TestCase):
         before = datetime.now(timezone.utc)
         expiry = _decode_jwt_expiry("header.!!!not-base64!!!.sig")
         self.assertGreater(expiry, before + timedelta(hours=3))
-
-
-class TestSessionCookies(unittest.TestCase):
-    """The cookies a plain Chrome is seeded with before minting a token."""
-
-    def test_auth_token_is_readable_by_the_page(self):
-        # An httpOnly auth-token leaves Twitch's page anonymous (confirmed
-        # live: /integrity then goes out without Authorization and the
-        # resulting token fails dropCampaign).
-        cookies = {c["name"]: c for c in _session_cookies("token123", "device-abc")}
-        self.assertEqual(set(cookies), {"auth-token", "unique_id"})
-        self.assertFalse(cookies["auth-token"].get("httpOnly", False))
-
-    def test_skips_the_device_id_cookie_when_blank(self):
-        names = {c["name"] for c in _session_cookies("token123", "")}
-        self.assertEqual(names, {"auth-token"})
 
 
 class TestAcquireIntegrityToken(unittest.IsolatedAsyncioTestCase):
@@ -126,3 +110,35 @@ class TestAcquireIntegrityToken(unittest.IsolatedAsyncioTestCase):
         mock_terminate.assert_awaited_once_with(xvfb_proc)
         mock_release.assert_called_once_with(92)
 
+
+
+class TestIntegrityHelper(unittest.IsolatedAsyncioTestCase):
+    """With TDM_INTEGRITY_HELPER_URL set, another machine mints the token
+    (a Raspberry Pi's own Chromium only gets rejected ones)."""
+
+    async def test_uses_the_helper_instead_of_a_local_browser(self):
+        expiry = datetime.now(timezone.utc) + timedelta(hours=16)
+        via_helper = AsyncMock(return_value=("itok", expiry))
+        local = AsyncMock()
+        with (
+            patch.dict("os.environ", {"TDM_INTEGRITY_HELPER_URL": "http://100.77.0.1:8099"}),
+            patch("src.auth.browser_login._mint_via_helper", new=via_helper),
+            patch("src.auth.browser_login.mint_integrity_token_locally", new=local),
+        ):
+            result = await acquire_integrity_token("token123", "device-abc")
+        self.assertEqual(result, ("itok", expiry))
+        via_helper.assert_awaited_once_with("http://100.77.0.1:8099", "token123", "device-abc")
+        local.assert_not_awaited()
+
+    async def test_never_sends_the_session_over_public_plain_http(self):
+        with patch.dict("os.environ", {"TDM_INTEGRITY_HELPER_URL": "http://8.8.8.8:8099"}):
+            with patch("aiohttp.ClientSession") as session:
+                self.assertIsNone(await acquire_integrity_token("token123", "device-abc"))
+        session.assert_not_called()
+
+    def test_plain_http_only_inside_lan_or_vpn(self):
+        for url in ("http://127.0.0.1:8099", "http://192.168.0.5:8099", "http://100.77.227.12:8099",
+                    "http://box.tail1.ts.net:8099", "https://helper.example.com"):
+            self.assertTrue(_helper_url_is_safe(url), url)
+        for url in ("http://8.8.8.8:8099", "http://helper.example.com", "ftp://192.168.0.5"):
+            self.assertFalse(_helper_url_is_safe(url), url)

@@ -3,18 +3,20 @@ won't trust -- a Raspberry Pi's Chromium only ever gets tokens that fail the
 integrity check (confirmed live 2026-10-29), while the same mint on an x86
 PC or server passes, and the token then works from any IP.
 
-Run it on such a machine (it needs Chrome or Chromium):
+Run it on such a machine (it needs Chrome or Chromium), bound to its LAN or
+VPN address (e.g. its Tailscale IP), never a public one:
 
-    TDM_INTEGRITY_HELPER_KEY=<long random secret> python -m src.auth.integrity_helper --host 0.0.0.0 --port 8099
+    TDM_INTEGRITY_HELPER_KEY=<long random secret> python -m src.auth.integrity_helper --host <LAN/VPN IP> --port 8099
 
 and point the TDM instance at it:
 
-    TDM_INTEGRITY_HELPER_URL=http://<helper host>:8099
+    TDM_INTEGRITY_HELPER_URL=http://<LAN/VPN IP>:8099
     TDM_INTEGRITY_HELPER_KEY=<the same secret>
 
-The instance sends its Twitch auth token with each request, so keep the
-helper on a trusted network (LAN, VPN such as Tailscale) and never expose it
-publicly. Nothing is logged or stored.
+The instance sends its Twitch auth token with each request; TDM sends it
+over plain http only to loopback, private LAN and Tailscale addresses,
+anything else needs https (e.g. behind a reverse proxy). Nothing is logged
+or stored.
 """
 
 from __future__ import annotations
