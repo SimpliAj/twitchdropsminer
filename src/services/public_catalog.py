@@ -37,7 +37,8 @@ MAX_BODY_BYTES = 8 * 1024 * 1024
 # The API allows 1 request per 300 s per IP; instances on one host share a cache file
 # so a second instance (or a restart) doesn't get a 429 and an empty campaign list.
 CACHE_TTL = 300
-CACHE_FILE = Path(tempfile.gettempdir()) / "tdm_public_drops_feed.json"
+# per-user cache dir, not the world-writable temp dir: another local user must not be able to plant a feed
+CACHE_FILE = Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache") / "tdm" / "public_drops_feed.json"
 _not_before: float = 0.0
 
 
@@ -233,20 +234,26 @@ def parse_catalog(payload: Any, now: datetime | None = None) -> list[JsonType]:
 def _read_cache() -> tuple[Any, float] | None:
     """(payload, age in seconds) of the shared cache file, None if absent/unreadable."""
     try:
-        age = time.time() - CACHE_FILE.stat().st_mtime
-        return json.loads(CACHE_FILE.read_text(encoding="utf-8")), age
+        st = CACHE_FILE.stat()
+        if st.st_size > MAX_BODY_BYTES or (hasattr(os, "getuid") and st.st_uid != os.getuid()):
+            return None
+        return json.loads(CACHE_FILE.read_text(encoding="utf-8")), time.time() - st.st_mtime
     except (OSError, ValueError):
         return None
 
 
 def _write_cache(body: bytes) -> None:
-    tmp = CACHE_FILE.with_name(f"{CACHE_FILE.name}.{os.getpid()}.tmp")
+    tmp: str | None = None
     try:
-        tmp.write_bytes(body)
+        CACHE_FILE.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+        fd, tmp = tempfile.mkstemp(dir=CACHE_FILE.parent, prefix=".feed-")
+        with os.fdopen(fd, "wb") as f:
+            f.write(body)
         os.replace(tmp, CACHE_FILE)
     except OSError as exc:
         logger.debug(f"Could not cache the public drops feed: {exc}")
-        tmp.unlink(missing_ok=True)
+        if tmp is not None:
+            Path(tmp).unlink(missing_ok=True)
 
 
 def _retry_after(resp: aiohttp.ClientResponse) -> float:
