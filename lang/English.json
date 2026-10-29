@@ -547,6 +547,8 @@
       "badge_earned": "✓ Earned",
       "badge_earned_title": "Watch time completed — waiting for Twitch to confirm",
       "badge_claim_now": "⚡ Claim now",
+      "badge_claim_manual": "⚠ Claim manually",
+      "badge_claim_manual_title": "Twitch requires an integrity check for this drop — claim it yourself in your Twitch drops inventory",
       "badge_percent_left": "{pct}% · {mins}min left",
       "badge_sub_only": "🔒 Sub only"
     },

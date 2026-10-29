@@ -52,7 +52,7 @@ class HealthMonitorService:
     ) -> None:
         self._twitch = twitch
         self._clock = clock
-        self._label = label or os.environ.get("TDM_LABEL") or f"port {os.environ.get('TDM_PORT', '8080')}"
+        self._label = label or os.environ.get("TDM_LABEL") or f"port {os.environ.get('TDM_PORT') or os.environ.get('PORT') or '8080'}"
         self._last_watch_ok = clock()
         self._login_since: float | None = None
         self._active: set[str] = set()

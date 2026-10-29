@@ -5379,6 +5379,13 @@ function showCampaignDropsModal(campaignId, onlyRemaining) {
                 badge.style.background = 'rgba(52,231,184,0.18)';
                 badge.style.color = '#1DA980';
                 badge.textContent = cm.badge_claimed || '✓ Claimed';
+            } else if (drop.claim_blocked) {
+                badge.style.background = 'rgba(255,159,28,0.2)';
+                badge.style.color = '#C86A00';
+                badge.style.cursor = 'pointer';
+                badge.textContent = cm.badge_claim_manual || '⚠ Claim manually';
+                badge.title = cm.badge_claim_manual_title || 'Twitch requires an integrity check for this drop — claim it yourself in your Twitch drops inventory';
+                badge.addEventListener('click', () => window.open('https://www.twitch.tv/drops/inventory', '_blank', 'noopener'));
             } else if (locallyEarned) {
                 badge.style.background = 'rgba(52,231,184,0.14)';
                 badge.style.color = '#1DA980';
@@ -5403,7 +5410,7 @@ function showCampaignDropsModal(campaignId, onlyRemaining) {
             header.appendChild(badge);
             item.appendChild(header);
 
-            if (!drop.is_claimed && !locallyEarned && drop.required_minutes > 0) {
+            if (!drop.is_claimed && !locallyEarned && !drop.claim_blocked && drop.required_minutes > 0) {
                 const pct = Math.min(100, (effectiveMinutes / drop.required_minutes) * 100);
                 const bar = document.createElement('div');
                 bar.style.cssText = 'width:100%;height:3px;background:var(--bg-secondary);border-radius:2px;overflow:hidden;margin-bottom:6px';

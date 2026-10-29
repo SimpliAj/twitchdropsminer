@@ -31,7 +31,11 @@ from src.web.diagnostics_api import DiagnosticsAPI
 
 
 # one cookie name per port: browsers share cookies across ports of the same host, so instances on :8080/:8082 would overwrite each other
-_SESSION_COOKIE = "__tdm_session" + (("_" + _os_ck.environ["TDM_PORT"]) if _os_ck.environ.get("TDM_PORT", "").strip() else "")
+# PORT (Docker image default 8080) only counts when it isn't the default, so existing sessions survive
+_port_env = (_os_ck.environ.get("TDM_PORT") or "").strip()
+if not _port_env and (_os_ck.environ.get("PORT") or "").strip() not in ("", "8080"):
+    _port_env = _os_ck.environ["PORT"].strip()
+_SESSION_COOKIE = "__tdm_session" + (("_" + _port_env) if _port_env else "")
 
 _DATA_DIR = Path(_os.environ.get("TDM_DATA_DIR", str(Path(__file__).parent.parent.parent / "data")))
 _WEB_CONFIG_FILE = _DATA_DIR / "web_config.json"
@@ -1252,7 +1256,7 @@ async def test_webhook(request: Request):
 @app.get("/api/instance")
 async def get_instance():
     import os as _eos
-    port = int(_eos.environ.get("TDM_PORT", 8080))
+    port = int(_eos.environ.get("TDM_PORT") or _eos.environ.get("PORT") or 8080)
     label = _eos.environ.get("TDM_LABEL", f"Instance {port}")
     login = None
     try:

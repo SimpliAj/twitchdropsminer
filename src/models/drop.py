@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
+import time
 from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING
 
@@ -14,7 +15,7 @@ from src.exceptions import GQLException
 from src.i18n import _
 from src.models.benefit import Benefit
 from src.services import drop_minutes_cache
-from src.services.drop_history import finalize_drop_claim
+from src.services.drop_history import finalize_drop_claim, notify_manual_claim
 
 
 if TYPE_CHECKING:
@@ -26,6 +27,11 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("TwitchDrops")
 DIMS_PATTERN = re.compile(r"-\d+x\d+(?=\.(?:jpg|png|gif)$)", re.I)
+INVENTORY_URL = "https://www.twitch.tv/drops/inventory"
+BLOCKED_CLAIM_RETRY_SECONDS = 30 * 60
+# drop id -> monotonic time of the last integrity-blocked claim; module-level because
+# every inventory fetch rebuilds the drop objects, which would reset the throttle
+_blocked_claims: dict[str, float] = {}
 
 
 def remove_dimensions(url: str) -> str:
@@ -77,6 +83,11 @@ class BaseDrop:
         else:
             additional = ""
         return f"Drop({self.rewards_text()}{additional})"
+
+    @property
+    def claim_blocked(self) -> bool:
+        # Twitch answered IntegrityCheckFailed to the claim: only the user can claim it
+        return self.id in _blocked_claims
 
     @property
     def preconditions_met(self) -> bool:
@@ -171,9 +182,14 @@ class BaseDrop:
         if self.excluded:
             logger.info(f"Not claiming blacklisted/ignored drop: {self.name} ({self.id})")
             return False
+        failed_at = _blocked_claims.get(self.id)
+        if failed_at is not None and time.monotonic() - failed_at < BLOCKED_CLAIM_RETRY_SECONDS:
+            return False
         result = await self._claim()
         if result:
             self.is_claimed = result
+            if _blocked_claims.pop(self.id, None) is not None:
+                self._on_state_changed()
             claim_text = (
                 f"{self.campaign.game.name}\n"
                 f"{self.rewards_text()} "
@@ -184,9 +200,27 @@ class BaseDrop:
             self._twitch.print(
                 _.t["status"]["claimed_drop"].format(drop=claim_text.replace("\n", " "))
             )
-        else:
+        elif not self.claim_blocked:
             logger.error(f"Drop claim has potentially failed! Drop ID: {self.id}")
         return result
+
+    def _claim_failed(self, error: str) -> None:
+        if "IntegrityCheckFailed" not in error:
+            logger.warning(f"Claiming drop {self.name} ({self.id}) failed: {error}")
+            return
+        first = not self.claim_blocked
+        _blocked_claims[self.id] = time.monotonic()
+        # no-op without a cached token; otherwise a fresh one is minted for the next attempt
+        self._twitch._auth_state.reject_integrity_token()
+        if not first:
+            logger.debug(f"Claiming drop {self.name} ({self.id}) is still integrity-blocked")
+            return
+        logger.warning(
+            f"Drop {self.name} ({self.campaign.game.name}) needs a manual claim at {INVENTORY_URL} "
+            "-- Twitch requires an integrity check this miner can't pass"
+        )
+        self._on_state_changed()
+        notify_manual_claim(self._twitch, self.campaign, self)
 
     async def _claim(self) -> bool:
         """
@@ -202,21 +236,23 @@ class BaseDrop:
                     {"input": {"dropInstanceID": self.claim_id}}
                 )
             )
-        except GQLException:
+        except GQLException as exc:
             # regardless of the error, we have to assume
             # the claiming operation has potentially failed
+            self._claim_failed(str(exc))
             return False
         data = response["data"]
         if "errors" in data and data["errors"]:
+            self._claim_failed(str(data["errors"]))
             return False
         elif "claimDropRewards" in data:
             if not data["claimDropRewards"]:
+                logger.warning(f"Claiming drop {self.name} ({self.id}) returned no result")
                 return False
-            elif data["claimDropRewards"]["status"] in (
-                "ELIGIBLE_FOR_ALL",
-                "DROP_INSTANCE_ALREADY_CLAIMED",
-            ):
+            status = data["claimDropRewards"]["status"]
+            if status in ("ELIGIBLE_FOR_ALL", "DROP_INSTANCE_ALREADY_CLAIMED"):
                 return True
+            logger.warning(f"Claiming drop {self.name} ({self.id}) returned status {status}")
         return False
 
 
@@ -229,6 +265,7 @@ class TimedDrop(BaseDrop):
         self.required_minutes: int = data["requiredMinutesWatched"]
         self.real_current_minutes: int = drop_minutes_cache.get(self.id, api_minutes)
         self.extra_current_minutes: int = 0
+        self._immediate_claim_started: bool = False
         if self.is_claimed:
             # claimed drops may report inconsistent current minutes, so we need to overwrite them
             self.real_current_minutes = self.required_minutes
@@ -331,11 +368,13 @@ class TimedDrop(BaseDrop):
         `first_drop`/blocking its precondition chain since `is_claimed` never flips —
         while the watch loop keeps uselessly bumping it.
         """
-        if self.is_claimed or self.claim_id is not None or self.progress < 1.0:
+        if self.is_claimed or self._immediate_claim_started or self.progress < 1.0:
             return
+        self._immediate_claim_started = True
 
         async def _do_claim() -> None:
-            await self.generate_claim()
+            if self.claim_id is None:
+                await self.generate_claim()
             claimed = await self.claim()
             if claimed:
                 finalize_drop_claim(self._twitch, self.campaign, self)

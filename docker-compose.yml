@@ -12,12 +12,15 @@ services:
     stop_grace_period: 30s
     shm_size: 256m
     ports:
+      # To use another port: set TDM_PORT below and change BOTH sides of this
+      # mapping to match, e.g. TDM_PORT=9090 and "9090:9090"
       - "8080:8080"
     volumes:
       # Mount data directory for persistent storage
       - ./data:/app/data
       - ./logs:/app/logs
     environment:
+      # - TDM_PORT=8080
       # Set to your real timezone -- the real-browser login uses it, and a
       # mismatch (e.g. the UTC default) gets the login page rejected by
       # Twitch as "not currently supported"

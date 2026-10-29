@@ -67,7 +67,7 @@ EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/healthz', timeout=2)" || exit 1
+    CMD python -c "import os, urllib.request; urllib.request.urlopen('http://localhost:%s/healthz' % (os.environ.get('TDM_PORT') or os.environ.get('PORT') or '8080'), timeout=2)" || exit 1
 
 # Run the application (web GUI is now default)
 CMD ["python", "main.py"]

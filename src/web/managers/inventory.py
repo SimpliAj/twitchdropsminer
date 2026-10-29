@@ -63,6 +63,7 @@ class InventoryManager:
                     "progress": drop.progress,
                     "is_claimed": drop.is_claimed,
                     "can_claim": drop.can_claim,
+                    "claim_blocked": drop.claim_blocked,
                     "benefits": benefits_data,
                     "starts_at": drop.starts_at.isoformat(),
                     "ends_at": drop.ends_at.isoformat(),
@@ -117,6 +118,7 @@ class InventoryManager:
                             "progress": drop.progress,
                             "is_claimed": drop.is_claimed,
                             "can_claim": drop.can_claim,
+                            "claim_blocked": drop.claim_blocked,
                         }
                     )
                     asyncio.create_task(

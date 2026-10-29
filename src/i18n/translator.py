@@ -393,6 +393,8 @@ class GUIDropsToday(TypedDict):
 
 class GUICampaignModalOptional(TypedDict, total=False):
     badge_sub_only: str
+    badge_claim_manual: str
+    badge_claim_manual_title: str
 
 
 class GUICampaignModal(GUICampaignModalOptional):

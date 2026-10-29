@@ -1,13 +1,32 @@
+import json
+import os
+import tempfile
+import time
 import unittest
 from datetime import datetime, timezone
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from src.exceptions import GQLException
+from src.services import public_catalog
 from src.services.inventory_service import InventoryService
 from src.services.public_catalog import fetch_public_campaigns, parse_catalog
 
 
 NOW = datetime(2026, 10, 5, 12, 0, tzinfo=timezone.utc)
+
+_tmp = None
+
+
+def setUpModule():
+    # never touch the host-wide cache file of a real TDM instance
+    global _tmp
+    _tmp = tempfile.TemporaryDirectory()
+    public_catalog.CACHE_FILE = Path(_tmp.name) / "feed.json"
+
+
+def tearDownModule():
+    _tmp.cleanup()
 
 
 def _rec(cid, status="ACTIVE"):
@@ -64,6 +83,10 @@ class TestParseCatalog(unittest.TestCase):
 
 
 class TestFetch(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        public_catalog.CACHE_FILE.unlink(missing_ok=True)
+        public_catalog._not_before = 0.0
+
     async def test_network_error_returns_empty(self):
         session = MagicMock()
         session.get.side_effect = OSError("down")
@@ -131,6 +154,10 @@ class _FakeResp:
 
 
 class TestChunkedBody(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        public_catalog.CACHE_FILE.unlink(missing_ok=True)
+        public_catalog._not_before = 0.0
+
     async def test_body_split_over_many_chunks_is_read_completely(self):
         import json
         from datetime import datetime, timezone
@@ -283,3 +310,54 @@ class TestUnknownLink(unittest.TestCase):
         c = self._campaign(False, {"never-seen.example": True})
         self.assertTrue(c.eligible)
         self.assertFalse(c.link_assumed)
+
+
+class _Resp429(_FakeResp):
+    status = 429
+    headers = {"Retry-After": "292"}
+
+    def __init__(self):
+        super().__init__(b'{"code":"RATE_LIMITED"}')
+
+
+class TestSharedCache(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        public_catalog.CACHE_FILE.unlink(missing_ok=True)
+        public_catalog._not_before = 0.0
+
+    def _fresh(self):
+        return _payload(datetime.now(timezone.utc).isoformat())
+
+    async def test_success_writes_cache_and_fresh_cache_skips_request(self):
+        session = MagicMock()
+        session.get.return_value = _FakeResp(json.dumps(self._fresh()).encode())
+        self.assertEqual(sorted(c["id"] for c in await fetch_public_campaigns(session)), ["a", "c"])
+        self.assertTrue(public_catalog.CACHE_FILE.exists())
+        second = MagicMock()
+        second.get.side_effect = AssertionError("must not request")
+        self.assertEqual(sorted(c["id"] for c in await fetch_public_campaigns(second)), ["a", "c"])
+
+    async def test_429_falls_back_to_cache_and_backs_off(self):
+        public_catalog.CACHE_FILE.write_text(json.dumps(self._fresh()))
+        old = time.time() - 1000
+        os.utime(public_catalog.CACHE_FILE, (old, old))
+        session = MagicMock()
+        session.get.return_value = _Resp429()
+        self.assertEqual(sorted(c["id"] for c in await fetch_public_campaigns(session)), ["a", "c"])
+        self.assertEqual(session.get.call_count, 1)
+        self.assertGreater(public_catalog._not_before, time.monotonic() + 200)
+        await fetch_public_campaigns(session)
+        self.assertEqual(session.get.call_count, 1)  # backed off, no second request
+
+    async def test_429_without_cache_returns_empty(self):
+        session = MagicMock()
+        session.get.return_value = _Resp429()
+        self.assertEqual(await fetch_public_campaigns(session), [])
+
+    async def test_stale_cached_payload_is_still_rejected(self):
+        public_catalog.CACHE_FILE.write_text(json.dumps(_payload("2020-01-01T00:00:00Z")))
+        old = time.time() - 1000
+        os.utime(public_catalog.CACHE_FILE, (old, old))
+        session = MagicMock()
+        session.get.return_value = _Resp429()
+        self.assertEqual(await fetch_public_campaigns(session), [])

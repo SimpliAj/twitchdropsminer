@@ -11,8 +11,12 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
+import tempfile
+import time
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
 
@@ -30,6 +34,11 @@ CATALOG_URL = "https://twitch-drops-api.sunkwi.com/v2/drops"
 MAX_CAMPAIGNS = 2000
 MAX_AGE = timedelta(minutes=30)
 MAX_BODY_BYTES = 8 * 1024 * 1024
+# The API allows 1 request per 300 s per IP; instances on one host share a cache file
+# so a second instance (or a restart) doesn't get a 429 and an empty campaign list.
+CACHE_TTL = 300
+CACHE_FILE = Path(tempfile.gettempdir()) / "tdm_public_drops_feed.json"
+_not_before: float = 0.0
 
 
 _ID_RE = re.compile(r"^[A-Za-z0-9_.:\-]{1,200}$")
@@ -221,24 +230,57 @@ def parse_catalog(payload: Any, now: datetime | None = None) -> list[JsonType]:
         return []
 
 
+def _read_cache() -> tuple[Any, float] | None:
+    """(payload, age in seconds) of the shared cache file, None if absent/unreadable."""
+    try:
+        age = time.time() - CACHE_FILE.stat().st_mtime
+        return json.loads(CACHE_FILE.read_text(encoding="utf-8")), age
+    except (OSError, ValueError):
+        return None
+
+
+def _write_cache(body: bytes) -> None:
+    tmp = CACHE_FILE.with_name(f"{CACHE_FILE.name}.{os.getpid()}.tmp")
+    try:
+        tmp.write_bytes(body)
+        os.replace(tmp, CACHE_FILE)
+    except OSError as exc:
+        logger.debug(f"Could not cache the public drops feed: {exc}")
+        tmp.unlink(missing_ok=True)
+
+
+def _retry_after(resp: aiohttp.ClientResponse) -> float:
+    try:
+        return max(0.0, min(float(resp.headers.get("Retry-After", CACHE_TTL)), 3600.0))
+    except (TypeError, ValueError):
+        return float(CACHE_TTL)
+
+
 async def fetch_public_campaigns(
     session: aiohttp.ClientSession, proxy: str | None = None
 ) -> list[JsonType]:
-    try:
-        async with session.get(
-            CATALOG_URL, timeout=aiohttp.ClientTimeout(total=20), proxy=proxy or None
-        ) as resp:
-            if resp.status != 200:
+    global _not_before
+    cached = _read_cache()
+    if cached is not None and cached[1] < CACHE_TTL:
+        return parse_catalog(cached[0])
+    if time.monotonic() >= _not_before:
+        try:
+            async with session.get(
+                CATALOG_URL, timeout=aiohttp.ClientTimeout(total=20), proxy=proxy or None
+            ) as resp:
+                if resp.status == 200:
+                    body = bytearray()
+                    async for part in resp.content.iter_chunked(64 * 1024):
+                        body += part
+                        if len(body) > MAX_BODY_BYTES:
+                            raise ValueError("response too large")
+                    payload = json.loads(body)
+                    _write_cache(bytes(body))
+                    return parse_catalog(payload)
                 logger.warning(f"Public drops feed returned HTTP {resp.status}")
-                return []
-            body = bytearray()
-            async for part in resp.content.iter_chunked(64 * 1024):
-                body += part
-                if len(body) > MAX_BODY_BYTES:
-                    logger.warning("Public drops feed response too large, ignoring it")
-                    return []
-            payload = json.loads(body)
-    except Exception as exc:
-        logger.warning(f"Public drops feed unavailable: {exc}")
-        return []
-    return parse_catalog(payload)
+                if resp.status == 429:
+                    _not_before = time.monotonic() + _retry_after(resp)
+        except Exception as exc:
+            logger.warning(f"Public drops feed unavailable: {exc}")
+    # rate limited or failed: an older cached copy still beats an empty list (parse_catalog rejects stale data)
+    return parse_catalog(cached[0]) if cached is not None else []

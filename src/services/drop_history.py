@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 _WEB_CONFIG_FILE = DATA_DIR / "web_config.json"
 _MAX_ENTRIES = 500
+_manual_claim_notified: set[str] = set()
 
 
 def _account_data_dir():
@@ -93,10 +94,7 @@ def finalize_drop_claim(twitch: Twitch, campaign: DropsCampaign, drop: TimedDrop
         drop.benefits[0].image_url if drop.benefits else None,
     )
 
-    webhook_url = twitch.settings.discord_webhook_drops
-    if not webhook_url:
-        return
-    embed: dict = {
+    _send_drop_webhook(twitch, drop, {
         "title": "🎁 Drop Claimed!",
         "color": 0x9147FF,
         "fields": [
@@ -104,7 +102,31 @@ def finalize_drop_claim(twitch: Twitch, campaign: DropsCampaign, drop: TimedDrop
             {"name": "Drop", "value": drop.name, "inline": True},
             {"name": "Reward", "value": drop.rewards_text(), "inline": False},
         ],
-    }
+    })
+
+
+def notify_manual_claim(twitch: Twitch, campaign: DropsCampaign, drop: TimedDrop) -> None:
+    """One Discord message per drop and process when Twitch's integrity check
+    blocks the auto-claim, so the user knows to claim it by hand."""
+    if drop.id in _manual_claim_notified:
+        return
+    _manual_claim_notified.add(drop.id)
+    _send_drop_webhook(twitch, drop, {
+        "title": "⚠️ Drop needs manual claim",
+        "color": 0xF5A623,
+        "fields": [
+            {"name": "Game", "value": campaign.game.name, "inline": True},
+            {"name": "Drop", "value": drop.name, "inline": True},
+            {"name": "Reward", "value": drop.rewards_text(), "inline": False},
+            {"name": "Claim it here", "value": "https://www.twitch.tv/drops/inventory", "inline": False},
+        ],
+    })
+
+
+def _send_drop_webhook(twitch: Twitch, drop: TimedDrop, embed: dict) -> None:
+    webhook_url = twitch.settings.discord_webhook_drops
+    if not webhook_url:
+        return
     try:
         _acct = json.loads(_WEB_CONFIG_FILE.read_text()).get("active_account", "") if _WEB_CONFIG_FILE.exists() else ""
     except Exception:
