@@ -155,3 +155,27 @@ class TestFinalizeManualClaim(unittest.TestCase):
         _, result, save = self._run(is_claimed=True, blocked=False)
         self.assertFalse(result)
         save.assert_not_called()
+
+
+class TestClaimAnnouncedOnce(unittest.IsolatedAsyncioTestCase):
+    """The inventory refetch right after a claim can still list the drop as
+    unclaimed; claiming it again logged a second "Drop claimed" line."""
+
+    def setUp(self):
+        drop_module._blocked_claims.clear()
+
+    async def test_finalized_drop_is_not_claimed_or_announced_again(self):
+        drop, twitch = _make_drop()
+        twitch._claim_finalized_drops = set()
+        twitch.gql_request = AsyncMock(
+            return_value={"data": {"claimDropRewards": {"status": "ELIGIBLE_FOR_ALL"}}}
+        )
+        self.assertTrue(await drop.claim())
+        twitch._claim_finalized_drops.add(drop.id)
+
+        refetched, _ = _make_drop()
+        refetched._twitch = twitch
+        self.assertTrue(await refetched.claim())
+        self.assertTrue(refetched.is_claimed)
+        self.assertEqual(twitch.gql_request.await_count, 1)
+        self.assertEqual(twitch.print.call_count, 1)

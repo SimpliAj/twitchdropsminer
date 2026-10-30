@@ -185,6 +185,12 @@ class BaseDrop:
         failed_at = _blocked_claims.get(self.id)
         if failed_at is not None and time.monotonic() - failed_at < BLOCKED_CLAIM_RETRY_SECONDS:
             return False
+        if self.id in self._twitch._claim_finalized_drops:
+            # already claimed and announced this run; the inventory refetch right
+            # after a claim can still list it unclaimed, and Twitch answers a
+            # repeat ClaimDropRewards with ELIGIBLE_FOR_ALL again
+            self.is_claimed = True
+            return True
         result = await self._claim()
         if result:
             self.is_claimed = result

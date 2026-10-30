@@ -255,6 +255,9 @@ class Websocket:
                     )
                     self.set_status(_.t["gui"]["websocket"]["disconnected"])
                     return
+            except (aiohttp.ClientConnectionError, ConnectionError) as exc:
+                # network blip / server dropped us mid-write: a normal reconnect
+                ws_logger.warning(f"Websocket[{self._idx}] connection lost: {exc!r}")
             except Exception:
                 ws_logger.exception(
                     f"Exception in Websocket[{self._idx}] to wss://pubsub-edge.twitch.tv/v1"
@@ -357,9 +360,12 @@ class Websocket:
             elif raw_message.type is WSMsgType.ERROR:
                 if (diagnostics := getattr(self._twitch, "diagnostics", None)) is not None:
                     diagnostics.record("twitch_websocket", outcome="connection")
-                ws_logger.error(
-                    f"Websocket[{self._idx}] error: {format_traceback(raw_message.data)}"
-                )
+                if isinstance(raw_message.data, aiohttp.ClientConnectionError):
+                    ws_logger.warning(f"Websocket[{self._idx}] connection lost: {raw_message.data!r}")
+                else:
+                    ws_logger.error(
+                        f"Websocket[{self._idx}] error: {format_traceback(raw_message.data)}"
+                    )
                 raise WebsocketClosed(raw_message=raw_message.data)
             else:
                 ws_logger.error(f"Websocket[{self._idx}] error: Unknown message: {raw_message}")
