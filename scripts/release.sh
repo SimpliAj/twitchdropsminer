@@ -81,6 +81,16 @@ git tag "$TAG"
 git push origin main
 git push origin "$TAG"
 
+# A Docker build still running for an earlier push to main can finish after
+# this one and point :latest back at the previous version (v1.8.11 did this).
+HEAD_SHA=$(git rev-parse HEAD)
+for run in $(gh run list --repo SimpliAj/twitchdropsminer --workflow docker-ghcr.yml --branch main \
+    --limit 20 --json databaseId,headSha,status \
+    --jq ".[] | select(.headSha != \"$HEAD_SHA\" and (.status == \"queued\" or .status == \"in_progress\")) | .databaseId"); do
+  echo "Cancelling superseded Docker build $run..."
+  gh run cancel "$run" --repo SimpliAj/twitchdropsminer || true
+done
+
 echo "Creating GitHub Release $TAG..."
 gh release create "$TAG" \
   --repo SimpliAj/twitchdropsminer \
