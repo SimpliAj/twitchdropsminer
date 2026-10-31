@@ -41,7 +41,7 @@ from src.services.message_handlers import MessageHandlerService
 from src.services.prediction_service import PredictionService
 from src.services.scheduler_service import SchedulerService
 from src.services.stream_selector import StreamSelector
-from src.services.watch_service import WatchService
+from src.services.watch_service import WatchService, log_topic_limit
 from src.utils import (
     AwaitableValue,
 )
@@ -692,7 +692,7 @@ class Twitch:
                 try:
                     self.websocket.add_topics(to_add_topics)
                 except MinerException:
-                    logger.warning("Topic limit reached — too many channels, some won't be tracked")
+                    log_topic_limit("channels", "Topic limit reached — too many channels, some won't be tracked")
                 # relink watching channel after cleanup
                 # NOTE: this replaces 'self.watching_channel's internal value with the new object
                 # Don't call stop_watching() here - let CHANNEL_SWITCH handle it to avoid clearing drop display

@@ -170,7 +170,8 @@ class MessageHandlerService:
         channel: Channel | None = self._twitch.channels.get(channel_id)
 
         if channel is None:
-            logger.error(f"Stream state change for a non-existing channel: {channel_id}")
+            # normal right after the channel list was rebuilt
+            logger.debug(f"Stream state change for a non-existing channel: {channel_id}")
             return
 
         if msg_type == "viewcount":

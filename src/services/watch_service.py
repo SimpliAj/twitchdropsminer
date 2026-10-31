@@ -28,6 +28,18 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("TwitchDrops")
 
+_topic_limit_warned: set[str] = set()
+
+
+def log_topic_limit(kind: str, message: str) -> None:
+    """Warn once per kind; the limit stays hit for the whole session and
+    re-warning every channel switch only floods the log."""
+    if kind in _topic_limit_warned:
+        logger.debug(message)
+        return
+    _topic_limit_warned.add(kind)
+    logger.warning(f"{message} (further ones are logged at debug level)")
+
 
 async def _send_idle_watch(channel) -> None:
     if not channel.online or channel.banned:
@@ -151,7 +163,7 @@ class WatchService:
                     )])
                     logger.info(f"Predictions subscribed for {channel.name}")
                 except MinerException:
-                    logger.warning(f"Topic limit — Predictions topic skipped for {channel.name}")
+                    log_topic_limit("Predictions", f"Topic limit — Predictions topic skipped for {channel.name}")
         # Subscribe CommunityPoints for this channel (only if enabled, 1 topic = safe)
         if self._twitch.settings.claim_channel_points:
             prev = self._twitch._watching_cp_topic_id
@@ -178,7 +190,7 @@ class WatchService:
                     self._twitch._message_handler_service.process_moments,
                 )])
             except MinerException:
-                logger.warning(f"Topic limit — Moments topic skipped for {channel.name}")
+                log_topic_limit("Moments", f"Topic limit — Moments topic skipped for {channel.name}")
 
         if update_status:
             # Check if manual mode is active for custom status message
