@@ -7,6 +7,7 @@ import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
+from src.config.reward_priority import RewardPriority
 from src.i18n.translator import _
 from src.models.game import Game
 from src.utils.string_utils import is_masked_proxy_url, mask_proxy_url
@@ -150,6 +151,14 @@ class SettingsManager:
         should_trigger_update |= self.check_and_update_setting(
             "priority_list_only", settings_data.get("priority_list_only"), True
         )
+        should_trigger_update |= self.check_and_update_setting(
+            "reward_priority_enabled", settings_data.get("reward_priority_enabled"), True
+        )
+        reward_priority = settings_data.get("reward_priority")
+        if reward_priority is not None and RewardPriority.is_valid(reward_priority):
+            should_trigger_update |= self.check_and_update_setting(
+                "reward_priority", reward_priority, True
+            )
         self.check_and_update_setting("scheduler_enabled", settings_data.get("scheduler_enabled"))
         self.check_and_update_setting("scheduler_start", settings_data.get("scheduler_start"))
         self.check_and_update_setting("scheduler_stop", settings_data.get("scheduler_stop"))

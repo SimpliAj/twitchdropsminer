@@ -215,7 +215,7 @@ socket.on('initial_state', (data) => {
     if (data.settings) { updateSettingsUI(data.settings); autoCleanWantedQueue(); autoAddLinkedGames(); }
     if (data.login) updateLoginStatus(data.login);
     if (data.manual_mode) updateManualModeUI(data.manual_mode);
-    if (data.paused !== undefined) updatePauseState(data.paused);
+    if (data.paused !== undefined) updatePauseState(data.paused, data.paused_until);
     // Restore current drop progress if it exists
     if (data.current_drop) {
         updateDropProgress(data.current_drop);
@@ -340,6 +340,10 @@ socket.on('channel_watching_clear', () => {
 
 socket.on('drop_progress', (data) => {
     updateDropProgress(data);
+    if (data.drop_id) {
+        updateLocalDropMinutes(data.drop_id, data.current_minutes || 0);
+        updateWantedProgress(data.drop_id, data.current_minutes);
+    }
 });
 
 socket.on('drop_progress_stop', () => {
@@ -367,6 +371,7 @@ socket.on('inventory_batch_update', (data) => {
 socket.on('drop_update', (data) => {
     updateLocalDropMinutes(data.drop.id, data.drop.current_minutes || 0);
     updateDrop(data.campaign_id, data.drop);
+    updateWantedProgress(data.drop.id, data.drop.current_minutes);
     autoAddLinkedGames();
 });
 
@@ -460,7 +465,7 @@ socket.on('prediction_result', (data) => {
 });
 
 socket.on('pause_state', function(data) {
-    updatePauseState(data.paused);
+    updatePauseState(data.paused, data.paused_until);
 });
 
 // ==================== UI Update Functions ====================
@@ -2174,6 +2179,11 @@ function updateSettingsUI(settings) {
     }
 
 
+    // Reward type priority
+    const rewardEnabledEl = document.getElementById('reward-priority-enabled');
+    if (rewardEnabledEl) rewardEnabledEl.checked = settings.reward_priority_enabled === true;
+    renderRewardPriority();
+
     // Update games to watch lists
     renderGamesToWatch();
 
@@ -3331,6 +3341,8 @@ async function _saveSettingsNow() {
         idle_parallel: document.getElementById('idle-parallel')?.checked ?? true,
         preferred_games: state.settings.preferred_games || [],
         priority_list_only: document.getElementById('priority-list-only')?.checked ?? true,
+        reward_priority_enabled: document.getElementById('reward-priority-enabled')?.checked ?? false,
+        reward_priority: getRewardPriority(),
         auto_add_excluded_games: state.settings.auto_add_excluded_games || [],
         drop_name_blacklist: (document.getElementById('drop-blacklist-input')?.value || '')
             .split(',').map(s => s.trim()).filter(Boolean),
@@ -3398,8 +3410,96 @@ async function savePushConfig() {
     }
 }
 
-function updatePauseState(paused) {
+const REWARD_TYPE_DEFAULT_ORDER = ['DIRECT_ENTITLEMENT', 'BADGE', 'EMOTE', 'UNKNOWN'];
+
+function getRewardPriority() {
+    const saved = state.settings?.reward_priority;
+    const valid = Array.isArray(saved) && saved.length === REWARD_TYPE_DEFAULT_ORDER.length
+        && REWARD_TYPE_DEFAULT_ORDER.every(t => saved.includes(t));
+    return valid ? saved.slice() : REWARD_TYPE_DEFAULT_ORDER.slice();
+}
+
+function rewardTypeLabel(type) {
+    const f = state.translations?.gui?.inventory?.filters || {};
+    const labels = {
+        DIRECT_ENTITLEMENT: f.item || 'Item',
+        BADGE: f.badge || 'Badge',
+        EMOTE: f.emote || 'Emote',
+        UNKNOWN: f.other || 'Other',
+    };
+    return labels[type] || type;
+}
+
+function renderRewardPriority() {
+    const list = document.getElementById('reward-priority-list');
+    if (!list) return;
+    const order = getRewardPriority();
+    list.replaceChildren();
+    order.forEach((type, i) => {
+        const row = document.createElement('div');
+        row.className = 'sortable-item reward-priority-item';
+        const rank = document.createElement('span');
+        rank.className = 'reward-priority-rank';
+        rank.textContent = String(i + 1);
+        const name = document.createElement('span');
+        name.className = 'reward-priority-name';
+        name.textContent = rewardTypeLabel(type);
+        row.append(rank, name);
+        [['▲', -1, 'gui.settings.move_up', 'Move up'], ['▼', 1, 'gui.settings.move_down', 'Move down']].forEach(([glyph, delta, key, fb]) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'reward-priority-move';
+            btn.textContent = glyph;
+            btn.title = tr(key, fb);
+            btn.setAttribute('aria-label', tr(key, fb) + ': ' + rewardTypeLabel(type));
+            btn.disabled = i + delta < 0 || i + delta >= order.length;
+            btn.addEventListener('click', () => moveRewardPriority(i, delta));
+            row.appendChild(btn);
+        });
+        list.appendChild(row);
+    });
+}
+
+function moveRewardPriority(index, delta) {
+    const order = getRewardPriority();
+    const target = index + delta;
+    if (target < 0 || target >= order.length) return;
+    [order[index], order[target]] = [order[target], order[index]];
+    state.settings.reward_priority = order;
+    renderRewardPriority();
+    saveSettings();
+}
+
+let pauseTicker = null;
+
+function formatPauseRemaining(ms) {
+    const totalMin = Math.max(1, Math.ceil(ms / 60000));
+    if (totalMin < 60) return tr('gui.quick_controls.pause_min_left', '{n} min left', { n: totalMin });
+    const h = Math.floor(totalMin / 60), m = totalMin % 60;
+    return tr('gui.quick_controls.pause_hm_left', '{h} h {m} min left', { h, m });
+}
+
+function renderPauseResumeText() {
+    const btn = document.getElementById('pause-resume-btn');
+    if (!btn || !state.paused) return;
+    const small = btn.querySelector('small');
+    if (!small) return;
+    if (state.pausedUntil) {
+        const left = state.pausedUntil - Date.now();
+        const hhmm = new Date(state.pausedUntil).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        small.textContent = tr('gui.quick_controls.paused_until', 'Paused until {time} · {left}', {
+            time: hhmm, left: formatPauseRemaining(left),
+        });
+    } else {
+        small.textContent = tr('gui.quick_controls.resume_desc', 'Click to resume');
+    }
+}
+
+function updatePauseState(paused, pausedUntilTs) {
     state.paused = paused;
+    state.pausedUntil = paused && pausedUntilTs ? pausedUntilTs * 1000 : null;
+    closePauseMenu();
+    if (pauseTicker) { clearInterval(pauseTicker); pauseTicker = null; }
     const btn = document.getElementById('pause-resume-btn');
     if (!btn) return;
     const strong = btn.querySelector('strong');
@@ -3408,7 +3508,8 @@ function updatePauseState(paused) {
     if (paused) {
         if (icon) icon.textContent = '▶';
         if (strong) strong.textContent = tr('gui.quick_controls.resume_label', 'Resume');
-        if (small) small.textContent = tr('gui.quick_controls.resume_desc', 'Click to resume');
+        renderPauseResumeText();
+        if (state.pausedUntil) pauseTicker = setInterval(renderPauseResumeText, 15000);
         btn.classList.add('qc-btn--active');
     } else {
         if (icon) icon.textContent = '⏸';
@@ -3418,14 +3519,82 @@ function updatePauseState(paused) {
     }
 }
 
-async function togglePause() {
-    const endpoint = state.paused ? '/api/resume' : '/api/pause';
+function closePauseMenu() {
+    document.getElementById('pause-menu')?.remove();
+    document.removeEventListener('mousedown', onPauseMenuOutside, true);
+    document.removeEventListener('keydown', onPauseMenuKey, true);
+    window.removeEventListener('resize', closePauseMenu);
+}
+
+function onPauseMenuOutside(e) {
+    const menu = document.getElementById('pause-menu');
+    const btn = document.getElementById('pause-resume-btn');
+    if (menu && !menu.contains(e.target) && !(btn && btn.contains(e.target))) closePauseMenu();
+}
+
+function onPauseMenuKey(e) {
+    if (e.key === 'Escape') closePauseMenu();
+}
+
+function openPauseMenu() {
+    if (document.getElementById('pause-menu')) { closePauseMenu(); return; }
+    const btn = document.getElementById('pause-resume-btn');
+    if (!btn) return;
+    const options = [
+        ['10m', tr('gui.quick_controls.pause_10m', 'For 10 minutes')],
+        ['1h', tr('gui.quick_controls.pause_1h', 'For 1 hour')],
+        ['midnight', tr('gui.quick_controls.pause_midnight', 'Until midnight')],
+        ['indefinite', tr('gui.quick_controls.pause_indefinite', 'Until I resume')],
+    ];
+    const menu = document.createElement('div');
+    menu.id = 'pause-menu';
+    menu.className = 'pause-menu';
+    menu.setAttribute('role', 'menu');
+    options.forEach(([duration, label]) => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'pause-menu-item';
+        item.setAttribute('role', 'menuitem');
+        item.textContent = label;
+        item.addEventListener('click', () => pauseMiner(duration));
+        menu.appendChild(item);
+    });
+    document.body.appendChild(menu);
+    const r = btn.getBoundingClientRect();
+    const mh = menu.offsetHeight;
+    menu.style.minWidth = r.width + 'px';
+    menu.style.left = Math.max(8, Math.min(r.left, window.innerWidth - menu.offsetWidth - 8)) + 'px';
+    const below = r.bottom + 6;
+    menu.style.top = (below + mh > window.innerHeight - 8 ? Math.max(8, r.top - mh - 6) : below) + 'px';
+    document.addEventListener('mousedown', onPauseMenuOutside, true);
+    document.addEventListener('keydown', onPauseMenuKey, true);
+    window.addEventListener('resize', closePauseMenu);
+    menu.querySelector('.pause-menu-item')?.focus();
+}
+
+async function pauseMiner(duration) {
+    closePauseMenu();
     try {
-        const resp = await fetch(endpoint, { method: 'POST' });
+        const resp = await fetch('/api/pause', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ duration }),
+        });
         const data = await resp.json();
-        updatePauseState(data.paused);
+        updatePauseState(data.paused, data.paused_until);
     } catch (e) {
-        console.error('Failed to toggle pause:', e);
+        console.error('Failed to pause:', e);
+    }
+}
+
+async function togglePause() {
+    if (!state.paused) { openPauseMenu(); return; }
+    try {
+        const resp = await fetch('/api/resume', { method: 'POST' });
+        const data = await resp.json();
+        updatePauseState(data.paused, null);
+    } catch (e) {
+        console.error('Failed to resume:', e);
     }
 }
 
@@ -4122,6 +4291,7 @@ function applyTranslations(t) {
         updateLabel('mining-benefit-badge', f.badge);
         updateLabel('mining-benefit-emote', f.emote);
         updateLabel('mining-benefit-unknown', f.other);
+        renderRewardPriority();
     }
 
     // Update header elements
@@ -5186,10 +5356,90 @@ document.addEventListener('DOMContentLoaded', () => {
 // Store last known tree for reorder/remove operations
 let _wantedTree = [];
 
-function renderWantedItems(tree) {
-    _wantedTree = tree || [];
+// Reward artwork + progress for one wanted drop. Rows carry data-drop-id so
+// updateWantedProgress() can refresh them in place (no re-render, so drag and
+// focus are left alone).
+function buildWantedDropRow(drop) {
+    const benefits = (drop.benefits || []).map(b => (typeof b === 'string' ? { name: b } : b));
+    const art = benefits.find(b => b.image_url);
+    const dropName = (drop.name || '').trim().toLowerCase();
+    const extraBenefits = benefits.filter(b => (b.name || '').trim().toLowerCase() !== dropName);
+
+    const row = makeElement('div', { class: 'wq-drop' });
+    if (drop.id) row.dataset.dropId = drop.id;
+    if (art) {
+        const img = document.createElement('img');
+        img.className = 'wq-drop-art';
+        img.draggable = false;
+        img.src = art.image_url;
+        img.alt = art.name || drop.name || '';
+        img.loading = 'lazy';
+        row.appendChild(img);
+    }
+    const body = makeElement('div', { class: 'wq-drop-body' });
+    body.appendChild(makeElement('span', { class: 'wq-drop-name' }, drop.name));
+    if (extraBenefits.length) {
+        const chips = makeElement('div', { class: 'wq-drop-benefits' });
+        extraBenefits.forEach(b => chips.appendChild(makeElement('span', { class: 'wq-benefit' }, b.name)));
+        body.appendChild(chips);
+    }
+    if ((drop.required_minutes || 0) > 0) {
+        const bar = makeElement('div', { class: 'wq-drop-bar' });
+        bar.appendChild(makeElement('div', { class: 'wq-drop-bar-fill' }));
+        body.appendChild(bar);
+        body.appendChild(makeElement('span', { class: 'wq-drop-minutes' }));
+    }
+    row.appendChild(body);
+    refreshWantedDropRow(row, drop);
+    return row;
+}
+
+function refreshWantedDropRow(row, drop) {
+    const required = drop.required_minutes || 0;
+    const fill = row.querySelector('.wq-drop-bar-fill');
+    const label = row.querySelector('.wq-drop-minutes');
+    if (!fill || !label || required <= 0) return;
+    const current = Math.min(required, getEffectiveMinutes(drop));
+    const pct = Math.round((current / required) * 100);
+    fill.style.width = pct + '%';
+    label.textContent = tr('gui.wanted.minutes_progress', '{current}/{required} min ({pct}%)', { current, required, pct });
+}
+
+function updateWantedProgress(dropId, currentMinutes) {
+    if (!dropId) return;
+    let drop = null;
+    for (const g of _wantedTree) {
+        for (const c of g.campaigns) {
+            drop = c.drops.find(d => d.id === dropId);
+            if (drop) break;
+        }
+        if (drop) break;
+    }
+    if (!drop) return;
+    if (currentMinutes !== undefined) drop.current_minutes = currentMinutes;
     const container = document.getElementById('wanted-items-list');
     if (!container) return;
+    container.querySelectorAll('.wq-drop').forEach(row => {
+        if (row.dataset.dropId === dropId) refreshWantedDropRow(row, drop);
+    });
+}
+
+let _pendingWantedTree = null;
+
+function renderWantedItems(tree) {
+    const container = document.getElementById('wanted-items-list');
+    if (!container) return;
+    // A server push mid-drag would rebuild the rows under the cursor; apply it on drop.
+    if (container.querySelector('.dragging')) { _pendingWantedTree = tree || []; return; }
+    _pendingWantedTree = null;
+    _wantedTree = tree || [];
+    // Keep rows the user expanded open across re-renders (first row opens by default on first render only).
+    const hadRows = container.querySelector('.wq-row') !== null;
+    const expanded = new Set(
+        Array.from(container.querySelectorAll('.wq-row'))
+            .filter(r => r.querySelector('.wq-body')?.style.display !== 'none')
+            .map(r => r.dataset.game)
+    );
     container.innerHTML = '';
 
     if (!tree || tree.length === 0) {
@@ -5300,22 +5550,7 @@ function renderWantedItems(tree) {
             const campEl = makeElement('div', { class: 'wq-campaign' }, '', el => {
                 el.appendChild(makeElement('span', { class: 'wq-campaign-link' }, campaign.name));
                 campaign.drops.forEach(drop => {
-                    const dropEl = makeElement('div', { class: 'wq-drop' }, '', d => {
-                        d.appendChild(makeElement('span', { class: 'wq-drop-name' }, drop.name));
-                        (drop.benefits || []).forEach(b => {
-                            const benefitEl = document.createElement('span');
-                            benefitEl.className = 'wq-benefit';
-                            const bName = typeof b === 'string' ? b : b.name;
-                            const bImg = typeof b === 'object' && b.image_url ? b.image_url : null;
-                            if (bImg) {
-                                const img = document.createElement('img');
-                                img.src = bImg; img.alt = bName;
-                                benefitEl.appendChild(img);
-                            }
-                            benefitEl.appendChild(document.createTextNode(bName));
-                            d.appendChild(benefitEl);
-                        });
-                    });
+                    const dropEl = buildWantedDropRow(drop);
                     dropEl.addEventListener('click', (e) => { e.stopPropagation(); showRewardModal(drop); });
                     el.appendChild(dropEl);
                 });
@@ -5324,7 +5559,8 @@ function renderWantedItems(tree) {
         });
 
         // Collapse by default unless first item
-        if (index !== 0) {
+        const startOpen = hadRows ? expanded.has(gameGroup.game_name) : index === 0;
+        if (!startOpen) {
             bodyEl.style.display = 'none';
             toggleEl.textContent = '▸';
         } else {
@@ -6421,6 +6657,12 @@ function showRewardModal(drop) {
 
 function handleWantedDragEnd(e) {
     e.target.classList.remove('dragging');
+    if (_pendingWantedTree) {
+        const pending = _pendingWantedTree;
+        _pendingWantedTree = null;
+        // The drop below saves the new order first; the follow-up push re-renders anyway.
+        setTimeout(() => renderWantedItems(pending), 0);
+    }
     const container = document.getElementById('wanted-items-list');
     if (!container) return;
     const items = container.querySelectorAll('.sortable-item');

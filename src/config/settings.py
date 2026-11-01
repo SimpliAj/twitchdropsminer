@@ -59,6 +59,8 @@ default_settings = {
     "idle_use_followed": False,
     "preferred_games": [],
     "priority_list_only": True,
+    "reward_priority_enabled": False,
+    "reward_priority": ["DIRECT_ENTITLEMENT", "BADGE", "EMOTE", "UNKNOWN"],
     "scheduler_enabled": False,
     "scheduler_start": "22:00",
     "scheduler_stop": "08:00",
@@ -106,6 +108,8 @@ class Settings:
     idle_use_followed: bool
     preferred_games: list[str]
     priority_list_only: bool
+    reward_priority_enabled: bool
+    reward_priority: list[str]
     scheduler_enabled: bool
     scheduler_start: str
     scheduler_stop: str

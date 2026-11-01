@@ -16,6 +16,7 @@ from dateutil.parser import isoparse
 
 from src.api import GQLClient
 from src.config import GQL_OPERATIONS
+from src.config.reward_priority import RewardPriority
 from src.exceptions import ExitRequest, GQLException
 from src.i18n import _
 from src.models import DropsCampaign
@@ -353,7 +354,11 @@ class InventoryService:
                 campaigns.append(campaign)
 
         if campaigns:
-            campaigns.sort(key=lambda c: c.remaining_minutes)
+            priority = RewardPriority(self._twitch.settings)
+            if priority.enabled:
+                campaigns.sort(key=lambda c: (*priority.campaign_key(c), c.remaining_minutes))
+            else:
+                campaigns.sort(key=lambda c: c.remaining_minutes)
             return campaigns[0]
 
         return None

@@ -1,5 +1,6 @@
 from datetime import date, datetime, timedelta, timezone
 
+from src.config.reward_priority import RewardPriority
 from src.config.settings import Settings
 from src.models.campaign import DropsCampaign
 from src.models.game import Game
@@ -13,13 +14,15 @@ from src.models.game import Game
 _BENEFIT_CATEGORY_ORDER = {"BADGE": 0, "EMOTE": 1, "UNKNOWN": 2, "DIRECT_ENTITLEMENT": 3}
 
 
-def _game_group_category_rank(wanted_campaigns: list[dict]) -> int:
+def _game_group_category_rank(
+    wanted_campaigns: list[dict], order: dict[str, int] = _BENEFIT_CATEGORY_ORDER
+) -> int:
     """Lowest (best) benefit-category rank among a game group's wanted drops."""
-    best = len(_BENEFIT_CATEGORY_ORDER)
+    best = len(order)
     for campaign in wanted_campaigns:
         for drop in campaign["drops"]:
             for benefit in drop["benefits"]:
-                rank = _BENEFIT_CATEGORY_ORDER.get(benefit["type"], best)
+                rank = order.get(benefit["type"], best)
                 if rank < best:
                     best = rank
     return best
@@ -112,7 +115,10 @@ class StreamSelector:
 
                         if len(filtered_benefits) > 0:
                             wanted_drops.append({
+                                "id": drop.id,
                                 "name": drop.name,
+                                "required_minutes": drop.required_minutes,
+                                "current_minutes": int(drop.current_minutes),
                                 "benefits": filtered_benefits,
                                 "image_url": filtered_benefits[0]["image_url"] if filtered_benefits else None,
                             })
@@ -148,7 +154,16 @@ class StreamSelector:
         # category, keep the existing order (list.sort is stable), which is
         # already either the manual games_to_watch order or the end-date order
         # the frontend saved back into it (see sortGamesByEndDate in app.js).
-        wanted_games.sort(key=lambda g: _game_group_category_rank(g["campaigns"]))
+        # With the optional reward-type priority enabled, the user's order replaces
+        # the built-in one (this only reorders the selected/preferred group; the
+        # fallback games below are appended afterwards and stay behind it).
+        reward_priority = RewardPriority(settings)
+        category_order = (
+            {name: i for i, name in enumerate(reward_priority.order)}
+            if reward_priority.enabled
+            else _BENEFIT_CATEGORY_ORDER
+        )
+        wanted_games.sort(key=lambda g: _game_group_category_rank(g["campaigns"], category_order))
 
         # Fallback: with priority_list_only off, every other game with an earnable
         # campaign is appended after the (already sorted) list, soonest campaign

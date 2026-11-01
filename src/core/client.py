@@ -38,6 +38,7 @@ from src.services.irc_service import IRCService
 from src.services.maintenance import MaintenanceService
 from src.services.manual_mode_store import ManualModeStore
 from src.services.message_handlers import MessageHandlerService
+from src.services.pause_timer import seconds_until
 from src.services.prediction_service import PredictionService
 from src.services.scheduler_service import SchedulerService
 from src.services.stream_selector import StreamSelector
@@ -116,6 +117,8 @@ class Twitch:
         # Pause/resume state (PR #65)
         self._is_paused: bool = False
         self._pause_source: str | None = None
+        self._pause_until: datetime | None = None  # timed pause deadline (not persisted)
+        self._pause_timer: asyncio.Task[None] | None = None
         self._user_override: bool = False
         self._scheduler_task: asyncio.Task[None] | None = None
         self._debug_memory_task: asyncio.Task[None] | None = None
@@ -250,28 +253,52 @@ class Twitch:
         """
         self.change_state(State.EXIT)
 
-    def pause(self, source: str = "user") -> None:
-        """Pause the miner."""
+    def pause(self, source: str = "user", until: datetime | None = None) -> None:
+        """Pause the miner. With `until`, the pause ends by itself at that moment."""
         if source == "user":
             self._user_override = True
+        self._cancel_pause_timer()
         self._is_paused = True
         self._pause_source = source
+        self._pause_until = until
+        if until is not None:
+            self._pause_timer = asyncio.create_task(self._pause_timer_run(until))
         self.change_state(State.PAUSED)
-        asyncio.create_task(self.gui.broadcast_pause_state(True))
+        asyncio.create_task(self.gui.broadcast_pause_state(True, until))
 
     def resume(self, *, user_override: bool = False) -> None:
         """Resume the miner."""
+        self._cancel_pause_timer()
         if user_override:
             self._user_override = True
             self._pause_source = None
         self._is_paused = False
         self._pause_source = None
+        self._pause_until = None
         self.change_state(State.INVENTORY_FETCH)
-        asyncio.create_task(self.gui.broadcast_pause_state(False))
+        asyncio.create_task(self.gui.broadcast_pause_state(False, None))
+
+    def _cancel_pause_timer(self) -> None:
+        timer, self._pause_timer = self._pause_timer, None
+        if timer is not None and timer is not asyncio.current_task():
+            timer.cancel()
+
+    async def _pause_timer_run(self, until: datetime) -> None:
+        await asyncio.sleep(seconds_until(until))
+        self._pause_timer = None
+        if self._is_paused and self._pause_until == until:
+            # Expired: drop the user override so the scheduler (if enabled) applies again.
+            self._user_override = False
+            self.resume()
+            self._scheduler_service.trigger_check()
 
     def is_paused(self) -> bool:
         """Return whether the miner is currently paused."""
         return self._is_paused
+
+    def pause_until(self) -> datetime | None:
+        """Deadline of the current timed pause, or None (not paused / until resumed)."""
+        return self._pause_until if self._is_paused else None
 
     def print(self, message: str, *, collapse_key: str | None = None) -> None:
         """Print a message in the GUI."""

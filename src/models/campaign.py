@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 from dateutil.parser import isoparse
 
 from src.config.constants import State
+from src.config.reward_priority import RewardPriority
 from src.models.channel import Channel
 from src.models.drop import TimedDrop
 from src.models.game import Game
@@ -162,9 +163,14 @@ class DropsCampaign:
 
     @property
     def first_drop(self) -> TimedDrop | None:
+        priority = RewardPriority(self._twitch.settings)
         drops: list[TimedDrop] = sorted(
             (drop for drop in self.drops if drop.can_earn() and not drop.excluded),
-            key=lambda d: d.remaining_minutes,
+            key=(
+                (lambda d: (*priority.drop_key(d), d.remaining_minutes))
+                if priority.enabled
+                else (lambda d: d.remaining_minutes)
+            ),
         )
         return drops[0] if drops else None
 

@@ -47,6 +47,8 @@ class TestWantedItems(unittest.TestCase):
 
         d1.required_minutes = 30
         d1.name = "Drop1"
+        d1.id = "drop-1"
+        d1.current_minutes = 12
         d1.is_claimed = False
         d1.get_wanted_unclaimed_benefits = TimedDrop.get_wanted_unclaimed_benefits.__get__(
             d1, TimedDrop
@@ -148,6 +150,9 @@ class TestWantedItems(unittest.TestCase):
         self.assertEqual(campaigns[0]["name"], "Campaign1")
         self.assertEqual(len(campaigns[0]["drops"]), 1)
         self.assertEqual(campaigns[0]["drops"][0]["name"], "Drop1")
+        self.assertEqual(campaigns[0]["drops"][0]["id"], "drop-1")
+        self.assertEqual(campaigns[0]["drops"][0]["required_minutes"], 30)
+        self.assertEqual(campaigns[0]["drops"][0]["current_minutes"], 12)
         self.assertEqual([b["name"] for b in campaigns[0]["drops"][0]["benefits"]], ["Badge1"])
 
     def test_get_wanted_tree_claimed_filtering(self):

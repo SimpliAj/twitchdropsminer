@@ -27,6 +27,7 @@ from pydantic import BaseModel
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.auth import browser_login
+from src.services.pause_timer import pause_deadline
 from src.web.diagnostics_api import DiagnosticsAPI
 from src.web.host_guard import HostGuardMiddleware
 
@@ -590,6 +591,8 @@ class SettingsUpdate(BaseModel):
     idle_parallel: bool | None = None
     preferred_games: list[str] | None = None
     priority_list_only: bool | None = None
+    reward_priority_enabled: bool | None = None
+    reward_priority: list[str] | None = None
     scheduler_enabled: bool | None = None
     scheduler_start: str | None = None
     scheduler_stop: str | None = None
@@ -784,6 +787,7 @@ async def get_status():
         "login": gui_manager.login.get_status(),
         "manual_mode": twitch_client.get_manual_mode_info(),
         "paused": twitch_client.is_paused() if twitch_client else False,
+        "paused_until": _paused_until_ts(),
         "current_drop": gui_manager.progress.get_current_drop(),
         "watching_channel": watching_channel,
     }
@@ -797,13 +801,26 @@ async def get_health():
     return twitch_client._health_monitor.snapshot()
 
 
+def _paused_until_ts() -> float | None:
+    until = twitch_client.pause_until() if twitch_client else None
+    return until.timestamp() if until else None
+
+
+class PauseRequest(BaseModel):
+    duration: str = "indefinite"  # "10m" | "1h" | "midnight" | "indefinite"
+
+
 @app.post("/api/pause")
-async def pause_miner():
-    """Pause the miner."""
+async def pause_miner(req: PauseRequest | None = None):
+    """Pause the miner, optionally for a fixed duration (timed pauses auto-resume)."""
     if not twitch_client:
         raise HTTPException(status_code=503, detail="Not ready")
-    twitch_client.pause(source="user")
-    return {"success": True, "paused": True}
+    try:
+        until = pause_deadline(req.duration if req else "indefinite")
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid pause duration")
+    twitch_client.pause(source="user", until=until)
+    return {"success": True, "paused": True, "paused_until": until.timestamp() if until else None}
 
 
 @app.post("/api/resume")

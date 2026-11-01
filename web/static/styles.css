@@ -700,6 +700,54 @@ body.dark-mode .tab-button.active { color: var(--glitch-glow); }
 .qc-btn--active-green .qc-labels small { color: rgba(255, 255, 255, 0.78); }
 .qc-btn--active-green:hover { filter: brightness(1.08); }
 
+/* Reward type priority list (Settings > Mining) */
+.reward-priority-list { display: flex; flex-direction: column; gap: 6px; }
+.reward-priority-item { display: flex; align-items: center; gap: 10px; cursor: default; }
+.reward-priority-rank { color: var(--ink-dim); font-size: 0.8rem; width: 1.2em; text-align: center; }
+.reward-priority-name { flex: 1; min-width: 0; }
+.reward-priority-move {
+    background: var(--panel-raised);
+    border: 1px solid var(--seam);
+    border-radius: var(--r-sm);
+    color: var(--ink);
+    cursor: pointer;
+    padding: 4px 10px;
+    min-width: 34px;
+    min-height: 30px;
+}
+.reward-priority-move:hover:not(:disabled) { border-color: var(--ore); color: var(--ore); }
+.reward-priority-move:disabled { opacity: 0.35; cursor: default; }
+
+/* Pause duration menu (fixed popover under the Pause button) */
+.pause-menu {
+    position: fixed;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    padding: 4px;
+    background: var(--panel);
+    border: 1px solid var(--seam);
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow-pop);
+}
+.pause-menu-item {
+    padding: 10px 12px;
+    background: none;
+    border: 0;
+    border-radius: var(--r-sm);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    text-align: left;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.pause-menu-item:hover, .pause-menu-item:focus-visible {
+    background: var(--panel-raised);
+    outline: none;
+    color: var(--ore);
+}
+
 /* Lone button on the last row of the 2-col grid (odd visible count) spans
    the full row instead of sitting half-width with dead space beside it. */
 .qc-btn--span-full { grid-column: 1 / -1; }
@@ -1558,7 +1606,14 @@ body.dark-mode .tab-button.active { color: var(--glitch-glow); }
 }
 .wq-drop:hover { background: rgba(145, 70, 255, 0.10); }
 
-.wq-drop-name { color: var(--ink-dim); flex: 1; min-width: 0; }
+.wq-drop { flex-wrap: nowrap; align-items: flex-start; gap: 8px; }
+.wq-drop-art { width: 36px; height: 36px; border-radius: var(--r-sm); object-fit: cover; flex-shrink: 0; background: var(--panel-raised); }
+.wq-drop-body { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+.wq-drop-name { color: var(--ink); min-width: 0; overflow-wrap: anywhere; white-space: normal; }
+.wq-drop-benefits { display: flex; flex-wrap: wrap; gap: 4px; }
+.wq-drop-bar { height: 4px; background: var(--progress-bg); border-radius: var(--r-pill); overflow: hidden; }
+.wq-drop-bar-fill { height: 100%; width: 0; background: linear-gradient(90deg, var(--ore) 0%, var(--ore-glow) 100%); border-radius: var(--r-pill); transition: width 0.35s ease; }
+.wq-drop-minutes { font-size: 0.7rem; color: var(--ink-dim); }
 
 .wq-benefit {
     display: inline-flex;

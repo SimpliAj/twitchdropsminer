@@ -251,6 +251,11 @@
       "preferred_games_help": "Games that are always watched — even without active drop campaigns. Auto-connects when a campaign appears. Never auto-removed. Ordered by the soonest campaign end, not by the position in the list.",
       "priority_list_only": "Priority list only",
       "priority_list_only_help": "When off, any other game with an active drop campaign is mined whenever none of your priority or preferred games is live. Your list always comes first.",
+      "reward_priority": "Reward Type Priority",
+      "reward_priority_help": "When enabled, drops that can be earned right now are mined in this reward-type order (earlier deadline breaks ties). Your game order and priority games are not changed.",
+      "reward_priority_enable": "Order by reward type",
+      "move_up": "Move up",
+      "move_down": "Move down",
       "webhook_missing": "No webhook URL set.",
       "push_blocked": "Browser notifications are blocked. Please allow them in your browser settings (click the lock icon in the address bar) and reload the page.",
       "predictions": {
@@ -344,6 +349,7 @@
       }
     },
     "wanted": {
+      "minutes_progress": "{current}/{required} min ({pct}%)",
       "name": "Wanted Drops Queue",
       "none": "No wanted drops queued...",
       "waiting_for_campaign": "⭐ Waiting for Campaign",
@@ -376,7 +382,14 @@
       "pause_label": "Pause",
       "pause_desc": "Pause / resume the miner",
       "resume_label": "Resume",
-      "resume_desc": "Click to resume"
+      "resume_desc": "Click to resume",
+      "pause_10m": "For 10 minutes",
+      "pause_1h": "For 1 hour",
+      "pause_midnight": "Until midnight",
+      "pause_indefinite": "Until I resume",
+      "paused_until": "Paused until {time} · {left}",
+      "pause_min_left": "{n} min left",
+      "pause_hm_left": "{h} h {m} min left"
     },
     "inventory": {
       "no_campaigns": "No campaigns loaded yet...",
