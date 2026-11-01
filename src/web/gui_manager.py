@@ -152,9 +152,11 @@ class WebGUIManager:
         """
         asyncio.create_task(self._broadcaster.emit("theme_change", {"dark_mode": dark_mode}))
 
-    def broadcast_pause_state(self, paused: bool):
+    def broadcast_pause_state(self, paused: bool, until=None):
         """Broadcast pause state change to all connected clients."""
-        return self._broadcaster.emit("pause_state", {"paused": paused})
+        return self._broadcaster.emit(
+            "pause_state", {"paused": paused, "paused_until": until.timestamp() if until else None}
+        )
 
     def broadcast_manual_mode_change(self, manual_mode_info: dict):
         """Broadcast manual mode status change to connected clients.

@@ -215,7 +215,7 @@ socket.on('initial_state', (data) => {
     if (data.settings) { updateSettingsUI(data.settings); autoCleanWantedQueue(); autoAddLinkedGames(); }
     if (data.login) updateLoginStatus(data.login);
     if (data.manual_mode) updateManualModeUI(data.manual_mode);
-    if (data.paused !== undefined) updatePauseState(data.paused);
+    if (data.paused !== undefined) updatePauseState(data.paused, data.paused_until);
     // Restore current drop progress if it exists
     if (data.current_drop) {
         updateDropProgress(data.current_drop);
@@ -460,7 +460,7 @@ socket.on('prediction_result', (data) => {
 });
 
 socket.on('pause_state', function(data) {
-    updatePauseState(data.paused);
+    updatePauseState(data.paused, data.paused_until);
 });
 
 // ==================== UI Update Functions ====================
@@ -3398,8 +3398,36 @@ async function savePushConfig() {
     }
 }
 
-function updatePauseState(paused) {
+let pauseTicker = null;
+
+function formatPauseRemaining(ms) {
+    const totalMin = Math.max(1, Math.ceil(ms / 60000));
+    if (totalMin < 60) return tr('gui.quick_controls.pause_min_left', '{n} min left', { n: totalMin });
+    const h = Math.floor(totalMin / 60), m = totalMin % 60;
+    return tr('gui.quick_controls.pause_hm_left', '{h} h {m} min left', { h, m });
+}
+
+function renderPauseResumeText() {
+    const btn = document.getElementById('pause-resume-btn');
+    if (!btn || !state.paused) return;
+    const small = btn.querySelector('small');
+    if (!small) return;
+    if (state.pausedUntil) {
+        const left = state.pausedUntil - Date.now();
+        const hhmm = new Date(state.pausedUntil).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        small.textContent = tr('gui.quick_controls.paused_until', 'Paused until {time} · {left}', {
+            time: hhmm, left: formatPauseRemaining(left),
+        });
+    } else {
+        small.textContent = tr('gui.quick_controls.resume_desc', 'Click to resume');
+    }
+}
+
+function updatePauseState(paused, pausedUntilTs) {
     state.paused = paused;
+    state.pausedUntil = paused && pausedUntilTs ? pausedUntilTs * 1000 : null;
+    closePauseMenu();
+    if (pauseTicker) { clearInterval(pauseTicker); pauseTicker = null; }
     const btn = document.getElementById('pause-resume-btn');
     if (!btn) return;
     const strong = btn.querySelector('strong');
@@ -3408,7 +3436,8 @@ function updatePauseState(paused) {
     if (paused) {
         if (icon) icon.textContent = '▶';
         if (strong) strong.textContent = tr('gui.quick_controls.resume_label', 'Resume');
-        if (small) small.textContent = tr('gui.quick_controls.resume_desc', 'Click to resume');
+        renderPauseResumeText();
+        if (state.pausedUntil) pauseTicker = setInterval(renderPauseResumeText, 15000);
         btn.classList.add('qc-btn--active');
     } else {
         if (icon) icon.textContent = '⏸';
@@ -3418,14 +3447,82 @@ function updatePauseState(paused) {
     }
 }
 
-async function togglePause() {
-    const endpoint = state.paused ? '/api/resume' : '/api/pause';
+function closePauseMenu() {
+    document.getElementById('pause-menu')?.remove();
+    document.removeEventListener('mousedown', onPauseMenuOutside, true);
+    document.removeEventListener('keydown', onPauseMenuKey, true);
+    window.removeEventListener('resize', closePauseMenu);
+}
+
+function onPauseMenuOutside(e) {
+    const menu = document.getElementById('pause-menu');
+    const btn = document.getElementById('pause-resume-btn');
+    if (menu && !menu.contains(e.target) && !(btn && btn.contains(e.target))) closePauseMenu();
+}
+
+function onPauseMenuKey(e) {
+    if (e.key === 'Escape') closePauseMenu();
+}
+
+function openPauseMenu() {
+    if (document.getElementById('pause-menu')) { closePauseMenu(); return; }
+    const btn = document.getElementById('pause-resume-btn');
+    if (!btn) return;
+    const options = [
+        ['10m', tr('gui.quick_controls.pause_10m', 'For 10 minutes')],
+        ['1h', tr('gui.quick_controls.pause_1h', 'For 1 hour')],
+        ['midnight', tr('gui.quick_controls.pause_midnight', 'Until midnight')],
+        ['indefinite', tr('gui.quick_controls.pause_indefinite', 'Until I resume')],
+    ];
+    const menu = document.createElement('div');
+    menu.id = 'pause-menu';
+    menu.className = 'pause-menu';
+    menu.setAttribute('role', 'menu');
+    options.forEach(([duration, label]) => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'pause-menu-item';
+        item.setAttribute('role', 'menuitem');
+        item.textContent = label;
+        item.addEventListener('click', () => pauseMiner(duration));
+        menu.appendChild(item);
+    });
+    document.body.appendChild(menu);
+    const r = btn.getBoundingClientRect();
+    const mh = menu.offsetHeight;
+    menu.style.minWidth = r.width + 'px';
+    menu.style.left = Math.max(8, Math.min(r.left, window.innerWidth - menu.offsetWidth - 8)) + 'px';
+    const below = r.bottom + 6;
+    menu.style.top = (below + mh > window.innerHeight - 8 ? Math.max(8, r.top - mh - 6) : below) + 'px';
+    document.addEventListener('mousedown', onPauseMenuOutside, true);
+    document.addEventListener('keydown', onPauseMenuKey, true);
+    window.addEventListener('resize', closePauseMenu);
+    menu.querySelector('.pause-menu-item')?.focus();
+}
+
+async function pauseMiner(duration) {
+    closePauseMenu();
     try {
-        const resp = await fetch(endpoint, { method: 'POST' });
+        const resp = await fetch('/api/pause', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ duration }),
+        });
         const data = await resp.json();
-        updatePauseState(data.paused);
+        updatePauseState(data.paused, data.paused_until);
     } catch (e) {
-        console.error('Failed to toggle pause:', e);
+        console.error('Failed to pause:', e);
+    }
+}
+
+async function togglePause() {
+    if (!state.paused) { openPauseMenu(); return; }
+    try {
+        const resp = await fetch('/api/resume', { method: 'POST' });
+        const data = await resp.json();
+        updatePauseState(data.paused, null);
+    } catch (e) {
+        console.error('Failed to resume:', e);
     }
 }
 

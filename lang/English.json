@@ -376,7 +376,14 @@
       "pause_label": "Pause",
       "pause_desc": "Pause / resume the miner",
       "resume_label": "Resume",
-      "resume_desc": "Click to resume"
+      "resume_desc": "Click to resume",
+      "pause_10m": "For 10 minutes",
+      "pause_1h": "For 1 hour",
+      "pause_midnight": "Until midnight",
+      "pause_indefinite": "Until I resume",
+      "paused_until": "Paused until {time} · {left}",
+      "pause_min_left": "{n} min left",
+      "pause_hm_left": "{h} h {m} min left"
     },
     "inventory": {
       "no_campaigns": "No campaigns loaded yet...",

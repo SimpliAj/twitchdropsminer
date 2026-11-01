@@ -611,6 +611,13 @@
       "pause_desc": "Miner pausieren / fortsetzen",
       "resume_label": "Fortsetzen",
       "resume_desc": "Klicken zum Fortsetzen",
+      "pause_10m": "Für 10 Minuten",
+      "pause_1h": "Für 1 Stunde",
+      "pause_midnight": "Bis Mitternacht",
+      "pause_indefinite": "Bis ich fortsetze",
+      "paused_until": "Pausiert bis {time} · {left}",
+      "pause_min_left": "noch {n} Min.",
+      "pause_hm_left": "noch {h} Std. {m} Min.",
       "check_drops_desc_default": "Nach aktiven Drops suchen",
       "mining_active_label": "Drop-Mining aktiv",
       "mining_active_desc": "Drops werden gerade gefarmt"
