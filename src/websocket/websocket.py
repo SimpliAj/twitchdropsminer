@@ -12,6 +12,7 @@ import aiohttp
 from src.config import PING_INTERVAL, PING_TIMEOUT, WS_TOPICS_LIMIT
 from src.exceptions import WebsocketClosed
 from src.i18n import _
+from src.utils.string_utils import mask_proxy_url
 from src.utils import (
     CHARS_ASCII,
     AwaitableValue,
@@ -187,7 +188,7 @@ class Websocket:
         backoff = ExponentialBackoff(**kwargs)
         proxy = self._twitch.settings.proxy or None
         ws_logger.info(
-            f"Websocket[{self._idx}] connecting with {'no' if proxy is None else proxy} proxy"
+            f"Websocket[{self._idx}] connecting with {'no' if proxy is None else mask_proxy_url(proxy)} proxy"
         )
         for delay in backoff:
             try:

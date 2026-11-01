@@ -1202,9 +1202,17 @@ async def verify_proxy(request: ProxyVerifyRequest):
 
     import aiohttp
 
+    from src.utils.string_utils import is_masked_proxy_url, mask_proxy_url, mask_text
+
     proxy_url = request.proxy.strip()
     if not proxy_url:
         return {"success": False, "message": "Proxy URL is empty"}
+    stored_proxy = (gui_manager.settings._settings.proxy or "") if gui_manager else ""
+    if is_masked_proxy_url(proxy_url):
+        # The dashboard shows the masked URL; test with the stored real one.
+        if proxy_url != mask_proxy_url(stored_proxy):
+            return {"success": False, "message": "Enter the full proxy URL including the password"}
+        proxy_url = stored_proxy
 
     try:
         start_time = time.time()
@@ -1227,7 +1235,10 @@ async def verify_proxy(request: ProxyVerifyRequest):
                     "message": f"Proxy reachable but returned {response.status}",
                 }
     except Exception as e:
-        return {"success": False, "message": f"Connection failed: {str(e)}"}
+        return {
+            "success": False,
+            "message": f"Connection failed: {mask_text(str(e), proxy_url)}",
+        }
 
 
 @app.post("/api/settings/test-webhook")

@@ -76,7 +76,9 @@ if __name__ == "__main__":
         logger.info(f"Version: {__version__}")
         logger.info(f"Python version: {sys.version}")
         logger.info(f"Platform: {sys.platform}")
-        logger.info(f"Proxy: {settings.proxy}")
+        from src.utils.string_utils import mask_proxy_url
+
+        logger.info(f"Proxy: {mask_proxy_url(settings.proxy)}")
         logger.info(f"Language: {settings.language}")
         logger.info(
             f"Minimum refresh interval: {settings.minimum_refresh_interval_minutes} minutes"

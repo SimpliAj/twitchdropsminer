@@ -20,6 +20,7 @@ from src.config import COOKIES_PATH
 from src.exceptions import ExitRequest, RequestInvalid
 from src.i18n import _
 from src.utils import ExponentialBackoff
+from src.utils.string_utils import mask_proxy_url
 
 
 if TYPE_CHECKING:
@@ -163,7 +164,11 @@ class HTTPClient:
         if self.settings.proxy and "proxy" not in kwargs:
             kwargs["proxy"] = self.settings.proxy
 
-        logger.debug(f"Request: ({method=}, {url=}, {kwargs=})")
+        logged_kwargs = {
+            k: (mask_proxy_url(v) if k == "proxy" and isinstance(v, str) else v)
+            for k, v in kwargs.items()
+        }
+        logger.debug(f"Request: ({method=}, {url=}, kwargs={logged_kwargs})")
         session_timeout = timedelta(seconds=session.timeout.total or 0)
         backoff = ExponentialBackoff(maximum=3 * 60)
 

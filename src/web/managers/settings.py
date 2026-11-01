@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any
 
 from src.i18n.translator import _
 from src.models.game import Game
+from src.utils.string_utils import is_masked_proxy_url, mask_proxy_url
 
 
 logger = logging.getLogger("TwitchDrops")
@@ -64,6 +65,7 @@ class SettingsManager:
             Dictionary containing all user-configurable settings
         """
         settings = vars(self._settings).copy()
+        settings["proxy"] = mask_proxy_url(settings.get("proxy") or "")
         return settings
 
     def get_languages(self) -> dict[str, Any]:
@@ -101,10 +103,19 @@ class SettingsManager:
             "connection_quality", settings_data.get("connection_quality")
         )
         if "proxy" in settings_data:
-            proxy_value = settings_data["proxy"]
+            proxy_value = str(settings_data["proxy"]).strip() if settings_data["proxy"] else ""
+            if is_masked_proxy_url(proxy_value):
+                # The dashboard only ever sees the masked URL; echoing it back must
+                # never replace the stored password with the mask.
+                if proxy_value != mask_proxy_url(self._settings.proxy or ""):
+                    logger.warning(
+                        "Ignoring proxy update: the password is masked. "
+                        "Enter the full proxy URL including the password to change it."
+                    )
+                proxy_value = None
             should_trigger_update |= self.check_and_update_setting(
                 "proxy",
-                str(proxy_value).strip() if proxy_value else "",
+                proxy_value,
                 True,
                 lambda proxy: self._log_change("Proxy cleared") if proxy == "" else None,
             )
@@ -255,7 +266,8 @@ class SettingsManager:
         if new_value is None or getattr(self._settings, key, None) == new_value:
             return False
         setattr(self._settings, key, new_value)
-        self._log_change(f"Setting changed: {key} = {new_value}")
+        shown = mask_proxy_url(new_value) if key == "proxy" else new_value
+        self._log_change(f"Setting changed: {key} = {shown}")
         action(new_value)
         return should_trigger_update
 
