@@ -28,6 +28,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.auth import browser_login
 from src.web.diagnostics_api import DiagnosticsAPI
+from src.web.host_guard import HostGuardMiddleware
 
 
 # one cookie name per port: browsers share cookies across ports of the same host, so instances on :8080/:8082 would overwrite each other
@@ -504,7 +505,7 @@ sio = socketio.AsyncServer(
 )
 
 # Wrap with ASGI app
-socket_app = socketio.ASGIApp(sio, app)
+socket_app = HostGuardMiddleware(socketio.ASGIApp(sio, app))
 
 # Global references (set by main.py)
 gui_manager: WebGUIManager | None = None

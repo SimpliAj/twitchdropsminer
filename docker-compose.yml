@@ -25,4 +25,7 @@ services:
       # mismatch (e.g. the UTC default) gets the login page rejected by
       # Twitch as "not currently supported"
       - TZ=Australia/Sydney
+      # Reached through a domain name (reverse proxy)? Allow its Host header
+      # (comma-separated, no scheme/port). IP and localhost access always works.
+      # - ALLOWED_HOSTS=tdm.example.com
     restart: unless-stopped

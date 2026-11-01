@@ -131,6 +131,8 @@ Your Twitch session is sent to the helper for each mint (about every 16 h), so o
 
 Set `WEB_PASSWORD` (or a password in **Settings → Login & Password**) before the dashboard is reachable from outside, and prefer https. Sessions last 30 days. See [Remote Access](../../wiki/Remote-Access).
 
+Against DNS rebinding the dashboard only answers requests whose `Host` header is an IP address, `localhost`, a single-label name (e.g. a Docker service name), or a `.local`/`.internal`/`.home.arpa` name. If you open it through a real domain name, set `ALLOWED_HOSTS=tdm.example.com` (comma-separated, no scheme or port) or `PUBLIC_BASE_URL`; otherwise you get a `421` telling you so.
+
 ## 🌍 Languages
 
 Arabic · Chinese (Simplified / Traditional) · Czech · Danish · Dutch · English · French · German · Indonesian · Italian · Japanese · Polish · Portuguese · Romanian · Russian · Spanish · Turkish · Ukrainian
