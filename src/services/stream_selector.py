@@ -115,7 +115,10 @@ class StreamSelector:
 
                         if len(filtered_benefits) > 0:
                             wanted_drops.append({
+                                "id": drop.id,
                                 "name": drop.name,
+                                "required_minutes": drop.required_minutes,
+                                "current_minutes": int(drop.current_minutes),
                                 "benefits": filtered_benefits,
                                 "image_url": filtered_benefits[0]["image_url"] if filtered_benefits else None,
                             })

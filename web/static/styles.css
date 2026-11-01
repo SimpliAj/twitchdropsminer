@@ -1606,7 +1606,14 @@ body.dark-mode .tab-button.active { color: var(--glitch-glow); }
 }
 .wq-drop:hover { background: rgba(145, 70, 255, 0.10); }
 
-.wq-drop-name { color: var(--ink-dim); flex: 1; min-width: 0; }
+.wq-drop { flex-wrap: nowrap; align-items: flex-start; gap: 8px; }
+.wq-drop-art { width: 36px; height: 36px; border-radius: var(--r-sm); object-fit: cover; flex-shrink: 0; background: var(--panel-raised); }
+.wq-drop-body { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+.wq-drop-name { color: var(--ink); min-width: 0; overflow-wrap: anywhere; white-space: normal; }
+.wq-drop-benefits { display: flex; flex-wrap: wrap; gap: 4px; }
+.wq-drop-bar { height: 4px; background: var(--progress-bg); border-radius: var(--r-pill); overflow: hidden; }
+.wq-drop-bar-fill { height: 100%; width: 0; background: linear-gradient(90deg, var(--ore) 0%, var(--ore-glow) 100%); border-radius: var(--r-pill); transition: width 0.35s ease; }
+.wq-drop-minutes { font-size: 0.7rem; color: var(--ink-dim); }
 
 .wq-benefit {
     display: inline-flex;

@@ -409,6 +409,7 @@
       }
     },
     "wanted": {
+      "minutes_progress": "{current}/{required} Min. ({pct}%)",
       "name": "Wunsch-Drops Warteschlange",
       "none": "Keine Wunsch-Drops in der Warteschlange...",
       "waiting_for_campaign": "⭐ Wartet auf Kampagne",

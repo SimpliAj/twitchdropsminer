@@ -349,6 +349,7 @@
       }
     },
     "wanted": {
+      "minutes_progress": "{current}/{required} min ({pct}%)",
       "name": "Wanted Drops Queue",
       "none": "No wanted drops queued...",
       "waiting_for_campaign": "⭐ Waiting for Campaign",

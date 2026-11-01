@@ -340,6 +340,10 @@ socket.on('channel_watching_clear', () => {
 
 socket.on('drop_progress', (data) => {
     updateDropProgress(data);
+    if (data.drop_id) {
+        updateLocalDropMinutes(data.drop_id, data.current_minutes || 0);
+        updateWantedProgress(data.drop_id, data.current_minutes);
+    }
 });
 
 socket.on('drop_progress_stop', () => {
@@ -367,6 +371,7 @@ socket.on('inventory_batch_update', (data) => {
 socket.on('drop_update', (data) => {
     updateLocalDropMinutes(data.drop.id, data.drop.current_minutes || 0);
     updateDrop(data.campaign_id, data.drop);
+    updateWantedProgress(data.drop.id, data.drop.current_minutes);
     autoAddLinkedGames();
 });
 
@@ -5351,10 +5356,90 @@ document.addEventListener('DOMContentLoaded', () => {
 // Store last known tree for reorder/remove operations
 let _wantedTree = [];
 
-function renderWantedItems(tree) {
-    _wantedTree = tree || [];
+// Reward artwork + progress for one wanted drop. Rows carry data-drop-id so
+// updateWantedProgress() can refresh them in place (no re-render, so drag and
+// focus are left alone).
+function buildWantedDropRow(drop) {
+    const benefits = (drop.benefits || []).map(b => (typeof b === 'string' ? { name: b } : b));
+    const art = benefits.find(b => b.image_url);
+    const dropName = (drop.name || '').trim().toLowerCase();
+    const extraBenefits = benefits.filter(b => (b.name || '').trim().toLowerCase() !== dropName);
+
+    const row = makeElement('div', { class: 'wq-drop' });
+    if (drop.id) row.dataset.dropId = drop.id;
+    if (art) {
+        const img = document.createElement('img');
+        img.className = 'wq-drop-art';
+        img.draggable = false;
+        img.src = art.image_url;
+        img.alt = art.name || drop.name || '';
+        img.loading = 'lazy';
+        row.appendChild(img);
+    }
+    const body = makeElement('div', { class: 'wq-drop-body' });
+    body.appendChild(makeElement('span', { class: 'wq-drop-name' }, drop.name));
+    if (extraBenefits.length) {
+        const chips = makeElement('div', { class: 'wq-drop-benefits' });
+        extraBenefits.forEach(b => chips.appendChild(makeElement('span', { class: 'wq-benefit' }, b.name)));
+        body.appendChild(chips);
+    }
+    if ((drop.required_minutes || 0) > 0) {
+        const bar = makeElement('div', { class: 'wq-drop-bar' });
+        bar.appendChild(makeElement('div', { class: 'wq-drop-bar-fill' }));
+        body.appendChild(bar);
+        body.appendChild(makeElement('span', { class: 'wq-drop-minutes' }));
+    }
+    row.appendChild(body);
+    refreshWantedDropRow(row, drop);
+    return row;
+}
+
+function refreshWantedDropRow(row, drop) {
+    const required = drop.required_minutes || 0;
+    const fill = row.querySelector('.wq-drop-bar-fill');
+    const label = row.querySelector('.wq-drop-minutes');
+    if (!fill || !label || required <= 0) return;
+    const current = Math.min(required, getEffectiveMinutes(drop));
+    const pct = Math.round((current / required) * 100);
+    fill.style.width = pct + '%';
+    label.textContent = tr('gui.wanted.minutes_progress', '{current}/{required} min ({pct}%)', { current, required, pct });
+}
+
+function updateWantedProgress(dropId, currentMinutes) {
+    if (!dropId) return;
+    let drop = null;
+    for (const g of _wantedTree) {
+        for (const c of g.campaigns) {
+            drop = c.drops.find(d => d.id === dropId);
+            if (drop) break;
+        }
+        if (drop) break;
+    }
+    if (!drop) return;
+    if (currentMinutes !== undefined) drop.current_minutes = currentMinutes;
     const container = document.getElementById('wanted-items-list');
     if (!container) return;
+    container.querySelectorAll('.wq-drop').forEach(row => {
+        if (row.dataset.dropId === dropId) refreshWantedDropRow(row, drop);
+    });
+}
+
+let _pendingWantedTree = null;
+
+function renderWantedItems(tree) {
+    const container = document.getElementById('wanted-items-list');
+    if (!container) return;
+    // A server push mid-drag would rebuild the rows under the cursor; apply it on drop.
+    if (container.querySelector('.dragging')) { _pendingWantedTree = tree || []; return; }
+    _pendingWantedTree = null;
+    _wantedTree = tree || [];
+    // Keep rows the user expanded open across re-renders (first row opens by default on first render only).
+    const hadRows = container.querySelector('.wq-row') !== null;
+    const expanded = new Set(
+        Array.from(container.querySelectorAll('.wq-row'))
+            .filter(r => r.querySelector('.wq-body')?.style.display !== 'none')
+            .map(r => r.dataset.game)
+    );
     container.innerHTML = '';
 
     if (!tree || tree.length === 0) {
@@ -5465,22 +5550,7 @@ function renderWantedItems(tree) {
             const campEl = makeElement('div', { class: 'wq-campaign' }, '', el => {
                 el.appendChild(makeElement('span', { class: 'wq-campaign-link' }, campaign.name));
                 campaign.drops.forEach(drop => {
-                    const dropEl = makeElement('div', { class: 'wq-drop' }, '', d => {
-                        d.appendChild(makeElement('span', { class: 'wq-drop-name' }, drop.name));
-                        (drop.benefits || []).forEach(b => {
-                            const benefitEl = document.createElement('span');
-                            benefitEl.className = 'wq-benefit';
-                            const bName = typeof b === 'string' ? b : b.name;
-                            const bImg = typeof b === 'object' && b.image_url ? b.image_url : null;
-                            if (bImg) {
-                                const img = document.createElement('img');
-                                img.src = bImg; img.alt = bName;
-                                benefitEl.appendChild(img);
-                            }
-                            benefitEl.appendChild(document.createTextNode(bName));
-                            d.appendChild(benefitEl);
-                        });
-                    });
+                    const dropEl = buildWantedDropRow(drop);
                     dropEl.addEventListener('click', (e) => { e.stopPropagation(); showRewardModal(drop); });
                     el.appendChild(dropEl);
                 });
@@ -5489,7 +5559,8 @@ function renderWantedItems(tree) {
         });
 
         // Collapse by default unless first item
-        if (index !== 0) {
+        const startOpen = hadRows ? expanded.has(gameGroup.game_name) : index === 0;
+        if (!startOpen) {
             bodyEl.style.display = 'none';
             toggleEl.textContent = '▸';
         } else {
@@ -6586,6 +6657,12 @@ function showRewardModal(drop) {
 
 function handleWantedDragEnd(e) {
     e.target.classList.remove('dragging');
+    if (_pendingWantedTree) {
+        const pending = _pendingWantedTree;
+        _pendingWantedTree = null;
+        // The drop below saves the new order first; the follow-up push re-renders anyway.
+        setTimeout(() => renderWantedItems(pending), 0);
+    }
     const container = document.getElementById('wanted-items-list');
     if (!container) return;
     const items = container.querySelectorAll('.sortable-item');
