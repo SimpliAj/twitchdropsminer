@@ -313,6 +313,11 @@
       "preferred_games_help": "Spiele, die immer beobachtet werden — auch ohne aktive Drop-Kampagne. Verbindet sich automatisch, sobald eine Kampagne erscheint. Werden nie automatisch entfernt.",
       "priority_list_only": "Nur Prioritätsliste",
       "priority_list_only_help": "Wenn aus, wird jedes andere Spiel mit aktiver Drop-Kampagne gemined, sobald keines Ihrer Prioritäts- oder bevorzugten Spiele live ist. Ihre Liste hat immer Vorrang.",
+      "reward_priority": "Belohnungstyp-Priorität",
+      "reward_priority_help": "Wenn aktiv, werden aktuell farmbare Drops in dieser Belohnungstyp-Reihenfolge gemined (bei Gleichstand zählt die frühere Deadline). Spiele-Reihenfolge und Prioritätsspiele bleiben unverändert.",
+      "reward_priority_enable": "Nach Belohnungstyp ordnen",
+      "move_up": "Nach oben",
+      "move_down": "Nach unten",
       "webhook_missing": "Keine Webhook-URL gesetzt.",
       "push_blocked": "Browser-Benachrichtigungen sind blockiert. Bitte erlauben Sie sie in den Browser-Einstellungen (Schloss-Symbol in der Adressleiste) und laden Sie die Seite neu.",
       "predictions": {

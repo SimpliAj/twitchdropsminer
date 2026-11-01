@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import TypedDict, cast
+from typing import NotRequired, TypedDict, cast
 
 from src.config import DEFAULT_LANG, LANG_PATH
 
@@ -225,6 +225,11 @@ class GUISettingsOptional(TypedDict, total=False):
     discord_health_webhook_help: str
     priority_list_only: str
     priority_list_only_help: str
+    reward_priority: NotRequired[str]
+    reward_priority_help: NotRequired[str]
+    reward_priority_enable: NotRequired[str]
+    move_up: NotRequired[str]
+    move_down: NotRequired[str]
     proxy_empty: str
     proxy_verifying: str
     push_blocked: str

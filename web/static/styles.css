@@ -700,6 +700,24 @@ body.dark-mode .tab-button.active { color: var(--glitch-glow); }
 .qc-btn--active-green .qc-labels small { color: rgba(255, 255, 255, 0.78); }
 .qc-btn--active-green:hover { filter: brightness(1.08); }
 
+/* Reward type priority list (Settings > Mining) */
+.reward-priority-list { display: flex; flex-direction: column; gap: 6px; }
+.reward-priority-item { display: flex; align-items: center; gap: 10px; cursor: default; }
+.reward-priority-rank { color: var(--ink-dim); font-size: 0.8rem; width: 1.2em; text-align: center; }
+.reward-priority-name { flex: 1; min-width: 0; }
+.reward-priority-move {
+    background: var(--panel-raised);
+    border: 1px solid var(--seam);
+    border-radius: var(--r-sm);
+    color: var(--ink);
+    cursor: pointer;
+    padding: 4px 10px;
+    min-width: 34px;
+    min-height: 30px;
+}
+.reward-priority-move:hover:not(:disabled) { border-color: var(--ore); color: var(--ore); }
+.reward-priority-move:disabled { opacity: 0.35; cursor: default; }
+
 /* Pause duration menu (fixed popover under the Pause button) */
 .pause-menu {
     position: fixed;

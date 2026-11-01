@@ -590,6 +590,8 @@ class SettingsUpdate(BaseModel):
     idle_parallel: bool | None = None
     preferred_games: list[str] | None = None
     priority_list_only: bool | None = None
+    reward_priority_enabled: bool | None = None
+    reward_priority: list[str] | None = None
     scheduler_enabled: bool | None = None
     scheduler_start: str | None = None
     scheduler_stop: str | None = None

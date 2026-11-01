@@ -2174,6 +2174,11 @@ function updateSettingsUI(settings) {
     }
 
 
+    // Reward type priority
+    const rewardEnabledEl = document.getElementById('reward-priority-enabled');
+    if (rewardEnabledEl) rewardEnabledEl.checked = settings.reward_priority_enabled === true;
+    renderRewardPriority();
+
     // Update games to watch lists
     renderGamesToWatch();
 
@@ -3331,6 +3336,8 @@ async function _saveSettingsNow() {
         idle_parallel: document.getElementById('idle-parallel')?.checked ?? true,
         preferred_games: state.settings.preferred_games || [],
         priority_list_only: document.getElementById('priority-list-only')?.checked ?? true,
+        reward_priority_enabled: document.getElementById('reward-priority-enabled')?.checked ?? false,
+        reward_priority: getRewardPriority(),
         auto_add_excluded_games: state.settings.auto_add_excluded_games || [],
         drop_name_blacklist: (document.getElementById('drop-blacklist-input')?.value || '')
             .split(',').map(s => s.trim()).filter(Boolean),
@@ -3396,6 +3403,66 @@ async function savePushConfig() {
     } catch (e) {
         console.error('Failed to save push config:', e);
     }
+}
+
+const REWARD_TYPE_DEFAULT_ORDER = ['DIRECT_ENTITLEMENT', 'BADGE', 'EMOTE', 'UNKNOWN'];
+
+function getRewardPriority() {
+    const saved = state.settings?.reward_priority;
+    const valid = Array.isArray(saved) && saved.length === REWARD_TYPE_DEFAULT_ORDER.length
+        && REWARD_TYPE_DEFAULT_ORDER.every(t => saved.includes(t));
+    return valid ? saved.slice() : REWARD_TYPE_DEFAULT_ORDER.slice();
+}
+
+function rewardTypeLabel(type) {
+    const f = state.translations?.gui?.inventory?.filters || {};
+    const labels = {
+        DIRECT_ENTITLEMENT: f.item || 'Item',
+        BADGE: f.badge || 'Badge',
+        EMOTE: f.emote || 'Emote',
+        UNKNOWN: f.other || 'Other',
+    };
+    return labels[type] || type;
+}
+
+function renderRewardPriority() {
+    const list = document.getElementById('reward-priority-list');
+    if (!list) return;
+    const order = getRewardPriority();
+    list.replaceChildren();
+    order.forEach((type, i) => {
+        const row = document.createElement('div');
+        row.className = 'sortable-item reward-priority-item';
+        const rank = document.createElement('span');
+        rank.className = 'reward-priority-rank';
+        rank.textContent = String(i + 1);
+        const name = document.createElement('span');
+        name.className = 'reward-priority-name';
+        name.textContent = rewardTypeLabel(type);
+        row.append(rank, name);
+        [['▲', -1, 'gui.settings.move_up', 'Move up'], ['▼', 1, 'gui.settings.move_down', 'Move down']].forEach(([glyph, delta, key, fb]) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'reward-priority-move';
+            btn.textContent = glyph;
+            btn.title = tr(key, fb);
+            btn.setAttribute('aria-label', tr(key, fb) + ': ' + rewardTypeLabel(type));
+            btn.disabled = i + delta < 0 || i + delta >= order.length;
+            btn.addEventListener('click', () => moveRewardPriority(i, delta));
+            row.appendChild(btn);
+        });
+        list.appendChild(row);
+    });
+}
+
+function moveRewardPriority(index, delta) {
+    const order = getRewardPriority();
+    const target = index + delta;
+    if (target < 0 || target >= order.length) return;
+    [order[index], order[target]] = [order[target], order[index]];
+    state.settings.reward_priority = order;
+    renderRewardPriority();
+    saveSettings();
 }
 
 let pauseTicker = null;
@@ -4219,6 +4286,7 @@ function applyTranslations(t) {
         updateLabel('mining-benefit-badge', f.badge);
         updateLabel('mining-benefit-emote', f.emote);
         updateLabel('mining-benefit-unknown', f.other);
+        renderRewardPriority();
     }
 
     // Update header elements

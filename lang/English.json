@@ -251,6 +251,11 @@
       "preferred_games_help": "Games that are always watched — even without active drop campaigns. Auto-connects when a campaign appears. Never auto-removed. Ordered by the soonest campaign end, not by the position in the list.",
       "priority_list_only": "Priority list only",
       "priority_list_only_help": "When off, any other game with an active drop campaign is mined whenever none of your priority or preferred games is live. Your list always comes first.",
+      "reward_priority": "Reward Type Priority",
+      "reward_priority_help": "When enabled, drops that can be earned right now are mined in this reward-type order (earlier deadline breaks ties). Your game order and priority games are not changed.",
+      "reward_priority_enable": "Order by reward type",
+      "move_up": "Move up",
+      "move_down": "Move down",
       "webhook_missing": "No webhook URL set.",
       "push_blocked": "Browser notifications are blocked. Please allow them in your browser settings (click the lock icon in the address bar) and reload the page.",
       "predictions": {

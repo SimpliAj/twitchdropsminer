@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap">
-    <link rel="stylesheet" href="/static/styles.css?v=20261101a">
+    <link rel="stylesheet" href="/static/styles.css?v=20261101b">
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
 
@@ -560,6 +560,16 @@
                                 <span>Other</span>
                             </label>
                         </div>
+                    </section>
+
+                    <section class="settings-section">
+                        <h2 data-i18n="gui.settings.reward_priority">Reward Type Priority</h2>
+                        <p class="help-text" data-i18n="gui.settings.reward_priority_help">When enabled, drops that can be earned right now are mined in this reward-type order (earlier deadline breaks ties). Your game order and priority games are not changed.</p>
+                        <label class="toggle-label" style="margin-bottom:10px;">
+                            <input type="checkbox" id="reward-priority-enabled" onchange="saveSettings()">
+                            <span data-i18n="gui.settings.reward_priority_enable">Order by reward type</span>
+                        </label>
+                        <div id="reward-priority-list" class="reward-priority-list"></div>
                     </section>
 
                     <section class="settings-section">
