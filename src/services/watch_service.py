@@ -18,6 +18,9 @@ from src.exceptions import GQLException, MinerException
 from src.i18n import _
 from src.utils import task_wrapper
 
+# How often (seconds) the real drop progress is re-read from Twitch while watching.
+RECONCILE_INTERVAL: float = 300.0
+
 
 if TYPE_CHECKING:
     from src.config import JsonType
@@ -257,6 +260,58 @@ class WatchService:
             await asyncio.wait_for(self._twitch._watching_restart.wait(), timeout=delay)
         self._twitch._watching_restart.clear()
 
+    async def reconcile_drop_progress(self, channel: Channel, stream) -> bool:
+        """
+        Query Twitch's real drop progress and apply it to the drop being mined.
+
+        Only runs while the displayed drop still has time remaining. The reply is
+        dropped if the watch target changed, the drop objects were replaced by an
+        inventory refresh, or any progress/claim update arrived while the request
+        was in flight. Failed or empty replies never add estimated progress.
+
+        Returns:
+            True if the reply was applied
+        """
+        current = self._twitch.gui.progress._current_drop
+        if current is None or current.remaining_minutes <= 0:
+            return False
+        snapshot = {
+            drop_id: (drop, drop.campaign.progress_revision)
+            for drop_id, drop in self._twitch._drops.items()
+        }
+        try:
+            context = await asyncio.wait_for(
+                self._twitch.gql_request(
+                    GQL_OPERATIONS["CurrentDrop"].with_variables({"channelID": str(channel.id)})
+                ),
+                timeout=5,
+            )
+            current_user: JsonType | None = context["data"]["currentUser"]
+            drop_data: JsonType | None = (
+                current_user["dropCurrentSession"] if current_user is not None else None
+            )
+        except (GQLException, TimeoutError, KeyError, TypeError):
+            return False
+        if drop_data is None or not channel._watch_current(stream):
+            return False
+        drop = self._twitch._drops.get(drop_data["dropID"])
+        previous = snapshot.get(drop_data["dropID"])
+        if (
+            drop is None
+            or previous is None
+            or previous[0] is not drop
+            or previous[1] != drop.campaign.progress_revision
+            or not drop.can_earn(channel)
+        ):
+            return False
+        drop.update_minutes(drop_data["currentMinutesWatched"])
+        logger.log(
+            CALL,
+            f"Drop progress reconciled from GQL: {drop.name} "
+            f"({drop.campaign.game}, {drop.current_minutes}/{drop.required_minutes})",
+        )
+        return True
+
     @task_wrapper(critical=True)
     async def watch_loop(self) -> NoReturn:
         """
@@ -280,6 +335,7 @@ class WatchService:
         # polled every ~10s (inside the rolling playlist window); everything else
         # (progress fallback, idle channels, channel points) keeps its ~minute cadence.
         next_progress = monotonic() + 20
+        next_reconcile = monotonic() + RECONCILE_INTERVAL
 
         while True:
             channel: Channel = await self._twitch.watching_channel.get()
@@ -320,7 +376,9 @@ class WatchService:
                         continue
                     asyncio.create_task(_send_idle_watch(idle_ch))
 
+            fallback_polled = False
             if succeeded and self._twitch.gui.progress.minute_almost_done():
+                fallback_polled = True
                 # If the previous update was more than ~60s ago, and the progress tracker
                 # isn't counting down anymore, that means Twitch has temporarily
                 # stopped reporting drop's progress. To ensure the timer keeps at least somewhat
@@ -387,6 +445,13 @@ class WatchService:
                         handled = True
                     else:
                         logger.log(CALL, "No active drop could be determined")
+
+            # Periodic reconciliation with Twitch's real progress, even while the
+            # websocket keeps reporting (it can silently drift or stop).
+            if succeeded and monotonic() >= next_reconcile:
+                next_reconcile = monotonic() + RECONCILE_INTERVAL
+                if not fallback_polled:
+                    await self.reconcile_drop_progress(channel, stream)
 
             # Periodic channel points poll (every ~60s) — covers the primary
             # channel plus any other channels being watched in parallel idle mode,

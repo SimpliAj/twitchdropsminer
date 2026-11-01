@@ -27,6 +27,9 @@ logger = logging.getLogger("TwitchDrops")
 class DropsCampaign:
     def __init__(self, twitch: Twitch, data: JsonType, claimed_benefits: dict[str, datetime]):
         self._twitch: Twitch = twitch
+        # Bumped whenever drop progress or claim state changes, so a slow
+        # CurrentDrop reply can tell it was superseded by a newer observation.
+        self.progress_revision: int = 0
         self.id: str = data["id"]
         self.campaign_url: str = f"https://www.twitch.tv/drops/campaigns?dropID={self.id}"
         self.name: str = data["name"]
@@ -166,6 +169,7 @@ class DropsCampaign:
         return drops[0] if drops else None
 
     def _update_real_minutes(self, delta: int) -> None:
+        self.progress_revision += 1
         for drop in self.drops:
             drop._update_real_minutes(delta)
         if (first_drop := self.first_drop) is not None:
@@ -234,6 +238,7 @@ class DropsCampaign:
         Bump the minute counter for all earnable drops in this campaign.
         Used when websocket updates aren't available.
         """
+        self.progress_revision += 1
         # NOTE: Use a temporary list to ensure all drops are bumped before checking
         if any(drop._bump_minutes(channel) for drop in self.drops):
             # Executes if any drop's extra_current_minutes reach MAX_ESTIMATED_MINUTES

@@ -158,6 +158,7 @@ class BaseDrop:
     def update_claim(self, claim_id: str) -> None:
         """Update the claim ID for this drop."""
         self.claim_id = claim_id
+        self.campaign.progress_revision += 1
 
     async def generate_claim(self) -> None:
         # claim IDs now appear to be constructed from other IDs we have access to
