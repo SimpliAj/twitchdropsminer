@@ -95,6 +95,7 @@ async def probe_hidden_mint(name: str, binary: str) -> bool:
     from src.auth import browser_login as bl
     from src.config.client_info import ClientType
 
+    before = set(visible_browser_windows())  # earlier probes may leave windows behind
     chrome = PlainChrome(binary, "about:blank", None, quiet=True, hidden=True)
     await chrome.start()
     try:
@@ -105,7 +106,7 @@ async def probe_hidden_mint(name: str, binary: str) -> bool:
         await chrome.call("Page.navigate", {"url": bl.INTEGRITY_SDK_PAGE}, session)
         while (await chrome.next_event(timeout=30)).get("method") != "Page.loadEventFired":
             pass
-        shown = visible_browser_windows()
+        shown = [t for t in visible_browser_windows() if t not in before]
         page = await chrome.call("Runtime.evaluate", {"expression": "globalThis"}, session)
         reply = await chrome.call("Runtime.callFunctionOn", {
             "objectId": page["result"]["result"]["objectId"],
