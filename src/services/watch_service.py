@@ -20,6 +20,10 @@ from src.utils import task_wrapper
 
 # How often (seconds) the real drop progress is re-read from Twitch while watching.
 RECONCILE_INTERVAL: float = 300.0
+# Twitch's stream-down websocket event can be missed (topic limit, reconnect gap);
+# the watch then fails forever on a stream that ended. After this long without a
+# successful watch the channel's real status is re-checked over GQL.
+STALE_RECHECK_AFTER: float = 120.0
 
 
 if TYPE_CHECKING:
@@ -260,6 +264,25 @@ class WatchService:
             await asyncio.wait_for(self._twitch._watching_restart.wait(), timeout=delay)
         self._twitch._watching_restart.clear()
 
+    async def recheck_failing_channel(self, channel: Channel) -> None:
+        """Re-check a channel whose watches keep failing; a missed stream-down event
+        otherwise leaves the miner watching a stream that already ended."""
+        logger.warning(
+            f"Watches to {channel.name} keep failing for {int(STALE_RECHECK_AFTER)}s+, "
+            "re-checking whether the stream is still live"
+        )
+        try:
+            # update_stream() reports OFFLINE through on_channel_update -> channel switch
+            online = await asyncio.wait_for(channel.update_stream(), timeout=15)
+        except (MinerException, TimeoutError) as exc:
+            logger.warning(f"Live re-check for {channel.name} failed: {exc!r}")
+            return
+        if online:
+            # still live: drop the cached playlist URL so the next watch fetches a fresh one
+            if channel._stream is not None:
+                channel._stream._stream_url = None
+            logger.warning(f"{channel.name} is still live, refreshing its stream URL")
+
     async def reconcile_drop_progress(self, channel: Channel, stream) -> bool:
         """
         Query Twitch's real drop progress and apply it to the drop being mined.
@@ -336,6 +359,8 @@ class WatchService:
         # (progress fallback, idle channels, channel points) keeps its ~minute cadence.
         next_progress = monotonic() + 20
         next_reconcile = monotonic() + RECONCILE_INTERVAL
+        fail_since: float | None = None
+        fail_channel: Channel | None = None
 
         while True:
             channel: Channel = await self._twitch.watching_channel.get()
@@ -351,8 +376,15 @@ class WatchService:
 
             if succeeded:
                 self._twitch._health_monitor.record_watch_ok()
+                fail_since = None
             else:
                 logger.log(CALL, f"Watch requested failed for channel: {channel.name}")
+                if fail_since is None or fail_channel is not channel:
+                    fail_since, fail_channel = monotonic(), channel
+                elif monotonic() - fail_since >= STALE_RECHECK_AFTER:
+                    fail_since = monotonic()
+                    await self.recheck_failing_channel(channel)
+                    continue
 
             # A ten-second poll fits inside Twitch's rolling segment window.
             await self.watch_sleep(max(0, 10 - (monotonic() - started)))
