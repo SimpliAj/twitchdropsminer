@@ -67,8 +67,7 @@ class HostAllowlist:
         )
 
 
-CROSS_ORIGIN_MESSAGE = "Cross-origin request refused: this dashboard only accepts changes from its own pages."
-_SAFE_METHODS = ("GET", "HEAD", "OPTIONS")
+CROSS_ORIGIN_MESSAGE = "Cross-origin request refused: this dashboard only answers its own pages."
 
 
 def same_origin(origin: str, host_header: str, allowed_hosts: frozenset[str] = frozenset()) -> bool:
@@ -100,10 +99,10 @@ class HostGuardMiddleware:
                     host = value.decode("latin-1")
                 elif key == b"origin":
                     origin = value.decode("latin-1")
-            # Any website the user visits could otherwise make their browser send changes to a
-            # dashboard on this machine (no password on a local install, CORS allows "*").
-            changes = scope["type"] == "websocket" or scope.get("method", "GET") not in _SAFE_METHODS
-            if changes and not same_origin(origin, host, self.guard.allowed_hosts):
+            # Browsers send Origin on every cross-site fetch/XHR/websocket (not on plain links or
+            # <img>), so a foreign Origin means another website is trying to read or change the
+            # dashboard through the user's browser (no password on a local install).
+            if not same_origin(origin, host, self.guard.allowed_hosts):
                 if scope["type"] == "websocket":
                     await send({"type": "websocket.close", "code": 1008})
                     return

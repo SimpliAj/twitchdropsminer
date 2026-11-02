@@ -20,7 +20,6 @@ from typing import TYPE_CHECKING
 
 import socketio
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -500,18 +499,12 @@ app = FastAPI(title="Twitch Drops Miner Web", version="1.0.0")
 # Add auth middleware (if WEB_PASSWORD env var is set)
 app.add_middleware(PasswordAuthMiddleware)
 
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# No CORS: the dashboard's own pages are same-origin, other instances talk server-to-server,
+# and allowing "*" with credentials let any website read and change a local dashboard.
 
 # Create Socket.IO server
 sio = socketio.AsyncServer(
-    async_mode="asgi", cors_allowed_origins="*", logger=False, engineio_logger=False
+    async_mode="asgi", cors_allowed_origins=[], logger=False, engineio_logger=False
 )
 
 # Wrap with ASGI app

@@ -104,6 +104,7 @@ class TestCrossOrigin(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(ok)
         self.assertEqual(sent[0], {"type": "websocket.close", "code": 1008})
 
-    async def test_get_from_anywhere_and_requests_without_origin_pass(self):
-        self.assertTrue((await self._call(method="GET", origin="https://evil.example"))[0])
+    async def test_foreign_read_is_refused_but_requests_without_origin_pass(self):
+        self.assertFalse((await self._call(method="GET", origin="https://evil.example"))[0])
+        self.assertTrue((await self._call(method="GET", origin=None))[0])
         self.assertTrue((await self._call(origin=None))[0])
