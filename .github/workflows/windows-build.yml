@@ -17,7 +17,7 @@ jobs:
     name: Build Windows app
     runs-on: windows-latest
     permissions:
-      contents: write   # attach the zip to the GitHub release on tag builds
+      contents: read
 
     steps:
       - name: Checkout code
@@ -61,8 +61,25 @@ jobs:
           name: TwitchDropsMiner-windows-x64
           path: dist/TwitchDropsMiner-*-windows-x64.zip
 
-      - name: Attach to release
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
+
+  release:
+    name: Attach to release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
         with:
-          files: dist/TwitchDropsMiner-*-windows-x64.zip
+          name: TwitchDropsMiner-windows-x64
+          path: dist
+      - name: Upload zip to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          # scripts/release.sh pushes the tag before it creates the release
+          for i in $(seq 1 30); do gh release view "$TAG" -R "$REPO" >/dev/null 2>&1 && break; sleep 20; done
+          gh release upload "$TAG" dist/TwitchDropsMiner-*-windows-x64.zip -R "$REPO" --clobber
