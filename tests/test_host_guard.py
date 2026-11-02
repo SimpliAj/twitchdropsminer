@@ -1,3 +1,4 @@
+import unittest
 import asyncio
 
 import pytest
@@ -50,3 +51,59 @@ def test_middleware_blocks_and_passes():
     ws = _call({"type": "websocket", "headers": [(b"host", b"evil.example.com")]})
     assert ws[0]["type"] == "websocket.close"
     assert _call({"type": "lifespan"}) == ["app"]
+
+
+class TestCrossOrigin(unittest.IsolatedAsyncioTestCase):
+    async def _call(self, method="POST", origin=None, host="127.0.0.1:8080", kind="http", allowed=""):
+        from src.web.host_guard import HostAllowlist, HostGuardMiddleware
+
+        reached, sent = [], []
+
+        async def app(scope, receive, send):
+            reached.append(scope)
+
+        async def send(message):
+            sent.append(message)
+
+        headers = [(b"host", host.encode())]
+        if origin is not None:
+            headers.append((b"origin", origin.encode()))
+        scope = {"type": kind, "headers": headers}
+        if kind == "http":
+            scope["method"] = method
+        await HostGuardMiddleware(app, HostAllowlist(allowed))(scope, None, send)
+        return bool(reached), sent
+
+    async def test_same_origin_post_passes(self):
+        ok, _ = await self._call(origin="http://127.0.0.1:8080")
+        self.assertTrue(ok)
+
+    async def test_tls_proxy_scheme_difference_passes(self):
+        ok, _ = await self._call(origin="https://tdm.example.com", host="tdm.example.com", allowed="tdm.example.com")
+        self.assertTrue(ok)
+
+    async def test_proxy_rewriting_host_passes_for_allowed_origin(self):
+        ok, _ = await self._call(origin="https://tdm.example.com", host="127.0.0.1:8080", allowed="tdm.example.com")
+        self.assertTrue(ok)
+
+    async def test_foreign_site_post_is_refused(self):
+        ok, sent = await self._call(origin="https://evil.example")
+        self.assertFalse(ok)
+        self.assertEqual(sent[0]["status"], 403)
+
+    async def test_other_port_is_refused(self):
+        ok, _ = await self._call(origin="http://127.0.0.1:9999")
+        self.assertFalse(ok)
+
+    async def test_null_origin_is_refused(self):
+        ok, _ = await self._call(origin="null")
+        self.assertFalse(ok)
+
+    async def test_foreign_websocket_is_closed(self):
+        ok, sent = await self._call(kind="websocket", origin="https://evil.example")
+        self.assertFalse(ok)
+        self.assertEqual(sent[0], {"type": "websocket.close", "code": 1008})
+
+    async def test_get_from_anywhere_and_requests_without_origin_pass(self):
+        self.assertTrue((await self._call(method="GET", origin="https://evil.example"))[0])
+        self.assertTrue((await self._call(origin=None))[0])

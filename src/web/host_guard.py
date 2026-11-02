@@ -67,6 +67,24 @@ class HostAllowlist:
         )
 
 
+CROSS_ORIGIN_MESSAGE = "Cross-origin request refused: this dashboard only accepts changes from its own pages."
+_SAFE_METHODS = ("GET", "HEAD", "OPTIONS")
+
+
+def same_origin(origin: str, host_header: str, allowed_hosts: frozenset[str] = frozenset()) -> bool:
+    """True when a browser's Origin header belongs to this dashboard: same host:port as the
+    Host header (scheme ignored, a TLS proxy changes it), or a host named in ALLOWED_HOSTS /
+    PUBLIC_BASE_URL (a proxy may rewrite Host). Requests without an Origin are not browsers'
+    cross-site requests and are checked by the caller."""
+    if origin in ("", "null"):
+        return origin == ""
+    parts = urlsplit(origin)
+    netloc = parts.netloc.lower()
+    if netloc and netloc == host_header.strip().lower():
+        return True
+    return (parts.hostname or "") in allowed_hosts
+
+
 class HostGuardMiddleware:
     """Pure ASGI wrapper so HTTP, Socket.IO and websocket traffic are all checked."""
 
@@ -76,11 +94,30 @@ class HostGuardMiddleware:
 
     async def __call__(self, scope, receive, send):
         if scope["type"] in ("http", "websocket"):
-            host = ""
+            host = origin = ""
             for key, value in scope.get("headers", []):
                 if key == b"host":
                     host = value.decode("latin-1")
-                    break
+                elif key == b"origin":
+                    origin = value.decode("latin-1")
+            # Any website the user visits could otherwise make their browser send changes to a
+            # dashboard on this machine (no password on a local install, CORS allows "*").
+            changes = scope["type"] == "websocket" or scope.get("method", "GET") not in _SAFE_METHODS
+            if changes and not same_origin(origin, host, self.guard.allowed_hosts):
+                if scope["type"] == "websocket":
+                    await send({"type": "websocket.close", "code": 1008})
+                    return
+                body = CROSS_ORIGIN_MESSAGE.encode()
+                await send({
+                    "type": "http.response.start",
+                    "status": 403,
+                    "headers": [
+                        (b"content-type", b"text/plain; charset=utf-8"),
+                        (b"content-length", str(len(body)).encode()),
+                    ],
+                })
+                await send({"type": "http.response.body", "body": body})
+                return
             if not self.guard.is_trusted(host):
                 if scope["type"] == "websocket":
                     await send({"type": "websocket.close", "code": 1008})
