@@ -59,6 +59,10 @@ docker compose up -d
 
 Open **<http://localhost:8080>**. Also on GHCR: `ghcr.io/simpliaj/twitchdropsminer:latest`.
 
+### 🪟 Windows app (no Docker)
+
+Download `TwitchDropsMiner-<version>-windows-x64.zip` from the [latest release](https://github.com/SimpliAj/twitchdropsminer/releases/latest), unzip it anywhere and run `TwitchDropsMiner.exe`. The dashboard opens in its own window; the miner keeps running in the tray (right-click the icon for **Start with Windows** and **Quit**). Settings and login live in `%APPDATA%\TwitchDropsMiner`. Needs Chrome or Edge for the Twitch login. The app isn't code-signed, so Windows SmartScreen may ask once — **More info → Run anyway**. Windows app contributed by Trep.
+
 ### 🧑‍💻 From source
 
 Python 3.12+:
