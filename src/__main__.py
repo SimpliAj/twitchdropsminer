@@ -24,6 +24,14 @@ def _log_file_name() -> str:
 if __name__ == "__main__":
     truststore.inject_into_ssl()
 
+    from src.config.paths import IS_FROZEN, LOGS_DIR
+
+    desktop = None
+    if IS_FROZEN:  # Windows desktop build only; source and Docker runs skip all of this
+        from src.desktop.launcher import DesktopLauncher
+
+        desktop = DesktopLauncher.prepare()
+
     from src.config import FILE_FORMATTER
     from src.config.settings import Settings
     from src.core.client import Twitch
@@ -43,6 +51,8 @@ if __name__ == "__main__":
     # Docker commonly start this with a different working directory, which silently
     # scattered logs across unrelated locations depending on how it was launched.
     logs_dir = Path(__file__).parent.parent / "logs"
+    if IS_FROZEN:  # the Windows app keeps its logs in the per-user data folder
+        logs_dir = LOGS_DIR
     logs_dir.mkdir(exist_ok=True)
     log_file = logs_dir / _log_file_name()
 
@@ -122,10 +132,13 @@ if __name__ == "__main__":
         # Start web server in background
         import os as _os
         _port = int(_os.environ.get("TDM_PORT") or _os.environ.get("PORT") or 8080)
-        logger.info(f"Starting web server on http://0.0.0.0:{_port}")
-        web_server_task = asyncio.create_task(webapp.run_server(host="0.0.0.0", port=_port))
+        _host = desktop.host if desktop is not None else "0.0.0.0"
+        logger.info(f"Starting web server on http://{_host}:{_port}")
+        web_server_task = asyncio.create_task(webapp.run_server(host=_host, port=_port))
 
         loop = asyncio.get_running_loop()
+        if desktop is not None:
+            desktop.start(client, loop, _port)
         if sys.platform == "linux":
             logger.debug("Setting up signal handlers for SIGINT and SIGTERM")
             loop.add_signal_handler(signal.SIGINT, lambda *_: client.close())
@@ -151,6 +164,8 @@ if __name__ == "__main__":
                 loop.remove_signal_handler(signal.SIGINT)
                 loop.remove_signal_handler(signal.SIGTERM)
             logger.info("Notifying client of exit")
+            if desktop is not None:
+                desktop.stop()
             client.print(_.t["gui"]["status"]["exiting"])
             # Shutdown web server
             if web_server_task and not web_server_task.done():

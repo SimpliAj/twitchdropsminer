@@ -109,9 +109,21 @@ class _AuthState:
         )
 
         login_form: LoginForm = self._twitch.gui.login
+        from src.desktop.login_gate import login_gate
+
         while True:
+            self._raise_if_exiting()  # Quit while a login prompt is pending or being retried
+            if login_gate.armed:
+                self._update_login_status(
+                    login_form,
+                    "waiting_for_user",
+                    "You're not logged in to Twitch. Press \"Log in to Twitch\" in the dashboard.",
+                )
+            await login_gate.wait()
+            self._raise_if_exiting()  # Quit also releases a waiting gate
             manager = BrowserLoginManager()
             browser_login.set_active_manager(manager)
+            deferred = False
             try:
                 if await manager.start() == "local":
                     await login_form.start_browser_login_local()
@@ -123,18 +135,33 @@ class _AuthState:
                 return self.access_token
             except BrowserLoginTimeout:
                 logger.warning("Browser login timed out; a new session will be offered")
-                self._update_login_status(
-                    login_form, "timed_out", "Login timed out - starting a new login session..."
-                )
+                deferred = login_gate.rearm()
+                if not deferred:
+                    self._update_login_status(
+                        login_form, "timed_out", "Login timed out - starting a new login session..."
+                    )
             except BrowserLoginCancelled:
                 logger.info("Browser login cancelled; a new session will be offered")
-                self._update_login_status(
-                    login_form, "cancelled", "Login cancelled - starting a new login session..."
-                )
+                deferred = login_gate.rearm()
+                if not deferred:
+                    self._update_login_status(
+                        login_form, "cancelled", "Login cancelled - starting a new login session..."
+                    )
             finally:
                 browser_login.set_active_manager(None)
                 await manager.stop()
-            await asyncio.sleep(BROWSER_LOGIN_RETRY_DELAY_SEC)
+            self._raise_if_exiting()
+            if not deferred:
+                await asyncio.sleep(BROWSER_LOGIN_RETRY_DELAY_SEC)
+
+    def _raise_if_exiting(self) -> None:
+        """Stop retrying logins once the user asked the miner to quit (tray -> Quit)."""
+        from src.config import State
+        from src.desktop.login_gate import login_gate
+        from src.exceptions import ExitRequest
+
+        if login_gate.enabled and getattr(self._twitch, "_state", None) is State.EXIT:
+            raise ExitRequest()
 
     @staticmethod
     def _update_login_status(login_form: LoginForm, key: str, fallback: str) -> None:

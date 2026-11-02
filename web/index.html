@@ -182,6 +182,7 @@
                 <section class="panel login-panel">
                     <h2>Login</h2>
                     <div id="login-status" class="login-status"></div>
+                    <button id="login-request-btn" class="secondary-btn desktop-login-btn" style="display:none" data-i18n="gui.system.twitch_login_btn">Log in to Twitch</button>
                     <div id="login-helper-panel" style="display: none;">
                         <p id="login-helper-intro">TDM runs on a server, so log in from your own PC: run this command there (needs Python 3 and Google Chrome or Edge). A normal browser window opens -- log in to Twitch and you're done.</p>
                         <div class="login-helper-command-row">
@@ -412,6 +413,15 @@
                         <p id="diagnostics-help" style="font-size:.8rem;color:var(--text-secondary);margin:8px 0 0">Saves deidentified miner state and recent sanitized API responses to the diagnostics folder in this account's data directory.</p>
                         <p id="diagnostics-result" role="status" aria-live="polite" style="font-size:.82rem;margin:6px 0 0"></p>
                     </div>
+                    <div class="system-card" id="autostart-card" style="margin-bottom:16px;display:none">
+                        <h3 id="autostart-header" data-i18n="gui.system.autostart_header">Start with Windows</h3>
+                        <p style="font-size:.82rem;color:var(--text-secondary);margin:4px 0 10px" data-i18n="gui.system.autostart_desc">Launch the miner automatically when you sign in to Windows. It starts in the system tray without opening a browser tab.</p>
+                        <label style="display:flex;gap:8px;align-items:center;font-size:.9rem;cursor:pointer">
+                            <input type="checkbox" id="autostart-toggle" aria-describedby="autostart-status">
+                            <span data-i18n="gui.system.autostart_label">Run at Windows startup</span>
+                        </label>
+                        <p id="autostart-status" role="status" aria-live="polite" style="font-size:.82rem;margin:8px 0 0"></p>
+                    </div>
                     <div class="system-card" id="accounts-card" style="margin-bottom:16px">
                         <h3 id="system-accounts-header">Twitch Accounts</h3>
                         <p style="font-size:.82rem;color:var(--text-secondary);margin:4px 0 10px" data-i18n="gui.system.accounts_desc">Switch between saved Twitch logins within this instance.</p>
@@ -442,6 +452,7 @@
                             <h3 id="system-twitch-logout-header">Twitch Account</h3>
                             <p id="system-twitch-logout-desc">Forget the saved Twitch session and log in again. Your dashboard password and other settings are kept.</p>
                             <button id="system-twitch-logout-btn" class="btn-danger">Log out of Twitch</button>
+                            <button id="system-twitch-login-btn" class="btn-secondary desktop-login-btn" style="display:none" data-i18n="gui.system.twitch_login_btn">Log in to Twitch</button>
                         </div>
                     </div>
                     <div id="system-status" class="system-status"></div>

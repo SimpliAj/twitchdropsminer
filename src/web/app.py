@@ -27,6 +27,15 @@ from pydantic import BaseModel
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.auth import browser_login
+from src.config.paths import (
+    APP_STATE_DIR,
+    DATA_DIR,
+    IS_FROZEN,
+    LOGS_DIR,
+    SCRIPTS_DIR,
+    WEB_DIR,
+)
+from src.desktop import AutostartError, AutostartManager, login_gate, restart_process
 from src.services.pause_timer import pause_deadline
 from src.web.diagnostics_api import DiagnosticsAPI
 from src.web.host_guard import HostGuardMiddleware
@@ -39,10 +48,10 @@ if not _port_env and (_os_ck.environ.get("PORT") or "").strip() not in ("", "808
     _port_env = _os_ck.environ["PORT"].strip()
 _SESSION_COOKIE = "__tdm_session" + (("_" + _port_env) if _port_env else "")
 
-_DATA_DIR = Path(_os.environ.get("TDM_DATA_DIR", str(Path(__file__).parent.parent.parent / "data")))
+_DATA_DIR = DATA_DIR
 _WEB_CONFIG_FILE = _DATA_DIR / "web_config.json"
 _BOT_TOKEN_FILE = _DATA_DIR / "discord_bot_token.json"
-_PAIRINGS_FILE = Path(__file__).parent.parent.parent / "discord_bot" / "pairings.json"
+_PAIRINGS_FILE = APP_STATE_DIR / "discord_bot" / "pairings.json"
 _pair_codes: dict[str, dict] = {}  # code -> {token, expires}
 
 
@@ -715,7 +724,7 @@ async def auth_login_page():
 
 # ==================== Static Assets ====================
 
-_web_dir = Path(__file__).parent.parent.parent / "web"
+_web_dir = WEB_DIR
 
 
 @app.get("/favicon.ico")
@@ -740,7 +749,7 @@ async def manifest():
 async def serve_index():
     """Serve the main web interface"""
     # Web files are in project_root/web/, we're in project_root/src/web/
-    web_dir = Path(__file__).parent.parent.parent / "web"
+    web_dir = WEB_DIR
     index_file = web_dir / "index.html"
     logger.debug(
         f"Looking for web files: __file__={__file__}, web_dir={web_dir}, index_file={index_file}, exists={index_file.exists()}"
@@ -1347,7 +1356,7 @@ _SECRET_LINE_RE = re.compile(
 @app.get("/api/logs/download")
 async def download_logs():
     """Bundle recent log output into one downloadable file users can attach to a bug report."""
-    logs_dir = Path(__file__).parent.parent.parent / "logs"
+    logs_dir = LOGS_DIR
     log_file = logs_dir / "TDM.log"
     if not log_file.exists():
         raise HTTPException(status_code=404, detail="No log file found yet")
@@ -1384,6 +1393,22 @@ async def get_wanted_items_http():
 # entry point here would start a Chromium session nobody polls a cookie for,
 # and used to leave this module holding a manager instance completely
 # unrelated to the one the auth flow was driving.
+#
+# The route below does not break that rule: it starts nothing itself. In the Windows tray
+# build the auth flow holds its login prompt back until someone is at the PC; the dashboard
+# button merely tells that same flow "someone is here, go ahead". It acts on this instance only
+# (every miner process has its own gate), i.e. on the account whose dashboard sent the request.
+
+
+@app.post("/api/login/browser/request")
+async def request_browser_login():
+    """Let a held-back Twitch login window open now (tray build only)."""
+    if not login_gate.enabled:
+        raise HTTPException(status_code=400, detail="Only available in the Windows tray app")
+    if not login_gate.pending:
+        return {"success": False, "pending": False}
+    login_gate.release()
+    return {"success": True, "pending": False}
 
 
 @app.post("/api/login/browser/cancel")
@@ -1423,7 +1448,7 @@ async def submit_helper_session(body: HelperSessionRequest):
 
 
 
-_LOGIN_HELPER_PATH = Path(__file__).resolve().parents[2] / "scripts" / "tdm_login_helper.py"
+_LOGIN_HELPER_PATH = SCRIPTS_DIR / "tdm_login_helper.py"
 
 
 @app.get("/login-helper.py")
@@ -1472,7 +1497,10 @@ def _restart_self() -> None:
         subprocess.Popen(["pm2", "restart", "twitchdrops"])
     else:
         logging.getLogger(__name__).info("pm2 not found, re-exec'ing process in place to restart")
-        os.execv(sys.executable, [sys.executable] + sys.argv)
+        if IS_FROZEN:  # Windows app: os.execv is unreliable there, see src/desktop/runtime.py
+            restart_process()
+        else:
+            os.execv(sys.executable, [sys.executable] + sys.argv)
 
 
 @app.post("/api/restart")
@@ -1506,6 +1534,29 @@ async def logout_twitch():
     return {"success": True}
 
 
+class AutostartRequest(BaseModel):
+    enabled: bool
+
+
+@app.get("/api/autostart")
+async def get_autostart():
+    """Whether the miner starts when this Windows user logs in (Windows only)."""
+    return AutostartManager().status()
+
+
+@app.post("/api/autostart")
+async def set_autostart(req: AutostartRequest):
+    """Enable/disable run-at-login for the current Windows user (HKCU, no admin needed)."""
+    manager = AutostartManager()
+    if not manager.supported:
+        raise HTTPException(status_code=400, detail="Run at startup is only available on Windows")
+    try:
+        manager.set_enabled(req.enabled)
+    except AutostartError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    return manager.status()
+
+
 @app.post("/api/self-update")
 async def self_update():
     """Pull latest code from GitHub and restart — detects Docker vs PM2"""
@@ -1523,6 +1574,18 @@ async def self_update():
                 "Or with docker run:\n\n"
                 "  docker pull gitsimpliaj/twitch-drops-miner:latest\n"
                 "  docker stop <container> && docker run ..."
+            ),
+        }
+
+    if IS_FROZEN:
+        return {
+            "success": False,
+            "frozen": True,
+            "log": (
+                "This is the packaged Windows app, so it cannot update itself from git.\n\n"
+                "Download the latest release and replace the app folder:\n\n"
+                "  https://github.com/SimpliAj/twitchdropsminer/releases/latest\n\n"
+                "Your settings and login are kept (they live in %APPDATA%\\TwitchDropsMiner)."
             ),
         }
 
@@ -1954,7 +2017,7 @@ async def set_push_config(request: Request):
 # ==================== Instance Management ====================
 
 _INSTANCES_FILE = _DATA_DIR / "instances.json"
-_LEGACY_INSTANCES_FILE = Path(__file__).parent.parent.parent / "instances.json"
+_LEGACY_INSTANCES_FILE = APP_STATE_DIR / "instances.json"
 
 
 def _migrate_legacy_instances_file() -> None:
@@ -2563,7 +2626,7 @@ async def get_wanted_items(sid):
 # Serve app.js with no-cache so PWA always gets the latest version
 @app.get("/static/app.js")
 async def serve_app_js():
-    web_dir_path = Path(__file__).parent.parent.parent / "web"
+    web_dir_path = WEB_DIR
     js_file = web_dir_path / "static" / "app.js"
     return FileResponse(js_file, headers={
         "Cache-Control": "no-store, no-cache, must-revalidate",
@@ -2573,7 +2636,7 @@ async def serve_app_js():
 
 # Mount static files (CSS, JS, images)
 # Web files are in project_root/web/, we're in project_root/src/web/
-web_dir = Path(__file__).parent.parent.parent / "web"
+web_dir = WEB_DIR
 if web_dir.exists():
     static_dir = web_dir / "static"
     if static_dir.exists():

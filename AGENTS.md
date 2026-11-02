@@ -60,6 +60,7 @@ src/
 │   └── managers/    # Individual UI managers (status, console, channels, campaigns, inventory, login, settings, cache, broadcaster)
 ├── services/        # Business logic services (channel, inventory, watch, maintenance, message_handlers)
 ├── core/            # Core client (Twitch client)
+├── desktop/         # Windows desktop build only (tray, run at login, single instance, launcher)
 ├── exceptions.py    # Custom exceptions
 ├── version.py       # Version string
 └── __main__.py      # Entry point
@@ -262,7 +263,7 @@ login_text = _.t["login"]["status"]["logged_in"]  # Returns "Logged in"
 
 - **src/config/constants.py** - Core enums (State, WebsocketTopic), logging config, type aliases
 - **src/config/operations.py** - GraphQL operation definitions (GQL_OPERATIONS)
-- **src/config/paths.py** - Path management and Docker environment detection
+- **src/config/paths.py** - Path management, Docker detection and frozen (PyInstaller) aware locations (`IS_FROZEN`, `RESOURCE_DIR`, `DATA_DIR`, `LOGS_DIR`)
 - **src/config/client_info.py** - Twitch client info (Client-Id, User-Agent)
 - **src/config/settings.py** - Application settings with JSON persistence
 - **src/exceptions.py** - Custom exceptions (MinerException, ExitRequest, RequestException, RequestInvalid, WebsocketClosed, LoginException, CaptchaRequired, GQLException)
@@ -414,6 +415,15 @@ The application uses a web-based interface accessible via browser:
 - Auto-restart policy
 - Timezone configuration
 
+### Windows Desktop Build
+
+An optional packaging of the same web GUI as a Windows app (not a native GUI). Nothing in `src/desktop/` is used by Docker or source runs.
+
+- **Build:** `scripts/build_windows.ps1` runs PyInstaller with `packaging/windows/tdm.spec`; output is `dist/TwitchDropsMiner/TwitchDropsMiner.exe`. The `windows-build` workflow does the same on `v*` tags.
+- **Data:** a frozen build stores data, logs and cookies in `%APPDATA%\TwitchDropsMiner` (override with `TDM_DATA_DIR`); bundled `web/`, `lang/` and `scripts/` are read from `RESOURCE_DIR`.
+- **`src/desktop/`:** `autostart.py` (per-user `HKCU\...\Run` entry), `tray.py` (pystray menu), `instance.py` (named-mutex single instance), `login_gate.py` (opens the Twitch login window only while someone is at the PC), `runtime.py` (flags, app-style dashboard window, restart, quit).
+- **Login window:** when the tray build is not logged in at sign-in (`--minimized`), or a login window was closed without logging in, the next login window waits until the user opens the dashboard from the tray. There is no HTTP route for this on purpose.
+
 ### Key Design Decisions
 
 - **WebSocket for real-time** - Socket.IO chosen for reliability (fallback to polling)
@@ -432,4 +442,4 @@ The application uses a web-based interface accessible via browser:
 
 **NOT supported:**
 
-- Desktop GUI
+- A native desktop GUI (the Windows build wraps the web dashboard)

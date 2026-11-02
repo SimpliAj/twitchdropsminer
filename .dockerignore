@@ -52,6 +52,7 @@ logs/
 .claude/
 
 # Build artifacts
+packaging/
 *.exe
 *.AppImage
 *.deb

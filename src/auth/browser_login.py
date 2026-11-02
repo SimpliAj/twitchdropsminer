@@ -29,11 +29,20 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 
 import aiohttp
-from playwright.async_api import async_playwright
 from yarl import URL
 
 from src.auth.plain_chrome import PlainChrome
 from src.config.client_info import ClientType
+from src.config.paths import IS_FROZEN
+from src.exceptions import LoginException
+
+
+try:
+    from playwright.async_api import async_playwright
+except ImportError:
+    if not IS_FROZEN:  # only the Windows app ships without Playwright (Chrome/Edge is always there)
+        raise
+    async_playwright = None  # type: ignore[assignment]
 
 
 logger = logging.getLogger("TwitchDrops")
@@ -168,6 +177,11 @@ class BrowserLoginManager:
                 if found.get(COOKIE_NAME):
                     return {"auth-token": found[COOKIE_NAME], "unique_id": found.get(DEVICE_ID_COOKIE_NAME, "")}
                 if not session.chrome.alive:
+                    if IS_FROZEN:  # diagnostics for the Windows app
+                        logger.info(
+                            "The login browser window is gone "
+                            f"(exit code {session.chrome.exit_code}, open for {session.chrome.uptime:.1f}s)"
+                        )
                     raise BrowserLoginCancelled()
             remaining = deadline - time.monotonic()
             if remaining <= 0:
@@ -328,6 +342,11 @@ async def _plain_chrome_binary() -> str:
             path = shutil.which(name)
             if path:
                 return path
+    if async_playwright is None:
+        raise LoginException(
+            "No Chrome or Edge installation was found. Install Google Chrome or Microsoft Edge "
+            "to log in to Twitch."
+        )
     async with async_playwright() as playwright:
         return playwright.chromium.executable_path
 
@@ -367,7 +386,9 @@ async def _mint_integrity_token_plain(
     device id. The token is bound to the account and the device id, not to
     the IP, session id or user agent (confirmed live 2026-10-29).
     """
-    chrome = PlainChrome(binary, "about:blank", env, no_sandbox=_needs_no_sandbox(), quiet=True)
+    chrome = PlainChrome(
+        binary, "about:blank", env, no_sandbox=_needs_no_sandbox(), quiet=True, hidden=_IS_WINDOWS and IS_FROZEN
+    )
     await chrome.start()
     try:
         targets = (await chrome.call("Target.getTargets"))["result"]["targetInfos"]

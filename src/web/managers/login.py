@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 from typing import TYPE_CHECKING, Any
 
+from src.desktop.login_gate import login_gate
 from src.i18n import _
 
 
@@ -31,11 +32,10 @@ class LoginFormManager:
         self._user_id = user_id
         self._user_login = user_login
         self._login_helper = None
-        asyncio.create_task(
-            self._broadcaster.emit(
-                "login_status", {"status": status, "user_id": user_id, "user_login": user_login}
-            )
-        )
+        payload: dict[str, Any] = {"status": status, "user_id": user_id, "user_login": user_login}
+        if login_gate.pending:  # Windows tray build only
+            payload["login_pending"] = True
+        asyncio.create_task(self._broadcaster.emit("login_status", payload))
 
     async def start_browser_login_local(self) -> None:
         """TDM opened a browser window on this computer's own desktop."""
@@ -63,4 +63,6 @@ class LoginFormManager:
         result: dict[str, Any] = {"status": self._status, "user_id": self._user_id, "user_login": self._user_login}
         if self._login_helper:
             result["login_helper"] = self._login_helper
+        if login_gate.pending:  # Windows tray build only
+            result["login_pending"] = True
         return result

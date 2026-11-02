@@ -1,0 +1,68 @@
+name: windows-build
+
+on:
+  push:
+    tags:
+      - 'v*'
+  pull_request:
+    paths:
+      - 'packaging/windows/**'
+      - 'src/desktop/**'
+      - 'src/config/paths.py'
+      - '.github/workflows/windows-build.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Windows app
+    runs-on: windows-latest
+    permissions:
+      contents: write   # attach the zip to the GitHub release on tag builds
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: packaging/windows/requirements.txt
+
+      - name: Build
+        shell: pwsh
+        run: ./scripts/build_windows.ps1
+
+      - name: Smoke test the built executable
+        shell: pwsh
+        run: |
+          $env:TDM_DATA_DIR = Join-Path $env:RUNNER_TEMP "tdm-smoke"
+          $env:TDM_PORT = "18080"
+          $proc = Start-Process -FilePath "dist\TwitchDropsMiner\TwitchDropsMiner.exe" -ArgumentList "--no-tray","--no-browser" -PassThru
+          $ok = $false
+          foreach ($i in 1..30) {
+            Start-Sleep -Seconds 2
+            try {
+              $r = Invoke-WebRequest -Uri "http://127.0.0.1:18080/healthz" -UseBasicParsing -TimeoutSec 3
+              if ($r.StatusCode -eq 200) { $ok = $true; break }
+            } catch {}
+          }
+          Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+          if (-not $ok) { throw "The packaged app did not start serving /healthz" }
+
+      - name: Login window opens in Edge and Chrome
+        shell: pwsh
+        run: .build-venv\Scripts\python.exe packaging\windows\edge_probe.py
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TwitchDropsMiner-windows-x64
+          path: dist/TwitchDropsMiner-*-windows-x64.zip
+
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/TwitchDropsMiner-*-windows-x64.zip

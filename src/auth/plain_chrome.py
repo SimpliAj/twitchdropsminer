@@ -12,8 +12,10 @@ from __future__ import annotations
 
 import asyncio
 import os
+import sys
 import shutil
 import socket
+import subprocess
 import tempfile
 import time
 from pathlib import Path
@@ -66,6 +68,28 @@ def sweep_stale_chrome_tmp() -> int:
     return removed
 
 
+def clean_browser_env(env: dict[str, str] | None = None) -> dict[str, str]:
+    """The environment for a browser started by the packaged (PyInstaller) app.
+
+    A frozen app carries bootloader variables (``_PYI_*``, ``_MEIPASS2``) and has its own
+    ``_internal`` folder on PATH; none of that is meant for a browser, so it is removed. Outside
+    a frozen build the environment is returned unchanged."""
+    source = dict(os.environ if env is None else env)
+    if not getattr(sys, "frozen", False):
+        return source
+    bundle = os.path.normcase(os.path.abspath(getattr(sys, "_MEIPASS", "") or "\0"))
+    for key in list(source):
+        if key.startswith(("_PYI", "PYINSTALLER_")) or key == "_MEIPASS2":
+            del source[key]
+    parts = [
+        part
+        for part in source.get("PATH", "").split(os.pathsep)
+        if part and not os.path.normcase(os.path.abspath(part)).startswith(bundle)
+    ]
+    source["PATH"] = os.pathsep.join(parts)
+    return source
+
+
 def free_port() -> int:
     with socket.socket() as sock:
         sock.bind(("127.0.0.1", 0))
@@ -73,6 +97,18 @@ def free_port() -> int:
 
 
 class PlainChrome:
+    # A real (not headless -- Twitch flags those) window, parked off-screen and kept from being
+    # throttled while minimized/occluded, for background work such as minting integrity tokens.
+    _HIDDEN_ARGS = (
+        "--window-position=-32000,-32000",
+        "--window-size=800,600",
+        "--start-minimized",
+        "--disable-backgrounding-occluded-windows",
+        "--disable-renderer-backgrounding",
+        "--disable-background-timer-throttling",
+        "--disable-features=CalculateNativeWinOcclusion",
+    )
+
     def __init__(
         self,
         binary: str,
@@ -81,18 +117,31 @@ class PlainChrome:
         *,
         no_sandbox: bool = False,
         quiet: bool = False,
+        hidden: bool = False,
     ) -> None:
         self._binary = binary
         self._url = url
         self._env = env
         self._no_sandbox = no_sandbox
         self._quiet = quiet
+        self._hidden = hidden
         self._proc: asyncio.subprocess.Process | None = None
         self._http: aiohttp.ClientSession | None = None
         self._ws: aiohttp.ClientWebSocketResponse | None = None
         self._profile_dir: str | None = None
         self._next_id = 0
         self._events: list[dict] = []
+        self._started_at = 0.0
+
+    @property
+    def uptime(self) -> float:
+        """Seconds since the browser was started."""
+        return time.monotonic() - self._started_at if self._started_at else 0.0
+
+    @property
+    def exit_code(self) -> int | None:
+        """The browser process' exit code once it has exited, else None."""
+        return self._proc.returncode if self._proc is not None else None
 
     @property
     def alive(self) -> bool:
@@ -111,7 +160,7 @@ class PlainChrome:
         # up in a RAM-backed /tmp.
         chrome_tmp = os.path.join(self._profile_dir, "tmp")
         os.makedirs(chrome_tmp, exist_ok=True)
-        env = {**(self._env if self._env is not None else os.environ), "TMPDIR": chrome_tmp}
+        env = {**clean_browser_env(self._env), "TMPDIR": chrome_tmp}
         args = [
             self._binary,
             *(["--no-sandbox"] if self._no_sandbox else []),
@@ -125,12 +174,23 @@ class PlainChrome:
                 if self._quiet
                 else []
             ),
+            *(self._HIDDEN_ARGS if self._hidden else []),
             self._url,
         ]
+        spawn_kwargs: dict = {}
+        if self._hidden and os.name == "nt":
+            # Start minimized without taking focus (SW_SHOWMINNOACTIVE) so a background task
+            # never flashes a window over what the user is doing.
+            startup = subprocess.STARTUPINFO()
+            startup.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            startup.wShowWindow = 7
+            spawn_kwargs["startupinfo"] = startup
         try:
             self._proc = await asyncio.create_subprocess_exec(
-                *args, env=env, stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL
+                *args, env=env, stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL,
+                **spawn_kwargs,
             )
+            self._started_at = time.monotonic()
             self._http = aiohttp.ClientSession()
             loop = asyncio.get_running_loop()
             deadline = loop.time() + timeout

@@ -2070,7 +2070,34 @@ async function copyLoginHelperCommand() {
     setTimeout(() => { button.textContent = loginText('helper_copy', 'Copy'); }, 2500);
 }
 
+// Windows tray build: the login window is held back until someone is at the PC. These buttons
+// (login panel + System tab) let the user ask for it from the dashboard of THIS miner/account.
+function setLoginRequestVisible(visible) {
+    document.querySelectorAll('.desktop-login-btn').forEach((btn) => {
+        btn.style.display = visible ? '' : 'none';
+        btn.disabled = false;
+        if (!btn.dataset.bound) {
+            btn.dataset.bound = '1';
+            btn.addEventListener('click', requestBrowserLogin);
+        }
+    });
+}
+
+async function requestBrowserLogin() {
+    document.querySelectorAll('.desktop-login-btn').forEach((btn) => { btn.disabled = true; });
+    try {
+        const response = await fetch(API_BASE + '/api/login/browser/request', { method: 'POST' });
+        const info = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(info.detail || response.statusText);
+        setLoginRequestVisible(false);
+    } catch (e) {
+        setLoginRequestVisible(true);
+        console.error('Could not request the Twitch login window:', e);
+    }
+}
+
 function updateLoginStatus(data) {
+    setLoginRequestVisible(Boolean(data.login_pending) && !data.user_id);
     const statusEl = document.getElementById('login-status');
     const loginPanel = document.querySelector('.login-panel');
     const t = state.translations;
@@ -5249,6 +5276,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('dump-diagnostics-btn')?.addEventListener('click', dumpDiagnostics);
 
+    initAutostartCard();
+
     document.getElementById('qc-switch-btn')?.addEventListener('click', async () => {
         try {
             const r = await fetch(API_BASE + '/api/idle-watch/switch', { method: 'POST' });
@@ -6588,9 +6617,11 @@ function showUpdateModal(text, withInstallBtn, latestVersion) {
             try {
                 const res = await fetch(API_BASE + '/api/self-update', { method: 'POST' });
                 const json = await res.json();
-                if (json.docker) {
+                if (json.docker || json.frozen) {
                     pre.textContent = json.log;
-                    title.textContent = um.docker_detected || '🐳 Docker detected';
+                    title.textContent = json.frozen
+                        ? (um.frozen_detected || '🪟 Packaged Windows app')
+                        : (um.docker_detected || '🐳 Docker detected');
                     installBtn.style.display = 'none';
                     cancelBtn.textContent = um.close || 'Close';
                     cancelBtn.disabled = false;
@@ -6766,6 +6797,59 @@ function showRemoteTab(btn, targetId) {
     block.querySelectorAll('.help-tab-btn').forEach(b => b.classList.remove('active'));
     document.getElementById(targetId).style.display = '';
     btn.classList.add('active');
+}
+
+// "Start with Windows": only shown when the server runs on Windows (GET /api/autostart -> supported).
+async function initAutostartCard() {
+    const card = document.getElementById('autostart-card');
+    const toggle = document.getElementById('autostart-toggle');
+    const status = document.getElementById('autostart-status');
+    if (!card || !toggle || !status || toggle.dataset.bound === '1') return;
+    toggle.dataset.bound = '1';
+
+    const render = (info) => {
+        toggle.checked = Boolean(info.enabled);
+        status.style.color = '';
+        if (info.error) {
+            status.textContent = tr('gui.system.autostart_error', 'Could not change the startup setting: {error}', { error: info.error });
+            status.style.color = 'var(--error, #e55)';
+        } else if (info.disabled_in_task_manager) {
+            status.textContent = tr('gui.system.autostart_disabled_by_user', 'Windows has this switched off under Task Manager → Startup apps. Tick the box to turn it back on.');
+        } else {
+            status.textContent = info.enabled
+                ? tr('gui.system.autostart_on', 'Enabled — the miner starts when you sign in to Windows.')
+                : tr('gui.system.autostart_off', 'Disabled.');
+        }
+    };
+
+    try {
+        const response = await fetch(API_BASE + '/api/autostart');
+        const info = await response.json();
+        if (!response.ok || !info.supported) return;
+        card.style.display = '';
+        render(info);
+    } catch (_) {
+        return;
+    }
+
+    toggle.addEventListener('change', async () => {
+        const wanted = toggle.checked;
+        toggle.disabled = true;
+        try {
+            const response = await fetch(API_BASE + '/api/autostart', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enabled: wanted })
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data.detail || response.statusText);
+            render(data);
+        } catch (e) {
+            toggle.checked = !wanted;
+            render({ enabled: !wanted, error: e.message });
+        } finally {
+            toggle.disabled = false;
+        }
+    });
 }
 
 async function dumpDiagnostics() {
