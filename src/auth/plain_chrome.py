@@ -11,6 +11,7 @@ the Network/Page domains -- never Runtime / JS injection -- is not flagged
 from __future__ import annotations
 
 import asyncio
+import logging
 import os
 import sys
 import shutil
@@ -21,6 +22,9 @@ import time
 from pathlib import Path
 
 import aiohttp
+
+
+logger = logging.getLogger("TwitchDrops")
 
 
 STALE_TMP_AGE_SEC = 2 * 3600
@@ -186,10 +190,20 @@ class PlainChrome:
             startup.wShowWindow = 7
             spawn_kwargs["startupinfo"] = startup
         try:
-            self._proc = await asyncio.create_subprocess_exec(
-                *args, env=env, stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL,
-                **spawn_kwargs,
-            )
+            self._proc = None
+            if self._hidden and os.name == "nt":
+                # Own invisible desktop: Chromium pulls off-screen windows back into view.
+                try:
+                    from src.auth.win_hidden_desktop import spawn_on_hidden_desktop
+
+                    self._proc = spawn_on_hidden_desktop(args, env)
+                except OSError as exc:
+                    logger.warning(f"Hidden desktop unavailable ({exc}); the browser window may show briefly")
+            if self._proc is None:
+                self._proc = await asyncio.create_subprocess_exec(
+                    *args, env=env, stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL,
+                    **spawn_kwargs,
+                )
             self._started_at = time.monotonic()
             self._http = aiohttp.ClientSession()
             loop = asyncio.get_running_loop()

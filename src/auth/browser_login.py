@@ -387,7 +387,7 @@ async def _mint_integrity_token_plain(
     the IP, session id or user agent (confirmed live 2026-10-29).
     """
     chrome = PlainChrome(
-        binary, "about:blank", env, no_sandbox=_needs_no_sandbox(), quiet=True, hidden=_IS_WINDOWS and IS_FROZEN
+        binary, "about:blank", env, no_sandbox=_needs_no_sandbox(), quiet=True, hidden=_IS_WINDOWS
     )
     await chrome.start()
     try:

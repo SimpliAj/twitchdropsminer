@@ -55,6 +55,12 @@ jobs:
         shell: pwsh
         run: .build-venv\Scripts\python.exe packaging\windows\edge_probe.py
 
+      - name: Integrity browser stays invisible and passes Kasada
+        shell: pwsh
+        run: |
+          .build-venv\Scripts\python.exe -m pip install --quiet playwright
+          .build-venv\Scripts\python.exe packaging\windows\edge_probe.py --hidden
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
