@@ -144,13 +144,14 @@ class PlainChrome:
         doing so while it runs (it re-activates itself when it opens a window)."""
         from src.auth.mac_hide import hide_pid  # noqa: PLC0415
 
+        started = time.monotonic()
         while proc.returncode is None:
             try:
                 hide_pid(proc.pid)
             except Exception:
                 logger.debug("Could not hide the browser app", exc_info=True)
                 return
-            await asyncio.sleep(0.25)
+            await asyncio.sleep(0.02 if time.monotonic() - started < 10 else 0.25)
 
     @property
     def uptime(self) -> float:
