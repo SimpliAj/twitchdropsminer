@@ -18,6 +18,7 @@ from src.exceptions import GQLException, MinerException
 from src.i18n import _
 from src.utils import task_wrapper
 
+
 # How often (seconds) the real drop progress is re-read from Twitch while watching.
 RECONCILE_INTERVAL: float = 300.0
 # Twitch's stream-down websocket event can be missed (topic limit, reconnect gap);

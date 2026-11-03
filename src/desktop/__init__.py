@@ -24,6 +24,7 @@ __all__ = [
     "AutostartError",
     "AutostartManager",
     "DashboardWindow",
+    "DesktopLauncher",
     "DesktopOptions",
     "LoginGate",
     "SingleInstanceGuard",

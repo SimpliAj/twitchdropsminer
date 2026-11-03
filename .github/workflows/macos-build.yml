@@ -14,6 +14,11 @@ on:
       - 'src/auth/**'
       - '.github/workflows/macos-build.yml'
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Existing release tag to attach the zips to (e.g. v1.8.17); empty = build only'
+        required: false
+        type: string
 
 jobs:
   build:
@@ -77,7 +82,7 @@ jobs:
   release:
     name: Attach to release
     needs: build
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || inputs.release_tag != ''
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -91,7 +96,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
-          TAG: ${{ github.ref_name }}
+          TAG: ${{ inputs.release_tag || github.ref_name }}
         run: |
           # scripts/release.sh pushes the tag before it creates the release
           for i in $(seq 1 30); do gh release view "$TAG" -R "$REPO" >/dev/null 2>&1 && break; sleep 20; done

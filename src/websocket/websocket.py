@@ -12,7 +12,6 @@ import aiohttp
 from src.config import PING_INTERVAL, PING_TIMEOUT, WS_TOPICS_LIMIT
 from src.exceptions import WebsocketClosed
 from src.i18n import _
-from src.utils.string_utils import mask_proxy_url
 from src.utils import (
     CHARS_ASCII,
     AwaitableValue,
@@ -23,6 +22,7 @@ from src.utils import (
     json_minify,
     task_wrapper,
 )
+from src.utils.string_utils import mask_proxy_url
 
 
 if TYPE_CHECKING:

@@ -270,16 +270,15 @@ async def _mint_via_helper(helper_url: str, auth_token: str, device_id: str) -> 
     headers = {"Authorization": f"Bearer {os.environ.get(INTEGRITY_HELPER_KEY_ENV, '').strip()}"}
     timeout = aiohttp.ClientTimeout(total=INTEGRITY_MINT_TIMEOUT_SEC + 60)
     try:
-        async with aiohttp.ClientSession(timeout=timeout) as session:
-            async with session.post(
-                f"{helper_url.rstrip('/')}/mint",
-                json={"auth_token": auth_token, "device_id": device_id},
-                headers=headers,
-            ) as response:
-                if response.status != 200:
-                    logger.warning(f"Integrity helper answered HTTP {response.status}")
-                    return None
-                data = await response.json()
+        async with aiohttp.ClientSession(timeout=timeout) as session, session.post(
+            f"{helper_url.rstrip('/')}/mint",
+            json={"auth_token": auth_token, "device_id": device_id},
+            headers=headers,
+        ) as response:
+            if response.status != 200:
+                logger.warning(f"Integrity helper answered HTTP {response.status}")
+                return None
+            data = await response.json()
         logger.info("Client-Integrity token received from the integrity helper")
         return data["token"], datetime.fromtimestamp(data["expires_at"], timezone.utc)
     except Exception as exc:
@@ -372,7 +371,7 @@ async def _plain_chrome_binary() -> str:
 
 _SDK_MINT_JS = """async function(headers, sdk) {
   return await new Promise(resolve => {
-    const deadline = setTimeout(() => resolve({failure: 'sdk_timeout'}), %d);
+    const deadline = setTimeout(() => resolve({failure: 'sdk_timeout'}), __TIMEOUT_MS__);
     const finish = value => { clearTimeout(deadline); resolve(value); };
     document.addEventListener('kpsdk-load', () => window.KPSDK.configure([
       {protocol: 'https:', method: 'POST', domain: 'gql.twitch.tv', path: '/integrity'}
@@ -389,7 +388,7 @@ _SDK_MINT_JS = """async function(headers, sdk) {
     script.src = sdk;
     document.body.appendChild(script);
   });
-}""" % (INTEGRITY_MINT_TIMEOUT_SEC * 1000)
+}""".replace("__TIMEOUT_MS__", str(INTEGRITY_MINT_TIMEOUT_SEC * 1000))
 
 
 async def _mint_integrity_token_plain(

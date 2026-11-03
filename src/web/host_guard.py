@@ -7,6 +7,7 @@ import re
 from ipaddress import ip_address
 from urllib.parse import urlsplit
 
+
 _HOST_RE = re.compile(
     r"(?:\[(?P<ipv6>[0-9a-f:.]+)\]|(?P<name>[a-z0-9_-]+(?:\.[a-z0-9_-]+)*\.?))(?::[0-9]{1,5})?"
 )

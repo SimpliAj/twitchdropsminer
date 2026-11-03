@@ -25,12 +25,12 @@ from .runtime import (
     default_host,
     ensure_std_streams,
     note_startup,
-    port_in_use,
-    show_error,
     open_dashboard,
     open_dashboard_when_ready,
+    port_in_use,
     register_restart_hook,
     request_quit,
+    show_error,
     wait_for_parent_exit,
 )
 
