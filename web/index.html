@@ -413,6 +413,14 @@
                         <p id="diagnostics-help" style="font-size:.8rem;color:var(--text-secondary);margin:8px 0 0">Saves deidentified miner state and recent sanitized API responses to the diagnostics folder in this account's data directory.</p>
                         <p id="diagnostics-result" role="status" aria-live="polite" style="font-size:.82rem;margin:6px 0 0"></p>
                     </div>
+                    <div class="system-card" id="backup-card" style="margin-bottom:16px">
+                        <h3 data-i18n="gui.system.backup_header">Backup / Restore</h3>
+                        <p style="font-size:.82rem;color:var(--text-secondary);margin:4px 0 10px" data-i18n="gui.system.backup_desc">Move your accounts and settings to another install (source, Docker or Windows app). The export contains your login cookies and tokens - keep it private.</p>
+                        <button id="export-data-btn" class="btn-secondary" style="width:auto;padding:7px 14px;font-size:.85rem" data-i18n="gui.system.backup_export">Export data</button>
+                        <button id="import-data-btn" class="btn-secondary" style="width:auto;padding:7px 14px;font-size:.85rem" data-i18n="gui.system.backup_import">Import data</button>
+                        <input type="file" id="import-data-file" accept=".zip,application/zip" style="display:none">
+                        <p id="backup-result" role="status" aria-live="polite" style="font-size:.82rem;margin:6px 0 0"></p>
+                    </div>
                     <div class="system-card" id="autostart-card" style="margin-bottom:16px;display:none">
                         <h3 id="autostart-header" data-i18n="gui.system.autostart_header">Start with Windows</h3>
                         <p style="font-size:.82rem;color:var(--text-secondary);margin:4px 0 10px" data-i18n="gui.system.autostart_desc">Launch the miner automatically when you sign in to Windows. It starts in the system tray without opening a browser tab.</p>

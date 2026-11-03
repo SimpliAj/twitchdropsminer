@@ -1508,6 +1508,45 @@ async def trigger_restart():
     return {"success": True}
 
 
+@app.get("/api/data/export")
+async def export_data():
+    from src.services import data_backup
+    from src.version import __version__ as _tdm_version
+    try:
+        body = await asyncio.to_thread(data_backup.build_export, DATA_DIR, _PAIRINGS_FILE, _tdm_version)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Export failed: {e}") from e
+    filename = f"TDM-backup-v{_tdm_version}-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}.zip"
+    return Response(
+        content=body,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@app.post("/api/data/import")
+async def import_data(request: Request):
+    from src.services import data_backup
+    if int(request.headers.get("content-length") or 0) > data_backup.MAX_UPLOAD + 1024 * 1024:
+        raise HTTPException(status_code=413, detail="Backup file is too large")
+    form = await request.form(max_part_size=data_backup.MAX_UPLOAD + 1024)
+    upload = form.get("file")
+    if upload is None or not hasattr(upload, "read"):
+        raise HTTPException(status_code=400, detail="No file uploaded")
+    raw = await upload.read(data_backup.MAX_UPLOAD + 1)
+    try:
+        await asyncio.to_thread(data_backup.restore_import, raw, DATA_DIR, _PAIRINGS_FILE)
+    except data_backup.BackupError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+    async def _restart():
+        await asyncio.sleep(1)
+        _restart_self()
+
+    asyncio.create_task(_restart())
+    return {"ok": True, "restart": True}
+
+
 @app.post("/api/auth/logout-twitch")
 async def logout_twitch():
     """Forget the saved Twitch session and restart for a fresh login. Only

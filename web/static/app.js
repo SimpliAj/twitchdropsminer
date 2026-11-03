@@ -5274,6 +5274,31 @@ document.addEventListener('DOMContentLoaded', () => {
         window.open(API_BASE + '/api/logs/download', '_blank');
     });
 
+    document.getElementById('export-data-btn')?.addEventListener('click', () => {
+        window.open(API_BASE + '/api/data/export', '_blank');
+    });
+    const importFile = document.getElementById('import-data-file');
+    document.getElementById('import-data-btn')?.addEventListener('click', () => importFile?.click());
+    importFile?.addEventListener('change', async () => {
+        const file = importFile.files[0];
+        importFile.value = '';
+        if (!file) return;
+        const result = document.getElementById('backup-result');
+        const show = (text, cls) => { if (result) { result.textContent = text; result.className = 'system-status ' + cls; } };
+        if (!confirm(tr('gui.system.backup_confirm', 'Importing replaces your current accounts and settings with the backup and restarts the miner. Your current files are kept in an import-backup folder. Continue?'))) return;
+        const body = new FormData();
+        body.append('file', file);
+        try {
+            const r = await fetch(API_BASE + '/api/data/import', { method: 'POST', body });
+            const d = await r.json().catch(() => ({}));
+            if (!r.ok) { show(d.detail || ('HTTP ' + r.status), 'error'); return; }
+            show(tr('gui.system.backup_done', 'Imported, restarting...'), 'success');
+            setTimeout(() => location.reload(), 8000);
+        } catch (e) {
+            show(tr('gui.common.error', 'Error: {error}', { error: e.message }), 'error');
+        }
+    });
+
     document.getElementById('dump-diagnostics-btn')?.addEventListener('click', dumpDiagnostics);
 
     initAutostartCard();
