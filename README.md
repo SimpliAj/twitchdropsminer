@@ -65,7 +65,17 @@ Download `TwitchDropsMiner-<version>-windows-x64.zip` from the [latest release](
 
 ### 🍎 macOS app (no Docker)
 
-Download `TwitchDropsMiner-<version>-macos-arm64.zip` (Apple Silicon) or `-macos-x64.zip` (Intel) from the [latest release](https://github.com/SimpliAj/twitchdropsminer/releases/latest), unzip it and move `TwitchDropsMiner.app` to Applications. It runs in the background without a Dock icon and opens the dashboard in your default browser (use the dashboard's close button to quit). The app isn't notarized, so on the first start macOS blocks it: open **System Settings → Privacy & Security** and click **Open Anyway** (macOS 15 and newer), or run `xattr -dr com.apple.quarantine /Applications/TwitchDropsMiner.app` once. Settings and login live in `~/Library/Application Support/TwitchDropsMiner`; **Start at login** is in the dashboard's system settings. Needs Google Chrome, Microsoft Edge or Brave for the Twitch login.
+Download from the [latest release](https://github.com/SimpliAj/twitchdropsminer/releases/latest):
+- `TwitchDropsMiner-<version>-macos-apple-silicon.zip` for M1/M2/M3/M4… Macs (Apple menu → About This Mac shows "Apple M…")
+- `TwitchDropsMiner-<version>-macos-intel.zip` for older Intel Macs
+
+Unzip it and move `TwitchDropsMiner.app` to Applications. The app isn't notarized by Apple, so macOS says it **"is damaged and can't be opened"**. It is not damaged: click **Cancel**, open **Terminal** and run once:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/TwitchDropsMiner.app
+```
+
+Then open it normally. It runs in the background without a Dock icon and opens the dashboard in its own window (via Chrome, Edge or Brave; otherwise your default browser). Use the dashboard's close button to quit, open the app again to bring the window back. Settings and login live in `~/Library/Application Support/TwitchDropsMiner`; **Start at login** is in the dashboard's system settings. Needs Google Chrome, Microsoft Edge or Brave for the Twitch login.
 
 ### 🧑‍💻 From source
 

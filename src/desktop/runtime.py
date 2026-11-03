@@ -86,6 +86,13 @@ def dashboard_url(port: int) -> str:
 
 def find_app_browser() -> str | None:
     """Edge (on every Windows 10/11) or Chrome, for a standalone app-style window."""
+    if sys.platform == "darwin":
+        for name in ("Google Chrome", "Microsoft Edge", "Brave Browser", "Chromium"):
+            for root in ("/Applications", os.path.expanduser("~/Applications")):
+                path = os.path.join(root, f"{name}.app", "Contents", "MacOS", name)
+                if os.path.exists(path):
+                    return path
+        return None
     if sys.platform != "win32":
         return None
     for vendor, app, exe in (("Microsoft", "Edge", "msedge.exe"), ("Google", "Chrome", "chrome.exe")):

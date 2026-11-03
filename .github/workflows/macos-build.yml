@@ -31,8 +31,10 @@ jobs:
       matrix:
         include:
           - arch: arm64
+            zip: apple-silicon
             runner: macos-14
           - arch: x64
+            zip: intel
             runner: macos-15-intel
 
     steps:
@@ -76,8 +78,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: TwitchDropsMiner-macos-${{ matrix.arch }}
-          path: dist/TwitchDropsMiner-*-macos-${{ matrix.arch }}.zip
+          name: TwitchDropsMiner-macos-${{ matrix.zip }}
+          path: dist/TwitchDropsMiner-*-macos-${{ matrix.zip }}.zip
 
   release:
     name: Attach to release

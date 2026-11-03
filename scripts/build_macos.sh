@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Builds the macOS app: dist/TwitchDropsMiner.app (ad-hoc signed) and
-# dist/TwitchDropsMiner-<version>-macos-<arm64|x64>.zip. Run on a Mac, from anywhere.
+# dist/TwitchDropsMiner-<version>-macos-<apple-silicon|intel>.zip. Run on a Mac, from anywhere.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
@@ -25,7 +25,7 @@ codesign --force --deep --sign - dist/TwitchDropsMiner.app
 codesign --verify --deep --strict dist/TwitchDropsMiner.app
 
 version=$(sed -n 's/^__version__ = "\(.*\)"/\1/p' src/version.py)
-case "$(uname -m)" in arm64) arch=arm64 ;; *) arch=x64 ;; esac
+case "$(uname -m)" in arm64) arch=apple-silicon ;; *) arch=intel ;; esac
 zip="dist/TwitchDropsMiner-${version}-macos-${arch}.zip"
 rm -f "$zip"
 ditto -c -k --keepParent dist/TwitchDropsMiner.app "$zip"
