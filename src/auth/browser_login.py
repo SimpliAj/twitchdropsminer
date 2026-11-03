@@ -24,6 +24,7 @@ import os
 import re
 import shutil
 import signal
+import sys
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
@@ -40,7 +41,7 @@ from src.exceptions import LoginException
 try:
     from playwright.async_api import async_playwright
 except ImportError:
-    if not IS_FROZEN:  # only the Windows app ships without Playwright (Chrome/Edge is always there)
+    if not IS_FROZEN:  # only the desktop apps ship without Playwright (Chrome/Edge is always there)
         raise
     async_playwright = None  # type: ignore[assignment]
 
@@ -52,6 +53,8 @@ COOKIE_DOMAIN = "twitch.tv"
 COOKIE_NAME = "auth-token"
 DEVICE_ID_COOKIE_NAME = "unique_id"
 _IS_WINDOWS = os.name == "nt"
+_IS_MAC = sys.platform == "darwin"
+_MAC_BROWSERS = ("Google Chrome", "Microsoft Edge", "Brave Browser", "Chromium")
 DEFAULT_TIMEOUT_SEC = 600  # 10 minutes
 COOKIE_POLL_INTERVAL_SEC = 1.5
 CHROMIUM_LAUNCH_TIMEOUT_SEC = 30
@@ -142,7 +145,7 @@ class BrowserLoginManager:
             raise RuntimeError("A browser login session is already in progress")
         display = _detect_real_display()
         if display is not None:
-            env = None if _IS_WINDOWS else {**os.environ, "DISPLAY": f":{display}"}
+            env = None if _IS_WINDOWS or _IS_MAC else {**os.environ, "DISPLAY": f":{display}"}
             try:
                 chrome = PlainChrome(await _plain_chrome_binary(), LOGIN_URL, env, no_sandbox=_needs_no_sandbox())
                 await chrome.start()
@@ -325,6 +328,17 @@ def _needs_no_sandbox() -> bool:
     return not _IS_WINDOWS and os.geteuid() == 0
 
 
+def find_mac_browser(home: str | None = None) -> str | None:
+    """First installed Chrome, Edge, Brave or Chromium app bundle's executable (macOS)."""
+    roots = ("/Applications", os.path.join(home or os.path.expanduser("~"), "Applications"))
+    for name in _MAC_BROWSERS:
+        for root in roots:
+            path = os.path.join(root, f"{name}.app", "Contents", "MacOS", name)
+            if os.path.exists(path):
+                return path
+    return None
+
+
 async def _plain_chrome_binary() -> str:
     """The installed Google Chrome (or Edge, which every Windows has; or a
     system Chromium on Linux), else Playwright's own Chromium binary --
@@ -337,6 +351,10 @@ async def _plain_chrome_binary() -> str:
                 path = os.path.join(base or "", vendor, app, "Application", exe)
                 if base and os.path.exists(path):
                     return path
+    elif _IS_MAC:
+        path = find_mac_browser()
+        if path:
+            return path
     else:
         for name in ("google-chrome", "google-chrome-stable", "chromium", "chromium-browser"):
             path = shutil.which(name)
@@ -344,8 +362,8 @@ async def _plain_chrome_binary() -> str:
                 return path
     if async_playwright is None:
         raise LoginException(
-            "No Chrome or Edge installation was found. Install Google Chrome or Microsoft Edge "
-            "to log in to Twitch."
+            "No Chrome, Edge or Brave installation was found. Install Google Chrome, Microsoft Edge "
+            "or Brave to log in to Twitch."
         )
     async with async_playwright() as playwright:
         return playwright.chromium.executable_path
@@ -387,7 +405,7 @@ async def _mint_integrity_token_plain(
     the IP, session id or user agent (confirmed live 2026-10-29).
     """
     chrome = PlainChrome(
-        binary, "about:blank", env, no_sandbox=_needs_no_sandbox(), quiet=True, hidden=_IS_WINDOWS
+        binary, "about:blank", env, no_sandbox=_needs_no_sandbox(), quiet=True, hidden=_IS_WINDOWS or _IS_MAC
     )
     await chrome.start()
     try:
@@ -442,8 +460,8 @@ def _detect_real_display() -> int | None:
     to download or run -- it's already the same machine). None if nothing
     usable is found, which is the common case on a VPS.
     """
-    if _IS_WINDOWS:
-        # Windows always has a real desktop and no X11 (no DISPLAY, no Xvfb).
+    if _IS_WINDOWS or _IS_MAC:
+        # Windows and macOS always have a real desktop and no X11 (no DISPLAY, no Xvfb).
         return 0
     display_env = os.environ.get("DISPLAY", "").strip()
     if not display_env.startswith(":"):

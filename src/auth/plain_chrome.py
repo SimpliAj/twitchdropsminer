@@ -136,6 +136,21 @@ class PlainChrome:
         self._next_id = 0
         self._events: list[dict] = []
         self._started_at = 0.0
+        self._hider: asyncio.Future | None = None
+
+    @staticmethod
+    async def _keep_hidden_mac(proc: asyncio.subprocess.Process) -> None:
+        """Chrome's windows cannot be parked off-screen on macOS: hide the whole app, and keep
+        doing so while it runs (it re-activates itself when it opens a window)."""
+        from src.auth.mac_hide import hide_pid  # noqa: PLC0415
+
+        while proc.returncode is None:
+            try:
+                hide_pid(proc.pid)
+            except Exception:
+                logger.debug("Could not hide the browser app", exc_info=True)
+                return
+            await asyncio.sleep(0.25)
 
     @property
     def uptime(self) -> float:
@@ -205,6 +220,8 @@ class PlainChrome:
                     **spawn_kwargs,
                 )
             self._started_at = time.monotonic()
+            if self._hidden and sys.platform == "darwin" and self._proc.pid:
+                self._hider = asyncio.ensure_future(self._keep_hidden_mac(self._proc))
             self._http = aiohttp.ClientSession()
             loop = asyncio.get_running_loop()
             deadline = loop.time() + timeout
@@ -256,6 +273,9 @@ class PlainChrome:
     async def close(self) -> None:
         ws, http, proc, profile_dir = self._ws, self._http, self._proc, self._profile_dir
         self._ws = self._http = self._profile_dir = None
+        if self._hider is not None:
+            self._hider.cancel()
+            self._hider = None
         try:
             if ws is not None and not ws.closed:
                 try:

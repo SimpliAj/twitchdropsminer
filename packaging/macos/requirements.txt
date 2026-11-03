@@ -1,0 +1,13 @@
+# Dependencies of the macOS app build: the Windows set minus the tray (pystray/pillow), since the
+# macOS app runs without a menu-bar icon.
+aiohttp>=3.9
+truststore
+python-dateutil
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+python-socketio>=5.10.0
+yarl>=1.9.2
+pydantic>=2.7.0
+python-multipart>=0.0.9
+tzdata
+pyinstaller>=6.10

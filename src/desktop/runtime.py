@@ -1,4 +1,4 @@
-"""Process-level helpers for the desktop (Windows) build."""
+"""Process-level helpers for the desktop (Windows and macOS) builds."""
 
 from __future__ import annotations
 
@@ -262,6 +262,13 @@ def restart_process() -> None:
     both may still hold the port), so there the replacement is spawned detached and told to wait
     for this PID to disappear before it starts. Elsewhere the in-place re-exec is unchanged.
     """
+    if IS_FROZEN and sys.platform == "darwin":
+        # The bundle's executable replaces this process in place (same PID, so the port and the
+        # instance lock are released by the exec itself); the bootloader must start from scratch.
+        env = {**os.environ, RESTARTED_ENV: "1", "PYINSTALLER_RESET_ENVIRONMENT": "1"}
+        logger.info(f"Restarting: re-executing {sys.executable}")
+        os.execve(sys.executable, [sys.executable, *sys.argv[1:]], env)  # noqa: S606
+        return
     if not IS_FROZEN or sys.platform != "win32":
         os.execv(sys.executable, [sys.executable] + sys.argv)  # noqa: S606
         return

@@ -40,7 +40,7 @@ def _merge_vars(base_vars: dict[str, Any], vars: dict[str, Any]) -> None:
 # Base Paths - environment-specific resolution
 
 
-# True when running from a PyInstaller bundle (the Windows desktop build).
+# True when running from a PyInstaller bundle (the Windows / macOS desktop builds).
 IS_FROZEN = bool(getattr(_sys, "frozen", False))
 
 # Read-only bundled resources (web/, lang/, scripts/). In a PyInstaller bundle this is the
@@ -58,6 +58,8 @@ def _default_data_dir() -> Path:
     """
     if not IS_FROZEN:
         return PROJECT_ROOT / "data"
+    if _sys.platform == "darwin":
+        return Path.home() / "Library" / "Application Support" / "TwitchDropsMiner"
     base = _os.environ.get("APPDATA") or _os.environ.get("XDG_DATA_HOME")
     if base:
         return Path(base) / "TwitchDropsMiner"

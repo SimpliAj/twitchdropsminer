@@ -1,4 +1,6 @@
-"""Start the miner automatically when the current Windows user logs in.
+"""Start the miner automatically when the current user logs in (Windows registry, macOS LaunchAgent).
+
+Windows:
 
 Uses the per-user ``Run`` registry key (HKCU), which needs no administrator rights and applies
 only to the user who enabled it -- exactly "runs when the user that runs the program logs in".
@@ -11,6 +13,7 @@ clears it again when the user re-enables the option from the dashboard.
 from __future__ import annotations
 
 import logging
+import plistlib
 import subprocess
 import sys
 from pathlib import Path
@@ -45,6 +48,11 @@ class AutostartManager:
         self._command = command
         self._registry = registry
 
+    def __new__(cls, *args: Any, **kwargs: Any) -> AutostartManager:
+        if cls is AutostartManager and sys.platform == "darwin":
+            cls = MacAutostartManager  # noqa: PLW0642
+        return super().__new__(cls)
+
     # -- environment -----------------------------------------------------------------------
 
     @property
@@ -55,7 +63,7 @@ class AutostartManager:
         if self._registry is not None:
             return self._registry
         if sys.platform != "win32":
-            raise AutostartError("Run at startup is only available on Windows")
+            raise AutostartError("Run at startup is not available on this system")
         import winreg  # noqa: PLC0415  (Windows-only module)
 
         return winreg
@@ -144,7 +152,7 @@ class AutostartManager:
 
     def set_enabled(self, enabled: bool) -> None:
         if not self.supported:
-            raise AutostartError("Run at startup is only available on Windows")
+            raise AutostartError("Run at startup is not available on this system")
         self.enable() if enabled else self.disable()
 
     def repair_if_stale(self) -> bool:
@@ -172,5 +180,89 @@ class AutostartManager:
                 ),
                 "command": self.registered_command(),
             }
+        except AutostartError as exc:
+            return {"supported": True, "enabled": False, "error": str(exc)}
+
+
+MAC_LABEL = "io.github.simpliaj.twitchdropsminer"
+
+
+class MacAutostartManager(AutostartManager):
+    """macOS run-at-login: a LaunchAgent plist in ~/Library/LaunchAgents (loaded at the next login;
+    nothing is started now, so enabling it never launches a second copy)."""
+
+    def __init__(
+        self,
+        app_name: str = APP_NAME,
+        command: list[str] | None = None,
+        registry: Any | None = None,
+        agents_dir: Path | None = None,
+    ) -> None:
+        super().__init__(app_name, None, registry)
+        self._argv = command
+        self._agents_dir = agents_dir
+
+    @property
+    def supported(self) -> bool:
+        return True
+
+    @property
+    def plist_path(self) -> Path:
+        agents = self._agents_dir or Path.home() / "Library" / "LaunchAgents"
+        return agents / f"{MAC_LABEL}.plist"
+
+    def build_argv(self) -> list[str]:
+        if self._argv is not None:
+            return self._argv
+        if IS_FROZEN:
+            return [sys.executable, MINIMIZED_FLAG]
+        return [sys.executable, str(PROJECT_ROOT / "main.py"), MINIMIZED_FLAG]
+
+    def build_command(self) -> str:
+        return " ".join(self._quote(part) for part in self.build_argv())
+
+    def _read(self) -> dict[str, Any] | None:
+        try:
+            with open(self.plist_path, "rb") as handle:
+                return plistlib.load(handle)
+        except FileNotFoundError:
+            return None
+        except (OSError, plistlib.InvalidFileException, ValueError) as exc:
+            raise AutostartError(f"Could not read the startup entry: {exc}") from exc
+
+    def registered_command(self) -> str | None:
+        data = self._read()
+        if data is None:
+            return None
+        return " ".join(self._quote(part) for part in data.get("ProgramArguments", []))
+
+    def is_enabled(self) -> bool:
+        return self._read() is not None
+
+    def enable(self) -> None:
+        try:
+            self.plist_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(self.plist_path, "wb") as handle:
+                plistlib.dump(
+                    {"Label": MAC_LABEL, "ProgramArguments": self.build_argv(), "RunAtLoad": True},
+                    handle,
+                )
+        except OSError as exc:
+            raise AutostartError(f"Could not create the startup entry: {exc}") from exc
+        logger.info("Run at login: enabled")
+
+    def disable(self) -> None:
+        try:
+            self.plist_path.unlink(missing_ok=True)
+        except OSError as exc:
+            raise AutostartError(f"Could not remove the startup entry: {exc}") from exc
+        logger.info("Run at login: disabled")
+
+    def set_enabled(self, enabled: bool) -> None:
+        self.enable() if enabled else self.disable()
+
+    def status(self) -> dict[str, Any]:
+        try:
+            return {"supported": True, "enabled": self.is_enabled(), "command": self.registered_command()}
         except AutostartError as exc:
             return {"supported": True, "enabled": False, "error": str(exc)}

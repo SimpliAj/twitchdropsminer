@@ -1397,7 +1397,7 @@ async def get_wanted_items_http():
 async def request_browser_login():
     """Let a held-back Twitch login window open now (tray build only)."""
     if not login_gate.enabled:
-        raise HTTPException(status_code=400, detail="Only available in the Windows tray app")
+        raise HTTPException(status_code=400, detail="Only available in the tray app")
     if not login_gate.pending:
         return {"success": False, "pending": False}
     login_gate.release()
@@ -1588,7 +1588,7 @@ async def set_autostart(req: AutostartRequest):
     """Enable/disable run-at-login for the current Windows user (HKCU, no admin needed)."""
     manager = AutostartManager()
     if not manager.supported:
-        raise HTTPException(status_code=400, detail="Run at startup is only available on Windows")
+        raise HTTPException(status_code=400, detail="Run at startup is not available on this system")
     try:
         manager.set_enabled(req.enabled)
     except AutostartError as exc:

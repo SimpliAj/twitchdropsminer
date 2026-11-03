@@ -63,6 +63,10 @@ Open **<http://localhost:8080>**. Also on GHCR: `ghcr.io/simpliaj/twitchdropsmin
 
 Download `TwitchDropsMiner-<version>-windows-x64.zip` from the [latest release](https://github.com/SimpliAj/twitchdropsminer/releases/latest), unzip it anywhere and run `TwitchDropsMiner.exe`. The dashboard opens in its own window; the miner keeps running in the tray (right-click the icon for **Start with Windows** and **Quit**). Settings and login live in `%APPDATA%\TwitchDropsMiner`. Needs Chrome or Edge for the Twitch login. The app isn't code-signed, so Windows SmartScreen may ask once — **More info → Run anyway**. Windows app contributed by Trep.
 
+### 🍎 macOS app (no Docker)
+
+Download `TwitchDropsMiner-<version>-macos-arm64.zip` (Apple Silicon) or `-macos-x64.zip` (Intel) from the [latest release](https://github.com/SimpliAj/twitchdropsminer/releases/latest), unzip it and move `TwitchDropsMiner.app` to Applications. It runs in the background without a Dock icon and opens the dashboard in your default browser (use the dashboard's close button to quit). The app isn't notarized, so on the first start macOS blocks it: open **System Settings → Privacy & Security** and click **Open Anyway** (macOS 15 and newer), or run `xattr -dr com.apple.quarantine /Applications/TwitchDropsMiner.app` once. Settings and login live in `~/Library/Application Support/TwitchDropsMiner`; **Start at login** is in the dashboard's system settings. Needs Google Chrome, Microsoft Edge or Brave for the Twitch login.
+
 ### 🧑‍💻 From source
 
 Python 3.12+:

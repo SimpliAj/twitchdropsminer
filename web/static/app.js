@@ -6824,7 +6824,7 @@ function showRemoteTab(btn, targetId) {
     btn.classList.add('active');
 }
 
-// "Start with Windows": only shown when the server runs on Windows (GET /api/autostart -> supported).
+// "Start at login": only shown when the server runs on Windows or macOS (GET /api/autostart -> supported).
 async function initAutostartCard() {
     const card = document.getElementById('autostart-card');
     const toggle = document.getElementById('autostart-toggle');
@@ -6842,7 +6842,7 @@ async function initAutostartCard() {
             status.textContent = tr('gui.system.autostart_disabled_by_user', 'Windows has this switched off under Task Manager → Startup apps. Tick the box to turn it back on.');
         } else {
             status.textContent = info.enabled
-                ? tr('gui.system.autostart_on', 'Enabled — the miner starts when you sign in to Windows.')
+                ? tr('gui.system.autostart_on', 'Enabled — the miner starts when you sign in.')
                 : tr('gui.system.autostart_off', 'Disabled.');
         }
     };

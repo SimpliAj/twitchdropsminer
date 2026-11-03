@@ -1,4 +1,4 @@
-"""PyInstaller entry point: the repository's main.py launcher, plus a safety net.
+"""PyInstaller entry point (Windows and macOS builds): the repository's main.py launcher, plus a safety net.
 
 The packaged app has no console, so an error during start-up would otherwise just make the
 process vanish. Here (before any miner code runs, using only the standard library) the start is
@@ -17,7 +17,12 @@ from pathlib import Path
 
 def _logs_dir() -> Path:
     base = os.environ.get("TDM_DATA_DIR")
-    root = Path(base) if base else Path(os.environ.get("APPDATA") or Path.home()) / "TwitchDropsMiner"
+    if base:
+        root = Path(base)
+    elif sys.platform == "darwin":
+        root = Path.home() / "Library" / "Application Support" / "TwitchDropsMiner"
+    else:
+        root = Path(os.environ.get("APPDATA") or Path.home()) / "TwitchDropsMiner"
     return root / "logs"
 
 

@@ -1,0 +1,98 @@
+name: macos-build
+
+on:
+  push:
+    tags:
+      - 'v*'
+  pull_request:
+    paths:
+      - 'packaging/macos/**'
+      - 'packaging/windows/entry.py'
+      - 'scripts/build_macos.sh'
+      - 'src/desktop/**'
+      - 'src/config/paths.py'
+      - 'src/auth/**'
+      - '.github/workflows/macos-build.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build macOS app (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            runner: macos-14
+          - arch: x64
+            runner: macos-15-intel
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: packaging/macos/requirements.txt
+
+      - name: Build
+        run: ./scripts/build_macos.sh
+
+      - name: Smoke test the built app
+        run: |
+          export TDM_DATA_DIR="$RUNNER_TEMP/tdm-smoke" TDM_PORT=18080
+          dist/TwitchDropsMiner.app/Contents/MacOS/TwitchDropsMiner --no-tray --no-browser &
+          pid=$!
+          ok=0
+          for i in $(seq 1 30); do
+            sleep 2
+            if curl -fsS http://127.0.0.1:18080/healthz >/dev/null 2>&1; then ok=1; break; fi
+          done
+          kill "$pid" 2>/dev/null || true
+          if [ "$ok" != 1 ]; then
+            cat "$TDM_DATA_DIR"/logs/*.log 2>/dev/null || true
+            echo "The packaged app did not start serving /healthz"; exit 1
+          fi
+
+      - name: Login window opens in the installed browsers
+        run: |
+          .build-venv/bin/python -m pip install --quiet pyobjc-framework-Quartz playwright
+          .build-venv/bin/python packaging/macos/mac_probe.py --login
+
+      - name: Integrity browser stays hidden and passes Kasada
+        run: .build-venv/bin/python packaging/macos/mac_probe.py --hidden
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TwitchDropsMiner-macos-${{ matrix.arch }}
+          path: dist/TwitchDropsMiner-*-macos-${{ matrix.arch }}.zip
+
+  release:
+    name: Attach to release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: TwitchDropsMiner-macos-*
+          merge-multiple: true
+          path: dist
+      - name: Upload zips to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          # scripts/release.sh pushes the tag before it creates the release
+          for i in $(seq 1 30); do gh release view "$TAG" -R "$REPO" >/dev/null 2>&1 && break; sleep 20; done
+          gh release upload "$TAG" dist/TwitchDropsMiner-*-macos-*.zip -R "$REPO" --clobber
