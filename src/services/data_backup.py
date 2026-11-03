@@ -8,6 +8,7 @@ import zipfile
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 
+
 MANIFEST = "tdm-backup.json"
 PAIRINGS = "discord_bot/pairings.json"
 EXCLUDED_DIRS = {"logs", "dashboard-window"}
@@ -89,15 +90,37 @@ def restore_import(raw: bytes, data_dir: Path, pairings_file: Path) -> Path | No
         if not entries:
             raise BackupError("Backup contains no data")
 
-        backup_dir = data_dir / f"import-backup-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
-        for _, target in entries:
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        staging = data_dir / f"import-backup-{stamp}.staging"
+        backup_dir = data_dir / f"import-backup-{stamp}"
+        try:
+            staged = []
+            for i, (info, target) in enumerate(entries):
+                tmp = staging / str(i)
+                tmp.parent.mkdir(parents=True, exist_ok=True)
+                with zf.open(info) as src, open(tmp, "wb") as out:
+                    shutil.copyfileobj(src, out)
+                staged.append((tmp, target))
+        except (zipfile.BadZipFile, OSError) as e:
+            shutil.rmtree(staging, ignore_errors=True)
+            raise BackupError(f"Backup is damaged: {e}") from e
+
+    moved: list[tuple[Path, Path]] = []
+    try:
+        for _, target in staged:
             if target.is_file():
                 rel = target.relative_to(data_dir) if target.is_relative_to(data_dir) else Path(PAIRINGS)
                 dest = backup_dir / rel
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 shutil.move(str(target), dest)
-        for info, target in entries:
+                moved.append((dest, target))
+        for tmp, target in staged:
             target.parent.mkdir(parents=True, exist_ok=True)
-            with zf.open(info) as src, open(target, "wb") as out:
-                shutil.copyfileobj(src, out)
+            shutil.move(str(tmp), target)
+    except OSError as e:
+        for dest, target in moved:
+            shutil.move(str(dest), target)
+        raise BackupError(f"Import failed, previous data restored: {e}") from e
+    finally:
+        shutil.rmtree(staging, ignore_errors=True)
     return backup_dir if backup_dir.exists() else None

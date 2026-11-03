@@ -820,7 +820,7 @@ async def pause_miner(req: PauseRequest | None = None):
     try:
         until = pause_deadline(req.duration if req else "indefinite")
     except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid pause duration")
+        raise HTTPException(status_code=400, detail="Invalid pause duration") from None
     twitch_client.pause(source="user", until=until)
     return {"success": True, "paused": True, "paused_until": until.timestamp() if until else None}
 
@@ -1508,8 +1508,14 @@ async def trigger_restart():
     return {"success": True}
 
 
+def _browser_session_only(request: Request) -> None:
+    if request.headers.get("X-Bot-Token") or request.headers.get("X-Fleet-Password"):
+        raise HTTPException(status_code=403, detail="Backups are only available from the dashboard")
+
+
 @app.get("/api/data/export")
-async def export_data():
+async def export_data(request: Request):
+    _browser_session_only(request)
     from src.services import data_backup
     from src.version import __version__ as _tdm_version
     try:
@@ -1526,6 +1532,7 @@ async def export_data():
 
 @app.post("/api/data/import")
 async def import_data(request: Request):
+    _browser_session_only(request)
     from src.services import data_backup
     if int(request.headers.get("content-length") or 0) > data_backup.MAX_UPLOAD + 1024 * 1024:
         raise HTTPException(status_code=413, detail="Backup file is too large")
