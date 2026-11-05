@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("TwitchDrops")
 
-CATALOG_URL = "https://twitch-drops-api.sunkwi.com/v2/drops"
+CATALOG_URL = "https://drops.sunkwi.com/api/twitch/drops"
 MAX_CAMPAIGNS = 2000
 MAX_AGE = timedelta(minutes=30)
 MAX_BODY_BYTES = 8 * 1024 * 1024
@@ -204,14 +204,14 @@ def parse_catalog(payload: Any, now: datetime | None = None) -> list[JsonType]:
     """Return the usable active/upcoming campaign records, [] if the payload is unusable."""
     now = now or datetime.now(timezone.utc)
     try:
-        updated = isoparse(payload["lastUpdatedAt"])
+        updated = isoparse(payload["refreshedAt"])
         if updated.tzinfo is None:
             updated = updated.replace(tzinfo=timezone.utc)
         if now - updated > MAX_AGE:
             logger.warning(f"Public drops feed is stale (last update {updated.isoformat()})")
             return []
         found: dict[str, JsonType] = {}
-        groups = payload["data"]
+        groups = payload["games"]
         if not isinstance(groups, list) or len(groups) > _MAX_GROUPS:
             raise ValueError("unexpected number of groups")
         for group in groups:
