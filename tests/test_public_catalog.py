@@ -45,8 +45,8 @@ def _rec(cid, status="ACTIVE"):
 
 def _payload(updated="2026-10-05T11:59:00Z"):
     return {
-        "lastUpdatedAt": updated,
-        "data": [
+        "refreshedAt": updated,
+        "games": [
             {"rewards": [_rec("a"), _rec("b", "EXPIRED")]},
             {"rewards": [_rec("c", "UPCOMING"), _rec("a")]},
             {},
@@ -66,14 +66,14 @@ class TestParseCatalog(unittest.TestCase):
         # The live feed carries box art only per game group (gameBoxArtURL),
         # never on a reward's own game object.
         art = "https://static-cdn.jtvnw.net/ttv-boxart/66170_IGDB-120x160.jpg"
-        payload = {"lastUpdatedAt": "2026-10-05T11:59:00Z",
-                   "data": [{"gameBoxArtURL": art, "rewards": [_rec("a")]}]}
+        payload = {"refreshedAt": "2026-10-05T11:59:00Z",
+                   "games": [{"gameBoxArtURL": art, "rewards": [_rec("a")]}]}
         (camp,) = parse_catalog(payload, NOW)
         self.assertEqual(camp["game"]["boxArtURL"], art)
 
     def test_group_box_art_still_https_only(self):
-        payload = {"lastUpdatedAt": "2026-10-05T11:59:00Z",
-                   "data": [{"gameBoxArtURL": "javascript:alert(1)", "rewards": [_rec("a")]}]}
+        payload = {"refreshedAt": "2026-10-05T11:59:00Z",
+                   "games": [{"gameBoxArtURL": "javascript:alert(1)", "rewards": [_rec("a")]}]}
         (camp,) = parse_catalog(payload, NOW)
         self.assertEqual(camp["game"]["boxArtURL"], "")
 
@@ -125,8 +125,8 @@ class TestInventoryFallback(unittest.IsolatedAsyncioTestCase):
 
 class TestHardening(unittest.TestCase):
     def test_bad_ids_dropped(self):
-        p = {"lastUpdatedAt": "2026-10-05T11:59:00Z",
-             "data": [{"rewards": [{**_rec("z"), "id": 5}, _rec("x" * 500),
+        p = {"refreshedAt": "2026-10-05T11:59:00Z",
+             "games": [{"rewards": [{**_rec("z"), "id": 5}, _rec("x" * 500),
                                    _rec("ok"), {"id": "bad", "status": "ACTIVE"}]}]}
         self.assertEqual([c["id"] for c in parse_catalog(p, NOW)], ["ok"])
 
@@ -239,7 +239,7 @@ class TestLinkStates(unittest.TestCase):
 
 class TestFeedIsUntrusted(unittest.TestCase):
     def _parse(self, rec):
-        p = {"lastUpdatedAt": "2026-10-05T11:59:00Z", "data": [{"rewards": [rec]}]}
+        p = {"refreshedAt": "2026-10-05T11:59:00Z", "games": [{"rewards": [rec]}]}
         return parse_catalog(p, NOW)
 
     def test_script_urls_are_dropped_not_passed_to_the_dashboard(self):
