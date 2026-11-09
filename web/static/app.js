@@ -4598,7 +4598,7 @@ async function loadInstances() {
             namePart.textContent = inst.label;
             const portBadge = document.createElement('span');
             portBadge.style.cssText = 'font-size:.75rem;color:var(--text-secondary);background:var(--bg-secondary);padding:2px 7px;border-radius:4px;';
-            portBadge.textContent = inst.base_url ? new URL(inst.base_url).host : `:${inst.port}`;
+            portBadge.textContent = inst.base_url ? new URL(instBase(inst)).host : `:${inst.port}`;
             const switchBtn = document.createElement('button');
             switchBtn.className = isActive ? 'btn-secondary' : 'btn-primary';
             switchBtn.style.cssText = 'padding:4px 10px;font-size:.8rem;width:auto;';
@@ -4633,6 +4633,7 @@ async function loadInstances() {
             listEl.appendChild(row);
         });
     } catch(e) {
+        console.error('loadInstances failed:', e);
         if (listEl) listEl.textContent = tr('gui.system.instances_load_failed', 'Failed to load instances.');
     }
 }
