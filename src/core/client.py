@@ -598,9 +598,21 @@ class Twitch:
                 self.change_state(State.CHANNELS_CLEANUP)
             elif self._state is State.CHANNELS_CLEANUP:
                 self.gui.status.update(_.t["gui"]["status"]["cleanup"])
+                # A reload drops every channel, and discovery only returns each game's top
+                # channels: a watched channel outside those would lose its stream topics and
+                # never get a stream-down event. Re-check it and keep it tracked while live.
+                keep_channel: Channel | None = None
+                if self.wanted_games:
+                    keep_channel = self.watching_channel.get_with_default(None)
+                    if keep_channel is not None:
+                        await self._watch_service.recheck_failing_channel(keep_channel)
+                        if keep_channel.offline:  # the normal offline path switches away
+                            keep_channel = None
                 if not self.wanted_games or full_cleanup:
                     # no games selected or we're doing full cleanup: remove everything
-                    to_remove_channels: list[Channel] = list(channels.values())
+                    to_remove_channels: list[Channel] = [
+                        ch for ch in channels.values() if ch is not keep_channel
+                    ]
                 else:
                     # remove all channels that:
                     to_remove_channels = [
@@ -616,6 +628,8 @@ class Twitch:
                         )
                     ]
                 full_cleanup = False
+                if keep_channel is not None:
+                    channels[keep_channel.id] = keep_channel
                 if to_remove_channels:
                     self._remove_channel_topics(to_remove_channels)
                     for channel in to_remove_channels:

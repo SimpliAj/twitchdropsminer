@@ -266,16 +266,12 @@ class WatchService:
         self._twitch._watching_restart.clear()
 
     async def recheck_failing_channel(self, channel: Channel) -> None:
-        """Re-check a channel whose watches keep failing; a missed stream-down event
+        """Re-check a watched channel; a missed stream-down event
         otherwise leaves the miner watching a stream that already ended."""
-        logger.warning(
-            f"Watches to {channel.name} keep failing for {int(STALE_RECHECK_AFTER)}s+, "
-            "re-checking whether the stream is still live"
-        )
         try:
             # update_stream() reports OFFLINE through on_channel_update -> channel switch
             online = await asyncio.wait_for(channel.update_stream(), timeout=15)
-        except (MinerException, TimeoutError) as exc:
+        except Exception as exc:  # a failed lookup keeps the known state
             logger.warning(f"Live re-check for {channel.name} failed: {exc!r}")
             return
         if online:
@@ -384,6 +380,10 @@ class WatchService:
                     fail_since, fail_channel = monotonic(), channel
                 elif monotonic() - fail_since >= STALE_RECHECK_AFTER:
                     fail_since = monotonic()
+                    logger.warning(
+                        f"Watches to {channel.name} keep failing for {int(STALE_RECHECK_AFTER)}s+, "
+                        "re-checking whether the stream is still live"
+                    )
                     await self.recheck_failing_channel(channel)
                     continue
 

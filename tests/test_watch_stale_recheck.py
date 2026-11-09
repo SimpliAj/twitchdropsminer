@@ -33,6 +33,12 @@ class TestRecheck(unittest.IsolatedAsyncioTestCase):
         ch.update_stream = AsyncMock(side_effect=MinerException("boom"))
         await WatchService(MagicMock()).recheck_failing_channel(ch)
 
+    async def test_unexpected_lookup_error_is_swallowed(self):
+        ch = _channel(True)
+        ch.update_stream = AsyncMock(side_effect=RuntimeError("network"))
+        await WatchService(MagicMock()).recheck_failing_channel(ch)
+        self.assertEqual(ch._stream._stream_url, "old")
+
 
 class TestWatchLoopRecheck(unittest.IsolatedAsyncioTestCase):
     async def test_failing_watches_trigger_recheck_after_threshold(self):
