@@ -183,6 +183,7 @@ class InventoryService:
                 raise GQLException(
                     "Campaigns query returned currentUser=None (transient Twitch-side error)"
                 )
+            self._twitch._auth_state.mark_integrity_accepted()
             available_list: list[JsonType] = current_user["dropCampaigns"] or []
             available_campaigns = {
                 c["id"]: c

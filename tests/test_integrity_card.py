@@ -211,6 +211,8 @@ class TestIntegrityStatus(IntegrityCardCase):
         self.assertEqual(self.status()["state"], "none")
         self.auth._integrity_token = "t"
         self.auth._integrity_minted_at = datetime.now(timezone.utc)
+        self.assertEqual(self.status()["state"], "pending")  # exists, but Twitch hasn't confirmed it
+        self.auth.mark_integrity_accepted()
         self.assertEqual(self.status()["state"], "ok")
         self.auth.reject_integrity_token()
         rejected = self.status()
@@ -218,7 +220,11 @@ class TestIntegrityStatus(IntegrityCardCase):
         self.assertTrue(rejected["rejected_at"])
         self.assertTrue(rejected["next_attempt_at"])  # quickly rejected -> cooldown
         self.auth._adopt_integrity_token(("fresh", datetime(2030, 1, 1, tzinfo=timezone.utc)))
-        self.assertEqual(self.status()["state"], "ok")
+        self.assertEqual(self.status()["state"], "rejected")  # a new token isn't proof yet
+        self.auth.mark_integrity_accepted()
+        status = self.status()
+        self.assertEqual(status["state"], "ok")
+        self.assertIsNone(status["rejected_at"])
 
     def test_arm_hint_logic(self):
         self.assertFalse(self.status("x86_64")["arm_hint"])

@@ -82,6 +82,7 @@ class InventoryManager:
             "ends_at": campaign.ends_at.isoformat(),
             "linked": campaign.linked or campaign.link_assumed,
             "link_assumed": campaign.link_assumed,
+            "link_unknown": campaign.link_unknown,
             "eligible": campaign.eligible,
             "has_badge_or_emote": campaign.has_badge_or_emote,
             "subscription_required": campaign.subscription_required,

@@ -2664,6 +2664,13 @@ function renderSelectedGames(games) {
 
     const t = state.translations;
     container.innerHTML = '';
+    const linkedGames = new Set();
+    const unverifiedGames = new Set();
+    Object.values(state.campaigns).forEach(c => {
+        const name = c.game_name?.toLowerCase();
+        if (c.linked && !c.link_assumed) linkedGames.add(name);
+        else if (c.link_unknown) unverifiedGames.add(name);
+    });
 
     if (games.length === 0) {
         const emptyMsg = t.gui?.settings?.no_games_selected || 'No games selected. Check games below to add them.';
@@ -2687,6 +2694,12 @@ function renderSelectedGames(games) {
             makeElement('span', { class: 'drag-handle' }, '☰'),
             priorityInput,
             makeElement('span', { class: 'game-name' }, game),
+            ...(state.settings.allow_unknown_link && unverifiedGames.has(game.toLowerCase()) && !linkedGames.has(game.toLowerCase())
+                ? [makeElement('span', {
+                    class: 'campaign-badge unverified',
+                    title: tr('gui.inventory.link_unverified_badge_title', 'Link state unknown - mining because "Mine unverified links" is on'),
+                }, tr('gui.inventory.link_unverified_badge', 'LINK UNVERIFIED'))]
+                : []),
             makeElement('button', { class: 'remove-btn' }, '✕'),
         );
 
@@ -5066,6 +5079,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.getElementById('allow-unknown-link')?.addEventListener('change', (e) => {
         state.settings.allow_unknown_link = e.target.checked;
+        renderGamesToWatch();
         saveSettings();
     });
     document.getElementById('inventory-list-view')?.addEventListener('change', (e) => {
@@ -7020,7 +7034,8 @@ function renderIntegrity() {
     const card = document.getElementById('integrity-card');
     if (!info || !card) return;
     const text = {
-        ok: ['Working', 'A Twitch integrity token is cached, so inventory and automatic claims work.'],
+        ok: ['Working', 'Twitch accepted the token, so inventory and automatic claims work.'],
+        pending: ['Waiting for Twitch', "A token exists, but Twitch hasn't confirmed it yet. This updates after the next campaign reload."],
         rejected: ['Twitch rejected the token', "Drops can't be claimed automatically until this is fixed; claim them by hand under Claim manually. On a Raspberry Pi or other ARM device, an integrity helper on a normal PC fixes it."],
         none: ['No token yet', 'TDM requests one after you log in to Twitch and again when the old one expires.'],
     };
