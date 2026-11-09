@@ -163,7 +163,17 @@ class StreamSelector:
             if reward_priority.enabled
             else _BENEFIT_CATEGORY_ORDER
         )
-        wanted_games.sort(key=lambda g: _game_group_category_rank(g["campaigns"], category_order))
+        if getattr(settings, "auto_prioritize", False) is True and not reward_priority.enabled:
+            # Auto-prioritize promises the soonest deadline first, whatever the reward type.
+            wanted_games.sort(
+                key=lambda g: min(
+                    c.ends_at
+                    for c in campaigns
+                    if c.game.name.lower() == g["game_name"].lower() and c.can_earn_within(next_hour)
+                )
+            )
+        else:
+            wanted_games.sort(key=lambda g: _game_group_category_rank(g["campaigns"], category_order))
 
         # Fallback: with priority_list_only off, every other game with an earnable
         # campaign is appended after the (already sorted) list, soonest campaign

@@ -2882,6 +2882,7 @@ function sortGamesByEndDate() {
     const getEarliestEnd = (gameName) => {
         const active = campaigns.filter(c =>
             c.game_name?.toLowerCase() === gameName.toLowerCase() && c.ends_at
+            && c.eligible !== false && c.claimed_drops < c.total_drops && new Date(c.ends_at) > Date.now()
         );
         if (!active.length) return Infinity;
         return Math.min(...active.map(c => new Date(c.ends_at).getTime()));

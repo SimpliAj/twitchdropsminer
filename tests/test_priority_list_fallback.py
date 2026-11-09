@@ -138,3 +138,18 @@ class TestPriorityListOnlyUi(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+    def _deadline_case(self, auto):
+        self.settings.games_to_watch = ["BadgeLate", "ItemSoon"]
+        self.settings.preferred_games = []
+        self.settings.priority_list_only = True
+        self.settings.reward_priority_enabled = False
+        self.settings.auto_prioritize = auto
+        self.campaigns = [_campaign(1, "BadgeLate", 200), _campaign(2, "ItemSoon", 5, "DIRECT_ENTITLEMENT")]
+        return self._names()
+
+    def test_auto_prioritize_orders_by_deadline_not_reward_type(self):
+        self.assertEqual(self._deadline_case(True), ["ItemSoon", "BadgeLate"])
+
+    def test_without_auto_prioritize_reward_type_still_sorts_first(self):
+        self.assertEqual(self._deadline_case(False), ["BadgeLate", "ItemSoon"])

@@ -294,10 +294,6 @@
                         <div class="filter-separator"
                             style="width: 1px; height: 24px; background: var(--border-color); margin: 0 10px;">
                         </div>
-                        <label class="filter-checkbox" title="Also mine campaigns whose account-link state Twitch no longer reports. Only enable this for games you have actually linked." data-i18n-title="gui.inventory.filters.unverified_links_title">
-                            <input type="checkbox" id="allow-unknown-link" />
-                            <span data-i18n="gui.inventory.filters.unverified_links">Mine unverified links</span>
-                        </label>
                         <label class="filter-checkbox" title="Show campaigns as compact horizontal rows instead of cards" data-i18n-title="gui.inventory.filters.list_view_title">
                             <input type="checkbox" id="inventory-list-view" />
                             <span data-i18n="gui.inventory.filters.list_view">List View</span>
@@ -413,6 +409,11 @@
                                                 <span>Other</span>
                                             </label>
                                         </div>
+                                    <label class="toggle-label" style="margin-top:14px;">
+                                            <input type="checkbox" id="allow-unknown-link">
+                                            <span data-i18n="gui.inventory.filters.unverified_links">Mine unverified links</span>
+                                            <span class="help-text" style="display:block;margin-top:2px;font-size:0.8em;" data-i18n="gui.inventory.filters.unverified_links_title">Also mine campaigns whose account-link state Twitch no longer reports. Only enable this for games you have actually linked.</span>
+                                        </label>
                                     </section>
 
                                     <section class="settings-section">
