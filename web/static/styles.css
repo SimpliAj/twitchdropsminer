@@ -2899,3 +2899,4 @@ body.dark-mode .tab-button.active { color: var(--glitch-glow); }
 .settings-panel .settings-grid { display: block; columns: 420px 3; column-gap: 16px; margin-bottom: 0; }
 .settings-panel .settings-grid > * { break-inside: avoid; margin: 0 0 16px; }
 .settings-panel .sortable-list:empty { min-height: 0; }
+#preferred-games-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; }
