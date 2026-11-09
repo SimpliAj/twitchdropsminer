@@ -4785,6 +4785,56 @@ function switchTab(tabName) {
     }
 }
 
+// Settings sub-navigation: one panel at a time, last one remembered per viewer.
+const SETTINGS_PANEL_KEY = 'tdm_settings_panel';
+function showSettingsPanel(name, { focus = false, scroll = true } = {}) {
+    const buttons = [...document.querySelectorAll('.settings-nav-btn')];
+    if (!buttons.some(b => b.dataset.panel === name)) name = 'games';
+    buttons.forEach(b => {
+        const on = b.dataset.panel === name;
+        b.setAttribute('aria-selected', on ? 'true' : 'false');
+        b.tabIndex = on ? 0 : -1;
+        document.getElementById(b.getAttribute('aria-controls')).hidden = !on;
+        if (on) {
+            if (focus) b.focus();
+            b.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        }
+    });
+    try { localStorage.setItem(SETTINGS_PANEL_KEY, name); } catch (e) { /* storage unavailable */ }
+    if (scroll) window.scrollTo(0, 0);
+}
+
+function initSettingsNav() {
+    const nav = document.getElementById('settings-nav');
+    if (!nav) return;
+    nav.addEventListener('click', e => {
+        const b = e.target.closest('.settings-nav-btn');
+        if (b) showSettingsPanel(b.dataset.panel);
+    });
+    nav.addEventListener('keydown', e => {
+        const buttons = [...nav.querySelectorAll('.settings-nav-btn')];
+        const i = buttons.findIndex(b => b.dataset.panel === document.querySelector('.settings-nav-btn[aria-selected="true"]')?.dataset.panel);
+        let j = null;
+        if (e.key === 'ArrowRight') j = (i + 1) % buttons.length;
+        else if (e.key === 'ArrowLeft') j = (i - 1 + buttons.length) % buttons.length;
+        else if (e.key === 'Home') j = 0;
+        else if (e.key === 'End') j = buttons.length - 1;
+        if (j === null) return;
+        e.preventDefault();
+        showSettingsPanel(buttons[j].dataset.panel, { focus: true });
+    });
+    let saved = null;
+    try { saved = localStorage.getItem(SETTINGS_PANEL_KEY); } catch (e) { /* storage unavailable */ }
+    showSettingsPanel(saved || 'games', { scroll: false });
+    // The sticky sub-nav sits below the top bar, whose height changes when it wraps on phones.
+    const topbar = document.querySelector('.topbar');
+    if (topbar) {
+        const sync = () => document.documentElement.style.setProperty('--topbar-h', topbar.offsetHeight + 'px');
+        new ResizeObserver(sync).observe(topbar);
+        sync();
+    }
+}
+
 // ==================== Event Listeners ====================
 
 function instBase(inst) {
@@ -4915,6 +4965,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') closeSidebar();
     });
+
+    initSettingsNav();
 
     // Tab switching
     document.querySelectorAll('.tab-button').forEach(button => {
@@ -5240,7 +5292,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // System tab buttons
     document.getElementById('system-reload-btn')?.addEventListener('click', async () => {
-        const status = document.getElementById('system-status');
+        const status = document.getElementById('system-twitch-status');
         try {
             await fetch(API_BASE + '/api/reload', { method: 'POST' });
             if (status) { status.textContent = tr('gui.system.reload_ok', 'Campaigns reload triggered.'); status.className = 'system-status success'; }

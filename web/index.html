@@ -325,471 +325,473 @@
 
         <!-- Settings Tab -->
         <div id="settings-tab" class="tab-content">
+            <div class="settings-nav" id="settings-nav" role="tablist" aria-label="Settings sections">
+                <button type="button" role="tab" class="settings-nav-btn" id="settings-tab-games" aria-controls="settings-panel-games" aria-selected="false" tabindex="-1" data-panel="games" data-i18n="gui.settings.tabs.games">Games</button>
+                <button type="button" role="tab" class="settings-nav-btn" id="settings-tab-mining" aria-controls="settings-panel-mining" aria-selected="false" tabindex="-1" data-panel="mining" data-i18n="gui.settings.tabs.mining">Mining</button>
+                <button type="button" role="tab" class="settings-nav-btn" id="settings-tab-points" aria-controls="settings-panel-points" aria-selected="false" tabindex="-1" data-panel="points" data-i18n="gui.settings.tabs.points">Points &amp; Bets</button>
+                <button type="button" role="tab" class="settings-nav-btn" id="settings-tab-notifications" aria-controls="settings-panel-notifications" aria-selected="false" tabindex="-1" data-panel="notifications" data-i18n="gui.settings.tabs.notifications">Notifications</button>
+                <button type="button" role="tab" class="settings-nav-btn" id="settings-tab-accounts" aria-controls="settings-panel-accounts" aria-selected="false" tabindex="-1" data-panel="accounts" data-i18n="gui.settings.tabs.accounts">Accounts</button>
+                <button type="button" role="tab" class="settings-nav-btn" id="settings-tab-system" aria-controls="settings-panel-system" aria-selected="false" tabindex="-1" data-panel="system" data-i18n="gui.settings.tabs.system">System</button>
+            </div>
             <div class="settings-container">
-
-                <!-- ─── ⚙️ System ─── -->
-                <div class="settings-category-label" data-i18n="gui.settings.categories.system">System</div>
-                <div class="settings-grid">
-                    <section class="settings-section">
-                        <h2 id="settings-general-header">General</h2>
-                        <label>
-                            <input type="checkbox" id="dark-mode"> Dark Mode
-                        </label>
-                        <label>
-                            <input type="checkbox" id="show-twitch-usernames" checked> <span data-i18n="gui.settings.general.show_usernames">Show Twitch Usernames in Header</span>
-                        </label>
-                        <label>
-                            <input type="checkbox" id="tab-counter-toggle" checked> <span data-i18n="gui.settings.general.tab_counter">Show Remaining Drops (linked) in Tab Title</span>
-                        </label>
-                        <label>
-                            Connection Quality:
-                            <input type="number" id="connection-quality" min="1" max="6" value="1">
-                        </label>
-                        <label>
-                            Minimum Refresh Interval (minutes):
-                            <input type="number" id="minimum-refresh-interval" min="1" max="1440" value="30">
-                        </label>
-                        <label>
-                            <span id="settings-proxy-label">Proxy URL:</span>
-                            <input type="text" id="proxy-url" placeholder="http://user:pass@host:port">
-                            <button id="set-proxy-btn" class="secondary-btn" title="Set and verify proxy" data-i18n-title="gui.settings.set_proxy_title">Set Proxy</button>
-                            <button id="verify-proxy-btn" class="secondary-btn" title="Test proxy connection" data-i18n-title="gui.settings.verify_proxy_title">Verify</button>
-                        </label>
-                        <small class="help-text-inline" id="settings-proxy-help" style="margin-top: 5px;">Leave empty to disable. Supports HTTP/HTTPS/SOCKS.</small>
-                        <div id="proxy-verify-result" class="verify-result" style="display: none;"></div>
-                    </section>
-
-                    <section class="settings-section">
-                        <h2 id="settings-password-header" data-i18n="gui.settings.password_header">Login & Password</h2>
-                        <div id="pw-status-badge" style="margin-bottom:10px;font-size:.82rem;color:#adadb8"></div>
-                        <form onsubmit="return false;" autocomplete="off">
-                        <input type="text" name="username" autocomplete="username" style="display:none" aria-hidden="true">
-                        <div class="form-row">
-                            <label id="pw-current-label" class="form-label" data-i18n="gui.settings.password_current_label">Current</label>
-                            <input type="password" id="pw-current" class="form-input" placeholder="Leave empty if none" data-i18n-placeholder="gui.settings.password_current_placeholder" autocomplete="current-password">
-                        </div>
-                        <div class="form-row">
-                            <label id="pw-new-label" class="form-label" data-i18n="gui.settings.password_new_label">New</label>
-                            <input type="password" id="pw-new" class="form-input" placeholder="New password (empty = disable)" data-i18n-placeholder="gui.settings.password_new_placeholder" autocomplete="new-password">
-                        </div>
-                        <div class="form-row">
-                            <label id="pw-confirm-label" class="form-label" data-i18n="gui.settings.password_confirm_label">Confirm</label>
-                            <input type="password" id="pw-new2" class="form-input" placeholder="Repeat new password" data-i18n-placeholder="gui.settings.password_repeat_placeholder" autocomplete="new-password">
-                        </div>
-                        </form>
-                        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-                            <button id="pw-save-btn" class="action-button" style="flex:1" data-i18n="gui.settings.password_save">Save</button>
-                            <button id="pw-disable-btn" class="action-button" style="flex:1;background:transparent;border:1px solid #3d3d4a;color:#adadb8" data-i18n="gui.settings.password_disable">Disable Login</button>
-                        </div>
-                        <div id="pw-result" style="margin-top:8px;font-size:.82rem;display:none"></div>
-                    </section>
-                </div>
-
-                <section class="settings-section" id="system-section">
-                    <h2 id="system-header">System</h2>
-                    <div class="system-card" id="instances-card" style="margin-bottom:16px">
-                        <h3 data-i18n="gui.system.instances_header">Instances</h3>
-                        <p style="font-size:.82rem;color:var(--text-secondary);margin:4px 0 10px" data-i18n="gui.system.instances_desc">Each instance runs a separate TDM process with its own Twitch session.</p>
-                        <div id="instances-list" style="margin-bottom:10px"></div>
-                        <div id="instances-proxy-warning" style="display:none;background:rgba(255,165,0,0.12);border:1px solid rgba(255,165,0,0.4);border-radius:6px;padding:8px 12px;margin-bottom:10px;font-size:.82rem;color:#ffa500">
-                            ⚠️ <strong data-i18n="gui.system.proxy_recommended">Proxy recommended:</strong> <span data-i18n="gui.system.proxy_recommended_text">Running 3+ accounts from one IP increases Twitch ban risk. Add one proxy per account in Settings → Proxy.</span>
-                        </div>
-                        <button id="add-instance-btn" class="btn-primary" style="width:auto;padding:7px 14px;font-size:.85rem" data-i18n="gui.system.add_instance">+ Add Instance</button>
-                        <div id="instances-status" style="margin-top:8px;font-size:.82rem;display:none"></div>
-                        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border-color);">
-                            <p style="font-size:.8rem;color:var(--text-secondary);margin:0 0 8px" data-i18n="gui.system.register_desc">Already running an instance yourself (custom port, another host/container)? Register it here — nothing is started, stopped, or reconfigured.</p>
-                            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-                                <input type="text" id="reg-instance-host" placeholder="host" value="localhost" style="width:120px;padding:5px 8px;font-size:.82rem;">
-                                <input type="number" id="reg-instance-port" placeholder="port" min="1" max="65535" style="width:80px;padding:5px 8px;font-size:.82rem;">
-                                <input type="text" id="reg-instance-label" placeholder="label (optional)" data-i18n-placeholder="gui.system.register_label_placeholder" style="width:120px;padding:5px 8px;font-size:.82rem;">
-                                <button id="register-instance-btn" class="btn-secondary" style="width:auto;padding:6px 12px;font-size:.82rem;" data-i18n="gui.system.register_btn">Register</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="system-card" id="diagnostics-card" style="margin-bottom:16px">
-                        <h3 id="system-diagnostics-header" data-i18n="gui.system.diagnostics_header">Diagnostics</h3>
-                        <p style="font-size:.82rem;color:var(--text-secondary);margin:4px 0 10px" data-i18n="gui.system.diagnostics_desc">Reporting a bug? Download the log file and attach it — makes it far easier to pin down what happened.</p>
-                        <button id="download-logs-btn" class="btn-secondary" style="width:auto;padding:7px 14px;font-size:.85rem" data-i18n="gui.system.download_logs">⬇ Download Logs</button>
-                        <button id="dump-diagnostics-btn" class="btn-secondary" type="button" aria-describedby="diagnostics-help" style="width:auto;padding:7px 14px;font-size:.85rem">Dump diagnosis data</button>
-                        <p id="diagnostics-help" style="font-size:.8rem;color:var(--text-secondary);margin:8px 0 0">Saves deidentified miner state and recent sanitized API responses to the diagnostics folder in this account's data directory.</p>
-                        <p id="diagnostics-result" role="status" aria-live="polite" style="font-size:.82rem;margin:6px 0 0"></p>
-                    </div>
-                    <div class="system-card" id="backup-card" style="margin-bottom:16px">
-                        <h3 data-i18n="gui.system.backup_header">Backup / Restore</h3>
-                        <p style="font-size:.82rem;color:var(--text-secondary);margin:4px 0 10px" data-i18n="gui.system.backup_desc">Move your accounts and settings to another install (source, Docker or Windows app). The export contains your login cookies and tokens - keep it private.</p>
-                        <button id="export-data-btn" class="btn-secondary" style="width:auto;padding:7px 14px;font-size:.85rem" data-i18n="gui.system.backup_export">Export data</button>
-                        <button id="import-data-btn" class="btn-secondary" style="width:auto;padding:7px 14px;font-size:.85rem" data-i18n="gui.system.backup_import">Import data</button>
-                        <input type="file" id="import-data-file" accept=".zip,application/zip" style="display:none">
-                        <p id="backup-result" role="status" aria-live="polite" style="font-size:.82rem;margin:6px 0 0"></p>
-                    </div>
-                    <div class="system-card" id="autostart-card" style="margin-bottom:16px;display:none">
-                        <h3 id="autostart-header" data-i18n="gui.system.autostart_header">Start at login</h3>
-                        <p style="font-size:.82rem;color:var(--text-secondary);margin:4px 0 10px" data-i18n="gui.system.autostart_desc">Launch the miner automatically when you sign in. It starts in the background without opening a browser tab.</p>
-                        <label style="display:flex;gap:8px;align-items:center;font-size:.9rem;cursor:pointer">
-                            <input type="checkbox" id="autostart-toggle" aria-describedby="autostart-status">
-                            <span data-i18n="gui.system.autostart_label">Start at login</span>
-                        </label>
-                        <p id="autostart-status" role="status" aria-live="polite" style="font-size:.82rem;margin:8px 0 0"></p>
-                    </div>
-                    <div class="system-card" id="accounts-card" style="margin-bottom:16px">
-                        <h3 id="system-accounts-header">Twitch Accounts</h3>
-                        <p style="font-size:.82rem;color:var(--text-secondary);margin:4px 0 10px" data-i18n="gui.system.accounts_desc">Switch between saved Twitch logins within this instance.</p>
-                        <div id="accounts-list" class="accounts-list" style="margin-top:10px"></div>
-                        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-                            <input type="text" id="new-account-label" placeholder="Label (e.g. Main, Alt)" style="flex:1;min-width:120px;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:6px;padding:7px 10px;color:var(--text-primary);font-size:.85rem;outline:none">
-                            <button id="add-account-btn" class="btn-primary" style="width:auto;padding:7px 14px;font-size:.85rem">+ Add Account</button>
-                        </div>
-                        <div id="accounts-status" style="margin-top:8px;font-size:.82rem;display:none"></div>
-                    </div>
-                    <div class="system-controls">
-                        <div class="system-card">
-                            <h3 id="system-miner-header">Miner</h3>
-                            <p id="system-miner-desc">Reload campaigns and restart the mining loop.</p>
-                            <button id="system-reload-btn" class="btn-primary">Reload Campaigns</button>
-                        </div>
-                        <div class="system-card danger">
-                            <h3 id="system-restart-header">Restart</h3>
-                            <p id="system-restart-desc">Stop the miner process. PM2 will restart it automatically.</p>
-                            <button id="system-restart-btn" class="btn-danger">Restart Miner</button>
-                        </div>
-                        <div class="system-card">
-                            <h3 id="system-session-header">Session</h3>
-                            <p id="system-session-desc">Log out of the web interface.</p>
-                            <button id="system-logout-btn" class="btn-secondary">Logout</button>
-                        </div>
-                        <div class="system-card danger">
-                            <h3 id="system-twitch-logout-header">Twitch Account</h3>
-                            <p id="system-twitch-logout-desc">Forget the saved Twitch session and log in again. Your dashboard password and other settings are kept.</p>
-                            <button id="system-twitch-logout-btn" class="btn-danger">Log out of Twitch</button>
-                            <button id="system-twitch-login-btn" class="btn-secondary desktop-login-btn" style="display:none" data-i18n="gui.system.twitch_login_btn">Log in to Twitch</button>
-                        </div>
-                    </div>
-                    <div id="system-status" class="system-status"></div>
-                </section>
-
-                <!-- ─── 🔔 Notifications ─── -->
-                <div class="settings-category-label" data-i18n="gui.settings.categories.notifications">Notifications</div>
-                <div class="settings-grid">
-                    <section class="settings-section" id="settings-notifications">
-                        <h2 id="settings-notifications-header">Browser</h2>
-                        <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                            <input type="checkbox" id="push-sound-toggle">
-                            <span id="settings-push-sound-label">Notification Sound</span>
-                        </label>
-                        <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                            <input type="checkbox" id="campaign-alerts-toggle">
-                            <span id="settings-campaign-alerts-label">Campaign End Alerts (24h warning)</span>
-                        </label>
-                    </section>
-
-                    <section class="settings-section">
-                        <h2 id="settings-discord-notif-header">Discord Webhooks</h2>
-                        <label>
-                            <span id="settings-drops-webhook-label">Drop Claimed Webhook:</span>
-                            <div style="display:flex;gap:8px;">
-                                <input type="text" id="discord-webhook-drops" placeholder="https://discord.com/api/webhooks/..." style="flex:1;">
-                                <button id="test-drops-webhook-btn" class="secondary-btn" onclick="testWebhook('drops')" style="white-space:nowrap;">Test</button>
-                            </div>
-                        </label>
-                        <small class="help-text-inline" id="settings-drops-webhook-help" style="margin-bottom:10px;display:block;">Fires when a Twitch drop is successfully claimed.</small>
-                        <label>
-                            <span id="settings-points-webhook-label">Channel Points Webhook:</span>
-                            <div style="display:flex;gap:8px;">
-                                <input type="text" id="discord-webhook-points" placeholder="https://discord.com/api/webhooks/..." style="flex:1;">
-                                <button id="test-points-webhook-btn" class="secondary-btn" onclick="testWebhook('points')" style="white-space:nowrap;">Test</button>
-                            </div>
-                        </label>
-                        <small class="help-text-inline" id="settings-points-webhook-help" style="margin-bottom:10px;display:block;">Fires when a bonus channel point chest is claimed.</small>
-                        <label>
-                            <span id="settings-health-webhook-label" data-i18n="gui.settings.discord_health_webhook_label">Health Alert Webhook:</span>
-                            <div style="display:flex;gap:8px;">
-                                <input type="text" id="discord-webhook-health" placeholder="https://discord.com/api/webhooks/..." style="flex:1;">
-                                <button id="test-health-webhook-btn" class="secondary-btn" onclick="testWebhook('health')" style="white-space:nowrap;">Test</button>
-                            </div>
-                        </label>
-                        <small class="help-text-inline" id="settings-health-webhook-help" data-i18n="gui.settings.discord_health_webhook_help">Fires when the Twitch login has been waiting for 30+ minutes or mining stalls, and again when it recovers. Empty: uses the drop webhook.</small>
-                    </section>
-
-                    <section class="settings-section">
-                        <h2 id="settings-discord-bot-header">Discord Bot</h2>
-                        <p id="settings-discord-bot-desc" class="help-text">Pair a Discord bot to control TwitchDropsMiner via chat commands.</p>
-                        <div id="bot-status-badge" style="margin-bottom:12px;font-size:.85rem;"></div>
-                        <div id="bot-pair-code-box" style="display:none;background:#0e0e10;border:1px solid #3d3d4a;border-radius:8px;padding:12px;margin-bottom:12px;font-family:monospace;font-size:.85rem;line-height:1.8;">
-                            <div id="bot-pair-code-text"></div>
-                            <small id="settings-discord-bot-expires" style="color:#adadb8;font-size:.78rem;">(Expires in 10 min)</small>
-                        </div>
-                        <div id="bot-channel-config" style="display:none;background:#0e0e10;border:1px solid #3d3d4a;border-radius:8px;padding:12px;margin-bottom:12px;">
-                            <div id="settings-bot-notif-channels-label" style="font-size:.8rem;font-weight:600;color:#adadb8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Notification Channels</div>
-                            <div style="display:flex;flex-direction:column;gap:6px;">
-                                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                                    <div>
-                                        <span style="font-size:.82rem;color:#adadb8;" data-i18n="gui.settings.discord_bot.drops_label">🎁 Drops: </span>
-                                        <span id="bot-drops-channel" style="font-family:monospace;font-size:.82rem;">—</span>
+                <div class="settings-panel" role="tabpanel" id="settings-panel-games" aria-labelledby="settings-tab-games" tabindex="0" hidden>
+                                <section class="settings-section">
+                                    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px;">
+                                        <h2 id="settings-games-header" style="margin:0;border:none;padding:0;">Games to Watch</h2>
+                                        <button id="reload-btn" class="secondary-btn" style="display:flex;align-items:center;gap:6px;">↻ Reload Campaigns</button>
                                     </div>
-                                    <button id="bot-drops-clear-btn" class="secondary-btn" style="display:none;font-size:.75rem;padding:2px 8px;color:#eb4a4a;border-color:#eb4a4a;" onclick="botClearChannel('drops')" data-i18n="gui.common.clear">Clear</button>
-                                </div>
-                                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                                    <div>
-                                        <span style="font-size:.82rem;color:#adadb8;" data-i18n="gui.settings.discord_bot.points_label">💰 Points: </span>
-                                        <span id="bot-points-channel" style="font-family:monospace;font-size:.82rem;">—</span>
+                                    <p id="settings-games-help" class="help-text">Select games to watch. Order matters - drag to reorder priority (top = highest priority). Games are auto-removed once every drop is claimed or unearnable (e.g. sub-only tiers) — for games you always want tracked, use ⭐ Preferred Games below instead.</p>
+
+                                    <div class="games-filter">
+                                        <input type="text" id="games-filter" placeholder="Search games..." />
+                                        <div class="filter-actions">
+                                            <button id="select-all-btn" class="small-btn">Select All</button>
+                                            <button id="deselect-all-btn" class="small-btn">Deselect All</button>
+                                            <button id="select-linked-btn" class="small-btn" data-i18n="gui.settings.select_linked">Select Linked</button>
+                                            <button id="select-badge-emote-btn" class="small-btn" data-i18n="gui.settings.select_badge_emote">Select Badge/Emote</button>
+                                            <button id="add-game-btn" class="small-btn">Add Game</button>
+                                        </div>
                                     </div>
-                                    <button id="bot-points-clear-btn" class="secondary-btn" style="display:none;font-size:.75rem;padding:2px 8px;color:#eb4a4a;border-color:#eb4a4a;" onclick="botClearChannel('points')" data-i18n="gui.common.clear">Clear</button>
-                                </div>
-                                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                                    <div>
-                                        <span style="font-size:.82rem;color:#adadb8;" data-i18n="gui.settings.discord_bot.health_label">🩺 Health: </span>
-                                        <span id="bot-health-channel" style="font-family:monospace;font-size:.82rem;">—</span>
+                                    <label style="display:flex;align-items:center;gap:8px;margin:6px 0 4px;font-size:.85rem;color:var(--text-muted,#aaa);cursor:pointer;">
+                                        <input type="checkbox" id="auto-prioritize-toggle">
+                                        <span id="auto-prioritize-label" data-i18n="gui.settings.auto_prioritize">Auto-prioritize by campaign end date</span>
+                                    </label>
+                                    <label style="display:flex;align-items:center;gap:8px;margin:0 0 8px;font-size:.85rem;color:var(--text-muted,#aaa);cursor:pointer;">
+                                        <input type="checkbox" id="auto-add-linked-toggle">
+                                        <span id="auto-add-linked-label" data-i18n="gui.settings.auto_add_linked">Auto-add linked games to watch list</span>
+                                    </label>
+
+                                    <div class="games-container">
+                                        <div class="selected-games">
+                                            <h3>Selected Games (drag to reorder)</h3>
+                                            <div id="selected-games-list" class="sortable-list"></div>
+                                        </div>
+                                        <div class="available-games">
+                                            <h3>Available Games</h3>
+                                            <div id="available-games-list" class="checkbox-list"></div>
+                                        </div>
                                     </div>
-                                    <button id="bot-health-clear-btn" class="secondary-btn" style="display:none;font-size:.75rem;padding:2px 8px;color:#eb4a4a;border-color:#eb4a4a;" onclick="botClearChannel('health')" data-i18n="gui.common.clear">Clear</button>
-                                </div>
-                            </div>
-                            <p id="settings-bot-setchannel-hint" style="font-size:.75rem;color:#6b6b7b;margin:8px 0 0;">Use <code>/setchannel</code> in Discord to set channels.</p>
-                        </div>
-                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                            <button id="bot-generate-btn" class="secondary-btn" onclick="botGenerateCode()">Generate code</button>
-                            <button id="bot-revoke-btn" class="secondary-btn" style="display:none;color:#eb4a4a;border-color:#eb4a4a;" onclick="botRevoke()">Disconnect</button>
-                            <a id="bot-invite-link" href="https://discord.com/oauth2/authorize?client_id=1513555081218359506&permissions=84992&integration_type=0&scope=bot" target="_blank" rel="noopener" class="secondary-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
-                                <span id="settings-discord-bot-invite-text">Invite bot</span>
-                            </a>
-                        </div>
-                    </section>
+                                </section>
+                                    <section class="settings-section">
+                                        <h2 data-i18n="gui.settings.preferred_games">⭐ Preferred Games</h2>
+                                        <p class="help-text" data-i18n="gui.settings.preferred_games_help">Games that are always watched — even without active drop campaigns. Auto-connects when a campaign appears. Never auto-removed.</p>
+                                        <label class="toggle-label" style="margin-bottom:10px;">
+                                            <input type="checkbox" id="priority-list-only" onchange="saveSettings()">
+                                            <span data-i18n="gui.settings.priority_list_only">Priority list only</span>
+                                            <span class="help-text" style="display:block;margin-top:2px;font-size:0.8em;" data-i18n="gui.settings.priority_list_only_help">When off, any other game with an active drop campaign is mined whenever none of your priority or preferred games is live. Your list always comes first.</span>
+                                        </label>
+                                        <div style="display:flex;gap:8px;margin-bottom:8px;position:relative;">
+                                            <div style="position:relative;flex:1;">
+                                                <input type="text" id="preferred-game-input" placeholder="Type to search games..." data-i18n-placeholder="gui.inventory.filters.search_placeholder" autocomplete="off" style="width:100%;box-sizing:border-box;">
+                                                <div id="preferred-game-dropdown" class="game-dropdown-list" style="display:none;top:100%;left:0;right:0;"></div>
+                                            </div>
+                                            <button id="preferred-game-add-btn" class="secondary-btn" data-i18n="gui.common.add">Add</button>
+                                        </div>
+                                        <div id="preferred-games-list" class="sortable-list"></div>
+                                    </section>
                 </div>
-
-                <!-- ─── 🎮 Mining ─── -->
-                <div class="settings-category-label" data-i18n="gui.settings.categories.mining">Mining</div>
+                <div class="settings-panel" role="tabpanel" id="settings-panel-mining" aria-labelledby="settings-tab-mining" tabindex="0" hidden>
                 <div class="settings-grid">
-                    <section class="settings-section">
-                        <h2 id="settings-benefits-header">Mining Benefits</h2>
-                        <p id="settings-benefits-help" class="help-text">Select which types of drops you want to mine.</p>
-                        <div class="benefits-filter filter-checkboxes">
-                            <label class="filter-checkbox" title="Detailed description: Direct Entitlement (Game Item)" data-i18n-title="gui.inventory.filters.item_title">
-                                <input type="checkbox" id="mining-benefit-item" checked />
-                                <span>Item</span>
-                            </label>
-                            <label class="filter-checkbox">
-                                <input type="checkbox" id="mining-benefit-badge" checked />
-                                <span>Badge</span>
-                            </label>
-                            <label class="filter-checkbox">
-                                <input type="checkbox" id="mining-benefit-emote" checked />
-                                <span>Emote</span>
-                            </label>
-                            <label class="filter-checkbox">
-                                <input type="checkbox" id="mining-benefit-unknown" checked />
-                                <span>Other</span>
-                            </label>
-                        </div>
-                    </section>
+                                    <section class="settings-section">
+                                        <h2 id="settings-benefits-header">Mining Benefits</h2>
+                                        <p id="settings-benefits-help" class="help-text">Select which types of drops you want to mine.</p>
+                                        <div class="benefits-filter filter-checkboxes">
+                                            <label class="filter-checkbox" title="Detailed description: Direct Entitlement (Game Item)" data-i18n-title="gui.inventory.filters.item_title">
+                                                <input type="checkbox" id="mining-benefit-item" checked />
+                                                <span>Item</span>
+                                            </label>
+                                            <label class="filter-checkbox">
+                                                <input type="checkbox" id="mining-benefit-badge" checked />
+                                                <span>Badge</span>
+                                            </label>
+                                            <label class="filter-checkbox">
+                                                <input type="checkbox" id="mining-benefit-emote" checked />
+                                                <span>Emote</span>
+                                            </label>
+                                            <label class="filter-checkbox">
+                                                <input type="checkbox" id="mining-benefit-unknown" checked />
+                                                <span>Other</span>
+                                            </label>
+                                        </div>
+                                    </section>
 
-                    <section class="settings-section">
-                        <h2 data-i18n="gui.settings.reward_priority">Reward Type Priority</h2>
-                        <p class="help-text" data-i18n="gui.settings.reward_priority_help">When enabled, drops that can be earned right now are mined in this reward-type order (earlier deadline breaks ties). Your game order and priority games are not changed.</p>
-                        <label class="toggle-label" style="margin-bottom:10px;">
-                            <input type="checkbox" id="reward-priority-enabled" onchange="saveSettings()">
-                            <span data-i18n="gui.settings.reward_priority_enable">Order by reward type</span>
-                        </label>
-                        <div id="reward-priority-list" class="reward-priority-list"></div>
-                    </section>
+                                    <section class="settings-section">
+                                        <h2 data-i18n="gui.settings.reward_priority">Reward Type Priority</h2>
+                                        <p class="help-text" data-i18n="gui.settings.reward_priority_help">When enabled, drops that can be earned right now are mined in this reward-type order (earlier deadline breaks ties). Your game order and priority games are not changed.</p>
+                                        <label class="toggle-label" style="margin-bottom:10px;">
+                                            <input type="checkbox" id="reward-priority-enabled" onchange="saveSettings()">
+                                            <span data-i18n="gui.settings.reward_priority_enable">Order by reward type</span>
+                                        </label>
+                                        <div id="reward-priority-list" class="reward-priority-list"></div>
+                                    </section>
 
-                    <section class="settings-section">
-                        <h2 id="settings-blacklist-header">Drop Name Blacklist</h2>
-                        <p class="help-text" id="settings-blacklist-help">Comma-separated keywords. Drops whose name contains any keyword are ignored. Useful for regional/exclusive drops (e.g. <code>JP, Korea, (KR)</code>).</p>
-                        <input type="text" id="drop-blacklist-input" class="settings-input"
-                            placeholder="JP, Korea, (KR), exclusive..." data-i18n-placeholder="gui.settings.blacklist_placeholder" style="width:100%;box-sizing:border-box;">
-                    </section>
+                                    <section class="settings-section">
+                                        <h2 id="settings-blacklist-header">Drop Name Blacklist</h2>
+                                        <p class="help-text" id="settings-blacklist-help">Comma-separated keywords. Drops whose name contains any keyword are ignored. Useful for regional/exclusive drops (e.g. <code>JP, Korea, (KR)</code>).</p>
+                                        <input type="text" id="drop-blacklist-input" class="settings-input"
+                                            placeholder="JP, Korea, (KR), exclusive..." data-i18n-placeholder="gui.settings.blacklist_placeholder" style="width:100%;box-sizing:border-box;">
+                                    </section>
 
-                    <section class="settings-section">
-                        <h2 id="settings-blacklist-ids-header">Blacklisted Drop IDs</h2>
-                        <p class="help-text" id="settings-blacklist-ids-help">Specific drops excluded by exact ID — added via the 🚫 button next to an active drop, or manually below. Unlike the keyword blacklist above, this matches one exact drop; other drops for the same game keep mining.</p>
-                        <div id="blacklisted-drop-ids-list" class="sortable-list"></div>
-                        <div style="display:flex;gap:8px;margin-top:8px;">
-                            <input type="text" id="blacklisted-drop-id-input" class="settings-input" placeholder="Drop ID..." data-i18n-placeholder="gui.settings.blacklist_ids_placeholder" style="flex:1;">
-                            <button id="blacklisted-drop-id-add-btn" class="secondary-btn" data-i18n="gui.common.add">Add</button>
-                        </div>
-                    </section>
+                                    <section class="settings-section">
+                                        <h2 id="settings-blacklist-ids-header">Blacklisted Drop IDs</h2>
+                                        <p class="help-text" id="settings-blacklist-ids-help">Specific drops excluded by exact ID — added via the 🚫 button next to an active drop, or manually below. Unlike the keyword blacklist above, this matches one exact drop; other drops for the same game keep mining.</p>
+                                        <div id="blacklisted-drop-ids-list" class="sortable-list"></div>
+                                        <div style="display:flex;gap:8px;margin-top:8px;">
+                                            <input type="text" id="blacklisted-drop-id-input" class="settings-input" placeholder="Drop ID..." data-i18n-placeholder="gui.settings.blacklist_ids_placeholder" style="flex:1;">
+                                            <button id="blacklisted-drop-id-add-btn" class="secondary-btn" data-i18n="gui.common.add">Add</button>
+                                        </div>
+                                    </section>
 
-                    <section class="settings-section">
-                        <h2 id="settings-blacklist-games-header">Blacklisted Games</h2>
-                        <p class="help-text" id="settings-blacklist-games-help">Games listed here are never auto-added to Games to Watch by "Auto-add linked games", even if Twitch links a drop campaign for them. Removing a game from Games to Watch already does this automatically — use this list to blacklist a game directly, without adding it first.</p>
-                        <div id="blacklisted-games-list" class="sortable-list"></div>
-                        <div style="display:flex;gap:8px;margin-top:8px;">
-                            <input type="text" id="blacklisted-game-input" class="settings-input" placeholder="Game name..." data-i18n-placeholder="gui.settings.blacklisted_games_placeholder" style="flex:1;">
-                            <button id="blacklisted-game-add-btn" class="secondary-btn" data-i18n="gui.common.add">Add</button>
-                        </div>
-                    </section>
+                                    <section class="settings-section">
+                                        <h2 id="settings-blacklist-games-header">Blacklisted Games</h2>
+                                        <p class="help-text" id="settings-blacklist-games-help">Games listed here are never auto-added to Games to Watch by "Auto-add linked games", even if Twitch links a drop campaign for them. Removing a game from Games to Watch already does this automatically — use this list to blacklist a game directly, without adding it first.</p>
+                                        <div id="blacklisted-games-list" class="sortable-list"></div>
+                                        <div style="display:flex;gap:8px;margin-top:8px;">
+                                            <input type="text" id="blacklisted-game-input" class="settings-input" placeholder="Game name..." data-i18n-placeholder="gui.settings.blacklisted_games_placeholder" style="flex:1;">
+                                            <button id="blacklisted-game-add-btn" class="secondary-btn" data-i18n="gui.common.add">Add</button>
+                                        </div>
+                                    </section>
 
-                    <section class="settings-section">
-                        <h2 id="settings-scheduler-header">Scheduler</h2>
-                        <p class="help-text" id="settings-scheduler-help">Automatically pause and resume mining based on time of day.</p>
-                        <label style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-                            <input type="checkbox" id="scheduler-enabled" onchange="saveSettings()">
-                            <span id="settings-scheduler-enable-label">Enable time-based scheduler</span>
-                        </label>
-                        <div class="scheduler-times" id="scheduler-times">
-                            <label style="display:flex;align-items:center;gap:8px;">
-                                <span id="settings-scheduler-from" style="min-width:90px;font-size:.9rem;">Active from</span>
-                                <input type="time" id="scheduler-start" class="settings-input" onchange="saveSettings()">
-                            </label>
-                            <label style="display:flex;align-items:center;gap:8px;margin-top:6px;">
-                                <span id="settings-scheduler-until" style="min-width:90px;font-size:.9rem;">Active until</span>
-                                <input type="time" id="scheduler-stop" class="settings-input" onchange="saveSettings()">
-                            </label>
-                            <p class="help-text" id="settings-scheduler-times-help" style="margin-top:6px;">Mining runs only within this window. Outside it, mining is automatically paused.</p>
-                        </div>
-                    </section>
+                                    <section class="settings-section">
+                                        <h2 id="settings-scheduler-header">Scheduler</h2>
+                                        <p class="help-text" id="settings-scheduler-help">Automatically pause and resume mining based on time of day.</p>
+                                        <label style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                                            <input type="checkbox" id="scheduler-enabled" onchange="saveSettings()">
+                                            <span id="settings-scheduler-enable-label">Enable time-based scheduler</span>
+                                        </label>
+                                        <div class="scheduler-times" id="scheduler-times">
+                                            <label style="display:flex;align-items:center;gap:8px;">
+                                                <span id="settings-scheduler-from" style="min-width:90px;font-size:.9rem;">Active from</span>
+                                                <input type="time" id="scheduler-start" class="settings-input" onchange="saveSettings()">
+                                            </label>
+                                            <label style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+                                                <span id="settings-scheduler-until" style="min-width:90px;font-size:.9rem;">Active until</span>
+                                                <input type="time" id="scheduler-stop" class="settings-input" onchange="saveSettings()">
+                                            </label>
+                                            <p class="help-text" id="settings-scheduler-times-help" style="margin-top:6px;">Mining runs only within this window. Outside it, mining is automatically paused.</p>
+                                        </div>
+                                    </section>
                 </div>
-
-                <section class="settings-section">
-                    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px;">
-                        <h2 id="settings-games-header" style="margin:0;border:none;padding:0;">Games to Watch</h2>
-                        <button id="reload-btn" class="secondary-btn" style="display:flex;align-items:center;gap:6px;">↻ Reload Campaigns</button>
-                    </div>
-                    <p id="settings-games-help" class="help-text">Select games to watch. Order matters - drag to reorder priority (top = highest priority). Games are auto-removed once every drop is claimed or unearnable (e.g. sub-only tiers) — for games you always want tracked, use ⭐ Preferred Games below instead.</p>
-
-                    <div class="games-filter">
-                        <input type="text" id="games-filter" placeholder="Search games..." />
-                        <div class="filter-actions">
-                            <button id="select-all-btn" class="small-btn">Select All</button>
-                            <button id="deselect-all-btn" class="small-btn">Deselect All</button>
-                            <button id="select-linked-btn" class="small-btn" data-i18n="gui.settings.select_linked">Select Linked</button>
-                            <button id="select-badge-emote-btn" class="small-btn" data-i18n="gui.settings.select_badge_emote">Select Badge/Emote</button>
-                            <button id="add-game-btn" class="small-btn">Add Game</button>
-                        </div>
-                    </div>
-                    <label style="display:flex;align-items:center;gap:8px;margin:6px 0 4px;font-size:.85rem;color:var(--text-muted,#aaa);cursor:pointer;">
-                        <input type="checkbox" id="auto-prioritize-toggle">
-                        <span id="auto-prioritize-label" data-i18n="gui.settings.auto_prioritize">Auto-prioritize by campaign end date</span>
-                    </label>
-                    <label style="display:flex;align-items:center;gap:8px;margin:0 0 8px;font-size:.85rem;color:var(--text-muted,#aaa);cursor:pointer;">
-                        <input type="checkbox" id="auto-add-linked-toggle">
-                        <span id="auto-add-linked-label" data-i18n="gui.settings.auto_add_linked">Auto-add linked games to watch list</span>
-                    </label>
-
-                    <div class="games-container">
-                        <div class="selected-games">
-                            <h3>Selected Games (drag to reorder)</h3>
-                            <div id="selected-games-list" class="sortable-list"></div>
-                        </div>
-                        <div class="available-games">
-                            <h3>Available Games</h3>
-                            <div id="available-games-list" class="checkbox-list"></div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- ─── 💤 Idle & Points ─── -->
-                <div class="settings-category-label" data-i18n="gui.settings.categories.idle_points">Idle &amp; Points</div>
+                </div>
+                <div class="settings-panel" role="tabpanel" id="settings-panel-points" aria-labelledby="settings-tab-points" tabindex="0" hidden>
                 <div class="settings-grid">
-                    <section class="settings-section">
-                        <h2 id="settings-idle-header">Idle Watch</h2>
-                        <p class="help-text" id="settings-idle-help">Channels to watch when no drops are available. Add in priority order.</p>
-                        <label class="toggle-label" style="margin-bottom:6px;">
-                            <input type="checkbox" id="idle-use-followed" onchange="saveSettings()">
-                            <span id="settings-idle-auto-label">Auto: use followed channels</span>
-                            <span id="settings-idle-auto-help" class="help-text" style="display:block;margin-top:2px;font-size:0.8em;">Automatically watches live channels you follow on Twitch when idle.</span>
-                        </label>
-                        <label class="toggle-label" style="margin-bottom:10px;">
-                            <input type="checkbox" id="idle-parallel" onchange="saveSettings()">
-                            <span data-i18n="gui.settings.idle_parallel">Parallel idle (watch all channels simultaneously)</span>
-                            <span class="help-text" style="display:block;margin-top:2px;font-size:0.8em;" data-i18n="gui.settings.idle_parallel_help">Earn channel points from multiple channels at the same time when idle.</span>
-                        </label>
-                        <div style="display:flex;gap:8px;margin-bottom:8px;">
-                            <input type="text" id="idle-channel-input" placeholder="Manual channel name..." style="flex:1;">
-                            <button id="idle-channel-add-btn" class="secondary-btn">Add</button>
-                        </div>
-                        <div id="idle-channels-list" class="sortable-list"></div>
-                    </section>
-
-                    <section class="settings-section">
-                        <h2 data-i18n="gui.settings.preferred_games">⭐ Preferred Games</h2>
-                        <p class="help-text" data-i18n="gui.settings.preferred_games_help">Games that are always watched — even without active drop campaigns. Auto-connects when a campaign appears. Never auto-removed.</p>
-                        <label class="toggle-label" style="margin-bottom:10px;">
-                            <input type="checkbox" id="priority-list-only" onchange="saveSettings()">
-                            <span data-i18n="gui.settings.priority_list_only">Priority list only</span>
-                            <span class="help-text" style="display:block;margin-top:2px;font-size:0.8em;" data-i18n="gui.settings.priority_list_only_help">When off, any other game with an active drop campaign is mined whenever none of your priority or preferred games is live. Your list always comes first.</span>
-                        </label>
-                        <div style="display:flex;gap:8px;margin-bottom:8px;position:relative;">
-                            <div style="position:relative;flex:1;">
-                                <input type="text" id="preferred-game-input" placeholder="Type to search games..." data-i18n-placeholder="gui.inventory.filters.search_placeholder" autocomplete="off" style="width:100%;box-sizing:border-box;">
-                                <div id="preferred-game-dropdown" class="game-dropdown-list" style="display:none;top:100%;left:0;right:0;"></div>
-                            </div>
-                            <button id="preferred-game-add-btn" class="secondary-btn" data-i18n="gui.common.add">Add</button>
-                        </div>
-                        <div id="preferred-games-list" class="sortable-list"></div>
-                    </section>
-
-                    <section class="settings-section">
-                        <h2 id="settings-cp-header">Channel Points</h2>
-                        <label>
-                            <input type="checkbox" id="claim-channel-points"> <span id="settings-cp-autoclaim-label">Auto-claim bonus channel points</span>
-                        </label>
-                        <small class="help-text-inline" id="settings-cp-autoclaim-help">Automatically claims the bonus chest when it appears on watched channels.</small>
-                    </section>
+                                    <section class="settings-section">
+                                        <h2 id="settings-idle-header">Idle Watch</h2>
+                                        <p class="help-text" id="settings-idle-help">Channels to watch when no drops are available. Add in priority order.</p>
+                                        <label class="toggle-label" style="margin-bottom:6px;">
+                                            <input type="checkbox" id="idle-use-followed" onchange="saveSettings()">
+                                            <span id="settings-idle-auto-label">Auto: use followed channels</span>
+                                            <span id="settings-idle-auto-help" class="help-text" style="display:block;margin-top:2px;font-size:0.8em;">Automatically watches live channels you follow on Twitch when idle.</span>
+                                        </label>
+                                        <label class="toggle-label" style="margin-bottom:10px;">
+                                            <input type="checkbox" id="idle-parallel" onchange="saveSettings()">
+                                            <span data-i18n="gui.settings.idle_parallel">Parallel idle (watch all channels simultaneously)</span>
+                                            <span class="help-text" style="display:block;margin-top:2px;font-size:0.8em;" data-i18n="gui.settings.idle_parallel_help">Earn channel points from multiple channels at the same time when idle.</span>
+                                        </label>
+                                        <div style="display:flex;gap:8px;margin-bottom:8px;">
+                                            <input type="text" id="idle-channel-input" placeholder="Manual channel name..." style="flex:1;">
+                                            <button id="idle-channel-add-btn" class="secondary-btn">Add</button>
+                                        </div>
+                                        <div id="idle-channels-list" class="sortable-list"></div>
+                                    </section>
+                                    <section class="settings-section">
+                                        <h2 id="settings-cp-header">Channel Points</h2>
+                                        <label>
+                                            <input type="checkbox" id="claim-channel-points"> <span id="settings-cp-autoclaim-label">Auto-claim bonus channel points</span>
+                                        </label>
+                                        <small class="help-text-inline" id="settings-cp-autoclaim-help">Automatically claims the bonus chest when it appears on watched channels.</small>
+                                    </section>
                 </div>
-
-                <!-- ─── 🎯 Predictions ─── -->
-                <div class="settings-category-label" data-i18n="gui.settings.categories.predictions">Predictions</div>
                 <div class="settings-grid">
-                    <section class="settings-section">
-                        <h2 data-i18n="gui.settings.predictions.header">🎯 Auto-Bet</h2>
-                        <p class="help-text" data-i18n="gui.settings.predictions.help">Automatically bet channel points on predictions.</p>
-                        <label class="toggle-label" style="margin-bottom:8px;">
-                            <input type="checkbox" id="set-make-predictions" onchange="saveSettings()">
-                            <span data-i18n="gui.settings.predictions.enable">Enable Auto-Bet</span>
-                        </label>
-                        <label class="settings-row">
-                            <span class="settings-row-label" data-i18n="gui.settings.predictions.strategy">Strategy</span>
-                            <select id="set-bet-strategy" onchange="saveSettings()" class="settings-select">
-                                <option value="SMART" data-i18n="gui.settings.predictions.strategy_smart">SMART (by odds gap)</option>
-                                <option value="PERCENTAGE" data-i18n="gui.settings.predictions.strategy_percentage">PERCENTAGE (always bet)</option>
-                                <option value="HIGH_ODDS" data-i18n="gui.settings.predictions.strategy_high_odds">HIGH_ODDS (underdog)</option>
-                                <option value="MOST_VOTED" data-i18n="gui.settings.predictions.strategy_most_voted">MOST_VOTED (crowd)</option>
-                            </select>
-                        </label>
-                        <label class="settings-row" title="Minimum gap between the top two outcomes' vote share required to place a SMART bet — if the gap is smaller, the prediction is skipped as too uncertain. Only affects the SMART strategy." data-i18n-title="gui.settings.predictions.bet_gap_title">
-                            <span class="settings-row-label" id="settings-bet-gap-label">Bet Gap % (SMART)</span>
-                            <input type="number" id="set-bet-gap" onchange="saveSettings()" min="0" max="100" step="1" class="settings-input" style="max-width:100px;">
-                        </label>
-                        <label class="settings-row">
-                            <span class="settings-row-label" data-i18n="gui.settings.predictions.bet_pct">Bet % of balance</span>
-                            <input type="number" id="set-bet-pct" onchange="saveSettings()" min="1" max="100" step="1" class="settings-input" style="max-width:100px;">
-                        </label>
-                        <label class="settings-row">
-                            <span class="settings-row-label" data-i18n="gui.settings.predictions.bet_max">Max points per bet</span>
-                            <input type="number" id="set-bet-max" onchange="saveSettings()" min="100" step="100" class="settings-input" style="max-width:100px;">
-                        </label>
-                        <label class="settings-row">
-                            <span class="settings-row-label" data-i18n="gui.settings.predictions.bet_min">Min balance to bet</span>
-                            <input type="number" id="set-bet-min" onchange="saveSettings()" min="0" step="100" class="settings-input" style="max-width:100px;">
-                        </label>
-                        <label class="settings-row">
-                            <span class="settings-row-label" data-i18n="gui.settings.predictions.bet_delay">Delay before lock (s)</span>
-                            <input type="number" id="set-bet-delay" onchange="saveSettings()" min="5" max="120" class="settings-input" style="max-width:100px;">
-                        </label>
-                    </section>
-
-                    <section class="settings-section">
-                        <h2 data-i18n="gui.settings.predictions.whitelist_header">📋 Channel Whitelist</h2>
-                        <p class="help-text" data-i18n="gui.settings.predictions.whitelist_help">Only bet on predictions in these channels. Leave empty to bet on all channels.</p>
-                        <div id="pred-channels-tags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;min-height:32px;"></div>
-                        <div style="display:flex;gap:8px;">
-                            <input type="text" id="pred-channel-input" class="settings-input" placeholder="Channel name..." data-i18n-placeholder="gui.settings.predictions.channel_placeholder" style="flex:1;" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9_]/g,'')">
-                            <button class="secondary-btn" onclick="addPredChannel()" data-i18n="gui.common.add">Add</button>
-                        </div>
-                    </section>
-
-                    <section class="settings-section" style="grid-column: 1 / -1;">
-                        <h2 data-i18n="gui.settings.predictions.overrides_header">⚙️ Per-Channel Overrides</h2>
-                        <p class="help-text" data-i18n="gui.settings.predictions.overrides_help">Override global prediction settings per channel. Leave a field empty to use the global value.</p>
-                        <div id="channel-overrides-table" style="margin-bottom:12px;overflow-x:auto;"></div>
-                        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                            <input type="text" id="co-channel-input" class="settings-input" placeholder="Channel name..." data-i18n-placeholder="gui.settings.predictions.channel_placeholder" style="flex:1;min-width:140px;" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9_]/g,'')">
-                            <button class="secondary-btn" onclick="addChannelOverride()" data-i18n="gui.settings.predictions.add_channel">Add Channel</button>
-                        </div>
-                    </section>
+                                    <section class="settings-section">
+                                        <h2 data-i18n="gui.settings.predictions.header">🎯 Auto-Bet</h2>
+                                        <p class="help-text" data-i18n="gui.settings.predictions.help">Automatically bet channel points on predictions.</p>
+                                        <label class="toggle-label" style="margin-bottom:8px;">
+                                            <input type="checkbox" id="set-make-predictions" onchange="saveSettings()">
+                                            <span data-i18n="gui.settings.predictions.enable">Enable Auto-Bet</span>
+                                        </label>
+                                        <label class="settings-row">
+                                            <span class="settings-row-label" data-i18n="gui.settings.predictions.strategy">Strategy</span>
+                                            <select id="set-bet-strategy" onchange="saveSettings()" class="settings-select">
+                                                <option value="SMART" data-i18n="gui.settings.predictions.strategy_smart">SMART (by odds gap)</option>
+                                                <option value="PERCENTAGE" data-i18n="gui.settings.predictions.strategy_percentage">PERCENTAGE (always bet)</option>
+                                                <option value="HIGH_ODDS" data-i18n="gui.settings.predictions.strategy_high_odds">HIGH_ODDS (underdog)</option>
+                                                <option value="MOST_VOTED" data-i18n="gui.settings.predictions.strategy_most_voted">MOST_VOTED (crowd)</option>
+                                            </select>
+                                        </label>
+                                        <label class="settings-row" title="Minimum gap between the top two outcomes' vote share required to place a SMART bet — if the gap is smaller, the prediction is skipped as too uncertain. Only affects the SMART strategy." data-i18n-title="gui.settings.predictions.bet_gap_title">
+                                            <span class="settings-row-label" id="settings-bet-gap-label">Bet Gap % (SMART)</span>
+                                            <input type="number" id="set-bet-gap" onchange="saveSettings()" min="0" max="100" step="1" class="settings-input" style="max-width:100px;">
+                                        </label>
+                                        <label class="settings-row">
+                                            <span class="settings-row-label" data-i18n="gui.settings.predictions.bet_pct">Bet % of balance</span>
+                                            <input type="number" id="set-bet-pct" onchange="saveSettings()" min="1" max="100" step="1" class="settings-input" style="max-width:100px;">
+                                        </label>
+                                        <label class="settings-row">
+                                            <span class="settings-row-label" data-i18n="gui.settings.predictions.bet_max">Max points per bet</span>
+                                            <input type="number" id="set-bet-max" onchange="saveSettings()" min="100" step="100" class="settings-input" style="max-width:100px;">
+                                        </label>
+                                        <label class="settings-row">
+                                            <span class="settings-row-label" data-i18n="gui.settings.predictions.bet_min">Min balance to bet</span>
+                                            <input type="number" id="set-bet-min" onchange="saveSettings()" min="0" step="100" class="settings-input" style="max-width:100px;">
+                                        </label>
+                                        <label class="settings-row">
+                                            <span class="settings-row-label" data-i18n="gui.settings.predictions.bet_delay">Delay before lock (s)</span>
+                                            <input type="number" id="set-bet-delay" onchange="saveSettings()" min="5" max="120" class="settings-input" style="max-width:100px;">
+                                        </label>
+                                    </section>
+                                    <section class="settings-section">
+                                        <h2 data-i18n="gui.settings.predictions.whitelist_header">📋 Channel Whitelist</h2>
+                                        <p class="help-text" data-i18n="gui.settings.predictions.whitelist_help">Only bet on predictions in these channels. Leave empty to bet on all channels.</p>
+                                        <div id="pred-channels-tags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;min-height:32px;"></div>
+                                        <div style="display:flex;gap:8px;">
+                                            <input type="text" id="pred-channel-input" class="settings-input" placeholder="Channel name..." data-i18n-placeholder="gui.settings.predictions.channel_placeholder" style="flex:1;" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9_]/g,'')">
+                                            <button class="secondary-btn" onclick="addPredChannel()" data-i18n="gui.common.add">Add</button>
+                                        </div>
+                                    </section>
                 </div>
+                                    <section class="settings-section">
+                                        <h2 data-i18n="gui.settings.predictions.overrides_header">⚙️ Per-Channel Overrides</h2>
+                                        <p class="help-text" data-i18n="gui.settings.predictions.overrides_help">Override global prediction settings per channel. Leave a field empty to use the global value.</p>
+                                        <div id="channel-overrides-table" style="margin-bottom:12px;overflow-x:auto;"></div>
+                                        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                                            <input type="text" id="co-channel-input" class="settings-input" placeholder="Channel name..." data-i18n-placeholder="gui.settings.predictions.channel_placeholder" style="flex:1;min-width:140px;" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9_]/g,'')">
+                                            <button class="secondary-btn" onclick="addChannelOverride()" data-i18n="gui.settings.predictions.add_channel">Add Channel</button>
+                                        </div>
+                                    </section>
+                </div>
+                <div class="settings-panel" role="tabpanel" id="settings-panel-notifications" aria-labelledby="settings-tab-notifications" tabindex="0" hidden>
+                <div class="settings-grid">
+                                    <section class="settings-section" id="settings-notifications">
+                                        <h2 id="settings-notifications-header">Browser</h2>
+                                        <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                                            <input type="checkbox" id="push-sound-toggle">
+                                            <span id="settings-push-sound-label">Notification Sound</span>
+                                        </label>
+                                        <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                                            <input type="checkbox" id="campaign-alerts-toggle">
+                                            <span id="settings-campaign-alerts-label">Campaign End Alerts (24h warning)</span>
+                                        </label>
+                                    </section>
 
+                                    <section class="settings-section">
+                                        <h2 id="settings-discord-notif-header">Discord Webhooks</h2>
+                                        <label>
+                                            <span id="settings-drops-webhook-label">Drop Claimed Webhook:</span>
+                                            <div style="display:flex;gap:8px;">
+                                                <input type="text" id="discord-webhook-drops" placeholder="https://discord.com/api/webhooks/..." style="flex:1;">
+                                                <button id="test-drops-webhook-btn" class="secondary-btn" onclick="testWebhook('drops')" style="white-space:nowrap;">Test</button>
+                                            </div>
+                                        </label>
+                                        <small class="help-text-inline" id="settings-drops-webhook-help" style="margin-bottom:10px;display:block;">Fires when a Twitch drop is successfully claimed.</small>
+                                        <label>
+                                            <span id="settings-points-webhook-label">Channel Points Webhook:</span>
+                                            <div style="display:flex;gap:8px;">
+                                                <input type="text" id="discord-webhook-points" placeholder="https://discord.com/api/webhooks/..." style="flex:1;">
+                                                <button id="test-points-webhook-btn" class="secondary-btn" onclick="testWebhook('points')" style="white-space:nowrap;">Test</button>
+                                            </div>
+                                        </label>
+                                        <small class="help-text-inline" id="settings-points-webhook-help" style="margin-bottom:10px;display:block;">Fires when a bonus channel point chest is claimed.</small>
+                                        <label>
+                                            <span id="settings-health-webhook-label" data-i18n="gui.settings.discord_health_webhook_label">Health Alert Webhook:</span>
+                                            <div style="display:flex;gap:8px;">
+                                                <input type="text" id="discord-webhook-health" placeholder="https://discord.com/api/webhooks/..." style="flex:1;">
+                                                <button id="test-health-webhook-btn" class="secondary-btn" onclick="testWebhook('health')" style="white-space:nowrap;">Test</button>
+                                            </div>
+                                        </label>
+                                        <small class="help-text-inline" id="settings-health-webhook-help" data-i18n="gui.settings.discord_health_webhook_help">Fires when the Twitch login has been waiting for 30+ minutes or mining stalls, and again when it recovers. Empty: uses the drop webhook.</small>
+                                    </section>
+
+                                    <section class="settings-section">
+                                        <h2 id="settings-discord-bot-header">Discord Bot</h2>
+                                        <p id="settings-discord-bot-desc" class="help-text">Pair a Discord bot to control TwitchDropsMiner via chat commands.</p>
+                                        <div id="bot-status-badge" style="margin-bottom:12px;font-size:.85rem;"></div>
+                                        <div id="bot-pair-code-box" style="display:none;background:#0e0e10;border:1px solid #3d3d4a;border-radius:8px;padding:12px;margin-bottom:12px;font-family:monospace;font-size:.85rem;line-height:1.8;">
+                                            <div id="bot-pair-code-text"></div>
+                                            <small id="settings-discord-bot-expires" style="color:#adadb8;font-size:.78rem;">(Expires in 10 min)</small>
+                                        </div>
+                                        <div id="bot-channel-config" style="display:none;background:#0e0e10;border:1px solid #3d3d4a;border-radius:8px;padding:12px;margin-bottom:12px;">
+                                            <div id="settings-bot-notif-channels-label" style="font-size:.8rem;font-weight:600;color:#adadb8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Notification Channels</div>
+                                            <div style="display:flex;flex-direction:column;gap:6px;">
+                                                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                                                    <div>
+                                                        <span style="font-size:.82rem;color:#adadb8;" data-i18n="gui.settings.discord_bot.drops_label">🎁 Drops: </span>
+                                                        <span id="bot-drops-channel" style="font-family:monospace;font-size:.82rem;">—</span>
+                                                    </div>
+                                                    <button id="bot-drops-clear-btn" class="secondary-btn" style="display:none;font-size:.75rem;padding:2px 8px;color:#eb4a4a;border-color:#eb4a4a;" onclick="botClearChannel('drops')" data-i18n="gui.common.clear">Clear</button>
+                                                </div>
+                                                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                                                    <div>
+                                                        <span style="font-size:.82rem;color:#adadb8;" data-i18n="gui.settings.discord_bot.points_label">💰 Points: </span>
+                                                        <span id="bot-points-channel" style="font-family:monospace;font-size:.82rem;">—</span>
+                                                    </div>
+                                                    <button id="bot-points-clear-btn" class="secondary-btn" style="display:none;font-size:.75rem;padding:2px 8px;color:#eb4a4a;border-color:#eb4a4a;" onclick="botClearChannel('points')" data-i18n="gui.common.clear">Clear</button>
+                                                </div>
+                                                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                                                    <div>
+                                                        <span style="font-size:.82rem;color:#adadb8;" data-i18n="gui.settings.discord_bot.health_label">🩺 Health: </span>
+                                                        <span id="bot-health-channel" style="font-family:monospace;font-size:.82rem;">—</span>
+                                                    </div>
+                                                    <button id="bot-health-clear-btn" class="secondary-btn" style="display:none;font-size:.75rem;padding:2px 8px;color:#eb4a4a;border-color:#eb4a4a;" onclick="botClearChannel('health')" data-i18n="gui.common.clear">Clear</button>
+                                                </div>
+                                            </div>
+                                            <p id="settings-bot-setchannel-hint" style="font-size:.75rem;color:#6b6b7b;margin:8px 0 0;">Use <code>/setchannel</code> in Discord to set channels.</p>
+                                        </div>
+                                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                            <button id="bot-generate-btn" class="secondary-btn" onclick="botGenerateCode()">Generate code</button>
+                                            <button id="bot-revoke-btn" class="secondary-btn" style="display:none;color:#eb4a4a;border-color:#eb4a4a;" onclick="botRevoke()">Disconnect</button>
+                                            <a id="bot-invite-link" href="https://discord.com/oauth2/authorize?client_id=1513555081218359506&permissions=84992&integration_type=0&scope=bot" target="_blank" rel="noopener" class="secondary-btn" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
+                                                <span id="settings-discord-bot-invite-text">Invite bot</span>
+                                            </a>
+                                        </div>
+                                    </section>
+                </div>
+                </div>
+                <div class="settings-panel" role="tabpanel" id="settings-panel-accounts" aria-labelledby="settings-tab-accounts" tabindex="0" hidden>
+                <div class="settings-grid">
+                                    <div class="system-card" id="accounts-card">
+                                        <h3 id="system-accounts-header">Twitch Accounts</h3>
+                                        <p style="font-size:.82rem;color:var(--text-secondary);margin:4px 0 10px" data-i18n="gui.system.accounts_desc">Switch between saved Twitch logins within this instance.</p>
+                                        <div id="accounts-list" class="accounts-list" style="margin-top:10px"></div>
+                                        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+                                            <input type="text" id="new-account-label" placeholder="Label (e.g. Main, Alt)" style="flex:1;min-width:120px;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:6px;padding:7px 10px;color:var(--text-primary);font-size:.85rem;outline:none">
+                                            <button id="add-account-btn" class="btn-primary" style="width:auto;padding:7px 14px;font-size:.85rem">+ Add Account</button>
+                                        </div>
+                                        <div id="accounts-status" style="margin-top:8px;font-size:.82rem;display:none"></div>
+                                    </div>
+                                    <div class="system-card" id="instances-card">
+                                        <h3 data-i18n="gui.system.instances_header">Instances</h3>
+                                        <p style="font-size:.82rem;color:var(--text-secondary);margin:4px 0 10px" data-i18n="gui.system.instances_desc">Each instance runs a separate TDM process with its own Twitch session.</p>
+                                        <div id="instances-list" style="margin-bottom:10px"></div>
+                                        <div id="instances-proxy-warning" style="display:none;background:rgba(255,165,0,0.12);border:1px solid rgba(255,165,0,0.4);border-radius:6px;padding:8px 12px;margin-bottom:10px;font-size:.82rem;color:#ffa500">
+                                            ⚠️ <strong data-i18n="gui.system.proxy_recommended">Proxy recommended:</strong> <span data-i18n="gui.system.proxy_recommended_text">Running 3+ accounts from one IP increases Twitch ban risk. Add one proxy per account in Settings → Proxy.</span>
+                                        </div>
+                                        <button id="add-instance-btn" class="btn-primary" style="width:auto;padding:7px 14px;font-size:.85rem" data-i18n="gui.system.add_instance">+ Add Instance</button>
+                                        <div id="instances-status" style="margin-top:8px;font-size:.82rem;display:none"></div>
+                                        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border-color);">
+                                            <p style="font-size:.8rem;color:var(--text-secondary);margin:0 0 8px" data-i18n="gui.system.register_desc">Already running an instance yourself (custom port, another host/container)? Register it here — nothing is started, stopped, or reconfigured.</p>
+                                            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+                                                <input type="text" id="reg-instance-host" placeholder="host" value="localhost" style="width:120px;padding:5px 8px;font-size:.82rem;">
+                                                <input type="number" id="reg-instance-port" placeholder="port" min="1" max="65535" style="width:80px;padding:5px 8px;font-size:.82rem;">
+                                                <input type="text" id="reg-instance-label" placeholder="label (optional)" data-i18n-placeholder="gui.system.register_label_placeholder" style="width:120px;padding:5px 8px;font-size:.82rem;">
+                                                <button id="register-instance-btn" class="btn-secondary" style="width:auto;padding:6px 12px;font-size:.82rem;" data-i18n="gui.system.register_btn">Register</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                </div>
+                <div class="settings-grid">
+                                    <section class="settings-section">
+                                        <h2 id="settings-password-header" data-i18n="gui.settings.password_header">Login & Password</h2>
+                                        <div id="pw-status-badge" style="margin-bottom:10px;font-size:.82rem;color:#adadb8"></div>
+                                        <form onsubmit="return false;" autocomplete="off">
+                                        <input type="text" name="username" autocomplete="username" style="display:none" aria-hidden="true">
+                                        <div class="form-row">
+                                            <label id="pw-current-label" class="form-label" data-i18n="gui.settings.password_current_label">Current</label>
+                                            <input type="password" id="pw-current" class="form-input" placeholder="Leave empty if none" data-i18n-placeholder="gui.settings.password_current_placeholder" autocomplete="current-password">
+                                        </div>
+                                        <div class="form-row">
+                                            <label id="pw-new-label" class="form-label" data-i18n="gui.settings.password_new_label">New</label>
+                                            <input type="password" id="pw-new" class="form-input" placeholder="New password (empty = disable)" data-i18n-placeholder="gui.settings.password_new_placeholder" autocomplete="new-password">
+                                        </div>
+                                        <div class="form-row">
+                                            <label id="pw-confirm-label" class="form-label" data-i18n="gui.settings.password_confirm_label">Confirm</label>
+                                            <input type="password" id="pw-new2" class="form-input" placeholder="Repeat new password" data-i18n-placeholder="gui.settings.password_repeat_placeholder" autocomplete="new-password">
+                                        </div>
+                                        </form>
+                                        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+                                            <button id="pw-save-btn" class="action-button" style="flex:1" data-i18n="gui.settings.password_save">Save</button>
+                                            <button id="pw-disable-btn" class="action-button" style="flex:1;background:transparent;border:1px solid #3d3d4a;color:#adadb8" data-i18n="gui.settings.password_disable">Disable Login</button>
+                                        </div>
+                                        <div id="pw-result" style="margin-top:8px;font-size:.82rem;display:none"></div>
+                                    </section>
+                <div class="system-controls">
+                                        <div class="system-card">
+                                            <h3 id="system-session-header">Session</h3>
+                                            <p id="system-session-desc">Log out of the web interface.</p>
+                                            <button id="system-logout-btn" class="btn-secondary">Logout</button>
+                                        </div>
+                                        <div class="system-card danger">
+                                            <h3 id="system-twitch-logout-header">Twitch Account</h3>
+                                            <p id="system-twitch-logout-desc">Forget the saved Twitch session and log in again. Your dashboard password and other settings are kept.</p>
+                                            <button id="system-twitch-logout-btn" class="btn-danger">Log out of Twitch</button>
+                                            <button id="system-twitch-login-btn" class="btn-secondary desktop-login-btn" style="display:none" data-i18n="gui.system.twitch_login_btn">Log in to Twitch</button>
+                                        </div>
+                </div>
+                </div>
+                <div id="system-twitch-status" class="system-status"></div>
+                </div>
+                <div class="settings-panel" role="tabpanel" id="settings-panel-system" aria-labelledby="settings-tab-system" tabindex="0" hidden>
+                    <h2 id="system-header" hidden>System</h2>
+                <div class="settings-grid">
+                                    <section class="settings-section">
+                                        <h2 id="settings-general-header">General</h2>
+                                        <label>
+                                            <input type="checkbox" id="dark-mode"> Dark Mode
+                                        </label>
+                                        <label>
+                                            <input type="checkbox" id="show-twitch-usernames" checked> <span data-i18n="gui.settings.general.show_usernames">Show Twitch Usernames in Header</span>
+                                        </label>
+                                        <label>
+                                            <input type="checkbox" id="tab-counter-toggle" checked> <span data-i18n="gui.settings.general.tab_counter">Show Remaining Drops (linked) in Tab Title</span>
+                                        </label>
+                                        <label>
+                                            Connection Quality:
+                                            <input type="number" id="connection-quality" min="1" max="6" value="1">
+                                        </label>
+                                        <label>
+                                            Minimum Refresh Interval (minutes):
+                                            <input type="number" id="minimum-refresh-interval" min="1" max="1440" value="30">
+                                        </label>
+                                        <label>
+                                            <span id="settings-proxy-label">Proxy URL:</span>
+                                            <input type="text" id="proxy-url" placeholder="http://user:pass@host:port">
+                                            <button id="set-proxy-btn" class="secondary-btn" title="Set and verify proxy" data-i18n-title="gui.settings.set_proxy_title">Set Proxy</button>
+                                            <button id="verify-proxy-btn" class="secondary-btn" title="Test proxy connection" data-i18n-title="gui.settings.verify_proxy_title">Verify</button>
+                                        </label>
+                                        <small class="help-text-inline" id="settings-proxy-help" style="margin-top: 5px;">Leave empty to disable. Supports HTTP/HTTPS/SOCKS.</small>
+                                        <div id="proxy-verify-result" class="verify-result" style="display: none;"></div>
+                                    </section>
+                                    <div class="system-card" id="autostart-card" style="display:none">
+                                        <h3 id="autostart-header" data-i18n="gui.system.autostart_header">Start at login</h3>
+                                        <p style="font-size:.82rem;color:var(--text-secondary);margin:4px 0 10px" data-i18n="gui.system.autostart_desc">Launch the miner automatically when you sign in. It starts in the background without opening a browser tab.</p>
+                                        <label style="display:flex;gap:8px;align-items:center;font-size:.9rem;cursor:pointer">
+                                            <input type="checkbox" id="autostart-toggle" aria-describedby="autostart-status">
+                                            <span data-i18n="gui.system.autostart_label">Start at login</span>
+                                        </label>
+                                        <p id="autostart-status" role="status" aria-live="polite" style="font-size:.82rem;margin:8px 0 0"></p>
+                                    </div>
+                                    <div class="system-card" id="backup-card">
+                                        <h3 data-i18n="gui.system.backup_header">Backup / Restore</h3>
+                                        <p style="font-size:.82rem;color:var(--text-secondary);margin:4px 0 10px" data-i18n="gui.system.backup_desc">Move your accounts and settings to another install (source, Docker or Windows app). The export contains your login cookies and tokens - keep it private.</p>
+                                        <button id="export-data-btn" class="btn-secondary" style="width:auto;padding:7px 14px;font-size:.85rem" data-i18n="gui.system.backup_export">Export data</button>
+                                        <button id="import-data-btn" class="btn-secondary" style="width:auto;padding:7px 14px;font-size:.85rem" data-i18n="gui.system.backup_import">Import data</button>
+                                        <input type="file" id="import-data-file" accept=".zip,application/zip" style="display:none">
+                                        <p id="backup-result" role="status" aria-live="polite" style="font-size:.82rem;margin:6px 0 0"></p>
+                                    </div>
+                                    <div class="system-card" id="diagnostics-card">
+                                        <h3 id="system-diagnostics-header" data-i18n="gui.system.diagnostics_header">Diagnostics</h3>
+                                        <p style="font-size:.82rem;color:var(--text-secondary);margin:4px 0 10px" data-i18n="gui.system.diagnostics_desc">Reporting a bug? Download the log file and attach it — makes it far easier to pin down what happened.</p>
+                                        <button id="download-logs-btn" class="btn-secondary" style="width:auto;padding:7px 14px;font-size:.85rem" data-i18n="gui.system.download_logs">⬇ Download Logs</button>
+                                        <button id="dump-diagnostics-btn" class="btn-secondary" type="button" aria-describedby="diagnostics-help" style="width:auto;padding:7px 14px;font-size:.85rem" data-i18n="gui.settings.dump_diagnostics">Dump diagnosis data</button>
+                                        <p id="diagnostics-help" data-i18n="gui.settings.diagnostics_help" style="font-size:.8rem;color:var(--text-secondary);margin:8px 0 0">Saves deidentified miner state and recent sanitized API responses to the diagnostics folder in this account's data directory.</p>
+                                        <p id="diagnostics-result" role="status" aria-live="polite" style="font-size:.82rem;margin:6px 0 0"></p>
+                                    </div>
+                </div>
+                <div class="system-controls" id="system-section">
+                                        <div class="system-card">
+                                            <h3 id="system-miner-header">Miner</h3>
+                                            <p id="system-miner-desc">Reload campaigns and restart the mining loop.</p>
+                                            <button id="system-reload-btn" class="btn-primary">Reload Campaigns</button>
+                                        </div>
+                                        <div class="system-card danger">
+                                            <h3 id="system-restart-header">Restart</h3>
+                                            <p id="system-restart-desc">Stop the miner process. PM2 will restart it automatically.</p>
+                                            <button id="system-restart-btn" class="btn-danger">Restart Miner</button>
+                                        </div>
+                </div>
+                <div id="system-status" class="system-status"></div>
+                </div>
             </div>
         </div>
 

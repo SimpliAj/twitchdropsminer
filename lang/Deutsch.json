@@ -289,6 +289,14 @@
       "blacklist_ids_help": "Bestimmte Drops, die anhand der exakten ID ausgeschlossen werden — über die 🚫-Schaltfläche neben einem aktiven Drop oder manuell unten hinzugefügt. Im Gegensatz zur Schlüsselwort-Blacklist oben betrifft dies genau einen Drop; andere Drops desselben Spiels werden weiterhin gemint.",
       "blacklisted_games_header": "Blockierte Spiele",
       "blacklisted_games_help": "Spiele, die hier aufgeführt sind, werden nie automatisch zu \"Zu beobachtende Spiele\" hinzugefügt durch \"Verlinkte Spiele automatisch hinzufügen\", selbst wenn Twitch eine Drop-Kampagne dafür verlinkt. Das Entfernen eines Spiels aus \"Zu beobachtende Spiele\" bewirkt dies bereits automatisch — verwenden Sie diese Liste, um ein Spiel direkt zu blockieren, ohne es vorher hinzuzufügen.",
+      "tabs": {
+        "games": "Spiele",
+        "mining": "Mining",
+        "points": "Punkte & Wetten",
+        "notifications": "Benachrichtigungen",
+        "accounts": "Konten",
+        "system": "System"
+      },
       "categories": {
         "system": "System",
         "notifications": "Benachrichtigungen",
@@ -447,6 +455,12 @@
       "diagnostics_header": "Diagnose",
       "diagnostics_desc": "Einen Fehler melden? Laden Sie die Logdatei herunter und hängen Sie sie an — das macht die Ursachensuche viel einfacher.",
       "download_logs": "⬇ Logs herunterladen",
+      "backup_header": "Sichern / Wiederherstellen",
+      "backup_desc": "Konten und Einstellungen auf eine andere Installation übertragen (Quellcode, Docker oder Windows-App). Der Export enthält Ihre Login-Cookies und Tokens – bitte privat halten.",
+      "backup_export": "Daten exportieren",
+      "backup_import": "Daten importieren",
+      "backup_confirm": "Der Import ersetzt Ihre aktuellen Konten und Einstellungen durch das Backup und startet den Miner neu. Ihre aktuellen Dateien bleiben in einem Ordner import-backup erhalten. Fortfahren?",
+      "backup_done": "Importiert, Neustart...",
       "accounts_desc": "Zwischen gespeicherten Twitch-Anmeldungen dieser Instanz wechseln.",
       "instance_remove_title": "Instanz entfernen",
       "instance_remove_confirm": "Konto {n} entfernen? Der Prozess wird gestoppt. Die Daten bleiben erhalten.",

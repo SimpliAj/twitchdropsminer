@@ -216,6 +216,7 @@ class GUISettingsOptional(TypedDict, total=False):
     blacklisted_games_placeholder: str
     campaign_end_notification: str
     categories: dict[str, str]
+    tabs: dict[str, str]
     idle_parallel: str
     idle_parallel_help: str
     password_repeat_placeholder: str
