@@ -35,6 +35,7 @@ from src.config.paths import (
     WEB_DIR,
 )
 from src.desktop import AutostartError, AutostartManager, login_gate, restart_process
+from src.services import update_announcer
 from src.services.pause_timer import pause_deadline
 from src.web.diagnostics_api import DiagnosticsAPI
 from src.web.host_guard import HostGuardMiddleware
@@ -526,6 +527,9 @@ def set_managers(gui: WebGUIManager, twitch: Twitch):
     gui.set_socketio(sio)
     _patch_status_for_persistence(gui)
     asyncio.create_task(_auto_resume_mode())
+    asyncio.create_task(
+        update_announcer.announce_loop(lambda: twitch_client.settings.discord_webhook_health)
+    )
 
 
 def _patch_status_for_persistence(gui: WebGUIManager) -> None:
@@ -1301,8 +1305,7 @@ async def get_instance():
 @app.get("/api/version")
 async def get_version():
     """Get current application version and check for updates"""
-    import aiohttp
-
+    from src.services.update_announcer import fetch_latest_release, is_newer
     from src.version import __version__
 
     current_version = __version__
@@ -1312,22 +1315,11 @@ async def get_version():
     release_notes = None
 
     try:
-        # Check GitHub API for latest release
-        async with (
-            aiohttp.ClientSession() as session,
-            session.get(
-                "https://api.github.com/repos/SimpliAj/twitchdropsminer/releases/latest", timeout=5
-            ) as response,
-        ):
-            if response.status == 200:
-                data = await response.json()
-                latest_version = data.get("tag_name", "").lstrip("v")
-                download_url = data.get("html_url")
-                release_notes = data.get("body", "")
-
-                # Compare versions (simple string comparison works for semantic versioning)
-                if latest_version and latest_version > current_version:
-                    update_available = True
+        if release := await fetch_latest_release():
+            latest_version = release["version"]
+            download_url = release["url"]
+            release_notes = release["notes"]
+            update_available = is_newer(latest_version, current_version)
     except Exception as e:
         logger.warning(f"Failed to check for updates: {str(e)}")
 
