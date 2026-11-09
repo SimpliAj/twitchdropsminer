@@ -1229,6 +1229,11 @@ async def update_settings(settings: SettingsUpdate, request: Request):
         new_url = (settings_dict.get("integrity_helper_url") or "").strip()
         if new_url and not browser_login._helper_url_is_safe(new_url):
             raise HTTPException(status_code=400, detail=_HELPER_UNSAFE_MESSAGE)
+        if (
+            new_url and new_url != stored.integrity_helper_url and stored.integrity_helper_key
+            and not (settings_dict.get("integrity_helper_key") or "").strip()
+        ):  # the saved key is only for the saved address
+            raise HTTPException(status_code=400, detail="Enter the key for the new helper address.")
     gui_manager.settings.update_settings(settings_dict)
     if helper_before != (stored.integrity_helper_url, stored.integrity_helper_key) and twitch_client:
         twitch_client._auth_state.reset_integrity_token()
@@ -1520,6 +1525,10 @@ async def trigger_restart():
 def _browser_session_only(request: Request, what: str = "Backups") -> None:
     if request.headers.get("X-Bot-Token") or request.headers.get("X-Fleet-Password"):
         raise HTTPException(status_code=403, detail=f"{what} are only available from the dashboard")
+    # Without a dashboard password anyone on the network reaches the API: these routes hand out or
+    # redirect the Twitch session, so then they only work from this machine.
+    if not _get_password() and (request.client is None or request.client.host not in ("127.0.0.1", "::1")):
+        raise HTTPException(status_code=403, detail=f"{what} need a dashboard password when used over the network")
 
 
 _HELPER_UNSAFE_MESSAGE = "Use https://, or plain http only for a LAN, loopback or VPN (Tailscale) address."

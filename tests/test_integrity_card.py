@@ -51,7 +51,7 @@ class IntegrityCardCase(unittest.TestCase):
         for var in (browser_login.INTEGRITY_HELPER_URL_ENV, browser_login.INTEGRITY_HELPER_KEY_ENV):
             import os
             os.environ.pop(var, None)
-        self.client = TestClient(app_module.app)
+        self.client = TestClient(app_module.app, client=("127.0.0.1", 50000))
 
     def save(self, **fields):
         return self.client.post("/api/settings", json=fields)
@@ -102,6 +102,16 @@ class TestHelperSettings(IntegrityCardCase):
             self.assertEqual(response.status_code, 403)
         self.assertEqual(self.settings.integrity_helper_url, "")
         self.assertEqual(self.client.post("/api/settings", json={"dark_mode": True}, headers=headers).status_code, 200)
+
+    def test_new_address_needs_its_own_key(self):
+        self.assertEqual(self.save(integrity_helper_url="http://192.168.0.5:8099", integrity_helper_key="k" * 20).status_code, 200)
+        self.assertEqual(self.save(integrity_helper_url="http://192.168.0.6:8099").status_code, 400)
+
+    def test_no_password_over_the_network_is_refused(self):
+        remote = TestClient(app_module.app, client=("192.168.0.9", 50000))
+        r = remote.post("/api/settings", json={"integrity_helper_url": "http://192.168.0.5:8099"})
+        self.assertEqual(r.status_code, 403)
+        self.assertEqual(remote.post("/api/integrity/test-helper", json={"url": "", "key": ""}).status_code, 403)
 
     def test_env_wins_over_saved_settings(self):
         self.save(integrity_helper_url="https://saved.example.com", integrity_helper_key=KEY)
