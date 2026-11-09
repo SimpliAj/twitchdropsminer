@@ -67,6 +67,8 @@ class SettingsManager:
         """
         settings = vars(self._settings).copy()
         settings["proxy"] = mask_proxy_url(settings.get("proxy") or "")
+        # The helper key never leaves the server; the dashboard only learns that one is set.
+        settings["integrity_helper_key_set"] = bool(settings.pop("integrity_helper_key", ""))
         return settings
 
     def get_languages(self) -> dict[str, Any]:
@@ -120,6 +122,14 @@ class SettingsManager:
                 True,
                 lambda proxy: self._log_change("Proxy cleared") if proxy == "" else None,
             )
+        # Set by hand, not via check_and_update_setting, which logs the new value.
+        helper_key = (settings_data.get("integrity_helper_key") or "").strip()
+        if helper_key:
+            self._settings.integrity_helper_key = helper_key
+        if settings_data.get("integrity_helper_url") is not None:
+            self._settings.integrity_helper_url = settings_data["integrity_helper_url"].strip()
+            if not self._settings.integrity_helper_url:
+                self._settings.integrity_helper_key = ""  # clearing the URL switches the helper off
         should_trigger_update |= self.check_and_update_setting(
             "minimum_refresh_interval_minutes",
             settings_data.get("minimum_refresh_interval_minutes"),

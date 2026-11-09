@@ -133,11 +133,15 @@ Twitch only lets drops be claimed (and campaign details be read) with a Client-I
 TDM_INTEGRITY_HELPER_KEY=<long random secret> python -m src.auth.integrity_helper --host <LAN/VPN IP> --port 8099
 ```
 
+Then tell TDM about it, either in the dashboard under **Settings → System → Twitch integrity check** (enter the URL and key, **Test connection**, **Save**; the card also shows whether Twitch currently accepts your token), or in TDM's environment on the Pi:
+
 ```bash
 # on the Pi, in TDM's environment
 TDM_INTEGRITY_HELPER_URL=http://<LAN/VPN IP>:8099
 TDM_INTEGRITY_HELPER_KEY=<the same secret>
 ```
+
+Environment variables win over the dashboard setting.
 
 Your Twitch session is sent to the helper for each mint (about every 16 h), so only point TDM at a machine you own; plain `http://` is only accepted for LAN and Tailscale addresses. Without a helper, drops Twitch won't let TDM claim show up under **Claim manually** on the dashboard.
 

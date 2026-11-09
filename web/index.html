@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap">
-    <link rel="stylesheet" href="/static/styles.css?v=20261101c">
+    <link rel="stylesheet" href="/static/styles.css?v=20261109a">
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
 
@@ -769,6 +769,34 @@
                                         <input type="file" id="import-data-file" accept=".zip,application/zip" style="display:none">
                                         <p id="backup-result" role="status" aria-live="polite" style="font-size:.82rem;margin:6px 0 0"></p>
                                     </div>
+                                    <div class="system-card" id="integrity-card">
+                                        <h3 data-i18n="gui.system.integrity_header">Twitch integrity check</h3>
+                                        <div id="integrity-state" class="integrity-state" role="status" aria-live="polite">
+                                            <strong id="integrity-state-title"></strong>
+                                            <span id="integrity-state-detail"></span>
+                                            <span id="integrity-state-next"></span>
+                                        </div>
+                                        <p id="integrity-meta" class="integrity-meta"></p>
+                                        <p id="integrity-arm-hint" class="integrity-arm" hidden data-i18n="gui.system.integrity_arm_hint">This looks like a Linux ARM device such as a Raspberry Pi. Twitch usually rejects integrity tokens made here, so set up an integrity helper below.</p>
+                                        <div class="integrity-form">
+                                            <label for="integrity-helper-url" data-i18n="gui.system.integrity_url_label">Helper URL</label>
+                                            <input type="text" id="integrity-helper-url" class="integrity-input" placeholder="http://192.168.0.5:8099" autocomplete="off" spellcheck="false">
+                                            <label for="integrity-helper-key" data-i18n="gui.system.integrity_key_label">Helper key</label>
+                                            <input type="password" id="integrity-helper-key" class="integrity-input" autocomplete="new-password">
+                                            <p id="integrity-env-note" class="integrity-meta" hidden data-i18n="gui.system.integrity_env_note">Set by environment variables</p>
+                                            <div class="integrity-actions">
+                                                <button id="integrity-save-btn" class="btn-secondary" type="button" data-i18n="gui.system.integrity_save">Save</button>
+                                                <button id="integrity-test-btn" class="btn-secondary" type="button" data-i18n="gui.system.integrity_test">Test connection</button>
+                                            </div>
+                                            <p id="integrity-result" role="status" aria-live="polite" class="integrity-result"></p>
+                                        </div>
+                                        <p class="integrity-help" data-i18n="gui.system.integrity_help">On a normal PC with Chrome or Chromium, in a TDM checkout, start the helper, then enter its address and key above. Leave the URL empty and save to switch the helper off.</p>
+                                        <div class="integrity-command">
+                                            <code id="integrity-command">TDM_INTEGRITY_HELPER_KEY=&lt;long random secret&gt; python -m src.auth.integrity_helper --host &lt;LAN/VPN IP&gt; --port 8099</code>
+                                            <button id="integrity-copy-btn" class="btn-secondary" type="button" data-i18n="gui.system.integrity_copy">Copy</button>
+                                        </div>
+                                        <p class="integrity-help"><span data-i18n="gui.system.integrity_warn">Your Twitch session is sent to the helper, so only use a helper you run yourself.</span> <a href="https://github.com/SimpliAj/twitchdropsminer#-raspberry-pi--arm-integrity-helper" target="_blank" rel="noopener noreferrer" data-i18n="gui.system.integrity_readme">Setup guide</a></p>
+                                    </div>
                                     <div class="system-card" id="diagnostics-card">
                                         <h3 id="system-diagnostics-header" data-i18n="gui.system.diagnostics_header">Diagnostics</h3>
                                         <p style="font-size:.82rem;color:var(--text-secondary);margin:4px 0 10px" data-i18n="gui.system.diagnostics_desc">Reporting a bug? Download the log file and attach it — makes it far easier to pin down what happened.</p>
@@ -1474,7 +1502,7 @@ TDM_PORT=8080 WEB_PASSWORD=mysecretpassword pm2 start main.py --name twitchdrops
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" integrity="sha384-e6nUZLBkQ86NJ6TVVKAeSaK8jWa3NhkYWZFomE39AvDbQWeie9PlQqM3pmYW5d1g" crossorigin="anonymous"></script>
-    <script src="/static/app.js?v=20261101a"></script>
+    <script src="/static/app.js?v=20261109a"></script>
 </body>
 
 </html>

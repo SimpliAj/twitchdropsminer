@@ -234,17 +234,28 @@ def _decode_jwt_expiry(token: str) -> datetime:
     return datetime.now(timezone.utc) + INTEGRITY_DEFAULT_TTL
 
 
-async def acquire_integrity_token(auth_token: str, device_id: str) -> tuple[str, datetime] | None:
+def resolve_integrity_helper(saved_url: str = "", saved_key: str = "") -> tuple[str, str, bool]:
+    """(url, key, from_env): the environment variables win over the saved settings."""
+    env_url = os.environ.get(INTEGRITY_HELPER_URL_ENV, "").strip()
+    if env_url:
+        return env_url, os.environ.get(INTEGRITY_HELPER_KEY_ENV, "").strip(), True
+    return (saved_url or "").strip(), (saved_key or "").strip(), False
+
+
+async def acquire_integrity_token(
+    auth_token: str, device_id: str, saved_helper_url: str = "", saved_helper_key: str = ""
+) -> tuple[str, datetime] | None:
     """Mint a fresh Client-Integrity token: through the integrity helper when
-    TDM_INTEGRITY_HELPER_URL is set, else in a throwaway plain Chrome here.
+    one is configured (environment or saved settings), else in a throwaway
+    plain Chrome here.
 
     Best-effort: returns None on any failure (never raises) -- the caller
     (_AuthState._ensure_integrity_token) treats a missing token as "proceed
     without the header, try again later".
     """
-    helper_url = os.environ.get(INTEGRITY_HELPER_URL_ENV, "").strip()
+    helper_url, helper_key, _from_env = resolve_integrity_helper(saved_helper_url, saved_helper_key)
     if helper_url:
-        return await _mint_via_helper(helper_url, auth_token, device_id)
+        return await _mint_via_helper(helper_url, auth_token, device_id, helper_key)
     return await mint_integrity_token_locally(auth_token, device_id)
 
 
@@ -263,27 +274,43 @@ def _helper_url_is_safe(helper_url: str) -> bool:
     return ip.is_loopback or ip.is_private or ip in ipaddress.ip_network("100.64.0.0/10")
 
 
-async def _mint_via_helper(helper_url: str, auth_token: str, device_id: str) -> tuple[str, datetime] | None:
+async def request_helper_mint(
+    helper_url: str, helper_key: str, auth_token: str, device_id: str
+) -> tuple[tuple[str, datetime] | None, str]:
+    """One mint through the helper: (result, reason) with reason one of ok,
+    unsafe, unreachable, unauthorized, bad_response or http_<status>."""
     if not _helper_url_is_safe(helper_url):
-        logger.warning(f"{INTEGRITY_HELPER_URL_ENV} must be https:// outside a LAN or VPN; not sending the session there")
-        return None
-    headers = {"Authorization": f"Bearer {os.environ.get(INTEGRITY_HELPER_KEY_ENV, '').strip()}"}
+        return None, "unsafe"
     timeout = aiohttp.ClientTimeout(total=INTEGRITY_MINT_TIMEOUT_SEC + 60)
     try:
         async with aiohttp.ClientSession(timeout=timeout) as session, session.post(
             f"{helper_url.rstrip('/')}/mint",
             json={"auth_token": auth_token, "device_id": device_id},
-            headers=headers,
+            headers={"Authorization": f"Bearer {helper_key}"},
         ) as response:
+            if response.status in (401, 403):
+                return None, "unauthorized"
             if response.status != 200:
-                logger.warning(f"Integrity helper answered HTTP {response.status}")
-                return None
+                return None, f"http_{response.status}"
             data = await response.json()
+        return (data["token"], datetime.fromtimestamp(data["expires_at"], timezone.utc)), "ok"
+    except (aiohttp.ClientError, asyncio.TimeoutError, OSError):
+        return None, "unreachable"
+    except Exception:
+        return None, "bad_response"
+
+
+async def _mint_via_helper(
+    helper_url: str, auth_token: str, device_id: str, helper_key: str = ""
+) -> tuple[str, datetime] | None:
+    result, reason = await request_helper_mint(helper_url, helper_key, auth_token, device_id)
+    if result is not None:
         logger.info("Client-Integrity token received from the integrity helper")
-        return data["token"], datetime.fromtimestamp(data["expires_at"], timezone.utc)
-    except Exception as exc:
-        logger.warning(f"Integrity helper unreachable: {type(exc).__name__}")
-        return None
+    elif reason == "unsafe":
+        logger.warning("The integrity helper URL must be https:// outside a LAN or VPN; not sending the session there")
+    else:
+        logger.warning(f"Integrity helper failed: {reason}")
+    return result
 
 
 async def mint_integrity_token_locally(auth_token: str, device_id: str) -> tuple[str, datetime] | None:

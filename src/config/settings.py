@@ -53,6 +53,8 @@ default_settings = {
         "UNKNOWN": True,
     },
     "proxy": "",
+    "integrity_helper_url": "",
+    "integrity_helper_key": "",
     "claim_channel_points": True,
     "idle_channels": [],
     "idle_parallel": True,
@@ -102,6 +104,8 @@ class Settings:
     minimum_refresh_interval_minutes: int
     mining_benefits: dict[str, bool]
     proxy: str
+    integrity_helper_url: str
+    integrity_helper_key: str
     claim_channel_points: bool
     idle_channels: list[str]
     idle_parallel: bool

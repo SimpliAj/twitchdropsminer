@@ -2262,6 +2262,30 @@ body.dark-mode .tab-button.active { color: var(--glitch-glow); }
 }
 .btn-secondary:hover { background: var(--seam); }
 
+/* Twitch integrity check card */
+#integrity-card { grid-column: 1 / -1; }
+.integrity-state { display: flex; flex-direction: column; gap: 2px; padding: 10px 14px; border-radius: var(--r-sm); border: 1px solid var(--seam); font-size: 0.9rem; color: var(--ink-dim); }
+.integrity-state strong { color: var(--ink); }
+.integrity-state.ok { background: rgba(18, 128, 95, 0.14); border-color: rgba(18, 128, 95, 0.35); }
+.integrity-state.ok strong { color: var(--signal); }
+.integrity-state.rejected { background: rgba(194, 42, 62, 0.14); border-color: rgba(194, 42, 62, 0.35); }
+.integrity-state.rejected strong { color: var(--alert); }
+.system-card p.integrity-meta { margin: 8px 0 0; font-size: 0.82rem; }
+.system-card p.integrity-arm { margin: 8px 0 0; padding: 8px 12px; border-radius: var(--r-sm); border: 1px solid var(--warn); color: var(--ink); }
+.integrity-form { display: grid; gap: 6px; max-width: 520px; margin-top: 14px; }
+.integrity-form label { font-size: 0.82rem; color: var(--ink-dim); }
+.integrity-input { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--seam); border-radius: var(--r-sm); background: var(--panel-raised); color: var(--ink); font-family: var(--font-body); }
+.integrity-input:focus { outline: none; border-color: var(--ore); }
+.integrity-input:disabled, .integrity-actions .btn-secondary:disabled { opacity: 0.5; cursor: default; }
+.integrity-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.integrity-actions .btn-secondary, .integrity-command .btn-secondary { width: auto; padding: 7px 14px; font-size: 0.85rem; }
+.system-card p.integrity-result { margin: 0; font-size: 0.82rem; }
+.integrity-result.success { color: var(--signal); }
+.integrity-result.error { color: var(--alert); }
+.system-card p.integrity-help { margin: 14px 0 0; font-size: 0.82rem; }
+.integrity-command { display: flex; gap: 8px; align-items: flex-start; margin-top: 8px; }
+.integrity-command code { flex: 1; min-width: 0; padding: 8px 10px; border-radius: var(--r-sm); background: var(--panel-raised); border: 1px solid var(--seam); font-size: 0.78rem; overflow-wrap: anywhere; user-select: all; }
+
 .system-status { margin-top: 16px; padding: 10px 14px; border-radius: var(--r-sm); font-size: 0.9rem; display: none; }
 .system-status.success { display: block; background: rgba(18, 128, 95, 0.14); color: var(--signal); border: 1px solid rgba(18, 128, 95, 0.35); }
 .system-status.error { display: block; background: rgba(194, 42, 62, 0.14); color: var(--alert); border: 1px solid rgba(194, 42, 62, 0.35); }

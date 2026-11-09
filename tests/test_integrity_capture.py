@@ -127,7 +127,7 @@ class TestIntegrityHelper(unittest.IsolatedAsyncioTestCase):
         ):
             result = await acquire_integrity_token("token123", "device-abc")
         self.assertEqual(result, ("itok", expiry))
-        via_helper.assert_awaited_once_with("http://100.77.0.1:8099", "token123", "device-abc")
+        via_helper.assert_awaited_once_with("http://100.77.0.1:8099", "token123", "device-abc", "")
         local.assert_not_awaited()
 
     async def test_never_sends_the_session_over_public_plain_http(self):

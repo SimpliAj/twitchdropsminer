@@ -2134,6 +2134,7 @@ function updateWantedOrderHint() {
 
 function updateSettingsUI(settings) {
     state.settings = settings;
+    renderIntegrity();
     updateWantedOrderHint();
     state.settingsLoaded = true;
     document.getElementById('dark-mode').checked = settings.dark_mode || false;
@@ -4355,6 +4356,7 @@ function applyTranslations(t) {
 
     // Static markup bound via data-i18n attributes (see applyDataI18n)
     applyDataI18n();
+    renderIntegrity();
     // Re-render the "Game:" line under the status in the new language
     if (state.statusGame) setStatusGame(state.statusGame);
 }
@@ -4802,6 +4804,7 @@ function showSettingsPanel(name, { focus = false, scroll = true } = {}) {
         }
     });
     try { localStorage.setItem(SETTINGS_PANEL_KEY, name); } catch (e) { /* storage unavailable */ }
+    setIntegrityPolling(name === 'system');
     if (scroll) window.scrollTo(0, 0);
 }
 
@@ -5365,6 +5368,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('dump-diagnostics-btn')?.addEventListener('click', dumpDiagnostics);
 
     initAutostartCard();
+    initIntegrityCard();
 
     document.getElementById('qc-switch-btn')?.addEventListener('click', async () => {
         try {
@@ -6983,4 +6987,121 @@ async function dumpDiagnostics() {
         button.disabled = false;
         button.removeAttribute('aria-busy');
     }
+}
+
+// "Twitch integrity check" card (Settings -> System): status from GET /api/integrity/status,
+// helper address/key saved through /api/settings. The key is write-only: the server only says whether one is set.
+let _integrityTimer = null;
+
+async function refreshIntegrity() {
+    try {
+        const response = await fetch(API_BASE + '/api/integrity/status');
+        if (!response.ok) return;
+        state.integrity = await response.json();
+        renderIntegrity();
+    } catch (_) { /* keep the last status */ }
+}
+
+// Polls only while the System panel is on screen.
+function setIntegrityPolling(on) {
+    clearInterval(_integrityTimer);
+    _integrityTimer = null;
+    if (!on) return;
+    refreshIntegrity();
+    _integrityTimer = setInterval(() => {
+        const panel = document.getElementById('settings-panel-system');
+        if (!document.hidden && panel && panel.offsetParent !== null) refreshIntegrity();
+    }, 15000);
+}
+
+function renderIntegrity() {
+    const info = state.integrity;
+    const card = document.getElementById('integrity-card');
+    if (!info || !card) return;
+    const text = {
+        ok: ['Working', 'A Twitch integrity token is cached, so inventory and automatic claims work.'],
+        rejected: ['Twitch rejected the token', "Drops can't be claimed automatically until this is fixed; claim them by hand under Claim manually. On a Raspberry Pi or other ARM device, an integrity helper on a normal PC fixes it."],
+        none: ['No token yet', 'TDM requests one after you log in to Twitch and again when the old one expires.'],
+    };
+    const [title, detail] = text[info.state] || text.none;
+    const box = document.getElementById('integrity-state');
+    box.className = 'integrity-state ' + (info.state in text ? info.state : 'none');
+    document.getElementById('integrity-state-title').textContent = tr('gui.system.integrity_state_' + info.state, title);
+    document.getElementById('integrity-state-detail').textContent = tr('gui.system.integrity_state_' + info.state + '_detail', detail);
+    document.getElementById('integrity-state-next').textContent = info.next_attempt_at
+        ? tr('gui.system.integrity_next_attempt', 'Next attempt at {time}', { time: new Date(info.next_attempt_at).toLocaleTimeString() })
+        : '';
+    const source = info.source === 'helper'
+        ? tr('gui.system.integrity_source_helper', 'Tokens come from: your integrity helper')
+        : tr('gui.system.integrity_source_local', 'Tokens come from: this device');
+    document.getElementById('integrity-meta').textContent =
+        source + ' · ' + tr('gui.system.integrity_machine', 'Architecture: {machine}', { machine: info.machine });
+    document.getElementById('integrity-arm-hint').hidden = !info.arm_hint;
+
+    const urlInput = document.getElementById('integrity-helper-url');
+    const keyInput = document.getElementById('integrity-helper-key');
+    const env = Boolean(info.helper_from_env);
+    if (!urlInput.dataset.dirty) urlInput.value = env ? '' : (state.settings.integrity_helper_url || '');
+    keyInput.placeholder = state.settings.integrity_helper_key_set && !env
+        ? tr('gui.system.integrity_key_saved', 'Saved - leave empty to keep it') : '';
+    for (const el of [urlInput, keyInput, document.getElementById('integrity-save-btn')]) el.disabled = env;
+    document.getElementById('integrity-env-note').hidden = !env;
+}
+
+function initIntegrityCard() {
+    const urlInput = document.getElementById('integrity-helper-url');
+    const keyInput = document.getElementById('integrity-helper-key');
+    const result = document.getElementById('integrity-result');
+    if (!urlInput || urlInput.dataset.bound === '1') return;
+    urlInput.dataset.bound = '1';
+    urlInput.addEventListener('input', () => { urlInput.dataset.dirty = '1'; });
+    const show = (text, cls) => { result.textContent = text; result.className = 'integrity-result ' + cls; };
+    const post = async (path, body) => {
+        const response = await fetch(API_BASE + path, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+        });
+        return { response, data: await response.json().catch(() => ({})) };
+    };
+
+    document.getElementById('integrity-save-btn').addEventListener('click', async () => {
+        const body = { integrity_helper_url: urlInput.value.trim() };
+        if (keyInput.value) body.integrity_helper_key = keyInput.value;
+        try {
+            const { response, data } = await post('/api/settings', body);
+            if (!response.ok) { show(data.detail || ('HTTP ' + response.status), 'error'); return; }
+            keyInput.value = '';
+            delete urlInput.dataset.dirty;
+            if (data.settings) state.settings = data.settings;
+            show(tr('gui.system.integrity_saved', 'Saved. The next token comes from this setup.'), 'success');
+            refreshIntegrity();
+        } catch (e) {
+            show(tr('gui.common.error', 'Error: {error}', { error: e.message }), 'error');
+        }
+    });
+
+    const testBtn = document.getElementById('integrity-test-btn');
+    testBtn.addEventListener('click', async () => {
+        testBtn.disabled = true;
+        show(tr('gui.system.integrity_testing', 'Testing - the helper starts a browser, this can take a minute...'), '');
+        try {
+            const { response, data } = await post('/api/integrity/test-helper', { url: urlInput.value, key: keyInput.value });
+            if (!response.ok) show(data.detail || ('HTTP ' + response.status), 'error');
+            else show(data.message, data.ok ? 'success' : 'error');
+        } catch (e) {
+            show(tr('gui.common.error', 'Error: {error}', { error: e.message }), 'error');
+        } finally {
+            testBtn.disabled = false;
+        }
+    });
+
+    const copyBtn = document.getElementById('integrity-copy-btn');
+    copyBtn.addEventListener('click', async () => {
+        try {
+            await navigator.clipboard.writeText(document.getElementById('integrity-command').textContent);
+            copyBtn.textContent = tr('gui.system.integrity_copied', 'Copied');
+        } catch (_) {
+            window.getSelection().selectAllChildren(document.getElementById('integrity-command'));
+        }
+        setTimeout(() => { copyBtn.textContent = tr('gui.system.integrity_copy', 'Copy'); }, 1500);
+    });
 }

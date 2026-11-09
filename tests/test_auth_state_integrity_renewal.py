@@ -9,6 +9,7 @@ def _auth_state_with_identity():
     auth_state = _AuthState(MagicMock())
     auth_state.access_token = "token123"
     auth_state.device_id = "device-abc"
+    auth_state._twitch.settings = MagicMock(integrity_helper_url="", integrity_helper_key="")
     return auth_state
 
 
@@ -39,7 +40,7 @@ class TestEnsureIntegrityTokenRenewal(unittest.IsolatedAsyncioTestCase):
         ) as mock_acquire:
             await auth_state._ensure_integrity_token()
 
-        mock_acquire.assert_awaited_once_with("token123", "device-abc")
+        mock_acquire.assert_awaited_once_with("token123", "device-abc", "", "")
         self.assertEqual(auth_state._integrity_token, "itok-1")
         self.assertEqual(auth_state._integrity_expires_at, expiry)
 

@@ -59,6 +59,7 @@ class _AuthState:
         self._integrity_expires_at: datetime | None = None
         self._integrity_failed_until: datetime | None = None
         self._integrity_minted_at: datetime | None = None
+        self._integrity_rejected_at: datetime | None = None
         self._integrity_failures = 0  # consecutive failed acquisitions / quickly rejected tokens
         # serializes renewals: concurrent validate() calls would each launch a Chromium
         self._integrity_lock = asyncio.Lock()
@@ -344,12 +345,37 @@ class _AuthState:
             return
         self._integrity_token = None
         self._integrity_expires_at = None
+        self._integrity_rejected_at = datetime.now(timezone.utc)
         if self._integrity_minted_at is not None:
             if datetime.now(timezone.utc) - self._integrity_minted_at > INTEGRITY_FAILURE_COOLDOWN:
                 self._integrity_failures = 0  # it worked for a while, so this isn't a streak
             else:
                 self._start_integrity_cooldown(self._integrity_minted_at)
         logger.warning("Client-Integrity token was rejected by Twitch; it will be renewed")
+
+    def reset_integrity_token(self) -> None:
+        """Forget the token and any cooldown, e.g. after the helper changed:
+        the next validate() renews through the new setup."""
+        self._integrity_token = self._integrity_expires_at = None
+        self._integrity_failed_until = self._integrity_rejected_at = None
+        self._integrity_failures = 0
+
+    def integrity_status(self) -> dict:
+        """ok = a token is cached (a rejected one is dropped at once);
+        rejected = Twitch refused the last one and no new one exists yet."""
+        now = datetime.now(timezone.utc)
+        if self._integrity_token is not None:
+            state = "ok"
+        elif self._integrity_rejected_at is not None:
+            state = "rejected"
+        else:
+            state = "none"
+        cooling = self._integrity_failed_until is not None and self._integrity_failed_until > now
+        return {
+            "state": state,
+            "rejected_at": self._integrity_rejected_at and self._integrity_rejected_at.isoformat(),
+            "next_attempt_at": self._integrity_failed_until.isoformat() if cooling else None,
+        }
 
     async def _ensure_integrity_token(self) -> None:
         """Keep a Client-Integrity token cached and fresh for headers().
@@ -375,7 +401,10 @@ class _AuthState:
             if not self._integrity_renewal_due():
                 return  # another caller renewed it while we waited
             logger.info("Renewing the Client-Integrity token...")
-            result = await browser_login.acquire_integrity_token(self.access_token, self.device_id)
+            result = await browser_login.acquire_integrity_token(
+                self.access_token, self.device_id,
+                self._twitch.settings.integrity_helper_url, self._twitch.settings.integrity_helper_key,
+            )
             self._adopt_integrity_token(result)
 
     def _integrity_renewal_due(self) -> bool:

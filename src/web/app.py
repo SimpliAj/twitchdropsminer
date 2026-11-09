@@ -585,6 +585,8 @@ class SettingsUpdate(BaseModel):
     dark_mode: bool | None = None
     language: str | None = None
     proxy: str | None = None
+    integrity_helper_url: str | None = None
+    integrity_helper_key: str | None = None
     connection_quality: int | None = None
     minimum_refresh_interval_minutes: int | None = None
     inventory_filters: dict | None = None
@@ -625,6 +627,11 @@ class SettingsUpdate(BaseModel):
     claim_moments: bool | None = None
     irc_chat_presence: bool | None = None
     irc_mention_notify: bool | None = None
+
+
+class IntegrityHelperTest(BaseModel):
+    url: str = ""
+    key: str = ""
 
 
 class ProxyVerifyRequest(BaseModel):
@@ -1208,13 +1215,23 @@ async def get_translations():
 
 
 @app.post("/api/settings")
-async def update_settings(settings: SettingsUpdate):
+async def update_settings(settings: SettingsUpdate, request: Request):
     """Update application settings"""
     if not gui_manager:
         raise HTTPException(status_code=503, detail="GUI not initialized")
 
     settings_dict = settings.dict(exclude_unset=True)
+    stored = gui_manager.settings._settings
+    helper_before = (stored.integrity_helper_url, stored.integrity_helper_key)
+    if "integrity_helper_url" in settings_dict or "integrity_helper_key" in settings_dict:
+        # The Twitch session is sent to this URL: not for a bot token or a sibling instance to redirect.
+        _browser_session_only(request, "Integrity helper settings")
+        new_url = (settings_dict.get("integrity_helper_url") or "").strip()
+        if new_url and not browser_login._helper_url_is_safe(new_url):
+            raise HTTPException(status_code=400, detail=_HELPER_UNSAFE_MESSAGE)
     gui_manager.settings.update_settings(settings_dict)
+    if helper_before != (stored.integrity_helper_url, stored.integrity_helper_key) and twitch_client:
+        twitch_client._auth_state.reset_integrity_token()
     return {"success": True, "settings": gui_manager.settings.get_settings()}
 
 
@@ -1500,9 +1517,60 @@ async def trigger_restart():
     return {"success": True}
 
 
-def _browser_session_only(request: Request) -> None:
+def _browser_session_only(request: Request, what: str = "Backups") -> None:
     if request.headers.get("X-Bot-Token") or request.headers.get("X-Fleet-Password"):
-        raise HTTPException(status_code=403, detail="Backups are only available from the dashboard")
+        raise HTTPException(status_code=403, detail=f"{what} are only available from the dashboard")
+
+
+_HELPER_UNSAFE_MESSAGE = "Use https://, or plain http only for a LAN, loopback or VPN (Tailscale) address."
+_HELPER_TEST_MESSAGES = {
+    "ok": "Connected. The helper minted a token.",
+    "unsafe": _HELPER_UNSAFE_MESSAGE,
+    "unreachable": "Could not reach the helper at that address.",
+    "unauthorized": "The helper refused the key.",
+    "bad_response": "The helper answered something unexpected.",
+}
+
+
+@app.get("/api/integrity/status")
+async def integrity_status():
+    import platform
+
+    status = twitch_client._auth_state.integrity_status() if twitch_client else {"state": "none"}
+    stored = gui_manager.settings._settings if gui_manager else None
+    helper_url, _key, from_env = browser_login.resolve_integrity_helper(
+        stored.integrity_helper_url if stored else "", stored.integrity_helper_key if stored else ""
+    )
+    machine = platform.machine()
+    is_arm = machine.lower().startswith(("aarch64", "arm"))
+    return {
+        **status,
+        "source": "helper" if helper_url else "local",
+        "helper_from_env": from_env,
+        "machine": machine,
+        # Apple Silicon reports arm64 too, but its Chrome is trusted by Twitch.
+        "arm_hint": is_arm and not helper_url and sys.platform != "darwin",
+    }
+
+
+@app.post("/api/integrity/test-helper")
+async def test_integrity_helper(body: IntegrityHelperTest, request: Request):
+    _browser_session_only(request, "Integrity helper tests")
+    auth_state = twitch_client._auth_state if twitch_client else None
+    if auth_state is None or not auth_state._hasattrs("access_token", "device_id"):
+        return {"ok": False, "message": "Log in to Twitch first; the test mints a token for your session."}
+    stored = gui_manager.settings._settings
+    url = body.url.strip()
+    # The saved key only goes to the saved address, never to a URL typed into the form.
+    key = body.key.strip() or (stored.integrity_helper_key if url == stored.integrity_helper_url else "")
+    url, key, _from_env = browser_login.resolve_integrity_helper(url, key)
+    if not url:
+        return {"ok": False, "message": "Enter the helper URL first."}
+    result, reason = await browser_login.request_helper_mint(url, key, auth_state.access_token, auth_state.device_id)
+    message = _HELPER_TEST_MESSAGES.get(reason)
+    if message is None:
+        message = f"The helper answered HTTP {reason.removeprefix('http_')}; check its console."
+    return {"ok": result is not None, "message": message}
 
 
 @app.get("/api/data/export")
