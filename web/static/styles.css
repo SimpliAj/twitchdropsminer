@@ -2895,5 +2895,7 @@ body.dark-mode .tab-button.active { color: var(--glitch-glow); }
 .manual-claim-item div { display: flex; flex-direction: column; min-width: 0; }
 .manual-claim-item span { font-size: 13px; opacity: 0.8; }
 
-/* the Mining cards differ a lot in height: stretching them leaves large empty areas */
-#settings-panel-mining .settings-grid { align-items: start; }
+/* the cards differ a lot in height: columns pack them without gaps, a grid cannot */
+.settings-panel .settings-grid { display: block; columns: 420px 3; column-gap: 16px; margin-bottom: 0; }
+.settings-panel .settings-grid > * { break-inside: avoid; margin: 0 0 16px; }
+.settings-panel .sortable-list:empty { min-height: 0; }
