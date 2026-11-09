@@ -145,6 +145,15 @@ class BaseDrop:
         )
 
     @property
+    def _claim_deliverable(self) -> bool:
+        # Twitch can't deliver a game reward to an account that isn't linked
+        return (
+            self.campaign.linked
+            or self.campaign.link_assumed
+            or any(b.type.is_badge_or_emote() for b in self.benefits)
+        )
+
+    @property
     def can_claim(self) -> bool:
         # https://help.twitch.tv/s/article/mission-based-drops?language=en_US#claiming
         # "If you are unable to claim the Drop in time, you will be able to claim it
@@ -152,6 +161,7 @@ class BaseDrop:
         return (
             self.claim_id is not None
             and not self.is_claimed
+            and self._claim_deliverable
             and datetime.now(timezone.utc) < self.campaign.ends_at + timedelta(hours=24)
         )
 
@@ -192,6 +202,9 @@ class BaseDrop:
             # repeat ClaimDropRewards with ELIGIBLE_FOR_ALL again
             self.is_claimed = True
             return True
+        if not self.is_claimed and not self._claim_deliverable:
+            logger.debug(f"Not claiming {self.name} ({self.id}): campaign account isn't linked")
+            return False
         result = await self._claim()
         if result:
             self.is_claimed = result
