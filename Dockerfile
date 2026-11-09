@@ -29,6 +29,7 @@ WORKDIR /app
 # - tzdata: unchanged from before
 # - xvfb: virtual X display the Chromium that fetches Twitch's integrity
 #   token runs under on this headless image (see src/auth/browser_login.py)
+# - tini: PID 1 that reaps the zombie Xvfb/Chromium children without compose's init: true
 # - procps: provides pgrep, which sweep_orphaned_processes() shells out to on
 #   every startup. Debian slim images do NOT ship it, and without it that
 #   sweep raises FileNotFoundError.
@@ -39,6 +40,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tzdata \
     xvfb \
     procps \
+    tini \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy project metadata and install dependencies
@@ -67,7 +69,10 @@ EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-    CMD python -c "import os, urllib.request; urllib.request.urlopen('http://localhost:%s/healthz' % (os.environ.get('TDM_PORT') or os.environ.get('PORT') or '8080'), timeout=2)" || exit 1
+    CMD ["python", "-c", "import os, urllib.request; urllib.request.urlopen('http://localhost:%s/healthz' % (os.environ.get('TDM_PORT') or os.environ.get('PORT') or '8080'), timeout=2)"]
+
+# tini -s: reap orphaned children even when not started as PID 1
+ENTRYPOINT ["/usr/bin/tini", "-s", "--"]
 
 # Run the application (web GUI is now default)
 CMD ["python", "main.py"]
