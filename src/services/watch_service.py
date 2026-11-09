@@ -278,7 +278,7 @@ class WatchService:
             # still live: drop the cached playlist URL so the next watch fetches a fresh one
             if channel._stream is not None:
                 channel._stream._stream_url = None
-            logger.warning(f"{channel.name} is still live, refreshing its stream URL")
+            logger.info(f"{channel.name} is still live, refreshing its stream URL")
 
     async def reconcile_drop_progress(self, channel: Channel, stream) -> bool:
         """
