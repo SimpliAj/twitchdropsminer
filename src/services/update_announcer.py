@@ -75,7 +75,7 @@ async def announce_new_release(webhook_url: str) -> None:
                 return
         ANNOUNCED_FILE.write_text(release["version"])
     except Exception as exc:
-        logger.warning(f"Release announcement failed: {exc!r}")
+        logger.warning(f"Release announcement failed: {type(exc).__name__}")
 
 
 async def announce_loop(get_webhook_url: Callable[[], str]) -> None:

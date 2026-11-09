@@ -1321,7 +1321,7 @@ async def get_version():
             release_notes = release["notes"]
             update_available = is_newer(latest_version, current_version)
     except Exception as e:
-        logger.warning(f"Failed to check for updates: {str(e)}")
+        logger.warning(f"Failed to check for updates: {type(e).__name__}")
 
     return {
         "current_version": current_version,

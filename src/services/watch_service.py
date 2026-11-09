@@ -272,7 +272,7 @@ class WatchService:
             # update_stream() reports OFFLINE through on_channel_update -> channel switch
             online = await asyncio.wait_for(channel.update_stream(), timeout=15)
         except Exception as exc:  # a failed lookup keeps the known state
-            logger.warning(f"Live re-check for {channel.name} failed: {exc!r}")
+            logger.warning(f"Live re-check for {channel.name} failed: {type(exc).__name__}")
             return
         if online:
             # still live: drop the cached playlist URL so the next watch fetches a fresh one
