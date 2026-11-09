@@ -93,3 +93,61 @@ class TestWatchLoopRecheck(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(asyncio.CancelledError):
                 await svc.watch_loop()
         svc.recheck_failing_channel.assert_not_called()
+
+
+class _Stop(Exception):
+    pass
+
+
+class TestReloadKeepsWatchedChannel(unittest.IsolatedAsyncioTestCase):
+    """Drives the real state loop through CHANNELS_CLEANUP."""
+
+    async def _cleanup(self, *, offline_after_recheck, full_cleanup_channels):
+        from src.core.client import Twitch
+        from src.utils import AwaitableValue
+        from src.config.constants import State
+
+        watched = MagicMock(id=1, offline=False, game="wanted")
+        watched.name = "watched"
+        other = MagicMock(id=2, offline=False, game="other-not-wanted", pending_online=False)
+
+        async def recheck(channel):
+            channel.offline = offline_after_recheck
+
+        client = MagicMock()
+        client._health_task = object()
+        client.get_auth = AsyncMock(return_value=MagicMock(user_id=42))
+        client.websocket.start = AsyncMock()
+        client._irc_service.start = AsyncMock()
+        client._watch_service.watch_loop = AsyncMock()
+        client._scheduler_service.run_scheduler = AsyncMock()
+        client.watching_channel = AwaitableValue()
+        client.watching_channel.set(watched)
+        client.wanted_games = ["wanted"]
+        client.channels = {}
+        client._watch_service.recheck_failing_channel = AsyncMock(side_effect=recheck)
+        client.settings.idle_use_followed = False
+        client.channels.update({ch.id: ch for ch in full_cleanup_channels})
+        client._state = State.INVENTORY_FETCH
+
+        def change_state(state):
+            if state is State.INVENTORY_FETCH:
+                client._state = State.CHANNELS_CLEANUP
+            elif state is State.CHANNELS_FETCH:
+                raise _Stop
+
+        client.change_state = change_state
+        with self.assertRaises(_Stop):
+            await Twitch._run(client)
+        return client, watched, other
+
+    async def test_live_watched_channel_stays_tracked_with_its_topics(self):
+        client, watched, _ = await self._cleanup(offline_after_recheck=False, full_cleanup_channels=[])
+        client._watch_service.recheck_failing_channel.assert_awaited_once_with(watched)
+        self.assertIs(client.channels[watched.id], watched)
+        client._remove_channel_topics.assert_not_called()
+
+    async def test_ended_watched_channel_is_not_forced_back(self):
+        client, watched, _ = await self._cleanup(offline_after_recheck=True, full_cleanup_channels=[])
+        client._watch_service.recheck_failing_channel.assert_awaited_once_with(watched)
+        self.assertNotIn(watched.id, client.channels)
