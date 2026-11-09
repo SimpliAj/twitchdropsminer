@@ -354,7 +354,8 @@
       "none": "No wanted drops queued...",
       "waiting_for_campaign": "⭐ Waiting for Campaign",
       "no_campaign": "No campaign",
-      "fallback": "Fallback"
+      "fallback": "Fallback",
+      "reward_order_hint": "Sorted by reward type first (Settings → Mining). Mining list order only breaks ties."
     },
     "main_stats": {
       "drops_today": "Drops Today",

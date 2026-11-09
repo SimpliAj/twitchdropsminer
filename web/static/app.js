@@ -2124,8 +2124,17 @@ function updateLoginStatus(data) {
     }
 }
 
+function updateWantedOrderHint() {
+    const hint = document.getElementById('wanted-order-hint');
+    if (!hint) return;
+    const on = state.settings?.reward_priority_enabled === true;
+    hint.textContent = on ? tr('gui.wanted.reward_order_hint', 'Sorted by reward type first (Settings → Mining). Mining list order only breaks ties.') : '';
+    hint.style.display = on ? 'block' : 'none';
+}
+
 function updateSettingsUI(settings) {
     state.settings = settings;
+    updateWantedOrderHint();
     state.settingsLoaded = true;
     document.getElementById('dark-mode').checked = settings.dark_mode || false;
     const listViewToggle = document.getElementById('inventory-list-view');
@@ -4229,6 +4238,7 @@ function applyTranslations(t) {
         // ID: wanted-header
         const wantedHeader = document.getElementById('wanted-header');
         if (wantedHeader) wantedHeader.textContent = t.gui.wanted.name;
+        updateWantedOrderHint();
         // Re-render wanted items to update empty message
         // Since we don't store wanted items in state globally (only receives them), we rely on updateWantedItems triggering render
     }

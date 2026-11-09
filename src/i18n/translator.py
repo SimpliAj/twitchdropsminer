@@ -136,6 +136,7 @@ class GUIBadges(TypedDict):
 
 class GUIWantedOptional(TypedDict, total=False):
     fallback: str
+    reward_order_hint: str
 
 
 class GUIWanted(GUIWantedOptional):
