@@ -1527,7 +1527,8 @@ def _browser_session_only(request: Request, what: str = "Backups") -> None:
         raise HTTPException(status_code=403, detail=f"{what} are only available from the dashboard")
     # Without a dashboard password anyone on the network reaches the API: these routes hand out or
     # redirect the Twitch session, so then they only work from this machine.
-    if not _get_password() and (request.client is None or request.client.host not in ("127.0.0.1", "::1")):
+    proxied = any(h in request.headers for h in ("forwarded", "x-forwarded-for", "x-real-ip"))
+    if not _get_password() and (proxied or request.client is None or request.client.host not in ("127.0.0.1", "::1")):
         raise HTTPException(status_code=403, detail=f"{what} need a dashboard password when used over the network")
 
 

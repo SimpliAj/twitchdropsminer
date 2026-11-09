@@ -112,6 +112,10 @@ class TestHelperSettings(IntegrityCardCase):
         r = remote.post("/api/settings", json={"integrity_helper_url": "http://192.168.0.5:8099"})
         self.assertEqual(r.status_code, 403)
         self.assertEqual(remote.post("/api/integrity/test-helper", json={"url": "", "key": ""}).status_code, 403)
+        via_proxy = self.client.post(
+            "/api/integrity/test-helper", json={"url": "", "key": ""}, headers={"X-Forwarded-For": "203.0.113.9"}
+        )
+        self.assertEqual(via_proxy.status_code, 403)
 
     def test_env_wins_over_saved_settings(self):
         self.save(integrity_helper_url="https://saved.example.com", integrity_helper_key=KEY)
