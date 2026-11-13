@@ -2060,7 +2060,7 @@ body.dark-mode .tab-button.active { color: var(--glitch-glow); }
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
+    width: 40px;
     height: 24px;
     background: var(--ore);
     color: var(--on-accent);
