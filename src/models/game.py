@@ -20,8 +20,10 @@ class Game:
         self.name: str = data.get("displayName") or data["name"]
         if "slug" in data:
             self.slug = data["slug"]
-        # Store box art URL if available (used for game icons in UI)
-        self.box_art_url: str | None = data.get("boxArtURL")
+        # Stream data carries no box art; Twitch serves it by game id for every category.
+        self.box_art_url: str | None = (
+            data.get("boxArtURL") or f"https://static-cdn.jtvnw.net/ttv-boxart/{self.id}-120x160.jpg"
+        )
 
     def __str__(self) -> str:
         return self.name
