@@ -1024,14 +1024,12 @@ function renderChannels() {
         gameGroups[gameId].channels.push(channel);
     });
 
-    // Fallback: fill missing icons from campaigns data
+    // Campaign art is the real cover; the channel icon can be Twitch's grey placeholder.
     Object.entries(gameGroups).forEach(([gameId, group]) => {
-        if (!group.icon) {
-            const camp = Object.values(state.campaigns).find(c =>
-                c.game_name && c.game_name.toLowerCase() === group.name.toLowerCase()
-            );
-            if (camp?.game_box_art_url) group.icon = camp.game_box_art_url;
-        }
+        const camp = Object.values(state.campaigns).find(c =>
+            c.game_box_art_url && c.game_name && c.game_name.toLowerCase() === group.name.toLowerCase()
+        );
+        if (camp) group.icon = camp.game_box_art_url;
     });
 
     // Sort games: prioritize games with watching channels, then by total viewers
