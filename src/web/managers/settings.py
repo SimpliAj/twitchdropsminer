@@ -93,8 +93,17 @@ class SettingsManager:
             settings_data: Dictionary of settings to update
         """
         should_trigger_update = False
+        new_games = settings_data.get("games_to_watch")
+        # With auto-prioritize the miner orders games by deadline itself, so a pure
+        # reorder (the dashboard re-sorts on every visit) must not re-gather channels.
+        reorder_only = (
+            new_games is not None
+            and getattr(self._settings, "auto_prioritize", False) is True
+            and getattr(self._settings, "reward_priority_enabled", False) is not True
+            and sorted(new_games) == sorted(self._settings.games_to_watch or [])
+        )
         should_trigger_update |= self.check_and_update_setting(
-            "games_to_watch", settings_data.get("games_to_watch"), True
+            "games_to_watch", new_games, not reorder_only
         )
         should_trigger_update |= self.check_and_update_setting(
             "dark_mode", settings_data.get("dark_mode")
