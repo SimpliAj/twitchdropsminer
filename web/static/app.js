@@ -177,12 +177,7 @@ socket.on('initial_state', (data) => {
     if (data.status) updateStatus(data.status);
 
     // Batch update channels to prevent UI freezing
-    if (data.channels) {
-        data.channels.forEach(ch => {
-            state.channels[ch.id] = ch;
-        });
-        renderChannels();
-    }
+    if (data.channels) replaceChannels(data.channels);  // a full snapshot, stale ones must go
 
     // Batch update campaigns to prevent UI freezing
     if (data.campaigns) {
@@ -311,12 +306,7 @@ socket.on('channels_clear', () => {
 });
 
 socket.on('channels_batch_update', (data) => {
-    // Replace all channels atomically to prevent flickering
-    state.channels = {};
-    data.channels.forEach(ch => {
-        state.channels[ch.id] = ch;
-    });
-    renderChannels();
+    replaceChannels(data.channels);
 });
 
 socket.on('channel_watching', (data) => {
@@ -952,9 +942,13 @@ function removeChannel(channelId) {
     renderChannels();
 }
 
-function clearChannels() {
-    state.channels = {};
+function replaceChannels(channels) {
+    state.channels = Object.fromEntries(channels.map(channel => [channel.id, channel]));
     renderChannels();
+}
+
+function clearChannels() {
+    replaceChannels([]);
 }
 
 function setWatchingChannel(channelId, gameOverride) {
@@ -2898,10 +2892,13 @@ function sortGamesByEndDate() {
         if (!active.length) return Infinity;
         return Math.min(...active.map(c => new Date(c.ends_at).getTime()));
     };
-    state.settings.games_to_watch = [...games].sort((a, b) => getEarliestEnd(a) - getEarliestEnd(b));
+    const sorted = [...games].sort((a, b) => getEarliestEnd(a) - getEarliestEnd(b));
+    if (sorted.every((g, i) => g === games[i])) return;
+    // Display only: the miner already orders by deadline itself. Saving here made every
+    // dashboard visit change games_to_watch and re-gather all channels.
+    state.settings.games_to_watch = sorted;
     renderGamesToWatch();
     renderChannels();
-    saveSettings();
 }
 
 function selectAllGames() {

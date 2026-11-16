@@ -151,4 +151,5 @@ class ChannelListManager:
         Returns:
             List of channel data dictionaries
         """
-        return list(self._channels.values())
+        # the stored flag goes stale when watching stops; derive it from the current state
+        return [{**data, "watching": data["id"] == self._watching_id} for data in self._channels.values()]

@@ -146,11 +146,12 @@ class BaseDrop:
 
     @property
     def _claim_deliverable(self) -> bool:
-        # Twitch can't deliver a game reward to an account that isn't linked
+        # Twitch can't deliver a game reward to an account that isn't linked, nor the
+        # badge of a drop that also holds a game item (the claim never completes)
         return (
             self.campaign.linked
             or self.campaign.link_assumed
-            or any(b.type.is_badge_or_emote() for b in self.benefits)
+            or (bool(self.benefits) and all(b.type.is_badge_or_emote() for b in self.benefits))
         )
 
     @property

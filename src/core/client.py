@@ -640,6 +640,7 @@ class Twitch:
                     self.change_state(State.CHANNELS_FETCH)
                 else:
                     # with no games available, we switch to IDLE after cleanup
+                    self.gui.channels.clear()
                     self.print(
                         _.t["status"]["no_campaign"],
                         collapse_key="status.no_campaign",
