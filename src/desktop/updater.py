@@ -176,9 +176,10 @@ def _apply_windows(install: Path, new: Path, staging: Path) -> None:
     subprocess.Popen(  # noqa: S603
         ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File", script],  # noqa: S607
         env=env,
+        stdin=subprocess.DEVNULL,  # a windowed app has no valid stdin to hand down
         stdout=log,
         stderr=subprocess.STDOUT,
-        creationflags=0x00000008 | 0x00000200 | 0x08000000,  # DETACHED | NEW_PROCESS_GROUP | NO_WINDOW
+        creationflags=0x00000200 | 0x08000000,  # NEW_PROCESS_GROUP | NO_WINDOW
         close_fds=True,
     )
     runtime.quit_for_update()
