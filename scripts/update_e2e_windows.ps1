@@ -32,7 +32,12 @@ Start-Sleep 12  # the updater script checks the new app stays up for 10 s before
 $st = try { Invoke-RestMethod "http://127.0.0.1:18081/api/update/status" } catch { $null }
 Write-Host "status after update: $($st | ConvertTo-Json -Compress)"
 Get-Process TwitchDropsMiner -ErrorAction SilentlyContinue | Stop-Process -Force
-if (-not $ok) { throw "the app was not replaced and restarted" }
+if (-not $ok) {
+  Get-ChildItem "$work\apps" -Force | Out-Host
+  Get-Content "$env:TEMP\tdm-update.log" -ErrorAction SilentlyContinue | Out-Host
+  Get-Content "$work\data\logs\startup.log" -ErrorAction SilentlyContinue | Out-Host
+  throw "the app was not replaced and restarted"
+}
 foreach ($leftover in "$work\apps\TwitchDropsMiner.old", "$work\apps\.TwitchDropsMiner-update") {
   if (Test-Path $leftover) { throw "not cleaned up: $leftover" }
 }
