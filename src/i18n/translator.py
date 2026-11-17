@@ -474,6 +474,8 @@ class GUIUpdateModal(TypedDict):
     close: str
     applied: str
     restarting_suffix: str
+    downloading: str
+    installing: str
     error_contacting: str
 
 

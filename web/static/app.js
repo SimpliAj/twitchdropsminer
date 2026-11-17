@@ -6674,6 +6674,35 @@ function renderMarkdown(md) {
     return div;
 }
 
+// Packaged app: the server downloads, verifies and swaps itself in, then restarts. Poll until it
+// reports an error, or until a fresh process (state idle again) answers: then reload the page.
+function pollDesktopUpdate(pre, um, installBtn, cancelBtn) {
+    let sawStarted = false;
+    pre.textContent = um.downloading || 'Downloading the update...';
+    const timer = setInterval(async () => {
+        try {
+            const st = await (await fetch(API_BASE + '/api/update/status')).json();
+            if (st.state === 'error') {
+                clearInterval(timer);
+                pre.textContent = st.error;
+                installBtn.style.display = 'none';
+                cancelBtn.textContent = um.close || 'Close';
+                cancelBtn.disabled = false;
+            } else if (st.state === 'downloading') {
+                sawStarted = true;
+            } else if (st.state === 'installing') {
+                sawStarted = true;
+                pre.textContent = um.installing || 'Installing, the app restarts...';
+            } else if (st.state === 'idle' && sawStarted) {
+                clearInterval(timer);
+                location.reload();
+            }
+        } catch (_) {
+            if (sawStarted) pre.textContent = um.installing || 'Installing, the app restarts...';
+        }
+    }, 1500);
+}
+
 function showUpdateModal(text, withInstallBtn, latestVersion) {
     const um = state.translations?.gui?.update_modal || {};
     document.getElementById('update-log-modal')?.remove();
@@ -6721,7 +6750,14 @@ function showUpdateModal(text, withInstallBtn, latestVersion) {
             try {
                 const res = await fetch(API_BASE + '/api/self-update', { method: 'POST' });
                 const json = await res.json();
-                if (json.docker || json.frozen) {
+                if (!res.ok) {
+                    pre.textContent = json.detail || (um.error_contacting || 'Error contacting server.');
+                    installBtn.style.display = 'none';
+                    cancelBtn.textContent = um.close || 'Close';
+                    cancelBtn.disabled = false;
+                } else if (json.updating) {
+                    pollDesktopUpdate(pre, um, installBtn, cancelBtn);
+                } else if (json.docker || json.frozen) {
                     pre.textContent = json.log;
                     title.textContent = json.frozen
                         ? (um.frozen_detected || '🪟 Packaged Windows app')

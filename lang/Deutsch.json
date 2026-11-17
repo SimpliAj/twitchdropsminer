@@ -625,13 +625,15 @@
     "update_modal": {
       "title": "🔄 Update verfügbar",
       "cancel": "Abbrechen",
-      "install": "v{version} installieren",
+      "install": "v{version} installieren und neu starten",
       "updating": "⏳ Wird aktualisiert...",
       "pulling": "Neuester Code wird von GitHub geladen...",
       "docker_detected": "🐳 Docker erkannt",
       "close": "Schließen",
       "applied": "✅ Update angewendet",
       "restarting_suffix": "⏳ Neustart läuft... Seite verbindet sich in Kürze neu.",
+      "downloading": "Update wird heruntergeladen...",
+      "installing": "Installation läuft, die App startet neu...",
       "error_contacting": "Fehler beim Kontaktieren des Servers."
     },
     "main_stats": {

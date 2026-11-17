@@ -669,13 +669,15 @@
     "update_modal": {
       "title": "🔄 Update Available",
       "cancel": "Cancel",
-      "install": "Install v{version}",
+      "install": "Install v{version} and restart",
       "updating": "⏳ Updating...",
       "pulling": "Pulling latest code from GitHub...",
       "docker_detected": "🐳 Docker detected",
       "close": "Close",
       "applied": "✅ Update Applied",
       "restarting_suffix": "⏳ Restarting... page will reconnect shortly.",
+      "downloading": "Downloading the update...",
+      "installing": "Installing, the app restarts...",
       "error_contacting": "Error contacting server."
     },
     "sidebar": {

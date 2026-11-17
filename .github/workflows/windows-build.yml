@@ -61,6 +61,10 @@ jobs:
           .build-venv\Scripts\python.exe -m pip install --quiet playwright
           .build-venv\Scripts\python.exe packaging\windows\edge_probe.py --hidden
 
+      - name: In-app update replaces a copy of the app and restarts it
+        shell: pwsh
+        run: ./scripts/update_e2e_windows.ps1
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -88,4 +92,5 @@ jobs:
         run: |
           # scripts/release.sh pushes the tag before it creates the release
           for i in $(seq 1 30); do gh release view "$TAG" -R "$REPO" >/dev/null 2>&1 && break; sleep 20; done
-          gh release upload "$TAG" dist/TwitchDropsMiner-*-windows-x64.zip -R "$REPO" --clobber
+          (cd dist && sha256sum TwitchDropsMiner-*-windows-x64.zip > SHA256SUMS-windows.txt)
+          gh release upload "$TAG" dist/TwitchDropsMiner-*-windows-x64.zip dist/SHA256SUMS-windows.txt -R "$REPO" --clobber
