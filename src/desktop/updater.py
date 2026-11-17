@@ -128,7 +128,6 @@ def windows_script(pid: int, install: Path, new: Path, backup: Path, staging: Pa
     exe = Path(sys.executable).name
     arg_list = ",".join(powershell_literal(a) for a in args) or "@()"
     return f"""$ErrorActionPreference = 'Stop'
-Start-Transcript -Path (Join-Path $env:TEMP 'tdm-update.log') -Force | Out-Null
 $install = {powershell_literal(str(install))}
 $new = {powershell_literal(str(new))}
 $backup = {powershell_literal(str(backup))}
@@ -172,9 +171,12 @@ def _apply_windows(install: Path, new: Path, staging: Path) -> None:
     with os.fdopen(handle, "w", encoding="utf-8-sig") as out:
         out.write(windows_script(os.getpid(), install, new, backup, staging, sys.argv[1:]))
     env = {**os.environ, runtime.RESTARTED_ENV: "1", "PYINSTALLER_RESET_ENVIRONMENT": "1"}
+    log = open(Path(tempfile.gettempdir()) / "tdm-update.log", "w")  # noqa: SIM115
     subprocess.Popen(  # noqa: S603
         ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File", script],  # noqa: S607
         env=env,
+        stdout=log,
+        stderr=subprocess.STDOUT,
         creationflags=0x00000008 | 0x00000200 | 0x08000000,  # DETACHED | NEW_PROCESS_GROUP | NO_WINDOW
         close_fds=True,
     )
