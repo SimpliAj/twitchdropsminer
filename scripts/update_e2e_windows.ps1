@@ -20,7 +20,7 @@ foreach ($i in 1..30) { if (Healthy) { break }; Start-Sleep 2 }
 if (-not (Healthy)) { throw "copy of the app did not start" }
 
 # first-run password setup would otherwise redirect every API call
-Invoke-WebRequest -Method Post "http://127.0.0.1:18081/__setup_post" -Body @{ action = "skip" } -UseBasicParsing -MaximumRedirection 0 -SkipHttpErrorCheck | Out-Null
+try { Invoke-WebRequest -Method Post "http://127.0.0.1:18081/__setup_post" -Body @{ action = "skip" } -UseBasicParsing -MaximumRedirection 0 | Out-Null } catch {}
 $r = Invoke-RestMethod -Method Post "http://127.0.0.1:18081/api/self-update"
 Write-Host "self-update: $($r | ConvertTo-Json -Compress)"
 $ok = $false
