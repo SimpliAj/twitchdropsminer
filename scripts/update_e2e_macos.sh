@@ -16,6 +16,8 @@ healthy() { curl -fsS http://127.0.0.1:18081/healthz >/dev/null 2>&1; }
 for i in $(seq 1 30); do sleep 2; healthy && break; done
 healthy || { echo "copy of the app did not start"; exit 1; }
 
+# first-run password setup would otherwise redirect every API call
+curl -sS -o /dev/null -d action=skip http://127.0.0.1:18081/__setup_post
 curl -fsS -X POST http://127.0.0.1:18081/api/self-update; echo
 ok=0
 for i in $(seq 1 60); do
