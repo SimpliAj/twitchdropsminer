@@ -128,6 +128,7 @@ def windows_script(pid: int, install: Path, new: Path, backup: Path, staging: Pa
     exe = Path(sys.executable).name
     arg_list = ",".join(powershell_literal(a) for a in args) or "@()"
     return f"""$ErrorActionPreference = 'Stop'
+Write-Output "updater started $(Get-Date -Format o)"
 $install = {powershell_literal(str(install))}
 $new = {powershell_literal(str(new))}
 $backup = {powershell_literal(str(backup))}

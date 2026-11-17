@@ -34,6 +34,9 @@ Write-Host "status after update: $($st | ConvertTo-Json -Compress)"
 Get-Process TwitchDropsMiner -ErrorAction SilentlyContinue | Stop-Process -Force
 if (-not $ok) {
   Get-ChildItem "$work\apps" -Force | Out-Host
+  Write-Host "TEMP=$env:TEMP"
+  Get-ChildItem $env:TEMP -Filter "tdm-update*" | Out-Host
+  Get-Process powershell -ErrorAction SilentlyContinue | Out-Host
   Get-Content "$env:TEMP\tdm-update.log" -ErrorAction SilentlyContinue | Out-Host
   Get-Content "$work\data\logs\startup.log" -ErrorAction SilentlyContinue | Out-Host
   throw "the app was not replaced and restarted"
