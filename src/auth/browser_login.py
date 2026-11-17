@@ -339,7 +339,7 @@ async def mint_integrity_token_locally(auth_token: str, device_id: str) -> tuple
     try:
         return await _mint_integrity_token_plain(await _plain_chrome_binary(), env, auth_token, device_id)
     except Exception as exc:
-        logger.warning(f"Integrity token acquisition failed: {exc}")
+        logger.warning(f"Integrity token acquisition failed: {type(exc).__name__}: {exc}")
         return None
     finally:
         if xvfb_process is not None:
@@ -418,8 +418,30 @@ _SDK_MINT_JS = """async function(headers, sdk) {
 }""".replace("__TIMEOUT_MS__", str(INTEGRITY_MINT_TIMEOUT_SEC * 1000))
 
 
+_hidden_desktop_failed = False
+
+
 async def _mint_integrity_token_plain(
     binary: str, env: dict[str, str], auth_token: str, device_id: str
+) -> tuple[str, datetime] | None:
+    """Mint on Windows' invisible desktop, or in an off-screen window once that failed."""
+    global _hidden_desktop_failed
+    if not _IS_WINDOWS or _hidden_desktop_failed:
+        return await _mint_integrity_token_plain_once(binary, env, auth_token, device_id, hidden_desktop=False)
+    try:
+        return await _mint_integrity_token_plain_once(binary, env, auth_token, device_id, hidden_desktop=True)
+    except Exception as exc:
+        # Seen on some PCs (security software?): the browser never answers on the separate desktop.
+        _hidden_desktop_failed = True
+        logger.warning(
+            f"Browser on the invisible desktop didn't respond ({type(exc).__name__}); "
+            "using an off-screen window from now on"
+        )
+        return await _mint_integrity_token_plain_once(binary, env, auth_token, device_id, hidden_desktop=False)
+
+
+async def _mint_integrity_token_plain_once(
+    binary: str, env: dict[str, str], auth_token: str, device_id: str, *, hidden_desktop: bool
 ) -> tuple[str, datetime] | None:
     """Mint a Client-Integrity token in a plain, non-Playwright Chrome.
 
@@ -431,7 +453,8 @@ async def _mint_integrity_token_plain(
     the IP, session id or user agent (confirmed live 2026-10-29).
     """
     chrome = PlainChrome(
-        binary, "about:blank", env, no_sandbox=_needs_no_sandbox(), quiet=True, hidden=_IS_WINDOWS or _IS_MAC
+        binary, "about:blank", env, no_sandbox=_needs_no_sandbox(), quiet=True, hidden=_IS_WINDOWS or _IS_MAC,
+        hidden_desktop=hidden_desktop,
     )
     await chrome.start()
     try:

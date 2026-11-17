@@ -122,6 +122,7 @@ class PlainChrome:
         no_sandbox: bool = False,
         quiet: bool = False,
         hidden: bool = False,
+        hidden_desktop: bool = True,
     ) -> None:
         self._binary = binary
         self._url = url
@@ -129,6 +130,7 @@ class PlainChrome:
         self._no_sandbox = no_sandbox
         self._quiet = quiet
         self._hidden = hidden
+        self._hidden_desktop = hidden_desktop
         self._proc: asyncio.subprocess.Process | None = None
         self._http: aiohttp.ClientSession | None = None
         self._ws: aiohttp.ClientWebSocketResponse | None = None
@@ -207,7 +209,7 @@ class PlainChrome:
             spawn_kwargs["startupinfo"] = startup
         try:
             self._proc = None
-            if self._hidden and os.name == "nt":
+            if self._hidden and self._hidden_desktop and os.name == "nt":
                 # Own invisible desktop: Chromium pulls off-screen windows back into view.
                 try:
                     from src.auth.win_hidden_desktop import spawn_on_hidden_desktop
