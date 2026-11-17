@@ -1329,6 +1329,19 @@ function clearDropProgress() {
     updateQCButtons(document.getElementById('status-text')?.textContent || '');
 }
 
+// A campaign with nothing left to earn: every drop claimed, sub-gated, or already at 100%.
+// Auto-clean removes games whose campaigns are all done; auto-add must use the same rule,
+// or the two keep adding and removing the same game on every dashboard visit.
+function campaignDone(c) {
+    return c.total_drops > 0 && c.drops.every(d =>
+        d.is_claimed
+        || (d.required_subs || 0) > 0
+        // Only trust local minutes when required_minutes is known (>0): "0 >= 0" used to
+        // mark whole games done and strip them from the watch list.
+        || ((d.required_minutes || 0) > 0 && (d.current_minutes || 0) >= d.required_minutes)
+    );
+}
+
 function autoAddLinkedGames() {
     if (!state.settings?.auto_add_linked) return;
     const watching = new Set(state.settings.games_to_watch || []);
@@ -1339,7 +1352,7 @@ function autoAddLinkedGames() {
     const excluded = new Set(state.settings.auto_add_excluded_games || []);
     let changed = false;
     Object.values(state.campaigns).forEach(c => {
-        if (c.linked && c.game_name && !watching.has(c.game_name) && !excluded.has(c.game_name)) {
+        if (c.linked && c.game_name && !watching.has(c.game_name) && !excluded.has(c.game_name) && !campaignDone(c)) {
             watching.add(c.game_name);
             changed = true;
         }
@@ -1978,18 +1991,7 @@ function autoCleanWantedQueue() {
         // in the watch queue forever, endlessly re-picked as an earn target. Mirror
         // DropsCampaign.finished (campaign.py): a drop counts as done if it's claimed,
         // sub-gated, or already hit 100% locally (even if Twitch hasn't confirmed yet).
-        const allFullyClaimed = gameCampaigns.every(c =>
-            c.total_drops > 0 && c.drops.every(d =>
-                d.is_claimed
-                || (d.required_subs || 0) > 0
-                // Only trust the local-minutes fallback when required_minutes is
-                // actually known (>0). A drop object missing both fields used to
-                // read as "0 >= 0" → wrongly counted as done, which could mark an
-                // entire game's campaigns "fully claimed" and silently strip it
-                // (and potentially the whole watch list) via the save() below.
-                || ((d.required_minutes || 0) > 0 && (d.current_minutes || 0) >= d.required_minutes)
-            )
-        );
+        const allFullyClaimed = gameCampaigns.every(campaignDone);
 
         if (allFullyClaimed) { changed = true; removedGames.push(gameName); return false; }
         return true;

@@ -94,6 +94,37 @@ def clean_browser_env(env: dict[str, str] | None = None) -> dict[str, str]:
     return source
 
 
+def _exe_from_command(command: str) -> str:
+    """The program of a Windows shell 'open' command like '"C:\\x\\chrome.exe" --single-argument %1'."""
+    command = command.strip()
+    if command.startswith('"'):
+        return command[1:].split('"', 1)[0]
+    return command.split(" ", 1)[0]
+
+
+def _is_chromium_install(exe: str) -> bool:
+    """Chromium builds ship a *_elf.dll next to the exe or in its version folder; Firefox doesn't."""
+    folder = Path(exe).parent
+    return os.path.isfile(exe) and (any(folder.glob("*_elf.dll")) or any(folder.glob("*/*_elf.dll")))
+
+
+def windows_default_chromium() -> str | None:
+    """The user's default browser if it is Chromium-based (Helium, Vivaldi, Opera, ...).
+
+    For PCs without Chrome or Edge (Edge can be removed on stripped-down Windows builds)."""
+    try:
+        import winreg  # noqa: PLC0415  (Windows-only module)
+
+        key = r"Software\Microsoft\Windows\Shell\Associations\UrlAssociations\https\UserChoice"
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key) as k:
+            prog_id = winreg.QueryValueEx(k, "ProgId")[0]
+        with winreg.OpenKey(winreg.HKEY_CLASSES_ROOT, rf"{prog_id}\shell\open\command") as k:
+            exe = _exe_from_command(winreg.QueryValueEx(k, "")[0])
+    except (ImportError, OSError, IndexError):
+        return None
+    return exe if _is_chromium_install(exe) else None
+
+
 def free_port() -> int:
     with socket.socket() as sock:
         sock.bind(("127.0.0.1", 0))

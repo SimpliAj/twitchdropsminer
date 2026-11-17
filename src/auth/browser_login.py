@@ -377,6 +377,11 @@ async def _plain_chrome_binary() -> str:
                 path = os.path.join(base or "", vendor, app, "Application", exe)
                 if base and os.path.exists(path):
                     return path
+        from src.auth.plain_chrome import windows_default_chromium  # noqa: PLC0415
+
+        path = windows_default_chromium()
+        if path:
+            return path
     elif _IS_MAC:
         path = find_mac_browser()
         if path:
@@ -389,7 +394,7 @@ async def _plain_chrome_binary() -> str:
     if async_playwright is None:
         raise LoginException(
             "No Chrome, Edge or Brave installation was found. Install Google Chrome, Microsoft Edge "
-            "or Brave to log in to Twitch."
+            "or Brave, or make a Chromium-based browser your default, to log in to Twitch."
         )
     async with async_playwright() as playwright:
         return playwright.chromium.executable_path

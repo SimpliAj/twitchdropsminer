@@ -102,7 +102,9 @@ def find_app_browser() -> str | None:
                 path = os.path.join(base, vendor, app, "Application", exe)
                 if os.path.exists(path):
                     return path
-    return None
+    from src.auth.plain_chrome import windows_default_chromium  # noqa: PLC0415
+
+    return windows_default_chromium()
 
 
 def open_dashboard(port: int, app_window: bool = False) -> subprocess.Popen | None:
