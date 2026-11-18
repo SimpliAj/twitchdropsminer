@@ -2249,6 +2249,10 @@ function updateSettingsUI(settings) {
 
     renderPreferredGames(settings.preferred_games || []);
     renderPreferredWaiting();
+    renderDailyWatch(settings.daily_watch_games || []);
+    const dailyMinutesEl = document.getElementById('daily-watch-minutes');
+    if (dailyMinutesEl) dailyMinutesEl.value = settings.daily_watch_minutes || 60;
+    refreshDailyWatchStatus();
 
     const schedulerEnabled = document.getElementById('scheduler-enabled');
     if (schedulerEnabled) schedulerEnabled.checked = settings.scheduler_enabled || false;
@@ -2609,6 +2613,57 @@ function handlePreferredGamesDragEnd(e) {
     renderPreferredGames(newOrder);
     saveSettings();
 }
+
+function renderDailyWatch(games) {
+    state.settings.daily_watch_games = games;
+    const container = document.getElementById('daily-watch-list');
+    if (!container) return;
+    const progress = new Map((state.dailyWatchStatus || []).map(e => [e.game.toLowerCase(), e]));
+    container.replaceChildren();
+    games.forEach((g, idx) => {
+        const st = progress.get(g.toLowerCase());
+        const item = document.createElement('div');
+        item.className = 'daily-watch-item';
+        const info = document.createElement('div');
+        info.className = 'daily-watch-info';
+        const name = document.createElement('span');
+        name.className = 'daily-watch-name';
+        name.textContent = g;
+        info.appendChild(name);
+        if (st) {
+            const detail = document.createElement('span');
+            detail.className = 'daily-watch-detail';
+            let text = tr('gui.settings.daily_watch_progress', '{minutes} / {quota} min today', { minutes: st.minutes, quota: st.quota });
+            if (st.minutes >= st.quota) text += ' · ' + tr('gui.settings.daily_watch_done', 'done for today');
+            else if (st.channel) text += ' · ' + st.channel;
+            detail.textContent = text;
+            info.appendChild(detail);
+        }
+        const btn = document.createElement('button');
+        btn.className = 'remove-btn';
+        btn.textContent = '✕';
+        btn.addEventListener('click', () => {
+            state.settings.daily_watch_games.splice(idx, 1);
+            renderDailyWatch([...state.settings.daily_watch_games]);
+            saveSettings();
+        });
+        item.appendChild(info);
+        item.appendChild(btn);
+        container.appendChild(item);
+    });
+}
+
+async function refreshDailyWatchStatus() {
+    const panel = document.getElementById('settings-panel-games');
+    if (!panel || panel.hidden || document.hidden || !(state.settings.daily_watch_games || []).length) return;
+    try {
+        const r = await fetch(API_BASE + '/api/daily-watch/status');
+        if (!r.ok) return;
+        state.dailyWatchStatus = (await r.json()).games || [];
+        renderDailyWatch([...(state.settings.daily_watch_games || [])]);
+    } catch (e) { /* status is cosmetic */ }
+}
+setInterval(refreshDailyWatchStatus, 15000);
 
 function renderGamesToWatch() {
     const selectedGames = state.settings.games_to_watch || [];
@@ -3388,6 +3443,8 @@ async function _saveSettingsNow() {
         idle_use_followed: document.getElementById('idle-use-followed')?.checked ?? false,
         idle_parallel: document.getElementById('idle-parallel')?.checked ?? true,
         preferred_games: state.settings.preferred_games || [],
+        daily_watch_games: state.settings.daily_watch_games || [],
+        daily_watch_minutes: parseInt(document.getElementById('daily-watch-minutes')?.value, 10) || 60,
         priority_list_only: document.getElementById('priority-list-only')?.checked ?? true,
         reward_priority_enabled: document.getElementById('reward-priority-enabled')?.checked ?? false,
         reward_priority: getRewardPriority(),
@@ -4816,6 +4873,7 @@ function showSettingsPanel(name, { focus = false, scroll = true } = {}) {
     });
     try { localStorage.setItem(SETTINGS_PANEL_KEY, name); } catch (e) { /* storage unavailable */ }
     setIntegrityPolling(name === 'system');
+    if (name === 'games') refreshDailyWatchStatus();
     if (scroll) window.scrollTo(0, 0);
 }
 
@@ -5202,90 +5260,130 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'Enter') document.getElementById('blacklisted-game-add-btn').click();
     });
 
-    let prefGameDropdownIndex = -1;
+    // Suggestions: local campaign games (optional) merged with any Twitch category, searched server-side.
+    function setupGameSuggest({ inputId, dropdownId, addBtnId, existing, onAdd, local }) {
+        const input = document.getElementById(inputId);
+        const dropdown = document.getElementById(dropdownId);
+        if (!input || !dropdown) return;
+        let index = -1;
+        let remote = [];
+        let timer = null;
+        let seq = 0;
 
-    function addPreferredGame(val) {
-        if (!val) return;
-        const games = state.settings.preferred_games || [];
-        if (!games.map(g => g.toLowerCase()).includes(val.toLowerCase())) {
-            games.push(val);
-            renderPreferredGames([...games]);
-            saveSettings();
-        }
-        document.getElementById('preferred-game-input').value = '';
-        closePrefGameDropdown();
-    }
+        const close = () => { dropdown.style.display = 'none'; index = -1; };
+        const add = (val) => {
+            if (!val) return;
+            onAdd(val);
+            input.value = '';
+            remote = [];
+            close();
+        };
+        const render = () => {
+            const term = input.value.trim().toLowerCase();
+            const have = new Set(existing().map(g => g.toLowerCase()));
+            const localMatches = !local ? [] : Array.from(availableGames)
+                .filter(g => g.toLowerCase().includes(term))
+                .sort((a, b) => a.toLowerCase().startsWith(term) ? -1 : b.toLowerCase().startsWith(term) ? 1 : a.localeCompare(b))
+                .slice(0, 15);
+            const seen = new Set();
+            const matches = [...localMatches, ...remote].filter(g => {
+                const k = g.toLowerCase();
+                if (have.has(k) || seen.has(k)) return false;
+                seen.add(k);
+                return true;
+            });
+            dropdown.replaceChildren();
+            if (!term || !matches.length) {
+                dropdown.style.display = 'none';
+                return;
+            }
+            matches.forEach((g, idx) => {
+                const item = document.createElement('div');
+                item.className = 'dropdown-item' + (idx === index ? ' focused' : '');
+                item.dataset.gameName = g;
+                item.textContent = g;
+                item.addEventListener('mousedown', (e) => { e.preventDefault(); add(g); });
+                dropdown.appendChild(item);
+            });
+            dropdown.style.display = 'block';
+        };
+        const search = () => {
+            clearTimeout(timer);
+            const term = input.value.trim();
+            if (term.length < 2) { remote = []; return; }
+            timer = setTimeout(async () => {
+                const mine = ++seq;
+                try {
+                    const r = await fetch(API_BASE + '/api/games/search?q=' + encodeURIComponent(term));
+                    const data = await r.json();
+                    if (mine !== seq) return;
+                    remote = Array.isArray(data.games) ? data.games : [];
+                } catch (e) {
+                    remote = [];
+                }
+                if (document.activeElement === input) render();
+            }, 250);
+        };
 
-    function renderPrefGameDropdown(search) {
-        const dropdown = document.getElementById('preferred-game-dropdown');
-        if (!dropdown) return;
-        const term = search.toLowerCase();
-        const existing = new Set((state.settings.preferred_games || []).map(g => g.toLowerCase()));
-        const matches = Array.from(availableGames)
-            .filter(g => g.toLowerCase().includes(term) && !existing.has(g.toLowerCase()))
-            .sort((a, b) => a.toLowerCase().startsWith(term) ? -1 : b.toLowerCase().startsWith(term) ? 1 : a.localeCompare(b))
-            .slice(0, 15);
-        dropdown.replaceChildren();
-        if (!matches.length) {
-            dropdown.style.display = 'none';
-            return;
-        }
-        matches.forEach((g, idx) => {
-            const item = document.createElement('div');
-            item.className = 'dropdown-item' + (idx === prefGameDropdownIndex ? ' focused' : '');
-            item.dataset.gameName = g;
-            item.textContent = g;
-            item.addEventListener('mousedown', (e) => { e.preventDefault(); addPreferredGame(g); });
-            dropdown.appendChild(item);
-        });
-        dropdown.style.display = 'block';
-    }
-
-    function closePrefGameDropdown() {
-        const dropdown = document.getElementById('preferred-game-dropdown');
-        if (dropdown) dropdown.style.display = 'none';
-        prefGameDropdownIndex = -1;
-    }
-
-    const prefInput = document.getElementById('preferred-game-input');
-    if (prefInput) {
-        prefInput.addEventListener('input', (e) => {
-            prefGameDropdownIndex = -1;
-            if (e.target.value.trim()) renderPrefGameDropdown(e.target.value.trim());
-            else closePrefGameDropdown();
-        });
-        prefInput.addEventListener('focus', (e) => {
-            if (e.target.value.trim()) renderPrefGameDropdown(e.target.value.trim());
-        });
-        prefInput.addEventListener('blur', () => setTimeout(closePrefGameDropdown, 150));
-        prefInput.addEventListener('keydown', (e) => {
-            const dropdown = document.getElementById('preferred-game-dropdown');
-            const items = dropdown?.querySelectorAll('.dropdown-item') || [];
+        input.addEventListener('input', () => { index = -1; search(); render(); });
+        input.addEventListener('focus', render);
+        input.addEventListener('blur', () => setTimeout(close, 150));
+        input.addEventListener('keydown', (e) => {
+            const items = dropdown.querySelectorAll('.dropdown-item');
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
-                prefGameDropdownIndex = Math.min(prefGameDropdownIndex + 1, items.length - 1);
-                renderPrefGameDropdown(prefInput.value.trim());
-                dropdown?.querySelector('.dropdown-item.focused')?.scrollIntoView({ block: 'nearest' });
+                index = Math.min(index + 1, items.length - 1);
+                render();
+                dropdown.querySelector('.dropdown-item.focused')?.scrollIntoView({ block: 'nearest' });
             } else if (e.key === 'ArrowUp') {
                 e.preventDefault();
-                prefGameDropdownIndex = Math.max(prefGameDropdownIndex - 1, 0);
-                renderPrefGameDropdown(prefInput.value.trim());
-                dropdown?.querySelector('.dropdown-item.focused')?.scrollIntoView({ block: 'nearest' });
+                index = Math.max(index - 1, 0);
+                render();
+                dropdown.querySelector('.dropdown-item.focused')?.scrollIntoView({ block: 'nearest' });
             } else if (e.key === 'Enter') {
                 e.preventDefault();
-                if (prefGameDropdownIndex >= 0 && items[prefGameDropdownIndex]) {
-                    addPreferredGame(items[prefGameDropdownIndex].dataset.gameName);
-                } else {
-                    addPreferredGame(prefInput.value.trim());
-                }
+                add(index >= 0 && items[index] ? items[index].dataset.gameName : input.value.trim());
             } else if (e.key === 'Escape') {
-                closePrefGameDropdown();
+                close();
             }
         });
+        document.getElementById(addBtnId)?.addEventListener('click', () => add(input.value.trim()));
     }
 
-    document.getElementById('preferred-game-add-btn')?.addEventListener('click', () => {
-        addPreferredGame(document.getElementById('preferred-game-input')?.value.trim());
+    setupGameSuggest({
+        inputId: 'preferred-game-input',
+        dropdownId: 'preferred-game-dropdown',
+        addBtnId: 'preferred-game-add-btn',
+        existing: () => state.settings.preferred_games || [],
+        local: true,
+        onAdd: (val) => {
+            const games = state.settings.preferred_games || [];
+            if (!games.map(g => g.toLowerCase()).includes(val.toLowerCase())) {
+                games.push(val);
+                renderPreferredGames([...games]);
+                saveSettings();
+            }
+        },
+    });
+
+    setupGameSuggest({
+        inputId: 'daily-watch-game-input',
+        dropdownId: 'daily-watch-game-dropdown',
+        addBtnId: 'daily-watch-add-btn',
+        existing: () => state.settings.daily_watch_games || [],
+        onAdd: (val) => {
+            const games = state.settings.daily_watch_games || [];
+            if (!games.map(g => g.toLowerCase()).includes(val.toLowerCase())) {
+                games.push(val);
+                renderDailyWatch([...games]);
+                saveSettings();
+            }
+        },
+    });
+
+    document.getElementById('daily-watch-minutes')?.addEventListener('change', (e) => {
+        e.target.value = Math.max(1, Math.min(240, parseInt(e.target.value, 10) || 60));
+        saveSettings();
     });
 
     // Inventory game search dropdown

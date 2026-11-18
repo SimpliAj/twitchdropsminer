@@ -370,7 +370,7 @@
                                 </section>
                                     <section class="settings-section">
                                         <h2 data-i18n="gui.settings.preferred_games">⭐ Preferred Games</h2>
-                                        <p class="help-text" data-i18n="gui.settings.preferred_games_help">Games that are always watched — even without active drop campaigns. Auto-connects when a campaign appears. Never auto-removed.</p>
+                                        <p class="help-text" data-i18n="gui.settings.preferred_games_help">Games watched whenever they have an active drop campaign. Without one they just wait, and connect as soon as a campaign appears. Never auto-removed. For a category without drops, use Daily watch below.</p>
                                         <label class="toggle-label" style="margin-bottom:10px;">
                                             <input type="checkbox" id="priority-list-only" onchange="saveSettings()">
                                             <span data-i18n="gui.settings.priority_list_only">Priority list only</span>
@@ -384,6 +384,22 @@
                                             <button id="preferred-game-add-btn" class="secondary-btn" data-i18n="gui.common.add">Add</button>
                                         </div>
                                         <div id="preferred-games-list" class="sortable-list"></div>
+                                    </section>
+                                    <section class="settings-section">
+                                        <h2 data-i18n="gui.settings.daily_watch">Daily watch</h2>
+                                        <p class="help-text" data-i18n="gui.settings.daily_watch_help">Watch a Twitch category for a set time every day, alongside drop mining — for example viewership badges like the GTA VI event.</p>
+                                        <div style="display:flex;gap:8px;margin-bottom:8px;position:relative;">
+                                            <div style="position:relative;flex:1;">
+                                                <input type="text" id="daily-watch-game-input" placeholder="Type to search games..." data-i18n-placeholder="gui.inventory.filters.search_placeholder" autocomplete="off" style="width:100%;box-sizing:border-box;">
+                                                <div id="daily-watch-game-dropdown" class="game-dropdown-list" style="display:none;top:100%;left:0;right:0;"></div>
+                                            </div>
+                                            <button id="daily-watch-add-btn" class="secondary-btn" data-i18n="gui.common.add">Add</button>
+                                        </div>
+                                        <div class="daily-watch-minutes">
+                                            <label for="daily-watch-minutes" data-i18n="gui.settings.daily_watch_minutes">Minutes per day</label>
+                                            <input type="number" id="daily-watch-minutes" min="1" max="240" value="60">
+                                        </div>
+                                        <div id="daily-watch-list" class="daily-watch-list"></div>
                                     </section>
                 </div>
                 <div class="settings-panel" role="tabpanel" id="settings-panel-mining" aria-labelledby="settings-tab-mining" tabindex="0" hidden>

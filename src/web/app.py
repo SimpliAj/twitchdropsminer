@@ -598,6 +598,8 @@ class SettingsUpdate(BaseModel):
     idle_use_followed: bool | None = None
     idle_parallel: bool | None = None
     preferred_games: list[str] | None = None
+    daily_watch_games: list[str] | None = None
+    daily_watch_minutes: int | None = None
     priority_list_only: bool | None = None
     reward_priority_enabled: bool | None = None
     reward_priority: list[str] | None = None
@@ -1105,6 +1107,23 @@ async def export_drops_history_csv():
 @app.get("/api/stats")
 async def get_stats(request: Request):
     return _aggregate_stats()
+
+@app.get("/api/games/search")
+async def search_games(q: str = ""):
+    """Twitch category names for the dashboard's game inputs."""
+    q = q.strip()
+    if not twitch_client or not 2 <= len(q) <= 60:
+        return {"games": []}
+    from src.services.daily_watch import search_categories
+    return {"games": await search_categories(twitch_client, q)}
+
+
+@app.get("/api/daily-watch/status")
+async def daily_watch_status():
+    if not twitch_client:
+        raise HTTPException(status_code=503, detail="Not ready")
+    return {"games": twitch_client.daily_watch.status()}
+
 
 @app.get("/api/idle-watch/status")
 async def idle_watch_status():

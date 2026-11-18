@@ -23,6 +23,7 @@ An independently maintained fork of [rangermix/TwitchDropsMiner](https://github.
 - 🔑 **Simple, safe login** — a normal browser window on your own PC; nothing remote-controlled for Twitch to reject
 - 👥 **Multi-account** — unlimited isolated accounts, a fleet view with bulk actions and settings
 - 💰 **Channel points** — auto-claims bonus chests, idle-watches channels when no drops are running
+- 📅 **Daily watch** — watch a Twitch category for N minutes every day alongside drop mining (e.g. event viewership badges that are not Drops)
 - 🎯 **Auto-betting** — optional prediction bets with four strategies and per-channel overrides
 - 🚫 **Fine-grained filters** — blacklist games, drop names or drop IDs, ignore single campaigns
 - 🤖 **Discord** — a bot with live embeds and slash commands, or plain webhooks

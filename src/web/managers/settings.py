@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any
 from src.config.reward_priority import RewardPriority
 from src.i18n.translator import _
 from src.models.game import Game
+from src.services.daily_watch import clamp_minutes
 from src.utils.string_utils import is_masked_proxy_url, mask_proxy_url
 
 
@@ -166,6 +167,12 @@ class SettingsManager:
         )
         self.check_and_update_setting(
             "preferred_games", settings_data.get("preferred_games")
+        )
+        # no reload: both are read again on the next daily watch minute
+        self.check_and_update_setting("daily_watch_games", settings_data.get("daily_watch_games"))
+        minutes = settings_data.get("daily_watch_minutes")
+        self.check_and_update_setting(
+            "daily_watch_minutes", None if minutes is None else clamp_minutes(minutes)
         )
         should_trigger_update |= self.check_and_update_setting(
             "priority_list_only", settings_data.get("priority_list_only"), True
