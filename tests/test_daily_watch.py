@@ -145,3 +145,21 @@ class SettingsTests(unittest.IsolatedAsyncioTestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class WatchGateTests(unittest.TestCase):
+    def test_daily_watch_channel_counts_as_watched(self):
+        # Channel.send_watch drops watches for channels nobody is watching; daily watch
+        # channels must pass that gate (live run: every watch failed without this).
+        from src.models.channel import Channel
+
+        twitch = MagicMock()
+        twitch.watching_channel.get_with_default.return_value = None
+        twitch._idle_channels_set = set()
+        channel = Channel(twitch, id=1, login="honeymad")
+        stream = MagicMock()
+        channel._stream = stream
+        twitch.daily_watch.channels.return_value = set()
+        self.assertFalse(channel._watch_current(stream))
+        twitch.daily_watch.channels.return_value = {channel}
+        self.assertTrue(channel._watch_current(stream))

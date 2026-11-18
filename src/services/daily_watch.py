@@ -116,6 +116,10 @@ class DailyWatch:
     def _quota(self) -> int:
         return clamp_minutes(getattr(self._twitch.settings, "daily_watch_minutes", 60))
 
+    def channels(self) -> set[Channel]:
+        """Channels watched right now; Channel.send_watch only sends for watched channels."""
+        return set(self._channels.values())
+
     def status(self) -> list[dict[str, Any]]:
         self._roll()
         quota = self._quota

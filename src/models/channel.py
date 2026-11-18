@@ -558,6 +558,7 @@ class Channel:
             and (
                 self._twitch.watching_channel.get_with_default(None) is self
                 or self in self._twitch._idle_channels_set
+                or self in self._twitch.daily_watch.channels()
             )
         )
 
