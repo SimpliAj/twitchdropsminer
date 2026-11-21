@@ -9,6 +9,8 @@ allocations so the log names the code that grew.
 from __future__ import annotations
 
 import asyncio
+import ctypes
+import gc
 import logging
 import os
 import sys
@@ -77,10 +79,27 @@ def limit_for(total: int | None) -> int:
     return max(MIN_LIMIT, min(MAX_LIMIT, total // 2))
 
 
+TRIM_EVERY = 10  # checks, i.e. about every 10 minutes
+
+
+def release_free_memory() -> None:
+    """Collect garbage and hand freed heap memory back to the OS (glibc keeps it otherwise)."""
+    gc.collect()
+    if sys.platform.startswith("linux"):
+        try:
+            ctypes.CDLL("libc.so.6").malloc_trim(0)
+        except (OSError, AttributeError):
+            pass
+
+
 async def run(restart: Callable[[], None], read: Callable[[], tuple[int | None, int | None]] = memory) -> None:
     tracing = False
+    checks = 0
     while True:
         await asyncio.sleep(CHECK_INTERVAL)
+        checks += 1
+        if checks % TRIM_EVERY == 0:
+            release_free_memory()
         rss, total = read()
         if rss is None:
             continue

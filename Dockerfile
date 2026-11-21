@@ -18,8 +18,10 @@ LABEL org.opencontainers.image.created="${BUILD_DATE}" \
       org.opencontainers.image.description="TwitchDropsMiner fork with channel points auto-claimer, idle watch, multi-account support and Discord webhooks"
 
 # Set environment variables
+# MALLOC_ARENA_MAX: glibc otherwise keeps up to 8 heaps per CPU core around; 2 keeps RAM low
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
+    MALLOC_ARENA_MAX=2 \
     PORT=8080
 
 # Set working directory

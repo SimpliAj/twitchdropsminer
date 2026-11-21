@@ -81,7 +81,7 @@ class MacBrowserLookupTests(unittest.TestCase):
                 patch.object(browser_login, "_IS_MAC", True),
                 patch.object(browser_login, "_IS_WINDOWS", False),
                 patch.object(browser_login, "find_mac_browser", return_value=None),
-                patch.object(browser_login, "async_playwright", None),
+                patch.object(browser_login, "_playwright", lambda: None),
             ):
                 await browser_login._plain_chrome_binary()
 

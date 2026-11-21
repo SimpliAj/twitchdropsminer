@@ -38,12 +38,20 @@ from src.config.paths import IS_FROZEN
 from src.exceptions import LoginException
 
 
-try:
-    from playwright.async_api import async_playwright
-except ImportError:
-    if not IS_FROZEN:  # only the desktop apps ship without Playwright (Chrome/Edge is always there)
-        raise
-    async_playwright = None  # type: ignore[assignment]
+# Playwright costs ~16 MB of RAM and is only needed when no Chrome/Edge is installed,
+# so it is imported on first use (the desktop apps don't ship it at all).
+async_playwright = None
+
+
+def _playwright():
+    global async_playwright
+    if async_playwright is None:
+        try:
+            from playwright.async_api import async_playwright as loaded  # noqa: PLC0415
+        except ImportError:
+            return None
+        async_playwright = loaded
+    return async_playwright
 
 
 logger = logging.getLogger("TwitchDrops")
@@ -391,7 +399,7 @@ async def _plain_chrome_binary() -> str:
             path = shutil.which(name)
             if path:
                 return path
-    if async_playwright is None:
+    if _playwright() is None:
         raise LoginException(
             "No Chrome, Edge or Brave installation was found. Install Google Chrome, Microsoft Edge "
             "or Brave, or make a Chromium-based browser your default, to log in to Twitch."
