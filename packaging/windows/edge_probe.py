@@ -123,12 +123,27 @@ async def probe_hidden_mint(name: str, binary: str) -> bool:
         await chrome.close()
 
 
+async def probe_cleanup(name: str, binary: str) -> bool:
+    """The process sweep that keeps token browsers from piling up (issue #46) finds real browsers."""
+    from src.auth.plain_chrome import kill_windows_processes_matching
+
+    chrome = PlainChrome(binary, "about:blank", None, quiet=True, hidden=True, hidden_desktop=False,
+                         profile_prefix="tdm-mint-")
+    await chrome.start()
+    killed = await asyncio.to_thread(kill_windows_processes_matching, chrome._profile_dir)
+    await chrome.close()
+    left = await asyncio.to_thread(kill_windows_processes_matching, "tdm-mint-")
+    print(f"{name} cleanup: killed {killed} browser process(es) by profile path, {left} left afterwards")
+    return killed > 0 and left == 0
+
+
 async def main_hidden() -> int:
     ok = True
     for name, parts in BROWSERS.items():
         binary = find(*parts)
         if binary is not None:
             ok = await probe_hidden_mint(name, binary) and ok
+            ok = await probe_cleanup(name, binary) and ok
     return 0 if ok else 1
 
 

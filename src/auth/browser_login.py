@@ -424,6 +424,8 @@ _SDK_MINT_JS = """async function(headers, sdk) {
 
 
 _hidden_desktop_failed = False
+# Own prefix so leftovers of earlier mints can be swept without touching a login browser.
+MINT_PROFILE_PREFIX = "tdm-mint-"
 
 
 async def _mint_integrity_token_plain(
@@ -431,6 +433,13 @@ async def _mint_integrity_token_plain(
 ) -> tuple[str, datetime] | None:
     """Mint on Windows' invisible desktop, or in an off-screen window once that failed."""
     global _hidden_desktop_failed
+    if _IS_WINDOWS:
+        from src.auth.plain_chrome import kill_windows_processes_matching  # noqa: PLC0415
+
+        # mints run one at a time, so any mint browser still alive here is a leftover
+        leftover = await asyncio.to_thread(kill_windows_processes_matching, MINT_PROFILE_PREFIX)
+        if leftover:
+            logger.warning(f"Closed {leftover} leftover token browser process(es)")
     if not _IS_WINDOWS or _hidden_desktop_failed:
         return await _mint_integrity_token_plain_once(binary, env, auth_token, device_id, hidden_desktop=False)
     try:
@@ -459,7 +468,7 @@ async def _mint_integrity_token_plain_once(
     """
     chrome = PlainChrome(
         binary, "about:blank", env, no_sandbox=_needs_no_sandbox(), quiet=True, hidden=_IS_WINDOWS or _IS_MAC,
-        hidden_desktop=hidden_desktop,
+        hidden_desktop=hidden_desktop, profile_prefix=MINT_PROFILE_PREFIX,
     )
     await chrome.start()
     try:

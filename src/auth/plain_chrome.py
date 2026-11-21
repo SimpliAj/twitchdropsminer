@@ -28,7 +28,7 @@ logger = logging.getLogger("TwitchDrops")
 
 
 STALE_TMP_AGE_SEC = 2 * 3600
-_STALE_TMP_PATTERNS = ("tdm-chrome-*", "org.chromium.Chromium.*", ".org.chromium.Chromium.*")
+_STALE_TMP_PATTERNS = ("tdm-chrome-*", "tdm-mint-*", "org.chromium.Chromium.*", ".org.chromium.Chromium.*")
 
 
 def is_stale_tmp_entry(mtime: float, owner_uid: int, now: float, uid: int | None) -> bool:
@@ -125,6 +125,30 @@ def windows_default_chromium() -> str | None:
     return exe if _is_chromium_install(exe) else None
 
 
+def kill_windows_processes_matching(fragment: str) -> int:
+    """Kill every process whose command line contains ``fragment`` (Windows only).
+
+    A Chrome that hands off to another process, or whose helpers outlive it, is not reached
+    by killing the process we started; matching our unique profile path finds all of them."""
+    if os.name != "nt" or not fragment:
+        return 0
+    script = (
+        "$f=$env:TDM_KILL_MATCH; $n=0; Get-CimInstance Win32_Process | "
+        "Where-Object { $_.CommandLine -and $_.CommandLine.Contains($f) } | "
+        "ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue; $n++ }; $n"
+    )
+    try:
+        result = subprocess.run(  # noqa: S603  (fixed script; the match text goes in via env)
+            ["powershell", "-NoProfile", "-NonInteractive", "-Command", script],
+            env={**os.environ, "TDM_KILL_MATCH": fragment},
+            capture_output=True, text=True, timeout=30,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+        )
+        return int((result.stdout or "0").strip().splitlines()[-1] or 0)
+    except (OSError, subprocess.SubprocessError, ValueError, IndexError):
+        return 0
+
+
 def free_port() -> int:
     with socket.socket() as sock:
         sock.bind(("127.0.0.1", 0))
@@ -154,6 +178,7 @@ class PlainChrome:
         quiet: bool = False,
         hidden: bool = False,
         hidden_desktop: bool = True,
+        profile_prefix: str = "tdm-chrome-",
     ) -> None:
         self._binary = binary
         self._url = url
@@ -162,6 +187,7 @@ class PlainChrome:
         self._quiet = quiet
         self._hidden = hidden
         self._hidden_desktop = hidden_desktop
+        self._profile_prefix = profile_prefix
         self._proc: asyncio.subprocess.Process | None = None
         self._http: aiohttp.ClientSession | None = None
         self._ws: aiohttp.ClientWebSocketResponse | None = None
@@ -207,7 +233,7 @@ class PlainChrome:
 
     async def start(self, timeout: float = 30.0) -> None:
         port = free_port()
-        self._profile_dir = tempfile.mkdtemp(prefix="tdm-chrome-")
+        self._profile_dir = tempfile.mkdtemp(prefix=self._profile_prefix)
         # Chromium's own temp files (component-updater downloads, unpackers)
         # follow TMPDIR, so they go away with the profile instead of piling
         # up in a RAM-backed /tmp.
@@ -328,4 +354,7 @@ class PlainChrome:
                     await proc.wait()
         finally:
             if profile_dir is not None:
+                if os.name == "nt":
+                    # leftover browsers piled up to many GB of RAM (issue #46)
+                    await asyncio.to_thread(kill_windows_processes_matching, profile_dir)
                 shutil.rmtree(profile_dir, ignore_errors=True)
