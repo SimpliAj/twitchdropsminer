@@ -116,6 +116,7 @@ class Twitch:
         self._watch_service: WatchService = WatchService(self)
         self.daily_watch = DailyWatch(self, _ACCOUNT_DATA_DIR / "daily_watch.json")
         self._daily_watch_task: asyncio.Task[None] | None = None
+        self._memory_guard_task: asyncio.Task[None] | None = None
         self._stream_selector: StreamSelector = StreamSelector()
         # Pause/resume state (PR #65)
         self._is_paused: bool = False
@@ -383,6 +384,11 @@ class Twitch:
         if self._daily_watch_task is not None:
             self._daily_watch_task.cancel()
         self._daily_watch_task = asyncio.create_task(self.daily_watch.run())
+        if self._memory_guard_task is None:
+            from src.services import memory_guard  # noqa: PLC0415
+            from src.web.app import _restart_self  # noqa: PLC0415
+
+            self._memory_guard_task = asyncio.create_task(memory_guard.run(_restart_self))
         # Start scheduler service
         if self._scheduler_task is not None:
             self._scheduler_task.cancel()

@@ -138,7 +138,11 @@ async def probe_cleanup(name: str, binary: str) -> bool:
 
 
 async def main_hidden() -> int:
-    ok = True
+    from src.services.memory_guard import memory
+
+    rss, total = memory()
+    print(f"memory guard reading: process {rss} bytes, total RAM {total} bytes")
+    ok = bool(rss) and bool(total) and total > rss
     for name, parts in BROWSERS.items():
         binary = find(*parts)
         if binary is not None:
