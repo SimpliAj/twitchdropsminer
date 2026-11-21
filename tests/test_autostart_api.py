@@ -69,13 +69,6 @@ class AutostartApiTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(await web_app.request_browser_login(), {"success": False, "pending": False})
         release.assert_not_called()
 
-    async def test_self_update_explains_how_to_update_the_packaged_app(self):
-        with patch.object(web_app, "IS_FROZEN", True), patch.object(web_app, "_is_docker", return_value=False):
-            result = await web_app.self_update()
-        self.assertFalse(result["success"])
-        self.assertTrue(result["frozen"])
-        self.assertIn("releases", result["log"])
-
 
 class AutostartFrontendTests(unittest.TestCase):
     def test_card_uses_safe_dom_and_is_hidden_until_supported(self):

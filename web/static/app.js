@@ -177,12 +177,7 @@ socket.on('initial_state', (data) => {
     if (data.status) updateStatus(data.status);
 
     // Batch update channels to prevent UI freezing
-    if (data.channels) {
-        data.channels.forEach(ch => {
-            state.channels[ch.id] = ch;
-        });
-        renderChannels();
-    }
+    if (data.channels) replaceChannels(data.channels);  // a full snapshot, stale ones must go
 
     // Batch update campaigns to prevent UI freezing
     if (data.campaigns) {
@@ -311,12 +306,7 @@ socket.on('channels_clear', () => {
 });
 
 socket.on('channels_batch_update', (data) => {
-    // Replace all channels atomically to prevent flickering
-    state.channels = {};
-    data.channels.forEach(ch => {
-        state.channels[ch.id] = ch;
-    });
-    renderChannels();
+    replaceChannels(data.channels);
 });
 
 socket.on('channel_watching', (data) => {
@@ -952,9 +942,13 @@ function removeChannel(channelId) {
     renderChannels();
 }
 
-function clearChannels() {
-    state.channels = {};
+function replaceChannels(channels) {
+    state.channels = Object.fromEntries(channels.map(channel => [channel.id, channel]));
     renderChannels();
+}
+
+function clearChannels() {
+    replaceChannels([]);
 }
 
 function setWatchingChannel(channelId, gameOverride) {
@@ -1024,14 +1018,12 @@ function renderChannels() {
         gameGroups[gameId].channels.push(channel);
     });
 
-    // Fallback: fill missing icons from campaigns data
+    // Campaign art is the real cover; the channel icon can be Twitch's grey placeholder.
     Object.entries(gameGroups).forEach(([gameId, group]) => {
-        if (!group.icon) {
-            const camp = Object.values(state.campaigns).find(c =>
-                c.game_name && c.game_name.toLowerCase() === group.name.toLowerCase()
-            );
-            if (camp?.game_box_art_url) group.icon = camp.game_box_art_url;
-        }
+        const camp = Object.values(state.campaigns).find(c =>
+            c.game_box_art_url && c.game_name && c.game_name.toLowerCase() === group.name.toLowerCase()
+        );
+        if (camp) group.icon = camp.game_box_art_url;
     });
 
     // Sort games: prioritize games with watching channels, then by total viewers
@@ -1337,6 +1329,19 @@ function clearDropProgress() {
     updateQCButtons(document.getElementById('status-text')?.textContent || '');
 }
 
+// A campaign with nothing left to earn: every drop claimed, sub-gated, or already at 100%.
+// Auto-clean removes games whose campaigns are all done; auto-add must use the same rule,
+// or the two keep adding and removing the same game on every dashboard visit.
+function campaignDone(c) {
+    return c.total_drops > 0 && c.drops.every(d =>
+        d.is_claimed
+        || (d.required_subs || 0) > 0
+        // Only trust local minutes when required_minutes is known (>0): "0 >= 0" used to
+        // mark whole games done and strip them from the watch list.
+        || ((d.required_minutes || 0) > 0 && (d.current_minutes || 0) >= d.required_minutes)
+    );
+}
+
 function autoAddLinkedGames() {
     if (!state.settings?.auto_add_linked) return;
     const watching = new Set(state.settings.games_to_watch || []);
@@ -1347,7 +1352,7 @@ function autoAddLinkedGames() {
     const excluded = new Set(state.settings.auto_add_excluded_games || []);
     let changed = false;
     Object.values(state.campaigns).forEach(c => {
-        if (c.linked && c.game_name && !watching.has(c.game_name) && !excluded.has(c.game_name)) {
+        if (c.linked && c.game_name && !watching.has(c.game_name) && !excluded.has(c.game_name) && !campaignDone(c)) {
             watching.add(c.game_name);
             changed = true;
         }
@@ -1986,18 +1991,7 @@ function autoCleanWantedQueue() {
         // in the watch queue forever, endlessly re-picked as an earn target. Mirror
         // DropsCampaign.finished (campaign.py): a drop counts as done if it's claimed,
         // sub-gated, or already hit 100% locally (even if Twitch hasn't confirmed yet).
-        const allFullyClaimed = gameCampaigns.every(c =>
-            c.total_drops > 0 && c.drops.every(d =>
-                d.is_claimed
-                || (d.required_subs || 0) > 0
-                // Only trust the local-minutes fallback when required_minutes is
-                // actually known (>0). A drop object missing both fields used to
-                // read as "0 >= 0" → wrongly counted as done, which could mark an
-                // entire game's campaigns "fully claimed" and silently strip it
-                // (and potentially the whole watch list) via the save() below.
-                || ((d.required_minutes || 0) > 0 && (d.current_minutes || 0) >= d.required_minutes)
-            )
-        );
+        const allFullyClaimed = gameCampaigns.every(campaignDone);
 
         if (allFullyClaimed) { changed = true; removedGames.push(gameName); return false; }
         return true;
@@ -2255,6 +2249,10 @@ function updateSettingsUI(settings) {
 
     renderPreferredGames(settings.preferred_games || []);
     renderPreferredWaiting();
+    renderDailyWatch(settings.daily_watch_games || []);
+    const dailyMinutesEl = document.getElementById('daily-watch-minutes');
+    if (dailyMinutesEl) dailyMinutesEl.value = settings.daily_watch_minutes || 60;
+    refreshDailyWatchStatus();
 
     const schedulerEnabled = document.getElementById('scheduler-enabled');
     if (schedulerEnabled) schedulerEnabled.checked = settings.scheduler_enabled || false;
@@ -2616,6 +2614,57 @@ function handlePreferredGamesDragEnd(e) {
     saveSettings();
 }
 
+function renderDailyWatch(games) {
+    state.settings.daily_watch_games = games;
+    const container = document.getElementById('daily-watch-list');
+    if (!container) return;
+    const progress = new Map((state.dailyWatchStatus || []).map(e => [e.game.toLowerCase(), e]));
+    container.replaceChildren();
+    games.forEach((g, idx) => {
+        const st = progress.get(g.toLowerCase());
+        const item = document.createElement('div');
+        item.className = 'daily-watch-item';
+        const info = document.createElement('div');
+        info.className = 'daily-watch-info';
+        const name = document.createElement('span');
+        name.className = 'daily-watch-name';
+        name.textContent = g;
+        info.appendChild(name);
+        if (st) {
+            const detail = document.createElement('span');
+            detail.className = 'daily-watch-detail';
+            let text = tr('gui.settings.daily_watch_progress', '{minutes} / {quota} min today', { minutes: st.minutes, quota: st.quota });
+            if (st.minutes >= st.quota) text += ' · ' + tr('gui.settings.daily_watch_done', 'done for today');
+            else if (st.channel) text += ' · ' + st.channel;
+            detail.textContent = text;
+            info.appendChild(detail);
+        }
+        const btn = document.createElement('button');
+        btn.className = 'remove-btn';
+        btn.textContent = '✕';
+        btn.addEventListener('click', () => {
+            state.settings.daily_watch_games.splice(idx, 1);
+            renderDailyWatch([...state.settings.daily_watch_games]);
+            saveSettings();
+        });
+        item.appendChild(info);
+        item.appendChild(btn);
+        container.appendChild(item);
+    });
+}
+
+async function refreshDailyWatchStatus() {
+    const panel = document.getElementById('settings-panel-games');
+    if (!panel || panel.hidden || document.hidden || !(state.settings.daily_watch_games || []).length) return;
+    try {
+        const r = await fetch(API_BASE + '/api/daily-watch/status');
+        if (!r.ok) return;
+        state.dailyWatchStatus = (await r.json()).games || [];
+        renderDailyWatch([...(state.settings.daily_watch_games || [])]);
+    } catch (e) { /* status is cosmetic */ }
+}
+setInterval(refreshDailyWatchStatus, 15000);
+
 function renderGamesToWatch() {
     const selectedGames = state.settings.games_to_watch || [];
     const filterText = document.getElementById('games-filter')?.value.toLowerCase() || '';
@@ -2900,10 +2949,13 @@ function sortGamesByEndDate() {
         if (!active.length) return Infinity;
         return Math.min(...active.map(c => new Date(c.ends_at).getTime()));
     };
-    state.settings.games_to_watch = [...games].sort((a, b) => getEarliestEnd(a) - getEarliestEnd(b));
+    const sorted = [...games].sort((a, b) => getEarliestEnd(a) - getEarliestEnd(b));
+    if (sorted.every((g, i) => g === games[i])) return;
+    // Display only: the miner already orders by deadline itself. Saving here made every
+    // dashboard visit change games_to_watch and re-gather all channels.
+    state.settings.games_to_watch = sorted;
     renderGamesToWatch();
     renderChannels();
-    saveSettings();
 }
 
 function selectAllGames() {
@@ -3391,6 +3443,8 @@ async function _saveSettingsNow() {
         idle_use_followed: document.getElementById('idle-use-followed')?.checked ?? false,
         idle_parallel: document.getElementById('idle-parallel')?.checked ?? true,
         preferred_games: state.settings.preferred_games || [],
+        daily_watch_games: state.settings.daily_watch_games || [],
+        daily_watch_minutes: parseInt(document.getElementById('daily-watch-minutes')?.value, 10) || 60,
         priority_list_only: document.getElementById('priority-list-only')?.checked ?? true,
         reward_priority_enabled: document.getElementById('reward-priority-enabled')?.checked ?? false,
         reward_priority: getRewardPriority(),
@@ -4819,6 +4873,7 @@ function showSettingsPanel(name, { focus = false, scroll = true } = {}) {
     });
     try { localStorage.setItem(SETTINGS_PANEL_KEY, name); } catch (e) { /* storage unavailable */ }
     setIntegrityPolling(name === 'system');
+    if (name === 'games') refreshDailyWatchStatus();
     if (scroll) window.scrollTo(0, 0);
 }
 
@@ -5205,90 +5260,130 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'Enter') document.getElementById('blacklisted-game-add-btn').click();
     });
 
-    let prefGameDropdownIndex = -1;
+    // Suggestions: local campaign games (optional) merged with any Twitch category, searched server-side.
+    function setupGameSuggest({ inputId, dropdownId, addBtnId, existing, onAdd, local }) {
+        const input = document.getElementById(inputId);
+        const dropdown = document.getElementById(dropdownId);
+        if (!input || !dropdown) return;
+        let index = -1;
+        let remote = [];
+        let timer = null;
+        let seq = 0;
 
-    function addPreferredGame(val) {
-        if (!val) return;
-        const games = state.settings.preferred_games || [];
-        if (!games.map(g => g.toLowerCase()).includes(val.toLowerCase())) {
-            games.push(val);
-            renderPreferredGames([...games]);
-            saveSettings();
-        }
-        document.getElementById('preferred-game-input').value = '';
-        closePrefGameDropdown();
-    }
+        const close = () => { dropdown.style.display = 'none'; index = -1; };
+        const add = (val) => {
+            if (!val) return;
+            onAdd(val);
+            input.value = '';
+            remote = [];
+            close();
+        };
+        const render = () => {
+            const term = input.value.trim().toLowerCase();
+            const have = new Set(existing().map(g => g.toLowerCase()));
+            const localMatches = !local ? [] : Array.from(availableGames)
+                .filter(g => g.toLowerCase().includes(term))
+                .sort((a, b) => a.toLowerCase().startsWith(term) ? -1 : b.toLowerCase().startsWith(term) ? 1 : a.localeCompare(b))
+                .slice(0, 15);
+            const seen = new Set();
+            const matches = [...localMatches, ...remote].filter(g => {
+                const k = g.toLowerCase();
+                if (have.has(k) || seen.has(k)) return false;
+                seen.add(k);
+                return true;
+            });
+            dropdown.replaceChildren();
+            if (!term || !matches.length) {
+                dropdown.style.display = 'none';
+                return;
+            }
+            matches.forEach((g, idx) => {
+                const item = document.createElement('div');
+                item.className = 'dropdown-item' + (idx === index ? ' focused' : '');
+                item.dataset.gameName = g;
+                item.textContent = g;
+                item.addEventListener('mousedown', (e) => { e.preventDefault(); add(g); });
+                dropdown.appendChild(item);
+            });
+            dropdown.style.display = 'block';
+        };
+        const search = () => {
+            clearTimeout(timer);
+            const term = input.value.trim();
+            if (term.length < 2) { remote = []; return; }
+            timer = setTimeout(async () => {
+                const mine = ++seq;
+                try {
+                    const r = await fetch(API_BASE + '/api/games/search?q=' + encodeURIComponent(term));
+                    const data = await r.json();
+                    if (mine !== seq) return;
+                    remote = Array.isArray(data.games) ? data.games : [];
+                } catch (e) {
+                    remote = [];
+                }
+                if (document.activeElement === input) render();
+            }, 250);
+        };
 
-    function renderPrefGameDropdown(search) {
-        const dropdown = document.getElementById('preferred-game-dropdown');
-        if (!dropdown) return;
-        const term = search.toLowerCase();
-        const existing = new Set((state.settings.preferred_games || []).map(g => g.toLowerCase()));
-        const matches = Array.from(availableGames)
-            .filter(g => g.toLowerCase().includes(term) && !existing.has(g.toLowerCase()))
-            .sort((a, b) => a.toLowerCase().startsWith(term) ? -1 : b.toLowerCase().startsWith(term) ? 1 : a.localeCompare(b))
-            .slice(0, 15);
-        dropdown.replaceChildren();
-        if (!matches.length) {
-            dropdown.style.display = 'none';
-            return;
-        }
-        matches.forEach((g, idx) => {
-            const item = document.createElement('div');
-            item.className = 'dropdown-item' + (idx === prefGameDropdownIndex ? ' focused' : '');
-            item.dataset.gameName = g;
-            item.textContent = g;
-            item.addEventListener('mousedown', (e) => { e.preventDefault(); addPreferredGame(g); });
-            dropdown.appendChild(item);
-        });
-        dropdown.style.display = 'block';
-    }
-
-    function closePrefGameDropdown() {
-        const dropdown = document.getElementById('preferred-game-dropdown');
-        if (dropdown) dropdown.style.display = 'none';
-        prefGameDropdownIndex = -1;
-    }
-
-    const prefInput = document.getElementById('preferred-game-input');
-    if (prefInput) {
-        prefInput.addEventListener('input', (e) => {
-            prefGameDropdownIndex = -1;
-            if (e.target.value.trim()) renderPrefGameDropdown(e.target.value.trim());
-            else closePrefGameDropdown();
-        });
-        prefInput.addEventListener('focus', (e) => {
-            if (e.target.value.trim()) renderPrefGameDropdown(e.target.value.trim());
-        });
-        prefInput.addEventListener('blur', () => setTimeout(closePrefGameDropdown, 150));
-        prefInput.addEventListener('keydown', (e) => {
-            const dropdown = document.getElementById('preferred-game-dropdown');
-            const items = dropdown?.querySelectorAll('.dropdown-item') || [];
+        input.addEventListener('input', () => { index = -1; search(); render(); });
+        input.addEventListener('focus', render);
+        input.addEventListener('blur', () => setTimeout(close, 150));
+        input.addEventListener('keydown', (e) => {
+            const items = dropdown.querySelectorAll('.dropdown-item');
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
-                prefGameDropdownIndex = Math.min(prefGameDropdownIndex + 1, items.length - 1);
-                renderPrefGameDropdown(prefInput.value.trim());
-                dropdown?.querySelector('.dropdown-item.focused')?.scrollIntoView({ block: 'nearest' });
+                index = Math.min(index + 1, items.length - 1);
+                render();
+                dropdown.querySelector('.dropdown-item.focused')?.scrollIntoView({ block: 'nearest' });
             } else if (e.key === 'ArrowUp') {
                 e.preventDefault();
-                prefGameDropdownIndex = Math.max(prefGameDropdownIndex - 1, 0);
-                renderPrefGameDropdown(prefInput.value.trim());
-                dropdown?.querySelector('.dropdown-item.focused')?.scrollIntoView({ block: 'nearest' });
+                index = Math.max(index - 1, 0);
+                render();
+                dropdown.querySelector('.dropdown-item.focused')?.scrollIntoView({ block: 'nearest' });
             } else if (e.key === 'Enter') {
                 e.preventDefault();
-                if (prefGameDropdownIndex >= 0 && items[prefGameDropdownIndex]) {
-                    addPreferredGame(items[prefGameDropdownIndex].dataset.gameName);
-                } else {
-                    addPreferredGame(prefInput.value.trim());
-                }
+                add(index >= 0 && items[index] ? items[index].dataset.gameName : input.value.trim());
             } else if (e.key === 'Escape') {
-                closePrefGameDropdown();
+                close();
             }
         });
+        document.getElementById(addBtnId)?.addEventListener('click', () => add(input.value.trim()));
     }
 
-    document.getElementById('preferred-game-add-btn')?.addEventListener('click', () => {
-        addPreferredGame(document.getElementById('preferred-game-input')?.value.trim());
+    setupGameSuggest({
+        inputId: 'preferred-game-input',
+        dropdownId: 'preferred-game-dropdown',
+        addBtnId: 'preferred-game-add-btn',
+        existing: () => state.settings.preferred_games || [],
+        local: true,
+        onAdd: (val) => {
+            const games = state.settings.preferred_games || [];
+            if (!games.map(g => g.toLowerCase()).includes(val.toLowerCase())) {
+                games.push(val);
+                renderPreferredGames([...games]);
+                saveSettings();
+            }
+        },
+    });
+
+    setupGameSuggest({
+        inputId: 'daily-watch-game-input',
+        dropdownId: 'daily-watch-game-dropdown',
+        addBtnId: 'daily-watch-add-btn',
+        existing: () => state.settings.daily_watch_games || [],
+        onAdd: (val) => {
+            const games = state.settings.daily_watch_games || [];
+            if (!games.map(g => g.toLowerCase()).includes(val.toLowerCase())) {
+                games.push(val);
+                renderDailyWatch([...games]);
+                saveSettings();
+            }
+        },
+    });
+
+    document.getElementById('daily-watch-minutes')?.addEventListener('change', (e) => {
+        e.target.value = Math.max(1, Math.min(240, parseInt(e.target.value, 10) || 60));
+        saveSettings();
     });
 
     // Inventory game search dropdown
@@ -6677,6 +6772,35 @@ function renderMarkdown(md) {
     return div;
 }
 
+// Packaged app: the server downloads, verifies and swaps itself in, then restarts. Poll until it
+// reports an error, or until a fresh process (state idle again) answers: then reload the page.
+function pollDesktopUpdate(pre, um, installBtn, cancelBtn) {
+    let sawStarted = false;
+    pre.textContent = um.downloading || 'Downloading the update...';
+    const timer = setInterval(async () => {
+        try {
+            const st = await (await fetch(API_BASE + '/api/update/status')).json();
+            if (st.state === 'error') {
+                clearInterval(timer);
+                pre.textContent = st.error;
+                installBtn.style.display = 'none';
+                cancelBtn.textContent = um.close || 'Close';
+                cancelBtn.disabled = false;
+            } else if (st.state === 'downloading') {
+                sawStarted = true;
+            } else if (st.state === 'installing') {
+                sawStarted = true;
+                pre.textContent = um.installing || 'Installing, the app restarts...';
+            } else if (st.state === 'idle' && sawStarted) {
+                clearInterval(timer);
+                location.reload();
+            }
+        } catch (_) {
+            if (sawStarted) pre.textContent = um.installing || 'Installing, the app restarts...';
+        }
+    }, 1500);
+}
+
 function showUpdateModal(text, withInstallBtn, latestVersion) {
     const um = state.translations?.gui?.update_modal || {};
     document.getElementById('update-log-modal')?.remove();
@@ -6724,7 +6848,14 @@ function showUpdateModal(text, withInstallBtn, latestVersion) {
             try {
                 const res = await fetch(API_BASE + '/api/self-update', { method: 'POST' });
                 const json = await res.json();
-                if (json.docker || json.frozen) {
+                if (!res.ok) {
+                    pre.textContent = json.detail || (um.error_contacting || 'Error contacting server.');
+                    installBtn.style.display = 'none';
+                    cancelBtn.textContent = um.close || 'Close';
+                    cancelBtn.disabled = false;
+                } else if (json.updating) {
+                    pollDesktopUpdate(pre, um, installBtn, cancelBtn);
+                } else if (json.docker || json.frozen) {
                     pre.textContent = json.log;
                     title.textContent = json.frozen
                         ? (um.frozen_detected || '🪟 Packaged Windows app')

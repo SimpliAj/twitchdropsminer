@@ -38,7 +38,7 @@ class ChannelListManager:
             "name": channel.name,
             "game": channel.game.name if channel.game else None,
             "game_id": channel.game.id if channel.game else None,
-            "game_icon": channel.game.box_art_url if channel.game else None,
+            "game_icon": channel.game.icon_url if channel.game else None,
             "viewers": channel.viewers,
             "online": channel.online,
             "drops_enabled": channel.drops_enabled,
@@ -126,7 +126,7 @@ class ChannelListManager:
                 "name": channel.name,
                 "game": channel.game.name if channel.game else None,
                 "game_id": channel.game.id if channel.game else None,
-                "game_icon": channel.game.box_art_url if channel.game else None,
+                "game_icon": channel.game.icon_url if channel.game else None,
                 "viewers": channel.viewers,
                 "online": channel.online,
                 "drops_enabled": channel.drops_enabled,
@@ -151,4 +151,5 @@ class ChannelListManager:
         Returns:
             List of channel data dictionaries
         """
-        return list(self._channels.values())
+        # the stored flag goes stale when watching stops; derive it from the current state
+        return [{**data, "watching": data["id"] == self._watching_id} for data in self._channels.values()]

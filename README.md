@@ -23,6 +23,7 @@ An independently maintained fork of [rangermix/TwitchDropsMiner](https://github.
 - 🔑 **Simple, safe login** — a normal browser window on your own PC; nothing remote-controlled for Twitch to reject
 - 👥 **Multi-account** — unlimited isolated accounts, a fleet view with bulk actions and settings
 - 💰 **Channel points** — auto-claims bonus chests, idle-watches channels when no drops are running
+- 📅 **Daily watch** — watch a Twitch category for N minutes every day alongside drop mining (e.g. event viewership badges that are not Drops)
 - 🎯 **Auto-betting** — optional prediction bets with four strategies and per-channel overrides
 - 🚫 **Fine-grained filters** — blacklist games, drop names or drop IDs, ignore single campaigns
 - 🤖 **Discord** — a bot with live embeds and slash commands, or plain webhooks
@@ -62,6 +63,8 @@ Open **<http://localhost:8080>**. Also on GHCR: `ghcr.io/simpliaj/twitchdropsmin
 ### 🪟 Windows app (no Docker)
 
 Download `TwitchDropsMiner-<version>-windows-x64.zip` from the [latest release](https://github.com/SimpliAj/twitchdropsminer/releases/latest), unzip it anywhere and run `TwitchDropsMiner.exe`. The dashboard opens in its own window; the miner keeps running in the tray (right-click the icon for **Start with Windows** and **Quit**). Settings and login live in `%APPDATA%\TwitchDropsMiner`. Needs Chrome or Edge for the Twitch login. The app isn't code-signed, so Windows SmartScreen may ask once — **More info → Run anyway**. Windows app contributed by Trep.
+
+**Updates:** when a new release is out the dashboard footer shows it; click it, then **Install and restart**. The app downloads the zip for your platform, checks it against the release's `SHA256SUMS-*.txt`, swaps the app folder (the old one is kept until the new one runs) and restarts. Your data is not touched. The app must live in a folder you can write to.
 
 ### 🍎 macOS app (no Docker)
 

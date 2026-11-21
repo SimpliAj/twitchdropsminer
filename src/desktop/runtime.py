@@ -102,7 +102,9 @@ def find_app_browser() -> str | None:
                 path = os.path.join(base, vendor, app, "Application", exe)
                 if os.path.exists(path):
                     return path
-    return None
+    from src.auth.plain_chrome import windows_default_chromium  # noqa: PLC0415
+
+    return windows_default_chromium()
 
 
 def open_dashboard(port: int, app_window: bool = False) -> subprocess.Popen | None:
@@ -262,6 +264,22 @@ def request_quit(
     return timer
 
 
+def _run_restart_hooks() -> None:
+    for hook in _restart_hooks:
+        try:
+            hook()
+        except Exception:
+            logger.debug("Restart hook failed", exc_info=True)
+
+
+def quit_for_update() -> None:
+    """Exit for the updater script, which swaps the install folder and starts the new app."""
+    _restart_started.set()
+    _run_restart_hooks()
+    time.sleep(0.2)
+    os._exit(0)
+
+
 def restart_process() -> None:
     """Replace this process with a fresh copy of itself.
 
@@ -283,11 +301,7 @@ def restart_process() -> None:
         logger.warning("Restart already in progress; ignoring a second request")
         return
     _restart_started.set()
-    for hook in _restart_hooks:
-        try:
-            hook()
-        except Exception:
-            logger.debug("Restart hook failed", exc_info=True)
+    _run_restart_hooks()
     args = [sys.executable] if IS_FROZEN else [sys.executable, *sys.argv[:1]]
     args += sys.argv[1:]
     env = {

@@ -120,6 +120,7 @@ class TestReloadKeepsWatchedChannel(unittest.IsolatedAsyncioTestCase):
         client.websocket.start = AsyncMock()
         client._irc_service.start = AsyncMock()
         client._watch_service.watch_loop = AsyncMock()
+        client.daily_watch.run = AsyncMock()
         client._scheduler_service.run_scheduler = AsyncMock()
         client.watching_channel = AwaitableValue()
         client.watching_channel.set(watched)
