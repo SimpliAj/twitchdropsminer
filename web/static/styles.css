@@ -2918,3 +2918,6 @@ body.dark-mode .tab-button.active { color: var(--glitch-glow); }
 .daily-watch-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .daily-watch-name { overflow-wrap: anywhere; }
 .daily-watch-detail { color: var(--ink-dim); font-size: .82rem; font-family: var(--font-mono); }
+
+.channel-link { text-decoration: none; }
+.channel-link[href]:hover { text-decoration: underline; }
