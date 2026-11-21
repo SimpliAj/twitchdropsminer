@@ -48,6 +48,7 @@ def _windows_memory() -> tuple[int | None, int | None]:
     psapi = ctypes.WinDLL("psapi")
     kernel32 = ctypes.WinDLL("kernel32")
     kernel32.GetCurrentProcess.restype = wintypes.HANDLE
+    psapi.GetProcessMemoryInfo.argtypes = [wintypes.HANDLE, ctypes.c_void_p, wintypes.DWORD]
     ok = psapi.GetProcessMemoryInfo(kernel32.GetCurrentProcess(), ctypes.byref(counters), counters.cb)
     status = Status(dwLength=ctypes.sizeof(Status))
     total = status.ullTotalPhys if kernel32.GlobalMemoryStatusEx(ctypes.byref(status)) else None
@@ -65,7 +66,7 @@ def memory() -> tuple[int | None, int | None]:
             with open("/proc/meminfo") as f:
                 total = int(f.readline().split()[1]) * 1024
             return rss, total
-    except (OSError, ValueError, IndexError, AttributeError):
+    except Exception:  # a reading problem must never stop the miner
         pass
     return None, None  # shortcut: macOS isn't covered (no cheap current-RSS call), add if reported
 
