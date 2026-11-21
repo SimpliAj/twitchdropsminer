@@ -9,6 +9,7 @@ allocations so the log names the code that grew.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import ctypes
 import gc
 import logging
@@ -86,10 +87,8 @@ def release_free_memory() -> None:
     """Collect garbage and hand freed heap memory back to the OS (glibc keeps it otherwise)."""
     gc.collect()
     if sys.platform.startswith("linux"):
-        try:
+        with contextlib.suppress(OSError, AttributeError):
             ctypes.CDLL("libc.so.6").malloc_trim(0)
-        except (OSError, AttributeError):
-            pass
 
 
 async def run(restart: Callable[[], None], read: Callable[[], tuple[int | None, int | None]] = memory) -> None:
