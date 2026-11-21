@@ -2688,8 +2688,14 @@ function renderGamesToWatch() {
     renderSelectedGames(selectedGames);
 
     // Render available games (checkboxes for unselected games)
+    // Games whose campaigns are all done are left out: auto-clean would remove them from the
+    // queue again on the next visit, which looked like the selection not being saved.
+    const doneGames = new Set(Array.from(availableGames).filter(game => {
+        const camps = Object.values(state.campaigns).filter(c => c.game_name?.toLowerCase() === game.toLowerCase());
+        return camps.length > 0 && camps.every(campaignDone);
+    }));
     const unselectedGames = Array.from(availableGames)
-        .filter(game => !selectedGames.includes(game))
+        .filter(game => !selectedGames.includes(game) && !doneGames.has(game))
         .filter(game => game.toLowerCase().includes(filterText))
         .sort();
 
