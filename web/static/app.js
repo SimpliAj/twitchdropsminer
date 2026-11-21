@@ -470,6 +470,21 @@ socket.on('pause_state', function(data) {
 
 // ==================== UI Update Functions ====================
 
+function twitchChannelUrl(login) {
+    return 'https://www.twitch.tv/' + encodeURIComponent(login);
+}
+
+// Turn an element into a link to the channel's Twitch page (safe DOM, no innerHTML).
+function setChannelLink(el, login) {
+    el.textContent = login;
+    if (!login) { el.removeAttribute('href'); return; }
+    el.href = twitchChannelUrl(login);
+    el.target = '_blank';
+    el.rel = 'noopener noreferrer';
+    el.classList.add('channel-link');
+    el.onclick = (e) => e.stopPropagation();
+}
+
 function updateChannelPointsDisplay(login, claimedAmount) {
     const channelEl = document.getElementById('channel-points-channel');
     const balanceEl = document.getElementById('channel-points-balance');
@@ -477,7 +492,7 @@ function updateChannelPointsDisplay(login, claimedAmount) {
     if (!channelEl || !balanceEl) return;
 
     const pts = state.sessionPoints[login];
-    channelEl.textContent = login;
+    setChannelLink(channelEl, login);
     const cpDisabled = pts && pts.cpEnabled === false;
     balanceEl.textContent = cpDisabled
         ? tr('gui.analytics.cp_disabled', 'No Points')
@@ -512,8 +527,8 @@ function renderPointsTracker() {
             row.style.cssText = 'display:flex;justify-content:space-between;padding:2px 0;font-size:0.85rem;';
             const nameEl = document.createElement('span');
             nameEl.style.display = 'flex';nameEl.style.alignItems = 'center';nameEl.style.gap = '5px';
-            const nameTxt = document.createElement('span');
-            nameTxt.textContent = login;
+            const nameTxt = document.createElement('a');
+            setChannelLink(nameTxt, login);
             nameTxt.style.color = '#A970FF';
             nameEl.appendChild(nameTxt);
             if (data.cpEnabled === false) {
@@ -798,15 +813,15 @@ function renderChannelPointsTab() {
         row.style.cssText = `display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:5px;cursor:pointer;transition:background 0.1s;${isTop ? 'background:rgba(145,71,255,0.07);' : ''}`;
         row.addEventListener('mouseover', () => row.style.background = 'rgba(191,148,255,0.14)');
         row.addEventListener('mouseout', () => row.style.background = isTop ? 'rgba(145,71,255,0.07)' : '');
-        row.addEventListener('click', () => window.open(`https://www.twitch.tv/${login}`, '_blank'));
+        row.addEventListener('click', () => window.open(twitchChannelUrl(login), '_blank', 'noopener'));
 
         const rankEl = document.createElement('span');
         rankEl.textContent = isTop ? '👑' : `${idx + 1}`;
         rankEl.style.cssText = `font-size:${isTop ? '0.85rem' : '0.72rem'};color:var(--text-secondary);width:22px;text-align:center;flex-shrink:0;`;
         row.appendChild(rankEl);
 
-        const nameEl = document.createElement('span');
-        nameEl.textContent = login;
+        const nameEl = document.createElement('a');
+        setChannelLink(nameEl, login);
         nameEl.style.cssText = `flex:1;font-size:0.88rem;font-weight:${isTop ? '600' : '400'};color:${isTop ? 'var(--ore)' : 'var(--text-primary)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;`;
         row.appendChild(nameEl);
 
