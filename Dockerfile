@@ -29,6 +29,7 @@ WORKDIR /app
 # - tzdata: unchanged from before
 # - xvfb: virtual X display the Chromium that fetches Twitch's integrity
 #   token runs under on this headless image (see src/auth/browser_login.py)
+# - libatomic1: needed by the Node runtime newer Playwright releases ship
 # - tini: PID 1 that reaps the zombie Xvfb/Chromium children without compose's init: true
 # - procps: provides pgrep, which sweep_orphaned_processes() shells out to on
 #   every startup. Debian slim images do NOT ship it, and without it that
@@ -41,6 +42,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     xvfb \
     procps \
     tini \
+    libatomic1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy project metadata and install dependencies

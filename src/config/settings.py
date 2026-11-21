@@ -60,6 +60,8 @@ default_settings = {
     "idle_parallel": True,
     "idle_use_followed": False,
     "preferred_games": [],
+    "daily_watch_games": [],
+    "daily_watch_minutes": 60,
     "priority_list_only": True,
     "reward_priority_enabled": False,
     "reward_priority": ["DIRECT_ENTITLEMENT", "BADGE", "EMOTE", "UNKNOWN"],
@@ -111,6 +113,8 @@ class Settings:
     idle_parallel: bool
     idle_use_followed: bool
     preferred_games: list[str]
+    daily_watch_games: list[str]
+    daily_watch_minutes: int
     priority_list_only: bool
     reward_priority_enabled: bool
     reward_priority: list[str]

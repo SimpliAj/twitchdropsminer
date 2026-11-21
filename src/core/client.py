@@ -31,6 +31,7 @@ from src.i18n import _
 from src.models.campaign import DropsCampaign
 from src.models.channel import Channel
 from src.services.channel_service import ChannelService
+from src.services.daily_watch import DailyWatch
 from src.services.drop_history import finalize_drop_claim, finalize_manual_claim
 from src.services.health_monitor_service import HealthMonitorService
 from src.services.inventory_service import InventoryService
@@ -113,6 +114,8 @@ class Twitch:
         self._message_handler_service: MessageHandlerService = MessageHandlerService(self)
         self._inventory_service: InventoryService = InventoryService(self)
         self._watch_service: WatchService = WatchService(self)
+        self.daily_watch = DailyWatch(self, _ACCOUNT_DATA_DIR / "daily_watch.json")
+        self._daily_watch_task: asyncio.Task[None] | None = None
         self._stream_selector: StreamSelector = StreamSelector()
         # Pause/resume state (PR #65)
         self._is_paused: bool = False
@@ -178,6 +181,9 @@ class Twitch:
         if self._watching_task is not None:
             self._watching_task.cancel()
             self._watching_task = None
+        if self._daily_watch_task is not None:
+            self._daily_watch_task.cancel()
+            self._daily_watch_task = None
         if self._mnt_task is not None:
             self._mnt_task.cancel()
             self._mnt_task = None
@@ -373,6 +379,10 @@ class Twitch:
         if self._watching_task is not None:
             self._watching_task.cancel()
         self._watching_task = asyncio.create_task(self._watch_service.watch_loop())
+        # own task: watch_loop idles when nothing is being mined, daily watch must not
+        if self._daily_watch_task is not None:
+            self._daily_watch_task.cancel()
+        self._daily_watch_task = asyncio.create_task(self.daily_watch.run())
         # Start scheduler service
         if self._scheduler_task is not None:
             self._scheduler_task.cancel()
@@ -640,6 +650,7 @@ class Twitch:
                     self.change_state(State.CHANNELS_FETCH)
                 else:
                     # with no games available, we switch to IDLE after cleanup
+                    self.gui.channels.clear()
                     self.print(
                         _.t["status"]["no_campaign"],
                         collapse_key="status.no_campaign",

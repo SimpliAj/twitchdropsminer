@@ -30,7 +30,7 @@ def is_newer(latest: str, current: str) -> bool:
 
 
 async def fetch_latest_release() -> dict | None:
-    """Latest GitHub release as {version, url, notes}, or None when unavailable."""
+    """Latest GitHub release as {version, url, notes, assets}, or None when unavailable."""
     async with (
         aiohttp.ClientSession() as session,
         session.get(RELEASES_API, timeout=aiohttp.ClientTimeout(total=5)) as response,
@@ -42,6 +42,7 @@ async def fetch_latest_release() -> dict | None:
         "version": data.get("tag_name", "").lstrip("v"),
         "url": data.get("html_url"),
         "notes": data.get("body", ""),
+        "assets": {a["name"]: a["browser_download_url"] for a in data.get("assets", [])},
     }
 
 

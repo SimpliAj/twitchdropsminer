@@ -75,6 +75,9 @@ jobs:
       - name: Integrity browser stays hidden and passes Kasada
         run: .build-venv/bin/python packaging/macos/mac_probe.py --hidden
 
+      - name: In-app update replaces a copy of the app and restarts it
+        run: ./scripts/update_e2e_macos.sh
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -102,4 +105,5 @@ jobs:
         run: |
           # scripts/release.sh pushes the tag before it creates the release
           for i in $(seq 1 30); do gh release view "$TAG" -R "$REPO" >/dev/null 2>&1 && break; sleep 20; done
-          gh release upload "$TAG" dist/TwitchDropsMiner-*-macos-*.zip -R "$REPO" --clobber
+          (cd dist && sha256sum TwitchDropsMiner-*-macos-*.zip > SHA256SUMS-macos.txt)
+          gh release upload "$TAG" dist/TwitchDropsMiner-*-macos-*.zip dist/SHA256SUMS-macos.txt -R "$REPO" --clobber

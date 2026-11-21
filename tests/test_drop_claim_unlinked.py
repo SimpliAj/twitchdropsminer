@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 from src.models.drop import TimedDrop
 
 
-def _drop(kind="DIRECT_ENTITLEMENT", linked=False, assumed=False):
+def _drop(kind="DIRECT_ENTITLEMENT", linked=False, assumed=False, extra_kind=None):
     now = datetime.now(timezone.utc)
     twitch = MagicMock()
     twitch.settings.blacklisted_drop_ids = []
@@ -20,10 +20,13 @@ def _drop(kind="DIRECT_ENTITLEMENT", linked=False, assumed=False):
     benefit = {
         "benefit": {"id": "b", "name": "B", "distributionType": kind, "imageAssetURL": "http://x/y.png"}
     }
+    edges = [benefit]
+    if extra_kind:
+        edges.append({"benefit": {**benefit["benefit"], "id": "b2", "distributionType": extra_kind}})
     data = {
         "id": "d1",
         "name": "Drop",
-        "benefitEdges": [benefit],
+        "benefitEdges": edges,
         "startAt": (now - timedelta(days=1)).isoformat(),
         "endAt": (now + timedelta(days=1)).isoformat(),
         "preconditionDrops": None,
@@ -53,5 +56,13 @@ class TestUnlinkedClaim(unittest.IsolatedAsyncioTestCase):
 
     async def test_claimable_once_linked(self):
         drop, _ = _drop()
+        drop.campaign.linked = True
+        self.assertTrue(drop.can_claim)
+
+    async def test_unlinked_item_plus_badge_waits_for_the_link(self):
+        drop, twitch = _drop("BADGE", extra_kind="DIRECT_ENTITLEMENT")
+        self.assertFalse(drop.can_claim)
+        self.assertFalse(await drop.claim())
+        twitch.gql_request.assert_not_called()
         drop.campaign.linked = True
         self.assertTrue(drop.can_claim)

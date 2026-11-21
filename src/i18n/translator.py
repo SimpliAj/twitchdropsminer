@@ -221,6 +221,11 @@ class GUISettingsOptional(TypedDict, total=False):
     idle_parallel_help: str
     password_repeat_placeholder: str
     predictions: dict[str, str]
+    daily_watch: NotRequired[str]
+    daily_watch_help: NotRequired[str]
+    daily_watch_minutes: NotRequired[str]
+    daily_watch_progress: NotRequired[str]
+    daily_watch_done: NotRequired[str]
     preferred_games: str
     preferred_games_help: str
     discord_health_webhook_label: str
@@ -474,6 +479,8 @@ class GUIUpdateModal(TypedDict):
     close: str
     applied: str
     restarting_suffix: str
+    downloading: str
+    installing: str
     error_contacting: str
 
 

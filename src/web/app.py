@@ -34,7 +34,7 @@ from src.config.paths import (
     SCRIPTS_DIR,
     WEB_DIR,
 )
-from src.desktop import AutostartError, AutostartManager, login_gate, restart_process
+from src.desktop import AutostartError, AutostartManager, login_gate, restart_process, updater
 from src.services import update_announcer
 from src.services.pause_timer import pause_deadline
 from src.web.diagnostics_api import DiagnosticsAPI
@@ -598,6 +598,8 @@ class SettingsUpdate(BaseModel):
     idle_use_followed: bool | None = None
     idle_parallel: bool | None = None
     preferred_games: list[str] | None = None
+    daily_watch_games: list[str] | None = None
+    daily_watch_minutes: int | None = None
     priority_list_only: bool | None = None
     reward_priority_enabled: bool | None = None
     reward_priority: list[str] | None = None
@@ -1105,6 +1107,23 @@ async def export_drops_history_csv():
 @app.get("/api/stats")
 async def get_stats(request: Request):
     return _aggregate_stats()
+
+@app.get("/api/games/search")
+async def search_games(q: str = ""):
+    """Twitch category names for the dashboard's game inputs."""
+    q = q.strip()
+    if not twitch_client or not 2 <= len(q) <= 60:
+        return {"games": []}
+    from src.services.daily_watch import search_categories
+    return {"games": await search_categories(twitch_client, q)}
+
+
+@app.get("/api/daily-watch/status")
+async def daily_watch_status():
+    if not twitch_client:
+        raise HTTPException(status_code=503, detail="Not ready")
+    return {"games": twitch_client.daily_watch.status()}
+
 
 @app.get("/api/idle-watch/status")
 async def idle_watch_status():
@@ -1666,8 +1685,16 @@ async def set_autostart(req: AutostartRequest):
     return manager.status()
 
 
+_update_task: list[asyncio.Task] = []  # keeps a reference so the task is not garbage collected
+
+
+@app.get("/api/update/status")
+async def update_status():
+    return updater.status
+
+
 @app.post("/api/self-update")
-async def self_update():
+async def self_update(request: Request):
     """Pull latest code from GitHub and restart — detects Docker vs PM2"""
     import subprocess
 
@@ -1687,16 +1714,14 @@ async def self_update():
         }
 
     if IS_FROZEN:
-        return {
-            "success": False,
-            "frozen": True,
-            "log": (
-                "This is the packaged Windows app, so it cannot update itself from git.\n\n"
-                "Download the latest release and replace the app folder:\n\n"
-                "  https://github.com/SimpliAj/twitchdropsminer/releases/latest\n\n"
-                "Your settings and login are kept (they live in %APPDATA%\\TwitchDropsMiner)."
-            ),
-        }
+        _browser_session_only(request, "Updates")
+        try:
+            target, parent = updater.ensure_ready()
+        except updater.UpdateError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        updater.status.update(state="downloading", error="")
+        _update_task.append(asyncio.create_task(updater.run_update(target, parent)))
+        return {"success": True, "frozen": True, "updating": True}
 
     repo_dir = Path(__file__).parent.parent.parent
     logs = []
