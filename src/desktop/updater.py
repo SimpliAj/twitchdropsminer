@@ -17,6 +17,7 @@ import subprocess
 import sys
 import tempfile
 import zipfile
+from collections.abc import Callable
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -261,7 +262,7 @@ def ensure_ready() -> tuple[Path, Path]:
     return target, parent
 
 
-async def run_update(target: Path, parent: Path) -> None:
+async def run_update(target: Path, parent: Path, before_apply: Callable[[], None] | None = None) -> None:
     staging = parent / STAGING_NAME
     try:
         shutil.rmtree(staging, ignore_errors=True)
@@ -275,6 +276,8 @@ async def run_update(target: Path, parent: Path) -> None:
         new = unpacked / target.name if sys.platform == "darwin" else unpacked / "TwitchDropsMiner"
         if not new.is_dir():
             raise UpdateError("The update archive does not contain the app")
+        if before_apply is not None:
+            before_apply()
         # Blocking on purpose: both variants end the process (Windows) or replace it (macOS).
         (_apply_macos if sys.platform == "darwin" else _apply_windows)(target, new, staging)
     except Exception as exc:

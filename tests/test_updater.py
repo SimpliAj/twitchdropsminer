@@ -214,7 +214,7 @@ class EndpointTests(unittest.IsolatedAsyncioTestCase):
         updater.status.update(state="idle", error="")
         ran = MagicMock()
 
-        async def fake_run(target, parent):
+        async def fake_run(target, parent, before_apply=None):
             ran(target, parent)
 
         with (

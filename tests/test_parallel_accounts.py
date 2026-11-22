@@ -173,3 +173,17 @@ class EndpointTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_instances_flag_spawn_support(self):
         self.assertTrue((await web_app.get_instances())["spawn_supported"])
+
+
+def test_update_stops_spawned_copies_first():
+    # The copies run from the folder the update replaces; on Windows that fails while they hold its files.
+    import asyncio
+    from pathlib import Path
+    from unittest.mock import AsyncMock, patch
+
+    from src.desktop import updater
+
+    calls = []
+    with patch.object(updater, "_fetch_sources", AsyncMock(side_effect=updater.UpdateError("stop"))):
+        asyncio.run(updater.run_update(Path("/tmp/x"), Path("/tmp"), lambda: calls.append(1)))
+    assert calls == []  # a failed download never stops the other accounts

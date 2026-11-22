@@ -1722,7 +1722,14 @@ async def self_update(request: Request):
         except updater.UpdateError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         updater.status.update(state="downloading", error="")
-        _update_task.append(asyncio.create_task(updater.run_update(target, parent)))
+        def stop_parallel_copies() -> None:
+            # they run from the same folder, which can't be replaced while they hold its files;
+            # the updated app starts them again on launch
+            for entry in _load_instances_registry()["instances"]:
+                if entry.get("spawned"):
+                    parallel_accounts.terminate(entry.get("pid"))
+
+        _update_task.append(asyncio.create_task(updater.run_update(target, parent, stop_parallel_copies)))
         return {"success": True, "frozen": True, "updating": True}
 
     repo_dir = Path(__file__).parent.parent.parent
