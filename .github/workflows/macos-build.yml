@@ -78,6 +78,9 @@ jobs:
       - name: In-app update replaces a copy of the app and restarts it
         run: ./scripts/update_e2e_macos.sh
 
+      - name: Parallel account starts, is listed and comes back with the app
+        run: ./scripts/parallel_e2e_macos.sh
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:

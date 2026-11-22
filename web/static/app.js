@@ -4676,6 +4676,8 @@ async function loadInstances() {
         // Auto-provisioning (pm2+nginx) only works on the maintainer's own VPS —
         // hide it everywhere else so self-hosters only see the option that
         // actually works for them (registering an already-running instance).
+        const spawnBox = document.getElementById('spawn-instance-box');
+        if (spawnBox) spawnBox.style.display = data.spawn_supported ? '' : 'none';
         const addBtn = document.getElementById('add-instance-btn');
         if (addBtn) addBtn.style.display = data.autoprovision_enabled ? '' : 'none';
         const instances = data.instances || [];
@@ -5530,6 +5532,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Fetch and apply translations for the current language
     fetchAndApplyTranslations();
+
+    document.getElementById('spawn-instance-btn')?.addEventListener('click', async () => {
+        const btn = document.getElementById('spawn-instance-btn');
+        const statusEl = document.getElementById('instances-status');
+        btn.disabled = true;
+        const res = await fetch('/api/instances/spawn', { method: 'POST' });
+        if (statusEl) {
+            statusEl.style.display = 'block';
+            if (res.ok) {
+                statusEl.textContent = tr('gui.system.instance_spawn_starting', 'Starting… log in with the other account in the new window');
+            } else {
+                const err = await res.json().catch(() => ({}));
+                statusEl.textContent = tr('gui.common.error', 'Error: {error}', { error: err.detail || tr('gui.common.failed', 'Failed') });
+            }
+        }
+        setTimeout(() => { loadInstanceTabs(); loadInstances(); btn.disabled = false; }, 5000);
+    });
 
     document.getElementById('add-instance-btn')?.addEventListener('click', async () => {
         const btn = document.getElementById('add-instance-btn');

@@ -14,9 +14,11 @@ from typing import Any
 
 from src.config.paths import IS_FROZEN
 
+from . import parallel
 from .autostart import AutostartManager
 from .instance import SingleInstanceGuard
 from .login_gate import login_gate
+from .parallel import SPAWNED_ENV
 from .runtime import (
     RESTARTED_ENV,
     DashboardWindow,
@@ -90,6 +92,10 @@ class DesktopLauncher:
         if options.minimized:
             logger.info("Started minimized (Windows sign-in): staying in the tray, no window opened")
         AutostartManager().repair_if_stale()
+        if not os.environ.get(SPAWNED_ENV):
+            from src.web import app as webapp
+
+            parallel.autostart(webapp._load_instances_registry()["instances"], options.minimized)
         if options.use_tray:
             from .tray import TrayIcon
 

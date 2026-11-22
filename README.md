@@ -125,7 +125,7 @@ The session is saved, so you only log in again when Twitch ends it.
 
 ## 👥 Multi-Account
 
-Each account has its own data folder (`data/accounts/<name>/`). Add, switch and rename accounts in **Settings → System**; **Manage Accounts** in the sidebar shows the whole fleet with bulk actions and shared settings. For fully separate processes per account (one port each, e.g. `/acc2/` behind Nginx), see the [Multi-Account wiki page](../../wiki/Multi-Account).
+Each account has its own data folder (`data/accounts/<name>/`). Add, switch and rename accounts in **Settings → System**; **Manage Accounts** in the sidebar shows the whole fleet with bulk actions and shared settings. In the Windows/macOS app, **Settings → Accounts → Instances → Add parallel account** starts another copy of the app in its own window (own port and data folder, relaunched with the app) so several accounts run at the same time. For fully separate processes per account (one port each, e.g. `/acc2/` behind Nginx), see the [Multi-Account wiki page](../../wiki/Multi-Account).
 
 ## 🍓 Raspberry Pi / ARM: integrity helper
 

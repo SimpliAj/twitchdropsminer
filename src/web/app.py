@@ -35,6 +35,8 @@ from src.config.paths import (
     WEB_DIR,
 )
 from src.desktop import AutostartError, AutostartManager, login_gate, restart_process, updater
+from src.desktop import parallel as parallel_accounts
+from src.desktop.runtime import configured_port
 from src.services import update_announcer
 from src.services.pause_timer import pause_deadline
 from src.web.diagnostics_api import DiagnosticsAPI
@@ -2182,6 +2184,8 @@ def _autoprovision_enabled() -> bool:
 def _load_instances_registry() -> dict:
     if _INSTANCES_FILE.exists():
         return json.loads(_INSTANCES_FILE.read_text())
+    if IS_FROZEN:
+        return {"instances": [{"n": 1, "port": configured_port(), "label": "Account 1"}]}
     return {"instances": [
         {"n": 1, "port": 8080, "data_dir": "data", "pm2_name": "twitchdrops", "label": "Account 1"},
         {"n": 2, "port": 8082, "data_dir": "data2", "pm2_name": "twitchdrops2", "label": "Account 2"},
@@ -2194,6 +2198,7 @@ async def get_instances():
     if len(registry.get("instances", [])) >= 3:
         registry["proxy_warning"] = True
     registry["autoprovision_enabled"] = _autoprovision_enabled()
+    registry["spawn_supported"] = IS_FROZEN
     return registry
 
 
@@ -2251,6 +2256,33 @@ async def register_instance(req: RegisterInstanceRequest):
     return {"success": True, "instances": instances}
 
 
+@app.post("/api/instances/spawn")
+async def spawn_instance(request: Request):
+    """Desktop app: start another copy of the app as a parallel account and remember it."""
+    _browser_session_only(request, "Parallel accounts")
+    if not IS_FROZEN:
+        raise HTTPException(status_code=400, detail="Parallel accounts can only be started from the Windows/macOS app")
+    registry = _load_instances_registry()
+    instances = registry["instances"]
+    port, data_dir = parallel_accounts.pick_slot(instances)
+    next_n = max((i["n"] for i in instances), default=0) + 1
+    entry = {
+        "n": next_n,
+        "port": port,
+        "base_url": f"http://127.0.0.1:{port}",
+        "label": f"Account {next_n}",
+        "spawned": True,
+        "data_dir": str(data_dir),
+    }
+    try:
+        parallel_accounts.launch(port, data_dir, entry["label"])
+    except OSError as exc:
+        raise HTTPException(status_code=500, detail=f"Could not start the app: {exc}") from exc
+    instances.append(entry)
+    _INSTANCES_FILE.write_text(json.dumps(registry, indent=2) + "\n")
+    return {"success": True, "instances": instances}
+
+
 @app.delete("/api/instances/{n}")
 async def remove_instance(n: int):
     if n == 1:
@@ -2259,6 +2291,17 @@ async def remove_instance(n: int):
     target = next((i for i in registry["instances"] if i["n"] == n), None)
     if target is None:
         raise HTTPException(status_code=404, detail="Instance not found")
+    if target.get("spawned"):
+        import aiohttp
+
+        # Best effort: a copy that is already gone, or has another password, is just forgotten
+        with contextlib.suppress(Exception):
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session:
+                await session.post(
+                    f"http://127.0.0.1:{target['port']}/api/close",
+                    headers=_fleet_auth_headers(),
+                    allow_redirects=False,
+                )
     import subprocess
     script = str(Path(__file__).parent.parent.parent / "scripts" / "manage_instance.sh")
     if "pm2_name" not in target or not _autoprovision_enabled() or not Path(script).exists():

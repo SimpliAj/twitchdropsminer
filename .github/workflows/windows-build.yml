@@ -65,6 +65,10 @@ jobs:
         shell: pwsh
         run: ./scripts/update_e2e_windows.ps1
 
+      - name: Parallel account starts, is listed and comes back with the app
+        shell: pwsh
+        run: ./scripts/parallel_e2e_windows.ps1
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
