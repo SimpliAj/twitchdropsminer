@@ -95,7 +95,9 @@ class DesktopLauncher:
         if not os.environ.get(SPAWNED_ENV):
             from src.web import app as webapp
 
-            parallel.autostart(webapp._load_instances_registry()["instances"], options.minimized)
+            registry = webapp._load_instances_registry()
+            parallel.autostart(registry["instances"], options.minimized)
+            webapp._save_instances_registry(registry)
         if options.use_tray:
             from .tray import TrayIcon
 

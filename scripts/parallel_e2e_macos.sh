@@ -16,7 +16,7 @@ stop_all() { pkill -f "$work/TwitchDropsMiner.app" || true; sleep 3; }
 wait_healthy 18082
 # first-run password setup would otherwise redirect every API call
 curl -sS -o /dev/null -d action=skip http://127.0.0.1:18082/__setup_post
-resp=$(curl -fsS -X POST http://127.0.0.1:18082/api/instances/spawn)
+resp=$(curl -fsS -X POST -H 'Content-Type: application/json' -d '{}' http://127.0.0.1:18082/api/instances/spawn)
 echo "spawn: $resp"
 port=$(echo "$resp" | python3 -c 'import json,sys; print([i for i in json.load(sys.stdin)["instances"] if i.get("spawned")][0]["port"])')
 wait_healthy "$port"
@@ -30,5 +30,11 @@ healthy 18082 && { echo "parent still running"; exit 1; }
 wait_healthy 18082
 wait_healthy "$port"
 echo "child came back with the app"
+n=$(curl -fsS http://127.0.0.1:18082/api/instances | python3 -c "import json,sys; print([i for i in json.load(sys.stdin)['instances'] if i.get('spawned')][0]['n'])")
+curl -fsS -X DELETE "http://127.0.0.1:18082/api/instances/$n" >/dev/null
+for i in $(seq 1 20); do healthy "$port" || break; sleep 1; done
+healthy "$port" && { echo "removed copy is still running"; exit 1; }
+healthy 18082 || { echo "parent died with the removed copy"; exit 1; }
+echo "removed copy stopped, parent still up"
 stop_all
 echo "Parallel accounts end-to-end OK"

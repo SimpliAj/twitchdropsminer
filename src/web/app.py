@@ -2192,6 +2192,10 @@ def _load_instances_registry() -> dict:
     ]}
 
 
+def _save_instances_registry(registry: dict) -> None:
+    _INSTANCES_FILE.write_text(json.dumps(registry, indent=2) + "\n")
+
+
 @app.get("/api/instances")
 async def get_instances():
     registry = _load_instances_registry()
@@ -2262,8 +2266,13 @@ async def spawn_instance(request: Request):
     _browser_session_only(request, "Parallel accounts")
     if not IS_FROZEN:
         raise HTTPException(status_code=400, detail="Parallel accounts can only be started from the Windows/macOS app")
+    # a cross-site <form> post cannot set this type, and JSON posts need a CORS preflight we never answer
+    if not request.headers.get("content-type", "").startswith("application/json"):
+        raise HTTPException(status_code=415, detail="Send the request as application/json")
     registry = _load_instances_registry()
     instances = registry["instances"]
+    if sum(1 for i in instances if i.get("spawned")) >= parallel_accounts.MAX_SPAWNED:
+        raise HTTPException(status_code=400, detail=f"At most {parallel_accounts.MAX_SPAWNED} parallel accounts")
     port, data_dir = parallel_accounts.pick_slot(instances)
     next_n = max((i["n"] for i in instances), default=0) + 1
     entry = {
@@ -2275,16 +2284,16 @@ async def spawn_instance(request: Request):
         "data_dir": str(data_dir),
     }
     try:
-        parallel_accounts.launch(port, data_dir, entry["label"])
+        entry["pid"] = parallel_accounts.launch(port, data_dir, entry["label"])
     except OSError as exc:
         raise HTTPException(status_code=500, detail=f"Could not start the app: {exc}") from exc
     instances.append(entry)
-    _INSTANCES_FILE.write_text(json.dumps(registry, indent=2) + "\n")
+    _save_instances_registry(registry)
     return {"success": True, "instances": instances}
 
 
 @app.delete("/api/instances/{n}")
-async def remove_instance(n: int):
+async def remove_instance(n: int, request: Request):
     if n == 1:
         raise HTTPException(status_code=400, detail="Cannot remove main instance")
     registry = _load_instances_registry()
@@ -2292,16 +2301,20 @@ async def remove_instance(n: int):
     if target is None:
         raise HTTPException(status_code=404, detail="Instance not found")
     if target.get("spawned"):
+        _browser_session_only(request, "Parallel accounts")
         import aiohttp
 
-        # Best effort: a copy that is already gone, or has another password, is just forgotten
+        # No credentials are sent: whatever listens on that port may not be our copy. A copy that
+        # still runs after the polite close is terminated by PID, but only if that PID is our exe.
         with contextlib.suppress(Exception):
             async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session:
-                await session.post(
-                    f"http://127.0.0.1:{target['port']}/api/close",
-                    headers=_fleet_auth_headers(),
-                    allow_redirects=False,
-                )
+                await session.post(f"http://127.0.0.1:{target['port']}/api/close", allow_redirects=False)
+        for _ in range(10):
+            if not parallel_accounts.is_our_copy(target.get("pid")):
+                break
+            await asyncio.sleep(0.5)
+        else:
+            parallel_accounts.terminate(target.get("pid"))
     import subprocess
     script = str(Path(__file__).parent.parent.parent / "scripts" / "manage_instance.sh")
     if "pm2_name" not in target or not _autoprovision_enabled() or not Path(script).exists():

@@ -12,9 +12,9 @@ from src.desktop import parallel
 from src.web import app as web_app
 
 
-def _request(headers=None, host="127.0.0.1"):
+def _request(headers=None, host="127.0.0.1", json_body=True):
     request = MagicMock()
-    request.headers = headers or {}
+    request.headers = {**({"content-type": "application/json"} if json_body else {}), **(headers or {})}
     request.client.host = host
     return request
 
@@ -36,7 +36,7 @@ class SlotTests(unittest.TestCase):
 class LaunchTests(unittest.TestCase):
     def test_child_env_and_args(self):
         with (
-            patch.dict(os.environ, {parallel.RESTARTED_ENV: "1"}),
+            patch.dict(os.environ, {parallel.RESTARTED_ENV: "1", "TDM_HOST": "0.0.0.0"}),  # noqa: S104
             patch.object(sys, "argv", ["app", "--no-tray", "--minimized", "-v"]),
             patch.object(parallel.subprocess, "Popen") as popen,
         ):
@@ -47,6 +47,7 @@ class LaunchTests(unittest.TestCase):
         self.assertEqual(env["TDM_PORT"], "8081")
         self.assertEqual(env["TDM_DATA_DIR"], str(Path("/d/TwitchDropsMiner2")))
         self.assertEqual(env["TDM_LABEL"], "Account 2")
+        self.assertEqual(env["TDM_HOST"], "127.0.0.1")
         self.assertEqual(env[parallel.SPAWNED_ENV], "1")
         self.assertEqual(env["PYINSTALLER_RESET_ENVIRONMENT"], "1")
         self.assertNotIn(parallel.RESTARTED_ENV, env)
@@ -64,6 +65,22 @@ class LaunchTests(unittest.TestCase):
         ):
             parallel.autostart(instances, minimized=True)
         launch.assert_called_once_with(8082, Path("/d/3"), "Account 3", True)
+        self.assertEqual(instances[2]["pid"], launch.return_value)
+
+    def test_terminate_only_our_own_executable(self):
+        with (
+            patch.object(parallel, "_image_path", return_value="/somewhere/else"),
+            patch.object(parallel.os, "kill") as kill,
+        ):
+            parallel.terminate(4242)
+        kill.assert_not_called()
+        with (
+            patch.object(parallel, "_image_path", return_value=sys.executable),
+            patch.object(parallel.os, "kill") as kill,
+        ):
+            parallel.terminate(4242)
+            parallel.terminate(None)
+        kill.assert_called_once_with(4242, parallel.signal.SIGTERM)
 
 
 class EndpointTests(unittest.IsolatedAsyncioTestCase):
@@ -83,11 +100,12 @@ class EndpointTests(unittest.IsolatedAsyncioTestCase):
     async def test_spawn_launches_and_registers(self):
         with (
             patch.object(web_app.parallel_accounts, "pick_slot", return_value=(8081, Path("/d/TwitchDropsMiner2"))),
-            patch.object(web_app.parallel_accounts, "launch") as launch,
+            patch.object(web_app.parallel_accounts, "launch", return_value=4242) as launch,
         ):
             result = await web_app.spawn_instance(_request())
         launch.assert_called_once_with(8081, Path("/d/TwitchDropsMiner2"), "Account 2")
         entry = result["instances"][1]
+        self.assertEqual(entry["pid"], 4242)
         self.assertEqual(entry["base_url"], "http://127.0.0.1:8081")
         self.assertTrue(entry["spawned"])
         self.assertEqual(entry["data_dir"], str(Path("/d/TwitchDropsMiner2")))
@@ -104,6 +122,36 @@ class EndpointTests(unittest.IsolatedAsyncioTestCase):
                 await web_app.spawn_instance(_request({header: "x"}))
             self.assertEqual(ctx.exception.status_code, 403)
 
+    async def test_spawn_needs_a_json_body(self):
+        with self.assertRaises(HTTPException) as ctx:
+            await web_app.spawn_instance(_request(json_body=False))
+        self.assertEqual(ctx.exception.status_code, 415)
+
+    async def test_spawn_is_capped(self):
+        spawned = [{"n": n, "port": 8070 + n, "spawned": True} for n in range(2, 2 + parallel.MAX_SPAWNED)]
+        self.file.write_text(json.dumps({"instances": [{"n": 1, "port": 8080}, *spawned]}))
+        with patch.object(web_app.parallel_accounts, "launch") as launch, self.assertRaises(HTTPException):
+            await web_app.spawn_instance(_request())
+        launch.assert_not_called()
+
+    async def test_remove_spawned_refused_for_bot_and_fleet_headers(self):
+        self.file.write_text(json.dumps({"instances": [{"n": 1, "port": 8080}, {"n": 2, "port": 8081, "spawned": True}]}))
+        with self.assertRaises(HTTPException) as ctx:
+            await web_app.remove_instance(2, _request({"X-Fleet-Password": "x"}))
+        self.assertEqual(ctx.exception.status_code, 403)
+
+    async def test_remove_terminates_a_copy_that_ignores_close(self):
+        entry = {"n": 2, "port": 8081, "spawned": True, "pid": 4242}
+        self.file.write_text(json.dumps({"instances": [{"n": 1, "port": 8080}, entry]}))
+        with (
+            patch("aiohttp.ClientSession", side_effect=OSError),
+            patch.object(web_app.parallel_accounts, "is_our_copy", return_value=True),
+            patch.object(web_app.parallel_accounts, "terminate") as terminate,
+            patch.object(web_app.asyncio, "sleep", AsyncMock()),
+        ):
+            await web_app.remove_instance(2, _request())
+        terminate.assert_called_once_with(4242)
+
     async def test_remove_spawned_asks_the_copy_to_close(self):
         entry = {"n": 2, "port": 8081, "base_url": "http://127.0.0.1:8081", "spawned": True, "label": "Account 2"}
         self.file.write_text(json.dumps({"instances": [{"n": 1, "port": 8080}, entry]}))
@@ -111,15 +159,16 @@ class EndpointTests(unittest.IsolatedAsyncioTestCase):
         session = MagicMock()
         session.__aenter__.return_value.post = post
         with patch("aiohttp.ClientSession", return_value=session):
-            result = await web_app.remove_instance(2)
+            result = await web_app.remove_instance(2, _request())
         self.assertEqual(post.call_args.args[0], "http://127.0.0.1:8081/api/close")
+        self.assertNotIn("headers", post.call_args.kwargs)
         self.assertEqual([i["n"] for i in result["instances"]], [1])
 
     async def test_remove_spawned_survives_an_unreachable_copy(self):
         entry = {"n": 2, "port": 8081, "spawned": True, "label": "Account 2"}
         self.file.write_text(json.dumps({"instances": [{"n": 1, "port": 8080}, entry]}))
         with patch("aiohttp.ClientSession", side_effect=OSError):
-            result = await web_app.remove_instance(2)
+            result = await web_app.remove_instance(2, _request())
         self.assertEqual(len(result["instances"]), 1)
 
     async def test_instances_flag_spawn_support(self):

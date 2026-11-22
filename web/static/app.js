@@ -5537,7 +5537,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const btn = document.getElementById('spawn-instance-btn');
         const statusEl = document.getElementById('instances-status');
         btn.disabled = true;
-        const res = await fetch('/api/instances/spawn', { method: 'POST' });
+        const res = await fetch('/api/instances/spawn', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
         if (statusEl) {
             statusEl.style.display = 'block';
             if (res.ok) {

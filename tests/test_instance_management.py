@@ -41,7 +41,7 @@ class TestInstanceManagement(unittest.IsolatedAsyncioTestCase):
         await web_app.register_instance(
             web_app.RegisterInstanceRequest(host="localhost", port=8016, label=None)
         )
-        result = await web_app.remove_instance(2)
+        result = await web_app.remove_instance(2, None)
         self.assertEqual(len(result["instances"]), 1)
 
     async def test_create_instance_fails_clearly_when_script_missing(self):
