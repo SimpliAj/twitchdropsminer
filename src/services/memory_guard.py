@@ -102,7 +102,7 @@ def available_memory() -> int | None:
 
 def _supervised() -> bool:
     """A supervisor (systemd, Docker, pm2) starts the process again after it exits."""
-    return bool(os.environ.get("INVOCATION_ID") or os.environ.get("pm_id")) or os.path.exists("/.dockerenv")
+    return bool(os.environ.get("INVOCATION_ID") or os.environ.get("pm_id")) or os.path.exists("/.dockerenv")  # noqa: SIM112 (pm2 sets lowercase pm_id)
 
 
 def _log_stream():
