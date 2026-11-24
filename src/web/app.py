@@ -1776,10 +1776,10 @@ async def self_update(request: Request):
         changed = git("diff", "--name-only", before, "HEAD").stdout.split()
         if "pyproject.toml" in changed:
             logs.append("Dependencies changed, installing...")
-            deps = subprocess.run(
-                [sys.executable, "-m", "pip", "install", "-q", "-e", "."],
-                cwd=str(repo_dir), capture_output=True, text=True, timeout=600,
-            )
+            cmd = [sys.executable, "-m", "pip", "install", "-q", "-e", "."]
+            if subprocess.run([sys.executable, "-m", "pip", "--version"], capture_output=True).returncode != 0 and shutil.which("uv"):
+                cmd = ["uv", "pip", "install", "-q", "--python", sys.executable, "-e", "."]  # venv made by uv has no pip
+            deps = subprocess.run(cmd, cwd=str(repo_dir), capture_output=True, text=True, timeout=600)
             if deps.returncode != 0:
                 logs.append(deps.stderr.strip()[-1500:])
                 logs.append("\nInstalling dependencies failed; run `pip install -e .` and restart by hand.")
