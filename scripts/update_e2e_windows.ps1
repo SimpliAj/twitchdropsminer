@@ -14,7 +14,9 @@ Set-Content "$work\apps\TwitchDropsMiner\OLD_MARKER" "old"
 $env:TDM_DATA_DIR = "$work\data"
 $env:TDM_PORT = "18081"
 $env:TDM_UPDATE_LOCAL_DIR = "$work\source"
-Start-Process -FilePath "$work\apps\TwitchDropsMiner\TwitchDropsMiner.exe" -ArgumentList "--no-tray", "--no-browser"
+# Like a real start from Explorer: working directory = the app folder, and the dashboard window
+# (Edge in app mode) opens. That window used to keep the folder locked so the update was rolled back.
+Start-Process -FilePath "$work\apps\TwitchDropsMiner\TwitchDropsMiner.exe" -ArgumentList "--no-tray" -WorkingDirectory "$work\apps\TwitchDropsMiner"
 function Healthy { try { (Invoke-WebRequest "http://127.0.0.1:18081/healthz" -UseBasicParsing -TimeoutSec 3).StatusCode -eq 200 } catch { $false } }
 foreach ($i in 1..30) { if (Healthy) { break }; Start-Sleep 2 }
 if (-not (Healthy)) { throw "copy of the app did not start" }
