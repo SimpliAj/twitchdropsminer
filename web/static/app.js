@@ -4480,12 +4480,18 @@ function renderPredictions(preds) {
     const losses = preds.filter(p => p.result === "LOSE").length;
     const net = preds.filter(p => ["WIN", "LOSE"].includes(p.result)).reduce((s, p) => s + (p.points_won || 0) - (p.points_bet || 0), 0);
     const winRate = wins + losses > 0 ? Math.round(wins / (wins + losses) * 100) : 0;
+    const refunded = preds.filter(p => p.result === "REFUNDED").length;
+    const unknown = preds.filter(p => p.result === "UNKNOWN");
+    const unknownStaked = unknown.reduce((s, p) => s + (p.points_bet || 0), 0);
     const summaryEl = document.getElementById("pred-summary");
     if (summaryEl) {
         summaryEl.replaceChildren();
-        [{ label: tr('gui.analytics.pred_total', 'Total'), value: preds.length }, { label: tr('gui.analytics.pred_win_rate', 'Win Rate'), value: `${winRate}%` }, { label: tr('gui.analytics.pred_net', 'Net'), value: (net >= 0 ? "+" : "") + tr('gui.common.points_short', '{points} pts', { points: net.toLocaleString() }), color: net >= 0 ? "#1DA980" : "#E5484D" }]
+        [{ label: tr('gui.analytics.pred_total', 'Total'), value: preds.length }, { label: tr('gui.analytics.pred_win_rate', 'Win Rate'), value: `${winRate}%` }, { label: tr('gui.analytics.pred_net', 'Net'), value: (net >= 0 ? "+" : "") + tr('gui.common.points_short', '{points} pts', { points: net.toLocaleString() }), color: net >= 0 ? "#1DA980" : "#E5484D" },
+            ...(refunded ? [{ label: tr('gui.analytics.pred_refunded', 'Refunded'), value: refunded }] : []),
+            ...(unknown.length ? [{ label: tr('gui.analytics.pred_unknown', 'Unknown'), value: tr('gui.analytics.pred_unknown_value', '{count} ({points} pts staked)', { count: unknown.length, points: unknownStaked.toLocaleString() }) }] : [])]
             .forEach(c => { const div = document.createElement("div"); div.className = "stat-card"; if (c.color) div.style.color = c.color; div.textContent = `${c.label}: ${c.value}`; summaryEl.appendChild(div); });
     }
+    renderPredictionChannelNet(preds);
     const tbody = document.getElementById("pred-tbody");
     if (!tbody) return;
     tbody.replaceChildren();
@@ -4527,6 +4533,37 @@ function renderPredictions(preds) {
     renderPager(document.getElementById("pred-pager"), preds.length, HISTORY_PAGE_SIZE, predHistoryPage, (page) => {
         predHistoryPage = page;
         renderPredictions(predHistoryFullList);
+    });
+}
+
+// Net per channel (won - staked on decided bets; refunded/unknown/pending don't count), worst first.
+function renderPredictionChannelNet(preds) {
+    const table = document.getElementById("pred-channel-table");
+    if (!table) return;
+    const byChannel = {};
+    preds.forEach(p => {
+        if (!["WIN", "LOSE"].includes(p.result)) return;
+        const c = byChannel[p.channel || "—"] ||= { bets: 0, net: 0 };
+        c.bets++;
+        c.net += (p.points_won || 0) - (p.points_bet || 0);
+    });
+    const rows = Object.entries(byChannel).sort((a, b) => a[1].net - b[1].net);
+    table.replaceChildren();
+    if (!rows.length) return;
+    const head = table.createTHead().insertRow();
+    [tr('gui.analytics.pred_col_channel', 'Channel'), tr('gui.analytics.pred_bets', 'Bets'), tr('gui.analytics.pred_net', 'Net')].forEach(t => {
+        const th = document.createElement("th");
+        th.textContent = t;
+        head.appendChild(th);
+    });
+    const body = table.createTBody();
+    rows.forEach(([channel, c]) => {
+        const row = body.insertRow();
+        [channel, c.bets, (c.net >= 0 ? "+" : "−") + Math.abs(c.net).toLocaleString()].forEach((v, i) => {
+            const td = row.insertCell();
+            td.textContent = v;
+            if (i === 2) td.style.color = c.net >= 0 ? "#1DA980" : "#E5484D";
+        });
     });
 }
 
