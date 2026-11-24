@@ -184,6 +184,7 @@ def _apply_windows(install: Path, new: Path, staging: Path) -> None:
     subprocess.Popen(  # noqa: S603
         ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File", script],  # noqa: S607
         env=env,
+        cwd=tempfile.gettempdir(),  # it renames the app folder, so it must not be working inside it
         stdin=subprocess.DEVNULL,  # a windowed app has no valid stdin to hand down
         stdout=log,
         stderr=subprocess.STDOUT,
