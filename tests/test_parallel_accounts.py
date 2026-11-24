@@ -39,9 +39,12 @@ class LaunchTests(unittest.TestCase):
             patch.dict(os.environ, {parallel.RESTARTED_ENV: "1", "TDM_HOST": "0.0.0.0"}),  # noqa: S104
             patch.object(sys, "argv", ["app", "--no-tray", "--minimized", "-v"]),
             patch.object(parallel.subprocess, "Popen") as popen,
+            patch.object(Path, "mkdir") as mkdir,
         ):
             parallel.launch(8081, Path("/d/TwitchDropsMiner2"), "Account 2", minimized=True)
         args, kwargs = popen.call_args
+        mkdir.assert_called_once()  # Windows refuses a missing working directory (WinError 267)
+        self.assertEqual(kwargs["cwd"], str(Path("/d/TwitchDropsMiner2")))
         self.assertEqual(args[0], [sys.executable, "--no-tray", "--minimized"])
         env = kwargs["env"]
         self.assertEqual(env["TDM_PORT"], "8081")
