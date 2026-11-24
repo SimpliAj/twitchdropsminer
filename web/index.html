@@ -528,10 +528,10 @@
                                         <label class="settings-row">
                                             <span class="settings-row-label" data-i18n="gui.settings.predictions.strategy">Strategy</span>
                                             <select id="set-bet-strategy" onchange="saveSettings()" class="settings-select">
-                                                <option value="SMART" data-i18n="gui.settings.predictions.strategy_smart">SMART (by odds gap)</option>
-                                                <option value="PERCENTAGE" data-i18n="gui.settings.predictions.strategy_percentage">PERCENTAGE (always bet)</option>
-                                                <option value="HIGH_ODDS" data-i18n="gui.settings.predictions.strategy_high_odds">HIGH_ODDS (underdog)</option>
-                                                <option value="MOST_VOTED" data-i18n="gui.settings.predictions.strategy_most_voted">MOST_VOTED (crowd)</option>
+                                                <option value="SMART" data-i18n="gui.settings.predictions.strategy_smart">SMART (crowd favourite, skips close calls)</option>
+                                                <option value="PERCENTAGE" data-i18n="gui.settings.predictions.strategy_percentage">PERCENTAGE (most points wagered)</option>
+                                                <option value="HIGH_ODDS" data-i18n="gui.settings.predictions.strategy_high_odds">HIGH_ODDS (highest payout)</option>
+                                                <option value="MOST_VOTED" data-i18n="gui.settings.predictions.strategy_most_voted">MOST_VOTED (most voters)</option>
                                             </select>
                                         </label>
                                         <label class="settings-row" title="Minimum gap between the top two outcomes' vote share required to place a SMART bet — if the gap is smaller, the prediction is skipped as too uncertain. Only affects the SMART strategy." data-i18n-title="gui.settings.predictions.bet_gap_title">
@@ -1135,10 +1135,10 @@
                             <table class="help-table">
                                 <thead><tr><th>Strategy</th><th>How it picks an outcome</th></tr></thead>
                                 <tbody>
-                                    <tr><td><strong>SMART</strong></td><td>Compares the vote share of the top two outcomes. Bets on whichever has more voters, but only if the gap between them is at least the configured <strong>Bet Gap %</strong> — if the vote is too close to call, the prediction is skipped entirely.</td></tr>
-                                    <tr><td><strong>PERCENTAGE</strong></td><td>Always bets, choosing the outcome that already has the most points wagered by others (the current crowd favorite by points).</td></tr>
-                                    <tr><td><strong>HIGH_ODDS</strong></td><td>Always bets on the underdog — the outcome with the fewest points wagered, which pays out at the highest odds if it wins.</td></tr>
-                                    <tr><td><strong>MOST_VOTED</strong></td><td>Always bets on whichever outcome the most individual users picked, regardless of how many points they wagered.</td></tr>
+                                    <tr><td><strong>SMART</strong></td><td>Bets on the crowd favourite (the outcome with the most voters), but only if it leads the runner-up by at least the configured <strong>Bet Gap %</strong> of the vote — otherwise the prediction is skipped.</td></tr>
+                                    <tr><td><strong>PERCENTAGE</strong></td><td>Bets on the outcome with the most points wagered so far. Skips predictions nobody has wagered on yet.</td></tr>
+                                    <tr><td><strong>HIGH_ODDS</strong></td><td>Bets on the outcome that would pay the most per point (the least points wagered, but at least some). Skips predictions nobody has wagered on yet.</td></tr>
+                                    <tr><td><strong>MOST_VOTED</strong></td><td>Bets on the outcome the most individual users picked, regardless of how many points they wagered. Skips predictions nobody has voted on yet.</td></tr>
                                 </tbody>
                             </table>
 
@@ -1152,7 +1152,7 @@
                                     <tr><td><strong>Bet % of balance</strong></td><td>What percentage of your current point balance on that channel to wager.</td></tr>
                                     <tr><td><strong>Max points per bet</strong></td><td>Hard cap on any single bet, regardless of the percentage above.</td></tr>
                                     <tr><td><strong>Min balance to bet</strong></td><td>The miner sits out predictions entirely if your balance on that channel is below this floor.</td></tr>
-                                    <tr><td><strong>Delay before lock (s)</strong></td><td>How long to wait after a prediction opens before betting, so more votes accumulate first. Automatically shortened if the prediction's own voting window would lock sooner.</td></tr>
+                                    <tr><td><strong>Delay before lock (s)</strong></td><td>How many seconds before the prediction locks the bet is placed, so the votes are close to final (never later than 3 s before the lock). If the voting window is shorter than this, the bet is placed right away.</td></tr>
                                 </tbody>
                             </table>
 

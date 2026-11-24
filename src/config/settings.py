@@ -85,7 +85,7 @@ default_settings = {
     "make_predictions": False,
     "bet_strategy": "SMART",
     "bet_percentage": 5,
-    "bet_max_points": 50000,
+    "bet_max_points": 5000,
     "bet_minimum_points": 1000,
     "bet_percentage_gap": 20,
     "bet_delay_seconds": 30,

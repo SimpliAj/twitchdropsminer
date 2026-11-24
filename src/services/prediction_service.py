@@ -98,21 +98,25 @@ class PredictionService:
             return None, None
         strategy = cfg["bet_strategy"].upper()
 
-        def total_points(o): return o.get("total_points", 0) or 1
-        def total_users(o): return o.get("total_users", 0) or 1
-        def odds(o): return (sum(x["total_points"] for x in outcomes) / total_points(o))
+        def points(o): return o.get("total_points", 0) or 0
+        def users(o): return o.get("total_users", 0) or 0
+        # an outcome nobody backed has no odds (0), not infinite ones
+        def odds(o): return sum(points(x) for x in outcomes) / points(o) if points(o) else 0
 
         if strategy == "MOST_VOTED":
-            return max(outcomes, key=lambda o: total_users(o)), None
+            key = users
         elif strategy == "HIGH_ODDS":
-            return max(outcomes, key=lambda o: odds(o)), None
+            key = odds
         elif strategy == "PERCENTAGE":
-            return max(outcomes, key=lambda o: total_points(o)), None
+            key = points
         else:  # SMART
-            sorted_by_users = sorted(outcomes, key=lambda o: total_users(o), reverse=True)
+            total = sum(users(o) for o in outcomes)
+            if not total:
+                return None, None
+            sorted_by_users = sorted(outcomes, key=users, reverse=True)
             top, second = sorted_by_users[0], sorted_by_users[1]
-            top_pct = total_users(top) / sum(total_users(o) for o in outcomes) * 100
-            second_pct = total_users(second) / sum(total_users(o) for o in outcomes) * 100
+            top_pct = users(top) / total * 100
+            second_pct = users(second) / total * 100
             gap = abs(top_pct - second_pct)
             threshold = cfg["bet_percentage_gap"]
             diag = {
@@ -131,11 +135,14 @@ class PredictionService:
                 f"gap={gap:.1f}% (threshold {threshold}%) -> BET on '{top.get('title', '')}'"
             )
             return top, diag
+        best = max(outcomes, key=key)
+        return (best if key(best) > 0 else None), None  # no votes/points yet: nothing to go on
 
     def _calc_amount(self, balance: int, cfg: dict) -> int:
         amount = int(balance * cfg["bet_percentage"] / 100)
         amount = min(amount, cfg["bet_max_points"])
-        return max(amount, 10)  # Twitch minimum is 10 channel points
+        amount = max(amount, 10)  # Twitch minimum is 10 channel points
+        return amount if amount <= balance else 0
 
     @task_wrapper
     async def process_prediction(self, channel_id: int, message: dict) -> None:
@@ -222,16 +229,11 @@ class PredictionService:
 
     def _effective_delay(self, event: dict, cfg: dict) -> float:
         """
-        Twitch predictions include a fixed window (`prediction_window_seconds`,
-        counted from `created_at`) after which the event locks and betting is
-        no longer possible. Fast-paced predictions (e.g. per-round esports)
-        can have windows well under the configured `bet_delay_seconds` —
-        using the fixed delay unconditionally meant the scheduled bet
-        routinely got cancelled by the lock before it ever fired, with no
-        bet placed and nothing logged (silent since 2026-07-08). Cap the
-        delay to whatever's actually left in the window (minus a small
-        safety buffer), falling back to the configured delay when the
-        window/created_at fields aren't present in the event payload.
+        Seconds to wait before betting: bet_delay_seconds BEFORE the lock
+        (lock = created_at + prediction_window_seconds), so the vote shares the
+        strategies read are close to final. Never later than a few seconds
+        before the lock, which would lose the bet. Falls back to the configured
+        delay counted from now when the window/created_at fields are missing.
         """
         from datetime import datetime, timezone
         window = event.get("prediction_window_seconds")
@@ -242,10 +244,8 @@ class PredictionService:
             created = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
         except (ValueError, AttributeError):
             return float(cfg["bet_delay_seconds"])
-        elapsed = (datetime.now(timezone.utc) - created).total_seconds()
-        remaining = window - elapsed
-        safety_buffer = 3  # leave a few seconds of margin before the lock
-        return max(min(cfg["bet_delay_seconds"], remaining - safety_buffer), 0.5)
+        remaining = window - (datetime.now(timezone.utc) - created).total_seconds()
+        return max(remaining - max(cfg["bet_delay_seconds"], 3), 0.5)
 
     async def _delayed_bet(self, event_id: str, channel, cfg: dict, delay: float) -> None:
         try:
