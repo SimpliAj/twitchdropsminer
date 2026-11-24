@@ -1372,7 +1372,19 @@ async def get_version():
         "update_available": update_available,
         "download_url": download_url or "https://github.com/SimpliAj/twitchdropsminer/releases",
         "release_notes": release_notes,
+        "install_type": _install_type(),
     }
+
+
+def _install_type() -> str:
+    """How this copy was installed, which decides what the update button can do."""
+    if _is_docker():
+        return "docker"
+    if IS_FROZEN:
+        return "app"
+    if (Path(__file__).parent.parent.parent / ".git").exists():
+        return "git"
+    return "manual"
 
 
 _SECRET_LINE_RE = re.compile(
@@ -1732,36 +1744,55 @@ async def self_update(request: Request):
         _update_task.append(asyncio.create_task(updater.run_update(target, parent, stop_parallel_copies)))
         return {"success": True, "frozen": True, "updating": True}
 
+    _browser_session_only(request, "Updates")
+    if _install_type() == "manual":
+        return {
+            "success": False,
+            "manual": True,
+            "log": (
+                "This copy isn't a git checkout, so it can't update itself.\n\n"
+                "Download the new version from\n"
+                "https://github.com/SimpliAj/twitchdropsminer/releases\n"
+                "and replace the program files (keep your data folder), or install with\n"
+                "  git clone https://github.com/SimpliAj/twitchdropsminer.git\n"
+                "to get one-click updates."
+            ),
+        }
+
     repo_dir = Path(__file__).parent.parent.parent
-    logs = []
+
+    def git(*args: str) -> subprocess.CompletedProcess:
+        return subprocess.run(["git", *args], cwd=str(repo_dir), capture_output=True, text=True, timeout=120)
 
     try:
-        result = subprocess.run(
-            ["git", "pull", "simpliaj", "main"],
-            cwd=str(repo_dir),
-            capture_output=True,
-            text=True,
-            timeout=60,
-        )
-        logs.append(result.stdout.strip() or "(no output)")
-        if result.stderr.strip():
-            logs.append(result.stderr.strip())
-        success = result.returncode == 0
+        before = git("rev-parse", "HEAD").stdout.strip()
+        pulled = git("pull", "--ff-only")
+        logs = [pulled.stdout.strip() or "(no output)"]
+        if pulled.stderr.strip():
+            logs.append(pulled.stderr.strip())
+        if pulled.returncode != 0:
+            logs.append("\ngit pull failed (local changes or another branch?). Nothing was changed.")
+            return {"success": False, "log": "\n".join(logs)}
+        changed = git("diff", "--name-only", before, "HEAD").stdout.split()
+        if "pyproject.toml" in changed:
+            logs.append("Dependencies changed, installing...")
+            deps = subprocess.run(
+                [sys.executable, "-m", "pip", "install", "-q", "-e", "."],
+                cwd=str(repo_dir), capture_output=True, text=True, timeout=600,
+            )
+            if deps.returncode != 0:
+                logs.append(deps.stderr.strip()[-1500:])
+                logs.append("\nInstalling dependencies failed; run `pip install -e .` and restart by hand.")
+                return {"success": False, "log": "\n".join(logs)}
     except Exception as e:
-        logs.append(f"Error: {e}")
-        success = False
+        return {"success": False, "log": f"Error: {type(e).__name__}: {e}"}
 
     async def _restart():
         await asyncio.sleep(2)
-        if shutil.which("pm2"):
-            subprocess.Popen(["pm2", "restart", "twitchdrops", "twitchdrops2"])
-        else:
-            logging.getLogger(__name__).warning(
-                "pm2 not found, cannot restart multi-instance setup automatically — restart manually"
-            )
+        _restart_self()
 
     asyncio.create_task(_restart())
-    return {"success": success, "log": "\n".join(logs)}
+    return {"success": True, "log": "\n".join(logs)}
 
 
 @app.post("/api/skip-game")

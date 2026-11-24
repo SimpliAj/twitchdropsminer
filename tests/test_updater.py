@@ -5,7 +5,7 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from fastapi import HTTPException
 
@@ -240,6 +240,61 @@ class EndpointTests(unittest.IsolatedAsyncioTestCase):
             await web_app.self_update(self._request())
         self.assertEqual(ctx.exception.status_code, 400)
         self.assertEqual(ctx.exception.detail, "no permission")
+
+    async def test_source_copy_without_git_gets_manual_steps(self):
+        with (
+            patch.object(web_app, "IS_FROZEN", False),
+            patch.object(web_app, "_is_docker", return_value=False),
+            patch.object(web_app, "_get_password", return_value=""),
+            patch.object(web_app, "_install_type", return_value="manual"),
+            patch.object(web_app.subprocess, "run") as run,
+        ):
+            result = await web_app.self_update(self._request())
+        self.assertTrue(result["manual"])
+        run.assert_not_called()
+
+    async def test_failed_git_pull_does_not_restart(self):
+        def fake_run(args, **kwargs):
+            out = MagicMock(stdout="abc\n", stderr="")
+            out.returncode = 1 if "pull" in args else 0
+            return out
+
+        with (
+            patch.object(web_app, "IS_FROZEN", False),
+            patch.object(web_app, "_is_docker", return_value=False),
+            patch.object(web_app, "_get_password", return_value=""),
+            patch.object(web_app, "_install_type", return_value="git"),
+            patch.object(web_app.subprocess, "run", side_effect=fake_run),
+            patch.object(web_app, "_restart_self") as restart,
+        ):
+            result = await web_app.self_update(self._request())
+        self.assertFalse(result["success"])
+        restart.assert_not_called()
+
+    async def test_git_pull_with_new_deps_installs_then_restarts(self):
+        calls = []
+
+        def fake_run(args, **kwargs):
+            calls.append(args)
+            out = MagicMock(stderr="", returncode=0)
+            out.stdout = "pyproject.toml\nsrc/x.py\n" if "diff" in args else "ok\n"
+            return out
+
+        with (
+            patch.object(web_app, "IS_FROZEN", False),
+            patch.object(web_app, "_is_docker", return_value=False),
+            patch.object(web_app, "_get_password", return_value=""),
+            patch.object(web_app, "_install_type", return_value="git"),
+            patch.object(web_app.subprocess, "run", side_effect=fake_run),
+            patch.object(web_app, "_restart_self") as restart,
+            patch.object(web_app.asyncio, "create_task") as create_task,
+        ):
+            result = await web_app.self_update(self._request())
+            with patch.object(web_app.asyncio, "sleep", AsyncMock()):
+                await create_task.call_args[0][0]
+        self.assertTrue(result["success"])
+        self.assertTrue(any("pip" in a for a in calls))
+        restart.assert_called_once()
 
 
 if __name__ == "__main__":

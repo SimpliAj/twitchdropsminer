@@ -119,9 +119,15 @@ async function fetchAndDisplayVersion() {
                 // Self-update on click — show release notes first, then update
                 updateLink.addEventListener('click', (e) => {
                     e.preventDefault();
-                    const notes = data.release_notes || '(no release notes)';
-                    showUpdateModal(notes, true, data.latest_version);
+                    showUpdateModal(data.release_notes || '(no release notes)', true, data.latest_version, data.install_type);
                 });
+
+                // Pop up once per new version when the dashboard or the app opens
+                let seen = null;
+                try { seen = localStorage.getItem('tdm-update-seen'); } catch (_) {}
+                if (seen !== data.latest_version && !document.getElementById('update-log-modal')) {
+                    showUpdateModal(data.release_notes || '(no release notes)', true, data.latest_version, data.install_type);
+                }
 
                 console.log(`Update available: ${data.latest_version} (current: ${data.current_version})`);
             }
@@ -6925,7 +6931,7 @@ function pollDesktopUpdate(pre, um, installBtn, cancelBtn) {
     }, 1500);
 }
 
-function showUpdateModal(text, withInstallBtn, latestVersion) {
+function showUpdateModal(text, withInstallBtn, latestVersion, installType) {
     const um = state.translations?.gui?.update_modal || {};
     document.getElementById('update-log-modal')?.remove();
     const overlay = document.createElement('div');
@@ -6954,11 +6960,14 @@ function showUpdateModal(text, withInstallBtn, latestVersion) {
         const row = document.createElement('div');
         row.style.cssText = 'display:flex;gap:10px;margin-top:14px;justify-content:flex-end;';
         const cancelBtn = document.createElement('button');
-        cancelBtn.textContent = um.cancel || 'Cancel';
+        cancelBtn.textContent = um.later || 'Later';
         cancelBtn.style.cssText = 'padding:8px 16px;border-radius:8px;border:1px solid #262B38A4A;background:transparent;color:#8991A6;cursor:pointer;';
         cancelBtn.addEventListener('click', () => overlay.remove());
         const installBtn = document.createElement('button');
-        installBtn.textContent = (um.install || 'Install v{version}').replace('{version}', latestVersion);
+        const installLabel = installType === 'docker' ? (um.how_to_update || 'How to update')
+            : installType === 'manual' ? (um.download || 'Download v{version}')
+            : (um.install || 'Install v{version}');
+        installBtn.textContent = installLabel.replace('{version}', latestVersion);
         installBtn.style.cssText = 'padding:8px 16px;border-radius:8px;border:none;background:var(--twitch-purple,#A970FF);color:#fff;font-weight:600;cursor:pointer;';
         installBtn.addEventListener('click', async () => {
             installBtn.textContent = um.updating || '⏳ Updating...';
@@ -6980,11 +6989,11 @@ function showUpdateModal(text, withInstallBtn, latestVersion) {
                     cancelBtn.disabled = false;
                 } else if (json.updating) {
                     pollDesktopUpdate(pre, um, installBtn, cancelBtn);
-                } else if (json.docker || json.frozen) {
+                } else if (json.docker || json.frozen || json.manual) {
                     pre.textContent = json.log;
-                    title.textContent = json.frozen
-                        ? (um.frozen_detected || '🪟 Packaged Windows app')
-                        : (um.docker_detected || '🐳 Docker detected');
+                    title.textContent = json.docker ? (um.docker_detected || '🐳 Docker detected')
+                        : json.manual ? (um.manual_install || '📦 Manual install')
+                        : (um.frozen_detected || '🪟 Packaged Windows app');
                     installBtn.style.display = 'none';
                     cancelBtn.textContent = um.close || 'Close';
                     cancelBtn.disabled = false;
@@ -7002,6 +7011,9 @@ function showUpdateModal(text, withInstallBtn, latestVersion) {
     overlay.appendChild(box);
     document.body.appendChild(overlay);
     overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+    if (withInstallBtn && latestVersion) {
+        try { localStorage.setItem('tdm-update-seen', latestVersion); } catch (_) {}
+    }
     return pre;
 }
 

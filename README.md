@@ -66,7 +66,7 @@ Open **<http://localhost:8080>**. Also on GHCR: `ghcr.io/simpliaj/twitchdropsmin
 
 Download `TwitchDropsMiner-<version>-windows-x64.zip` from the [latest release](https://github.com/SimpliAj/twitchdropsminer/releases/latest), unzip it anywhere and run `TwitchDropsMiner.exe`. The dashboard opens in its own window; the miner keeps running in the tray (right-click the icon for **Start with Windows** and **Quit**). Settings and login live in `%APPDATA%\TwitchDropsMiner`. Needs Chrome, Edge, Brave or Chromium for the Twitch login (on Windows another Chromium-based default browser also works). The app isn't code-signed, so Windows SmartScreen may ask once — **More info → Run anyway**. Windows app contributed by Trep. More in the [Desktop Apps wiki page](../../wiki/Desktop-Apps).
 
-**Updates:** when a new release is out the dashboard footer shows it; click it, then **Install and restart**. The app downloads the zip for your platform, checks it against the release's `SHA256SUMS-*.txt`, swaps the app folder (the old one is kept until the new one runs) and restarts. Your data is not touched. The app must live in a folder you can write to. If you run v1.8.29 to v1.8.32 on Windows, install v1.9.0 once by hand (download the zip and replace the app folder); those versions could not replace their own folder.
+**Updates:** when a new release is out, the update window opens by itself the next time you open the dashboard or the app (once per version; later you find it in the footer). Click **Install and restart**. The app downloads the zip for your platform, checks it against the release's `SHA256SUMS-*.txt`, swaps the app folder (the old one is kept until the new one runs) and restarts. Your data is not touched. The app must live in a folder you can write to. If you run v1.8.29 to v1.8.32 on Windows, install v1.9.0 once by hand (download the zip and replace the app folder); those versions could not replace their own folder.
 
 ### 🍎 macOS app (no Docker)
 
@@ -95,6 +95,8 @@ python main.py
 ```
 
 On a headless Linux server also install `xvfb` and `procps` (`sudo apt-get install -y xvfb procps`).
+
+**Updates:** a `git clone` install updates itself from the update window: it runs `git pull`, reinstalls dependencies when they changed and restarts. A copy downloaded as a zip (not a git checkout) gets a download link instead. With Docker, pull the new image (`docker compose pull && docker compose up -d`).
 
 ---
 
