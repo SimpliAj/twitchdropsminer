@@ -6970,6 +6970,11 @@ function showUpdateModal(text, withInstallBtn, latestVersion, installType) {
         installBtn.textContent = installLabel.replace('{version}', latestVersion);
         installBtn.style.cssText = 'padding:8px 16px;border-radius:8px;border:none;background:var(--twitch-purple,#A970FF);color:#fff;font-weight:600;cursor:pointer;';
         installBtn.addEventListener('click', async () => {
+            if (installType === 'manual') {
+                window.open('https://github.com/SimpliAj/twitchdropsminer/releases/latest', '_blank', 'noopener');
+                overlay.remove();
+                return;
+            }
             installBtn.textContent = um.updating || '⏳ Updating...';
             installBtn.disabled = true;
             cancelBtn.disabled = true;
