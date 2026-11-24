@@ -558,7 +558,11 @@
       "history_summary": "{total} gesamt · {today} heute",
       "cp_summary": "{channels} Kanäle · {points} Pkt. gesamt",
       "cp_summary_session": " · +{points} in dieser Sitzung",
-      "cp_disabled": "Keine Punkte"
+      "cp_disabled": "Keine Punkte",
+      "pred_by_channel": "Ergebnis pro Kanal",
+      "pred_channel_meta": "{bets} Wetten · {rate}% gewonnen",
+      "pred_show_all": "Alle {n} Kanäle anzeigen",
+      "pred_show_less": "Weniger anzeigen"
     },
     "drops_today": {
       "title": "Heute erhaltene Drops",

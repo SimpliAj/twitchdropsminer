@@ -490,9 +490,9 @@
       "autostart_header": "Start at login",
       "autostart_desc": "Launch the miner automatically when you sign in. It starts in the background without opening a browser tab.",
       "autostart_label": "Start at login",
-      "autostart_on": "Enabled \u2014 the miner starts when you sign in.",
+      "autostart_on": "Enabled — the miner starts when you sign in.",
       "autostart_off": "Disabled.",
-      "autostart_disabled_by_user": "Windows has this switched off under Task Manager \u2192 Startup apps. Tick the box to turn it back on.",
+      "autostart_disabled_by_user": "Windows has this switched off under Task Manager → Startup apps. Tick the box to turn it back on.",
       "autostart_error": "Could not change the startup setting: {error}",
       "instances_header": "Instances",
       "instances_desc": "Each instance runs a separate TDM process with its own Twitch session.",
@@ -603,7 +603,11 @@
       "history_summary": "{total} total · {today} today",
       "cp_summary": "{channels} channels · {points} pts total",
       "cp_summary_session": " · +{points} session",
-      "cp_disabled": "No Points"
+      "cp_disabled": "No Points",
+      "pred_by_channel": "Result per channel",
+      "pred_channel_meta": "{bets} bets · {rate}% won",
+      "pred_show_all": "Show all {n} channels",
+      "pred_show_less": "Show less"
     },
     "drops_today": {
       "title": "Drops Claimed Today",

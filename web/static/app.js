@@ -4537,34 +4537,58 @@ function renderPredictions(preds) {
 }
 
 // Net per channel (won - staked on decided bets; refunded/unknown/pending don't count), worst first.
+let predChannelsExpanded = false;
+const PRED_CHANNELS_SHOWN = 8;
 function renderPredictionChannelNet(preds) {
-    const table = document.getElementById("pred-channel-table");
-    if (!table) return;
+    const box = document.getElementById("pred-channel-table");
+    if (!box) return;
     const byChannel = {};
     preds.forEach(p => {
         if (!["WIN", "LOSE"].includes(p.result)) return;
-        const c = byChannel[p.channel || "—"] ||= { bets: 0, net: 0 };
+        const c = byChannel[p.channel || "—"] ||= { bets: 0, wins: 0, net: 0 };
         c.bets++;
+        if (p.result === "WIN") c.wins++;
         c.net += (p.points_won || 0) - (p.points_bet || 0);
     });
     const rows = Object.entries(byChannel).sort((a, b) => a[1].net - b[1].net);
-    table.replaceChildren();
+    box.replaceChildren();
     if (!rows.length) return;
-    const head = table.createTHead().insertRow();
-    [tr('gui.analytics.pred_col_channel', 'Channel'), tr('gui.analytics.pred_bets', 'Bets'), tr('gui.analytics.pred_net', 'Net')].forEach(t => {
-        const th = document.createElement("th");
-        th.textContent = t;
-        head.appendChild(th);
+    const title = document.createElement("h3");
+    title.className = "pred-channels-title";
+    title.textContent = tr('gui.analytics.pred_by_channel', 'Result per channel');
+    box.appendChild(title);
+    const biggest = Math.max(...rows.map(([, c]) => Math.abs(c.net)), 1);
+    const shown = predChannelsExpanded ? rows : rows.slice(0, PRED_CHANNELS_SHOWN);
+    shown.forEach(([channel, c]) => {
+        const row = document.createElement("div");
+        row.className = "pred-channel-row";
+        const name = document.createElement("span");
+        name.className = "pred-channel-name";
+        name.textContent = channel;
+        const meta = document.createElement("span");
+        meta.className = "pred-channel-meta";
+        meta.textContent = tr('gui.analytics.pred_channel_meta', '{bets} bets · {rate}% won', { bets: c.bets, rate: Math.round(c.wins / c.bets * 100) });
+        const bar = document.createElement("span");
+        bar.className = "pred-channel-bar";
+        const fill = document.createElement("span");
+        fill.className = c.net >= 0 ? "up" : "down";
+        fill.style.width = `${Math.max(2, Math.abs(c.net) / biggest * 100)}%`;
+        bar.appendChild(fill);
+        const net = document.createElement("span");
+        net.className = "pred-channel-net " + (c.net >= 0 ? "up" : "down");
+        net.textContent = (c.net >= 0 ? "+" : "−") + Math.abs(c.net).toLocaleString();
+        row.append(name, meta, bar, net);
+        box.appendChild(row);
     });
-    const body = table.createTBody();
-    rows.forEach(([channel, c]) => {
-        const row = body.insertRow();
-        [channel, c.bets, (c.net >= 0 ? "+" : "−") + Math.abs(c.net).toLocaleString()].forEach((v, i) => {
-            const td = row.insertCell();
-            td.textContent = v;
-            if (i === 2) td.style.color = c.net >= 0 ? "#1DA980" : "#E5484D";
-        });
-    });
+    if (rows.length > PRED_CHANNELS_SHOWN) {
+        const more = document.createElement("button");
+        more.className = "btn-secondary pred-channels-more";
+        more.textContent = predChannelsExpanded
+            ? tr('gui.analytics.pred_show_less', 'Show less')
+            : tr('gui.analytics.pred_show_all', 'Show all {n} channels', { n: rows.length });
+        more.addEventListener("click", () => { predChannelsExpanded = !predChannelsExpanded; renderPredictionChannelNet(preds); });
+        box.appendChild(more);
+    }
 }
 
 // ==================== Analytics Chart ====================
