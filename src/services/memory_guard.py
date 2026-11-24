@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import ctypes
+import faulthandler
 import gc
 import logging
 import os
@@ -81,6 +82,44 @@ def limit_for(total: int | None) -> int:
 
 
 TRIM_EVERY = 10  # checks, i.e. about every 10 minutes
+STALL_TIMEOUT = 180  # seconds the event loop may stand still before its stack is dumped
+LOW_AVAILABLE = 0.08  # share of RAM left for the whole system that counts as nearly out
+LOW_MEMORY_RSS = 150 * 1024**2  # restart for low system memory only once we're this big
+
+
+def available_memory() -> int | None:
+    """Memory the whole system still has, in bytes (Linux only)."""
+    # shortcut: Linux only (the Pi case); Windows/macOS rely on the per-process limit
+    try:
+        with open("/proc/meminfo") as f:
+            for line in f:
+                if line.startswith("MemAvailable:"):
+                    return int(line.split()[1]) * 1024
+    except (OSError, ValueError, IndexError):
+        pass
+    return None
+
+
+def _supervised() -> bool:
+    """A supervisor (systemd, Docker, pm2) starts the process again after it exits."""
+    return bool(os.environ.get("INVOCATION_ID") or os.environ.get("pm_id")) or os.path.exists("/.dockerenv")
+
+
+def _log_stream():
+    for handler in logging.getLogger("TwitchDrops").handlers + logging.getLogger().handlers:
+        if isinstance(handler, logging.FileHandler) and handler.stream:
+            return handler.stream
+    return sys.stderr
+
+
+def arm_stall_dump() -> None:
+    """If the event loop stops for STALL_TIMEOUT, the C watchdog thread writes every thread's
+    stack to the log (works while Python itself is stuck) and, when supervised, exits so the
+    supervisor restarts the miner before a frozen, growing process takes the machine down."""
+    with contextlib.suppress(Exception):
+        stream = _log_stream()
+        stream.flush()
+        faulthandler.dump_traceback_later(STALL_TIMEOUT, file=stream, exit=_supervised())
 
 
 def release_free_memory() -> None:
@@ -91,10 +130,15 @@ def release_free_memory() -> None:
             ctypes.CDLL("libc.so.6").malloc_trim(0)
 
 
-async def run(restart: Callable[[], None], read: Callable[[], tuple[int | None, int | None]] = memory) -> None:
+async def run(
+    restart: Callable[[], None],
+    read: Callable[[], tuple[int | None, int | None]] = memory,
+    available: Callable[[], int | None] = available_memory,
+) -> None:
     tracing = False
     checks = 0
     while True:
+        arm_stall_dump()
         await asyncio.sleep(CHECK_INTERVAL)
         checks += 1
         if checks % TRIM_EVERY == 0:
@@ -107,11 +151,20 @@ async def run(restart: Callable[[], None], read: Callable[[], tuple[int | None, 
             tracing = True
             tracemalloc.start(8)
             logger.warning(f"Memory use is high ({rss >> 20} MB); tracing allocations to find out why")
+        free = available()
+        if total and free is not None and free < total * LOW_AVAILABLE and rss > LOW_MEMORY_RSS:
+            logger.warning(
+                f"System memory nearly gone ({free >> 20} MB left, miner uses {rss >> 20} MB); restarting the miner"
+            )
+            faulthandler.cancel_dump_traceback_later()
+            restart()
+            return
         if rss > limit:
             if tracing:
                 top = tracemalloc.take_snapshot().statistics("traceback")[:8]
                 for stat in top:
                     logger.warning(f"[memory] {stat.size >> 20} MB in {stat.count} blocks: {stat.traceback.format()[-1].strip()}")
             logger.warning(f"Memory use reached {rss >> 20} MB (limit {limit >> 20} MB); restarting the miner")
+            faulthandler.cancel_dump_traceback_later()
             restart()
             return
