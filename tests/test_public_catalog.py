@@ -108,6 +108,7 @@ class TestInventoryFallback(unittest.IsolatedAsyncioTestCase):
     async def test_integrity_failure_uses_public_feed(self):
         twitch = self._twitch(GQLException("IntegrityCheckFailed"))
         service = InventoryService(twitch)
+        service.fetch_reward_campaigns = AsyncMock(return_value=[])
         service.fetch_campaigns = AsyncMock(return_value={})
         with (
             patch("src.services.inventory_service.fetch_public_campaigns",
@@ -180,6 +181,7 @@ class TestNullCampaignDetails(unittest.IsolatedAsyncioTestCase):
             {"data": {"user": None}},
         ])
         service = InventoryService(twitch)
+        service.fetch_reward_campaigns = AsyncMock(return_value=[])
         out = await service.fetch_campaigns([("a", {"id": "a", "status": "ACTIVE"}),
                                              ("b", {"id": "b", "status": "ACTIVE"}),
                                              ("c", {"id": "c", "status": "ACTIVE"})])
@@ -199,6 +201,7 @@ class TestFeedBecomesCampaign(unittest.IsolatedAsyncioTestCase):
         twitch.gui.inv.add_campaign = AsyncMock()
         twitch._drops, twitch._campaigns = {}, {}
         service = InventoryService(twitch)
+        service.fetch_reward_campaigns = AsyncMock(return_value=[])
         service.fetch_campaigns = AsyncMock(return_value={})  # details come back null
         with (
             patch("src.services.inventory_service.fetch_public_campaigns", AsyncMock(return_value=[_rec("a")])),

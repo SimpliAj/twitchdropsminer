@@ -416,6 +416,7 @@
       "starts": "Starts: {time}",
       "ends": "Ends: {time}",
       "claimed_drops": "claimed",
+      "reward_grants": "Times earned: {count}",
       "sub_only": "🔒 Sub only",
       "sub_only_title": "Needs a channel subscription — can't be earned by watching",
       "filters": {

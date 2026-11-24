@@ -6,6 +6,8 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING, Any
 
+from src.models import RewardCampaign
+
 
 if TYPE_CHECKING:
     from src.models import DropsCampaign, TimedDrop
@@ -44,15 +46,14 @@ class InventoryManager:
 
         drops_data = []
         for drop in campaign.drops:
-            # Collect full benefit data (filter out benefits without images)
+            # Collect full benefit data; rewards without artwork keep name and type
             benefits_data = [
                 {
                     "name": benefit.name,
                     "type": benefit.type.name,
-                    "image_url": str(benefit.image_url),
+                    "image_url": str(benefit.image_url) if benefit.image_url else None,
                 }
                 for benefit in drop.benefits
-                if benefit.image_url
             ]
             drops_data.append(
                 {
@@ -68,6 +69,9 @@ class InventoryManager:
                     "starts_at": drop.starts_at.isoformat(),
                     "ends_at": drop.ends_at.isoformat(),
                     "required_subs": drop.required_subs,
+                    "reward_grants": (
+                        drop.campaign.reward_grants if isinstance(drop.campaign, RewardCampaign) else None
+                    ),
                 }
             )
 
@@ -120,6 +124,10 @@ class InventoryManager:
                             "is_claimed": drop.is_claimed,
                             "can_claim": drop.can_claim,
                             "claim_blocked": drop.claim_blocked,
+                            "reward_grants": (
+                                drop.campaign.reward_grants
+                                if isinstance(drop.campaign, RewardCampaign) else None
+                            ),
                         }
                     )
                     asyncio.create_task(

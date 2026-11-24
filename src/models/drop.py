@@ -40,6 +40,12 @@ def remove_dimensions(url: str) -> str:
 
 
 class BaseDrop:
+    # Sitewide reward groups have an event title and separate names for their rewards.
+    ignore_name_aliases: tuple[str, ...] = ()
+    # Reward drops announce grants from grantCount (see RewardCampaign), not from the claim.
+    quiet_claim: bool = False
+    single_attempt_claim: bool = False
+
     def __init__(
         self, campaign: DropsCampaign, data: JsonType, claimed_benefits: dict[str, datetime]
     ):
@@ -104,11 +110,14 @@ class BaseDrop:
         # is kept out of "the drop we're mining" and never auto-claimed --
         # unless a wanted drop needs it claimed first to unlock.
         settings = self._twitch.settings
-        name = self.name.lower()
+        names = [n.lower() for n in (self.name, *self.ignore_name_aliases)]
         unwanted = (
             self.campaign.ignored
             or self.id in getattr(settings, "blacklisted_drop_ids", [])
-            or any(kw.strip() and kw.lower() in name for kw in getattr(settings, "drop_name_blacklist", []))
+            or any(
+                kw.strip() and any(kw.lower() in name for name in names)
+                for kw in getattr(settings, "drop_name_blacklist", [])
+            )
         )
         return unwanted and all(
             drop.excluded for drop in self.campaign.drops if self.id in drop.precondition_drops
@@ -197,7 +206,8 @@ class BaseDrop:
         failed_at = _blocked_claims.get(self.id)
         if failed_at is not None and time.monotonic() - failed_at < BLOCKED_CLAIM_RETRY_SECONDS:
             return False
-        if self.id in self._twitch._claim_finalized_drops:
+        # a daily reward repeats under one drop ID, so the finalized set must not short-circuit it
+        if self.id in self._twitch._claim_finalized_drops and not self.quiet_claim:
             # already claimed and announced this run; the inventory refetch right
             # after a claim can still list it unclaimed, and Twitch answers a
             # repeat ClaimDropRewards with ELIGIBLE_FOR_ALL again
@@ -211,6 +221,8 @@ class BaseDrop:
             self.is_claimed = result
             if _blocked_claims.pop(self.id, None) is not None:
                 self._on_state_changed()
+            if self.quiet_claim:
+                return result
             claim_text = (
                 f"{self.campaign.game.name}\n"
                 f"{self.rewards_text()} "
@@ -252,17 +264,19 @@ class BaseDrop:
         if not self.can_claim:
             return False
         try:
-            response = await self._twitch.gql_request(
-                GQL_OPERATIONS["ClaimDrop"].with_variables(
-                    {"input": {"dropInstanceID": self.claim_id}}
-                )
+            operation = GQL_OPERATIONS["ClaimDrop"].with_variables(
+                {"input": {"dropInstanceID": self.claim_id}}
             )
+            operation.single_attempt = self.single_attempt_claim
+            response = await self._twitch.gql_request(operation)
         except GQLException as exc:
             # regardless of the error, we have to assume
             # the claiming operation has potentially failed
             self._claim_failed(str(exc))
             return False
-        data = response["data"]
+        data = response.get("data") if isinstance(response, dict) else None
+        if not isinstance(data, dict):
+            return False
         if "errors" in data and data["errors"]:
             self._claim_failed(str(data["errors"]))
             return False
@@ -270,7 +284,8 @@ class BaseDrop:
             if not data["claimDropRewards"]:
                 logger.warning(f"Claiming drop {self.name} ({self.id}) returned no result")
                 return False
-            status = data["claimDropRewards"]["status"]
+            # Sitewide reward claims may answer without a status; that is unconfirmed.
+            status = data["claimDropRewards"].get("status")
             if status in ("ELIGIBLE_FOR_ALL", "DROP_INSTANCE_ALREADY_CLAIMED"):
                 return True
             logger.warning(f"Claiming drop {self.name} ({self.id}) returned status {status}")
@@ -278,13 +293,18 @@ class BaseDrop:
 
 
 class TimedDrop(BaseDrop):
+    # Repeating reward goals reset each window, so a remembered maximum would never reset.
+    uses_minutes_cache: bool = True
+
     def __init__(
         self, campaign: DropsCampaign, data: JsonType, claimed_benefits: dict[str, datetime]
     ):
         super().__init__(campaign, data, claimed_benefits)
         api_minutes: int = "self" in data and data["self"]["currentMinutesWatched"] or 0
         self.required_minutes: int = data["requiredMinutesWatched"]
-        self.real_current_minutes: int = drop_minutes_cache.get(self.id, api_minutes)
+        self.real_current_minutes: int = (
+            drop_minutes_cache.get(self.id, api_minutes) if self.uses_minutes_cache else api_minutes
+        )
         self.extra_current_minutes: int = 0
         self._immediate_claim_started: bool = False
         if self.is_claimed:
@@ -412,7 +432,8 @@ class TimedDrop(BaseDrop):
             if self._is_auto_granted():
                 self.is_claimed = True
         self.extra_current_minutes = 0
-        drop_minutes_cache.update(self.id, self.real_current_minutes)
+        if self.uses_minutes_cache:
+            drop_minutes_cache.update(self.id, self.real_current_minutes)
         self._on_state_changed()
         self._try_immediate_claim()
 

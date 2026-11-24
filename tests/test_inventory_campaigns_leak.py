@@ -67,6 +67,7 @@ class TestInventoryCampaignsDoesNotLeak(unittest.IsolatedAsyncioTestCase):
         twitch._state = None
 
         service = InventoryService(twitch)
+        service.fetch_reward_campaigns = AsyncMock(return_value=[])
 
         with patch("src.services.inventory_service.DropsCampaign", _FakeCampaign):
             # First fetch cycle: campaigns c0..c2 are live.

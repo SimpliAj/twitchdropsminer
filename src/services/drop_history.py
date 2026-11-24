@@ -9,6 +9,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from src.config.paths import DATA_DIR
+from src.i18n import _
 
 
 if TYPE_CHECKING:
@@ -36,7 +37,10 @@ def _account_data_dir():
     return DATA_DIR
 
 
-def save_drop_claim(game_name: str, drop_name: str, reward_text: str, image_url: str | None) -> None:
+def save_drop_claim(
+    game_name: str, drop_name: str, reward_text: str, image_url: str | None
+) -> bool:
+    """Append a history entry. Returns False when the entry could not be written."""
     acct_dir = _account_data_dir()
     hist_file = acct_dir / "drops_history.json"
     entry = {
@@ -55,6 +59,7 @@ def save_drop_claim(game_name: str, drop_name: str, reward_text: str, image_url:
         hist_file.write_text(json.dumps(history[:_MAX_ENTRIES], indent=2))
     except Exception as e:
         logger.warning(f"Failed to save drop claim to history: {e}")
+        return False
 
     # drops_history.json is capped at _MAX_ENTRIES for display purposes, so it can't
     # be used as the lifetime total once an account passes that many claims — track
@@ -69,6 +74,7 @@ def save_drop_claim(game_name: str, drop_name: str, reward_text: str, image_url:
         total_file.write_text(json.dumps({"count": total + 1}))
     except Exception as e:
         logger.warning(f"Failed to update drops total counter: {e}")
+    return True
 
 
 def finalize_drop_claim(twitch: Twitch, campaign: DropsCampaign, drop: TimedDrop) -> None:
@@ -83,6 +89,8 @@ def finalize_drop_claim(twitch: Twitch, campaign: DropsCampaign, drop: TimedDrop
     separately, silently dropped Discord notifications (only two of the three
     call sites had webhook code, so whichever path lacked it "won" silently).
     """
+    if getattr(drop, "quiet_claim", False):
+        return  # reward grants are recorded one by one from grantCount (record_reward_grant)
     if drop.id in twitch._claim_finalized_drops:
         return
     twitch._claim_finalized_drops.add(drop.id)
@@ -100,6 +108,31 @@ def finalize_drop_claim(twitch: Twitch, campaign: DropsCampaign, drop: TimedDrop
         "fields": [
             {"name": "Game", "value": campaign.game.name, "inline": True},
             {"name": "Drop", "value": drop.name, "inline": True},
+            {"name": "Reward", "value": drop.rewards_text(), "inline": False},
+        ],
+    })
+
+
+def record_reward_grant(campaign: DropsCampaign, drop: TimedDrop, number: int) -> bool:
+    """One history entry per observed grant of a repeating reward goal."""
+    return save_drop_claim(
+        campaign.game.name,
+        f"{drop.name} #{number}",
+        drop.rewards_text(),
+        drop.benefits[0].image_url if drop.benefits else None,
+    )
+
+
+def announce_reward_grant(twitch: Twitch, campaign: DropsCampaign, drop: TimedDrop, number: int) -> None:
+    """Print the grant and send the claim webhook (same message as a claimed drop)."""
+    text = f"{campaign.game.name} {drop.rewards_text()} (#{number})"
+    twitch.print(_.t["status"]["claimed_drop"].format(drop=text))
+    _send_drop_webhook(twitch, drop, {
+        "title": "🎁 Drop Claimed!",
+        "color": 0x9147FF,
+        "fields": [
+            {"name": "Game", "value": campaign.game.name, "inline": True},
+            {"name": "Drop", "value": f"{drop.name} #{number}", "inline": True},
             {"name": "Reward", "value": drop.rewards_text(), "inline": False},
         ],
     })
@@ -145,7 +178,7 @@ def _send_drop_webhook(twitch: Twitch, drop: TimedDrop, embed: dict) -> None:
         _acct = ""
     if _acct:
         embed["footer"] = {"text": f"Account: {_acct}"}
-    if drop.benefits:
+    if drop.benefits and drop.benefits[0].image_url:
         embed["thumbnail"] = {"url": drop.benefits[0].image_url}
     asyncio.create_task(
         twitch._message_handler_service._send_discord_webhook(webhook_url, {"embeds": [embed]})

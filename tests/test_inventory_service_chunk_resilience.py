@@ -71,6 +71,7 @@ class TestInventoryServiceChunkResilience(unittest.IsolatedAsyncioTestCase):
             return {cid: {**data, "game": {"id": "g1"}} for cid, data in campaigns_chunk}
 
         service = InventoryService(twitch)
+        service.fetch_reward_campaigns = AsyncMock(return_value=[])
 
         with patch.object(
             InventoryService, "fetch_campaigns", side_effect=fetch_campaigns_side_effect
@@ -90,6 +91,7 @@ class TestInventoryServiceChunkResilience(unittest.IsolatedAsyncioTestCase):
         twitch._maintenance_service.run_maintenance_task = AsyncMock()
 
         service = InventoryService(twitch)
+        service.fetch_reward_campaigns = AsyncMock(return_value=[])
 
         with (
             patch.object(InventoryService, "_fetch_inventory", side_effect=GQLException("boom")),
@@ -118,6 +120,7 @@ class TestInventoryServiceCurrentUserNone(unittest.IsolatedAsyncioTestCase):
         twitch.gql_request = AsyncMock(return_value={"data": {"currentUser": None}})
 
         service = InventoryService(twitch)
+        service.fetch_reward_campaigns = AsyncMock(return_value=[])
 
         with self.assertRaises(GQLException):
             await service._fetch_inventory()
@@ -138,6 +141,7 @@ class TestInventoryServiceCurrentUserNone(unittest.IsolatedAsyncioTestCase):
         twitch.gql_request = AsyncMock(side_effect=[inventory_response, campaigns_response])
 
         service = InventoryService(twitch)
+        service.fetch_reward_campaigns = AsyncMock(return_value=[])
 
         with self.assertRaises(GQLException):
             await service._fetch_inventory()

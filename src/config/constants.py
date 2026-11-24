@@ -37,7 +37,7 @@ FILE_FORMATTER = logging.Formatter(
 JsonType = dict[str, Any]
 URLType = NewType("URLType", str)
 TopicProcess: TypeAlias = "abc.Callable[[int, JsonType], Any]"
-GQLRequest: TypeAlias = "GQLOperation | GQLQuery"
+GQLRequest: TypeAlias = "GQLOperation | GQLQuery | GQLRawQuery"
 
 # Core constants
 MAX_INT = sys.maxsize
@@ -75,6 +75,9 @@ class State(Enum):
 
 class GQLOperation(JsonType):
     """GraphQL operation with persisted query hash."""
+
+    # Local transport policy on the operation copy. It is never part of the JSON body.
+    single_attempt: bool = False
 
     def __init__(self, name: str, sha256: str, *, variables: JsonType | None = None):
         super().__init__(
@@ -116,6 +119,15 @@ class GQLQuery(JsonType):
                 }
             },
         )
+
+
+class GQLRawQuery(JsonType):
+    """Raw GraphQL query operation without persisted query hash."""
+
+    def __init__(self, query: str, variables: JsonType | None = None):
+        super().__init__(query=query)
+        if variables is not None:
+            self.__setitem__("variables", variables)
 
 
 class WebsocketTopic:

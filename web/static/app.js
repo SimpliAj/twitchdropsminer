@@ -5992,6 +5992,13 @@ function showCampaignDropsModal(campaignId, onlyRemaining) {
                 item.appendChild(bRow);
             }
 
+            if (Number.isInteger(drop.reward_grants)) {
+                const grants = makeElement('div', { class: 'drop-reward-grants' },
+                    tr('gui.inventory.reward_grants', 'Times earned: {count}').replace('{count}', String(drop.reward_grants)));
+                grants.style.cssText = 'font-size:.78rem;color:var(--text-secondary);margin-top:6px';
+                item.appendChild(grants);
+            }
+
             list.appendChild(item);
         });
         modal.appendChild(list);

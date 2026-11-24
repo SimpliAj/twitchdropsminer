@@ -11,6 +11,7 @@ import logging
 from itertools import chain
 from typing import TYPE_CHECKING, overload
 
+from src.config.constants import GQLOperation
 from src.exceptions import GQLException, MinerException
 from src.utils import ExponentialBackoff, RateLimiter
 
@@ -90,6 +91,11 @@ class GQLClient:
             If the retry loop is broken unexpectedly
         """
         gql_logger.debug(f"GQL Request: {ops}")
+        # A mutation that must not be repeated (a lost reply may still have been applied).
+        single_attempt = any(
+            isinstance(op, GQLOperation) and op.single_attempt
+            for op in (ops if isinstance(ops, list) else [ops])
+        )
         backoff = ExponentialBackoff(maximum=60)
         # Budget of retries for "service error" / "PersistedQueryNotFound".
         # These aren't retried indefinitely like service timeout/unavailable
@@ -110,6 +116,7 @@ class GQLClient:
                     "POST",
                     "https://gql.twitch.tv/gql",
                     json=ops,
+                    single_attempt=single_attempt,
                     headers=auth_state.headers(user_agent=self._client_type.USER_AGENT, gql=True),
                 ) as response:
                     response_json: JsonType | list[JsonType] = await response.json()
@@ -119,6 +126,14 @@ class GQLClient:
 
             # Normalize to list for unified error handling
             response_list = response_json if isinstance(response_json, list) else [response_json]
+
+            if single_attempt:
+                if any(
+                    not isinstance(row, dict) or row.get("errors") or row.get("error")
+                    for row in response_list
+                ):
+                    raise GQLException("Mutation response was not confirmed")
+                return orig_response
 
             force_retry: bool = False
             for response_json in response_list:
@@ -132,7 +147,7 @@ class GQLClient:
                             ):
                                 logger.error(
                                     f"Retrying a {error_dict['message']} for "
-                                    f"{response_json['extensions']['operationName']} "
+                                    f"{response_json.get('extensions', {}).get('operationName')} "
                                     f"({retryable_errors_left} retries left)"
                                 )
                                 retryable_errors_left -= 1

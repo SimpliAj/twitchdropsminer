@@ -17,7 +17,7 @@ import aiohttp
 from yarl import URL
 
 from src.config import COOKIES_PATH
-from src.exceptions import ExitRequest, RequestInvalid
+from src.exceptions import ExitRequest, RequestException, RequestInvalid
 from src.i18n import _
 from src.utils import ExponentialBackoff
 from src.utils.string_utils import mask_proxy_url
@@ -128,6 +128,7 @@ class HTTPClient:
         url: URL | str,
         *,
         invalidate_after: datetime | None = None,
+        single_attempt: bool = False,
         **kwargs,
     ) -> abc.AsyncIterator[aiohttp.ClientResponse]:
         """
@@ -141,6 +142,8 @@ class HTTPClient:
             Request URL
         invalidate_after : datetime | None, optional
             Datetime after which the request should not be retried
+        single_attempt : bool, optional
+            Make one attempt: any non-200 reply or transport failure raises RequestException
         **kwargs
             Additional arguments passed to aiohttp.ClientSession.request
 
@@ -163,6 +166,8 @@ class HTTPClient:
 
         if self.settings.proxy and "proxy" not in kwargs:
             kwargs["proxy"] = self.settings.proxy
+        if single_attempt:
+            kwargs["allow_redirects"] = False
 
         logged_kwargs = {
             k: (mask_proxy_url(v) if k == "proxy" and isinstance(v, str) else v)
@@ -190,6 +195,8 @@ class HTTPClient:
                 assert response is not None
                 logger.debug(f"Response: {response.status}: {response}")
 
+                if single_attempt and response.status != 200:
+                    raise RequestException("Unconfirmed HTTP response")
                 if response.status < 500:
                     # Pre-read the response to avoid getting errors outside the context manager
                     raw_response = await response.read()
@@ -206,6 +213,8 @@ class HTTPClient:
                 # SSL verification failures should not be retried
                 if (diagnostics := getattr(self._twitch, "diagnostics", None)) is not None:
                     diagnostics.record(diagnostics.endpoint(url, method), outcome="tls")
+                if single_attempt:
+                    raise RequestException("Unconfirmed HTTP response") from None
                 raise
             except (
                 aiohttp.ClientConnectionError,
@@ -216,9 +225,15 @@ class HTTPClient:
                 if (diagnostics := getattr(self._twitch, "diagnostics", None)) is not None:
                     diagnostics.record(diagnostics.endpoint(url, method),
                                        outcome="timeout" if isinstance(error, TimeoutError) else "connection")
+                if single_attempt:
+                    raise RequestException("Unconfirmed HTTP response") from None
                 if backoff.steps > 1:
                     # Don't show quick retries to the user
                     self.gui.print(_.t["error"]["no_connection"].format(seconds=round(delay)))
+            except (aiohttp.ClientError, ValueError):
+                if single_attempt:
+                    raise RequestException("Unconfirmed HTTP response") from None
+                raise
             finally:
                 if response is not None:
                     response.release()

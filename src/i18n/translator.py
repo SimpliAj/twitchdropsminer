@@ -168,6 +168,7 @@ class GUIInvStatus(TypedDict):
 class GUIInventoryOptional(TypedDict, total=False):
     sub_only: str
     sub_only_title: str
+    reward_grants: str
 
 
 class GUIInventory(GUIInventoryOptional):

@@ -30,11 +30,12 @@ from src.exceptions import (
 from src.i18n import _
 from src.models.campaign import DropsCampaign
 from src.models.channel import Channel
+from src.models.reward_campaign import RewardCampaign
 from src.services.channel_service import ChannelService
 from src.services.daily_watch import DailyWatch
 from src.services.drop_history import finalize_drop_claim, finalize_manual_claim
 from src.services.health_monitor_service import HealthMonitorService
-from src.services.inventory_service import InventoryService
+from src.services.inventory_service import REWARD_ERRORS, InventoryService
 from src.services.irc_service import IRCService
 from src.services.maintenance import MaintenanceService
 from src.services.manual_mode_store import ManualModeStore
@@ -222,6 +223,10 @@ class Twitch:
             return False
         self.change_state(State.GAMES_UPDATE)
         return True
+
+    def request_inventory_refresh(self) -> None:
+        """Rebuild the inventory from Twitch (a reward goal finished or changed state)."""
+        self.change_state(State.INVENTORY_FETCH)
 
     def change_state(self, state: State) -> None:
         """Change the current state of the miner."""
@@ -671,12 +676,15 @@ class Twitch:
                 # NOTE: we consider only campaigns that can be progressed
                 # NOTE: we use another set so that we can set them online separately
                 no_acl: set[Game] = set()
+                flagless: set[Game] = set()
                 acl_channels: set[Channel] = set()
                 next_hour = datetime.now(timezone.utc) + timedelta(hours=1)
                 for campaign in self.inventory:
                     if campaign.game in self.wanted_games and campaign.can_earn_within(next_hour):
                         if campaign.allowed_channels:
                             acl_channels.update(campaign.allowed_channels)
+                        elif isinstance(campaign, RewardCampaign):
+                            flagless.add(campaign.game)
                         else:
                             no_acl.add(campaign.game)
                 # remove all ACL channels that already exist from the other set
@@ -692,6 +700,24 @@ class Twitch:
                         new_channels.update(await self.get_live_streams(game, drops_enabled=True))
                     except Exception as exc:
                         logger.warning(f"Failed to fetch channels for {game.name}: {exc} — skipping")
+                for game in flagless:
+                    # Reward campaigns progress on any live channel in the category, with or
+                    # without the drops flag. Added after the lookup above, so a drops-enabled
+                    # Channel is kept (set.update leaves an equal existing element in place).
+                    try:
+                        found = await asyncio.wait_for(
+                            self.get_live_streams(game, drops_enabled=False), timeout=5
+                        )
+                    except ExitRequest:
+                        raise
+                    except REWARD_ERRORS:
+                        logger.warning(f"Open Reward Campaign channel directory for {game.name} is unavailable")
+                        continue
+                    for channel in found:
+                        if channel not in new_channels:
+                            # the directory entry has no flag; the inventory decides eligibility
+                            channel._stream.drops_enabled = channel._has_earnable_drops()
+                    new_channels.update(found)
                 # Filter account-specific bans before priority sorting and the tracking cap.
                 retained_channels = [channel for channel in (
                     self.watching_channel.get_with_default(None), self._manual_target_channel,
@@ -774,6 +800,7 @@ class Twitch:
                 self.change_state(State.CHANNEL_SWITCH)
                 del (
                     no_acl,
+                    flagless,
                     acl_channels,
                     new_channels,
                     unbanned_channels,

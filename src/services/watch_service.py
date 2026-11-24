@@ -10,12 +10,14 @@ from __future__ import annotations
 import asyncio
 import logging
 from contextlib import suppress
+from functools import partial
 from time import monotonic
 from typing import TYPE_CHECKING, NoReturn
 
 from src.config import CALL, GQL_OPERATIONS, WATCH_INTERVAL, WebsocketTopic
 from src.exceptions import GQLException, MinerException
 from src.i18n import _
+from src.models import RewardCampaign
 from src.utils import task_wrapper
 
 
@@ -419,32 +421,57 @@ class WatchService:
                 # or even "pretend" mining as a last resort option.
                 handled: bool = False
 
-                # Solution 1: use GQL to query for the currently mined drop status
-                try:
-                    context = await asyncio.wait_for(
-                        self._twitch.gql_request(
-                            GQL_OPERATIONS["CurrentDrop"].with_variables({"channelID": str(channel.id)})
-                        ),
-                        timeout=5,
+                # Open Reward Campaigns report progress through their own query, so the
+                # CurrentDrop fallback skips them while that query works.
+                rewards = [
+                    campaign
+                    for campaign in self._twitch.inventory
+                    if isinstance(campaign, RewardCampaign)
+                    and campaign.game in self._twitch.wanted_games
+                    and campaign.can_earn(channel)
+                ]
+                rewards_ok = bool(rewards) and await (
+                    self._twitch._inventory_service.refresh_reward_progress(
+                        rewards, channel, partial(channel._watch_current, stream)
                     )
-                    current_user: JsonType | None = context["data"]["currentUser"]
-                    if current_user is None:
-                        # Twitch can answer with a "server error" GQL error scoped to the
-                        # whole "currentUser" field while still returning HTTP 200 (no
-                        # exception raised) - gql_client.py nulls out exactly the path the
-                        # error points to, which here is the entire object, not just
-                        # "dropCurrentSession" underneath it. Treat it like a failed
-                        # request (below) instead of crashing on a None subscript.
-                        logger.log(
-                            CALL,
-                            "CurrentDrop GQL returned currentUser=None "
-                            "(likely a transient Twitch-side error) — skipping this cycle",
+                )
+                if not channel._watch_current(stream):
+                    continue
+                # nothing but reward campaigns to mine on this channel: they are already handled
+                rewards_only = rewards_ok and self._twitch._inventory_service.get_active_campaign(
+                    channel, exclude_rewards=True
+                ) is None
+                if rewards_only:
+                    handled = True
+
+                # Solution 1: use GQL to query for the currently mined drop status
+                drop_data = None
+                if not rewards_only:
+                    try:
+                        context = await asyncio.wait_for(
+                            self._twitch.gql_request(
+                                GQL_OPERATIONS["CurrentDrop"].with_variables({"channelID": str(channel.id)})
+                            ),
+                            timeout=5,
                         )
+                        current_user: JsonType | None = context["data"]["currentUser"]
+                        if current_user is None:
+                            # Twitch can answer with a "server error" GQL error scoped to the
+                            # whole "currentUser" field while still returning HTTP 200 (no
+                            # exception raised) - gql_client.py nulls out exactly the path the
+                            # error points to, which here is the entire object, not just
+                            # "dropCurrentSession" underneath it. Treat it like a failed
+                            # request (below) instead of crashing on a None subscript.
+                            logger.log(
+                                CALL,
+                                "CurrentDrop GQL returned currentUser=None "
+                                "(likely a transient Twitch-side error) — skipping this cycle",
+                            )
+                            drop_data = None
+                        else:
+                            drop_data = current_user["dropCurrentSession"]
+                    except (GQLException, TimeoutError):
                         drop_data = None
-                    else:
-                        drop_data = current_user["dropCurrentSession"]
-                except (GQLException, TimeoutError):
-                    drop_data = None
 
                 if not channel._watch_current(stream):
                     continue
@@ -463,7 +490,9 @@ class WatchService:
                 # Solution 2: If GQL fails, figure out which campaign we're most likely mining
                 # right now, and then bump up the minutes on it's drops
                 if not handled:
-                    active_campaign = self._twitch._inventory_service.get_active_campaign(channel)
+                    active_campaign = self._twitch._inventory_service.get_active_campaign(
+                        channel, exclude_rewards=rewards_ok
+                    )
                     if active_campaign is not None:
                         active_campaign.bump_minutes(channel)
                         # NOTE: This usually gets overwritten below
