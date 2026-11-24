@@ -82,3 +82,102 @@ def test_calc_amount_caps_and_balance():
     assert s._calc_amount(10_000, _cfg(pct=5, mx=5000)) == 500
     assert s._calc_amount(50, _cfg(pct=5)) == 10      # Twitch minimum
     assert s._calc_amount(5, _cfg(pct=5)) == 0        # never more than the balance
+
+
+# ---- results: kept topics, refunds ----
+import asyncio
+import json
+import time
+from unittest.mock import AsyncMock, patch
+
+from src.core.client import Twitch
+
+
+def _hist(tmp_path, *entries):
+    f = tmp_path / "predictions_history.json"
+    f.write_text(json.dumps(list(entries)))
+    return f
+
+
+def _bet(event_id="e1", channel="chan", result="PENDING"):
+    return {"event_id": event_id, "ts": datetime.now(timezone.utc).isoformat(), "channel": channel,
+            "title": "t", "outcome_chosen": "A", "outcome_id": "o1", "points_bet": 100,
+            "result": result, "points_won": 0}
+
+
+def _chan(cid=7, name="chan"):
+    ch = MagicMock()
+    ch.id = cid
+    ch.name = name
+    ch._login = name
+    return ch
+
+
+def test_kept_topics_cover_open_bets_only_and_expire():
+    s = _svc()
+    s._awaiting["e1"] = (_chan(7), time.time() + 100)
+    s._awaiting["e2"] = (_chan(8), time.time() - 1)
+    assert s.kept_prediction_topics() == {"predictions-channel-v1.7"}
+    assert "e2" not in s._awaiting
+
+
+def test_kept_topics_are_capped():
+    s = _svc()
+    for i in range(20):
+        s._awaiting[f"e{i}"] = (_chan(i), time.time() + 100)
+    assert len(s.kept_prediction_topics()) == 5
+
+
+def test_clear_idle_watch_keeps_open_bet_topics():
+    tw = Twitch.__new__(Twitch)
+    tw.websocket = MagicMock()
+    tw._prediction_service = _svc()
+    tw._prediction_service._awaiting["e1"] = (_chan(7), time.time() + 100)
+    tw._idle_topic_ids = ["predictions-channel-v1.7", "predictions-channel-v1.8"]
+    tw._idle_channels_set = set()
+    Twitch._clear_idle_watch(tw)
+    tw.websocket.remove_topics.assert_called_once_with(["predictions-channel-v1.8"])
+    assert tw._idle_topic_ids == ["predictions-channel-v1.7"]
+
+
+def test_offline_keeps_awaited_bet_pending(tmp_path):
+    f = _hist(tmp_path, _bet("e1"), _bet("e2"))
+    s = _svc()
+    s._awaiting["e1"] = (_chan(), time.time() + 100)
+    with patch("src.services.prediction_service._get_predictions_file", return_value=f):
+        s.mark_channel_stale_pending("chan")
+    assert [e["result"] for e in json.loads(f.read_text())] == ["PENDING", "UNKNOWN"]
+
+
+def test_result_arrives_after_channel_was_left(tmp_path):
+    f = _hist(tmp_path, _bet("e1"))
+    s = _svc()
+    s._twitch.settings.make_predictions = True
+    s._twitch.settings.prediction_channels = []
+    s._twitch.channels = {}
+    s._twitch._idle_channels_set = set()
+    s._twitch.gui._broadcaster.emit = AsyncMock()
+    s._twitch.settings.discord_webhook_points = ""
+    s._awaiting["e1"] = (_chan(7), time.time() + 100)
+    msg = {"type": "event-updated", "data": {"event": {
+        "id": "e1", "status": "RESOLVED", "winning_outcome_id": "o1",
+        "outcomes": [_o("o1", 100, 1), _o("o2", 100, 1)]}}}
+    with patch("src.services.prediction_service._get_predictions_file", return_value=f), \
+         patch.object(s, "_get_channel_settings", return_value={"make_predictions": True}):
+        asyncio.run(s.process_prediction(7, msg))
+    e = json.loads(f.read_text())[0]
+    assert (e["result"], e["points_won"]) == ("WIN", 200)
+    assert "e1" not in s._awaiting
+
+
+def test_canceled_prediction_is_refunded(tmp_path):
+    f = _hist(tmp_path, _bet("e1"))
+    s = _svc()
+    s._twitch.gui._broadcaster.emit = AsyncMock()
+    s._twitch.settings.discord_webhook_points = ""
+    s._awaiting["e1"] = (_chan(), time.time() + 100)
+    with patch("src.services.prediction_service._get_predictions_file", return_value=f):
+        asyncio.run(s._record_result("e1", {"status": "CANCELED", "outcomes": []}, "chan"))
+    e = json.loads(f.read_text())[0]
+    assert (e["result"], e["points_won"]) == ("REFUNDED", 100)
+    assert s._twitch.gui._broadcaster.emit.call_args[0][1]["result"] == "REFUNDED"

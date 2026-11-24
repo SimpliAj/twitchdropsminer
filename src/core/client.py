@@ -339,8 +339,9 @@ class Twitch:
         (clear before repopulating) and leaving it for real drop-farming.
         """
         if self._idle_topic_ids:
-            self.websocket.remove_topics(self._idle_topic_ids)
-            self._idle_topic_ids = []
+            keep = self._prediction_service.kept_prediction_topics()
+            self.websocket.remove_topics([t for t in self._idle_topic_ids if t not in keep])
+            self._idle_topic_ids = [t for t in self._idle_topic_ids if t in keep]
         self._idle_channels_set = set()
 
     async def run(self) -> None:

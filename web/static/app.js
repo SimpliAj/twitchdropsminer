@@ -451,7 +451,7 @@ socket.on('wanted_items_update', (data) => {
 
 socket.on('prediction_result', (data) => {
     // On WIN: balance update adds full payout (bet+profit). Subtract bet so daily pts shows net profit only.
-    if (data.result === 'WIN') addDailyPoints(-(data.points_bet || 0));
+    if (data.result === 'WIN' || data.result === 'REFUNDED') addDailyPoints(-(data.points_bet || 0));
 });
 
 socket.on('pause_state', function(data) {
