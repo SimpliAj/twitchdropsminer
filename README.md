@@ -19,12 +19,14 @@ An independently maintained fork of [rangermix/TwitchDropsMiner](https://github.
 
 - 🚀 **Streamless mining** — earns drops without streaming video
 - 🔍 **Automatic campaigns** — finds new campaigns, picks the best live channel, claims drops instantly; optionally falls back to any other game with drops when nothing on your priority list is live
-- 🕹️ **Admin-style dashboard** — sidebar navigation on desktop, bottom bar on phones, light & dark mode, 19 languages
+- 🕹️ **Admin-style dashboard** — sidebar navigation on desktop, bottom bar on phones, light & dark mode, 21 languages
 - 🔑 **Simple, safe login** — a normal browser window on your own PC; nothing remote-controlled for Twitch to reject
 - 👥 **Multi-account** — unlimited isolated accounts, a fleet view with bulk actions and settings
 - 💰 **Channel points** — auto-claims bonus chests, idle-watches channels when no drops are running
 - 📅 **Daily watch** — watch a Twitch category for N minutes every day alongside drop mining (e.g. event viewership badges that are not Drops)
-- 🎯 **Auto-betting** — optional prediction bets with four strategies and per-channel overrides
+- 🎁 **Reward campaigns** — sitewide Twitch rewards such as the GTA VI daily chest are mined like drops ([details](../../wiki/Reward-Campaigns))
+- 🎯 **Auto-betting** — optional prediction bets with four strategies, per-channel overrides and a net result in Analytics ([details](../../wiki/Predictions))
+- 💾 **Backup / Restore** — export and import all accounts and settings in **Settings → System** ([details](../../wiki/Backup-Restore))
 - 🚫 **Fine-grained filters** — blacklist games, drop names or drop IDs, ignore single campaigns
 - 🤖 **Discord** — a bot with live embeds and slash commands, or plain webhooks
 - 🐳 **Docker-ready** — multi-arch images (`amd64`, `arm64`)
@@ -62,9 +64,9 @@ Open **<http://localhost:8080>**. Also on GHCR: `ghcr.io/simpliaj/twitchdropsmin
 
 ### 🪟 Windows app (no Docker)
 
-Download `TwitchDropsMiner-<version>-windows-x64.zip` from the [latest release](https://github.com/SimpliAj/twitchdropsminer/releases/latest), unzip it anywhere and run `TwitchDropsMiner.exe`. The dashboard opens in its own window; the miner keeps running in the tray (right-click the icon for **Start with Windows** and **Quit**). Settings and login live in `%APPDATA%\TwitchDropsMiner`. Needs Chrome or Edge for the Twitch login. The app isn't code-signed, so Windows SmartScreen may ask once — **More info → Run anyway**. Windows app contributed by Trep.
+Download `TwitchDropsMiner-<version>-windows-x64.zip` from the [latest release](https://github.com/SimpliAj/twitchdropsminer/releases/latest), unzip it anywhere and run `TwitchDropsMiner.exe`. The dashboard opens in its own window; the miner keeps running in the tray (right-click the icon for **Start with Windows** and **Quit**). Settings and login live in `%APPDATA%\TwitchDropsMiner`. Needs Chrome, Edge, Brave or Chromium for the Twitch login (on Windows another Chromium-based default browser also works). The app isn't code-signed, so Windows SmartScreen may ask once — **More info → Run anyway**. Windows app contributed by Trep. More in the [Desktop Apps wiki page](../../wiki/Desktop-Apps).
 
-**Updates:** when a new release is out the dashboard footer shows it; click it, then **Install and restart**. The app downloads the zip for your platform, checks it against the release's `SHA256SUMS-*.txt`, swaps the app folder (the old one is kept until the new one runs) and restarts. Your data is not touched. The app must live in a folder you can write to.
+**Updates:** when a new release is out the dashboard footer shows it; click it, then **Install and restart**. The app downloads the zip for your platform, checks it against the release's `SHA256SUMS-*.txt`, swaps the app folder (the old one is kept until the new one runs) and restarts. Your data is not touched. The app must live in a folder you can write to. If you run v1.8.29 to v1.8.32 on Windows, install v1.9.0 once by hand (download the zip and replace the app folder); those versions could not replace their own folder.
 
 ### 🍎 macOS app (no Docker)
 
@@ -78,7 +80,7 @@ Unzip it and move `TwitchDropsMiner.app` to Applications. The app isn't notarize
 xattr -dr com.apple.quarantine /Applications/TwitchDropsMiner.app
 ```
 
-Then open it normally. It runs in the background without a Dock icon and opens the dashboard in its own window (via Chrome, Edge or Brave; otherwise your default browser). Use the dashboard's close button to quit, open the app again to bring the window back. Settings and login live in `~/Library/Application Support/TwitchDropsMiner`; **Start at login** is in the dashboard's system settings. Needs Google Chrome, Microsoft Edge or Brave for the Twitch login.
+Then open it normally. It runs in the background without a Dock icon and opens the dashboard in its own window (via Chrome, Edge or Brave; otherwise your default browser). Use the dashboard's close button to quit, open the app again to bring the window back. Settings and login live in `~/Library/Application Support/TwitchDropsMiner`; **Start at login** is in the dashboard's system settings. Needs Google Chrome, Microsoft Edge, Brave or Chromium for the Twitch login. Firefox and Safari can only be used to view the dashboard.
 
 ### 🧑‍💻 From source
 
@@ -144,7 +146,7 @@ TDM_INTEGRITY_HELPER_URL=http://<LAN/VPN IP>:8099
 TDM_INTEGRITY_HELPER_KEY=<the same secret>
 ```
 
-Environment variables win over the dashboard setting.
+Environment variables win over the dashboard setting. More: [Integrity Helper wiki page](../../wiki/Integrity-Helper).
 
 Your Twitch session is sent to the helper for each mint (about every 16 h), so only point TDM at a machine you own; plain `http://` is only accepted for LAN and Tailscale addresses. Without a helper, drops Twitch won't let TDM claim show up under **Claim manually** on the dashboard.
 
@@ -160,11 +162,11 @@ Against DNS rebinding the dashboard only answers requests whose `Host` header is
 
 ## 🌍 Languages
 
-Arabic · Chinese (Simplified / Traditional) · Czech · Danish · Dutch · English · French · German · Indonesian · Italian · Japanese · Polish · Portuguese · Romanian · Russian · Spanish · Turkish · Ukrainian
+Arabic · Belarusian · Chinese (Simplified / Traditional) · Czech · Danish · Dutch · English · French · German · Indonesian · Italian · Japanese · Kazakh · Polish · Portuguese · Romanian · Russian · Spanish · Turkish · Ukrainian
 
 > ⚠️ Don't watch Twitch on the same account while the miner runs — it can desync drop progress.
 
-📖 **Everything else** (priority queue, idle watch, auto-betting, FAQ) is in the [Wiki](../../wiki).
+📖 **Everything else** (priority queue, reward campaigns, daily watch, backup/restore, auto-betting, FAQ) is in the [Wiki](../../wiki).
 
 ---
 
