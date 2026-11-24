@@ -33,6 +33,8 @@ class TestClearIdleWatch(unittest.TestCase):
         # those three attributes set is enough to exercise the real method.
         twitch = Twitch.__new__(Twitch)
         twitch.websocket = MagicMock()
+        twitch._prediction_service = MagicMock()
+        twitch._prediction_service.kept_prediction_topics.return_value = set()
         return twitch
 
     def test_clears_topics_and_channel_set_when_populated(self):

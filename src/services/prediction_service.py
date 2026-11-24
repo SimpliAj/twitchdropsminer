@@ -4,6 +4,7 @@ import asyncio
 import contextlib
 import json as _json
 import logging
+import time
 import uuid
 from typing import TYPE_CHECKING
 
@@ -17,6 +18,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger("TwitchDrops")
 
 MAX_HISTORY = 500
+MAX_KEPT_TOPICS = 5  # extra Predictions topics held for open bets, so they can't crowd out watching
 
 
 def _get_predictions_file():
@@ -75,6 +77,7 @@ class PredictionService:
         self._twitch = twitch
         self._pending: dict[str, asyncio.Task] = {}  # event_id -> bet task
         self._active_events: dict[str, dict] = {}    # event_id -> event data
+        self._awaiting: dict[str, tuple] = {}        # event_id -> (channel, deadline) for placed bets without a result
 
     def _get_channel_settings(self, channel_login: str) -> dict:
         overrides = _load_overrides().get(channel_login.lower(), {})
@@ -98,21 +101,25 @@ class PredictionService:
             return None, None
         strategy = cfg["bet_strategy"].upper()
 
-        def total_points(o): return o.get("total_points", 0) or 1
-        def total_users(o): return o.get("total_users", 0) or 1
-        def odds(o): return (sum(x["total_points"] for x in outcomes) / total_points(o))
+        def points(o): return o.get("total_points", 0) or 0
+        def users(o): return o.get("total_users", 0) or 0
+        # an outcome nobody backed has no odds (0), not infinite ones
+        def odds(o): return sum(points(x) for x in outcomes) / points(o) if points(o) else 0
 
         if strategy == "MOST_VOTED":
-            return max(outcomes, key=lambda o: total_users(o)), None
+            key = users
         elif strategy == "HIGH_ODDS":
-            return max(outcomes, key=lambda o: odds(o)), None
+            key = odds
         elif strategy == "PERCENTAGE":
-            return max(outcomes, key=lambda o: total_points(o)), None
+            key = points
         else:  # SMART
-            sorted_by_users = sorted(outcomes, key=lambda o: total_users(o), reverse=True)
+            total = sum(users(o) for o in outcomes)
+            if not total:
+                return None, None
+            sorted_by_users = sorted(outcomes, key=users, reverse=True)
             top, second = sorted_by_users[0], sorted_by_users[1]
-            top_pct = total_users(top) / sum(total_users(o) for o in outcomes) * 100
-            second_pct = total_users(second) / sum(total_users(o) for o in outcomes) * 100
+            top_pct = users(top) / total * 100
+            second_pct = users(second) / total * 100
             gap = abs(top_pct - second_pct)
             threshold = cfg["bet_percentage_gap"]
             diag = {
@@ -131,11 +138,14 @@ class PredictionService:
                 f"gap={gap:.1f}% (threshold {threshold}%) -> BET on '{top.get('title', '')}'"
             )
             return top, diag
+        best = max(outcomes, key=key)
+        return (best if key(best) > 0 else None), None  # no votes/points yet: nothing to go on
 
     def _calc_amount(self, balance: int, cfg: dict) -> int:
         amount = int(balance * cfg["bet_percentage"] / 100)
         amount = min(amount, cfg["bet_max_points"])
-        return max(amount, 10)  # Twitch minimum is 10 channel points
+        amount = max(amount, 10)  # Twitch minimum is 10 channel points
+        return amount if amount <= balance else 0
 
     @task_wrapper
     async def process_prediction(self, channel_id: int, message: dict) -> None:
@@ -151,6 +161,9 @@ class PredictionService:
             channel = next(
                 (ch for ch in self._twitch._idle_channels_set if ch.id == channel_id), None
             )
+        if not channel:
+            # channel was left after betting; its topic is kept subscribed for the result
+            channel = next((ch for ch, _d in self._awaiting.values() if ch.id == channel_id), None)
         if not channel:
             return
         # Overrides/whitelist are keyed by the Twitch login (always ASCII,
@@ -205,7 +218,7 @@ class PredictionService:
             if event_id in self._active_events:
                 self._active_events[event_id] = event
             # Twitch resolves predictions via event-updated with status RESOLVED (no separate event-ended)
-            if event.get("status") == "RESOLVED":
+            if event.get("status") in ("RESOLVED", "CANCELED"):
                 if event_id in self._pending:
                     self._pending[event_id].cancel()
                     del self._pending[event_id]
@@ -222,16 +235,11 @@ class PredictionService:
 
     def _effective_delay(self, event: dict, cfg: dict) -> float:
         """
-        Twitch predictions include a fixed window (`prediction_window_seconds`,
-        counted from `created_at`) after which the event locks and betting is
-        no longer possible. Fast-paced predictions (e.g. per-round esports)
-        can have windows well under the configured `bet_delay_seconds` —
-        using the fixed delay unconditionally meant the scheduled bet
-        routinely got cancelled by the lock before it ever fired, with no
-        bet placed and nothing logged (silent since 2026-07-08). Cap the
-        delay to whatever's actually left in the window (minus a small
-        safety buffer), falling back to the configured delay when the
-        window/created_at fields aren't present in the event payload.
+        Seconds to wait before betting: bet_delay_seconds BEFORE the lock
+        (lock = created_at + prediction_window_seconds), so the vote shares the
+        strategies read are close to final. Never later than a few seconds
+        before the lock, which would lose the bet. Falls back to the configured
+        delay counted from now when the window/created_at fields are missing.
         """
         from datetime import datetime, timezone
         window = event.get("prediction_window_seconds")
@@ -242,10 +250,8 @@ class PredictionService:
             created = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
         except (ValueError, AttributeError):
             return float(cfg["bet_delay_seconds"])
-        elapsed = (datetime.now(timezone.utc) - created).total_seconds()
-        remaining = window - elapsed
-        safety_buffer = 3  # leave a few seconds of margin before the lock
-        return max(min(cfg["bet_delay_seconds"], remaining - safety_buffer), 0.5)
+        remaining = window - (datetime.now(timezone.utc) - created).total_seconds()
+        return max(remaining - max(cfg["bet_delay_seconds"], 3), 0.5)
 
     async def _delayed_bet(self, event_id: str, channel, cfg: dict, delay: float) -> None:
         try:
@@ -302,6 +308,7 @@ class PredictionService:
                 self._save_pending_bet(
                     event_id, channel.name, event, chosen, amount, cfg["bet_strategy"], smart_diag
                 )
+                self._awaiting[event_id] = (channel, time.time() + STALE_PENDING_HOURS * 3600)
             except Exception as e:
                 logger.warning(f"MakePrediction GQL failed: {e}")
         finally:
@@ -351,6 +358,7 @@ class PredictionService:
             p.write_text(_json.dumps(hist, indent=2))
 
     async def _record_result(self, event_id, event, channel_name):
+        self._awaiting.pop(event_id, None)
         p = _get_predictions_file()
         try:
             hist = _json.loads(p.read_text()) if p.exists() else []
@@ -369,7 +377,10 @@ class PredictionService:
                     break
         for entry in reversed(hist):
             if entry.get("event_id") == event_id and entry.get("result") in ("PENDING", "UNKNOWN"):
-                if winning_outcome_id and entry.get("outcome_id") == winning_outcome_id:
+                if event.get("status") == "CANCELED":
+                    entry["result"] = "REFUNDED"
+                    entry["points_won"] = entry["points_bet"]  # Twitch returns the stake
+                elif winning_outcome_id and entry.get("outcome_id") == winning_outcome_id:
                     entry["result"] = "WIN"
                     # Estimate winnings from odds
                     outcomes = event.get("outcomes", [])
@@ -389,15 +400,17 @@ class PredictionService:
                 # Discord notification
                 webhook = self._twitch.settings.discord_webhook_points
                 if webhook:
-                    color = 0x00b368 if entry["result"] == "WIN" else 0xeb4a4a
+                    refunded = entry["result"] == "REFUNDED"
+                    color = 0x8991a6 if refunded else 0x00b368 if entry["result"] == "WIN" else 0xeb4a4a
+                    label = "↩️ Refunded" if refunded else "✅ Win" if entry["result"] == "WIN" else "❌ Lose"
                     embed = {
-                        "title": f"{'✅ Win' if entry['result'] == 'WIN' else '❌ Lose'} — Prediction",
+                        "title": f"{label} — Prediction",
                         "color": color,
                         "fields": [
                             {"name": "Channel", "value": entry["channel"], "inline": True},
                             {"name": "Prediction", "value": entry["title"][:100], "inline": False},
                             {"name": "Bet", "value": f"{entry['points_bet']:,} pts on {entry['outcome_chosen']}", "inline": True},
-                            {"name": "Profit", "value": f"+{entry['points_won'] - entry['points_bet']:,} pts" if entry["result"] == "WIN" else f"−{entry['points_bet']:,} pts", "inline": True},
+                            {"name": "Profit", "value": f"+{entry['points_won'] - entry['points_bet']:,} pts" if entry["result"] == "WIN" else "0 pts" if refunded else f"−{entry['points_bet']:,} pts", "inline": True},
                         ],
                     }
                     import aiohttp
@@ -417,18 +430,29 @@ class PredictionService:
         except Exception:
             return []
 
+    def kept_prediction_topics(self) -> set[str]:
+        """Predictions topics that must stay subscribed: channels with a placed bet
+        still waiting for its result (until the result arrives or STALE_PENDING_HOURS)."""
+        from src.config import WebsocketTopic
+        now = time.time()
+        for eid in [e for e, (_c, deadline) in self._awaiting.items() if deadline < now]:
+            del self._awaiting[eid]
+        ids = list(dict.fromkeys(ch.id for ch, _d in self._awaiting.values()))[:MAX_KEPT_TOPICS]
+        return {WebsocketTopic.as_str("Channel", "Predictions", i) for i in ids}
+
     def mark_channel_stale_pending(self, channel_name: str) -> None:
         """Flips this channel's still-PENDING bets to UNKNOWN. Called when the
         channel goes offline — Twitch predictions can resolve around stream end,
         and the miner constantly channel-hops chasing drops, so the RESOLVED
         websocket event that would normally flip PENDING -> WIN/LOSE is often
-        missed once we're no longer subscribed to this channel's PubSub topic."""
+        missed once we're no longer subscribed to this channel's PubSub topic.
+        Bets whose topic is kept (see kept_prediction_topics) stay PENDING."""
         p = _get_predictions_file()
         try:
             hist = _json.loads(p.read_text()) if p.exists() else []
         except Exception:
             return
-        changed = _flip_pending_matching(hist, lambda e: e.get("channel") == channel_name.lower())
+        changed = _flip_pending_matching(hist, lambda e: e.get("channel") == channel_name.lower() and e.get("event_id") not in self._awaiting)
         if changed:
             with contextlib.suppress(Exception):
                 p.write_text(_json.dumps(hist, indent=2))
