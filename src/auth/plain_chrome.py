@@ -271,13 +271,14 @@ class PlainChrome:
                 try:
                     from src.auth.win_hidden_desktop import spawn_on_hidden_desktop
 
-                    self._proc = spawn_on_hidden_desktop(args, env)
+                    self._proc = spawn_on_hidden_desktop(args, env, cwd=self._profile_dir)
                 except OSError as exc:
                     logger.warning(f"Hidden desktop unavailable ({exc}); the browser window may show briefly")
             if self._proc is None:
                 self._proc = await asyncio.create_subprocess_exec(
                     *args, env=env, stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL,
-                    **spawn_kwargs,
+                    # not the app folder: a browser working in it blocks the updater's folder swap
+                    cwd=self._profile_dir, **spawn_kwargs,
                 )
             self._started_at = time.monotonic()
             if self._hidden and sys.platform == "darwin" and self._proc.pid:

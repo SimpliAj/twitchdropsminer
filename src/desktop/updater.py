@@ -166,6 +166,13 @@ Remove-Item -LiteralPath {powershell_literal(str(staging))} -Recurse -Force -Err
 
 
 def _apply_windows(install: Path, new: Path, staging: Path) -> None:
+    from src.auth.plain_chrome import kill_windows_processes_matching  # noqa: PLC0415
+    from src.config.paths import DATA_DIR  # noqa: PLC0415
+
+    # The dashboard window and browsers started by older versions run with the app folder as their
+    # working directory, which keeps Windows from renaming it; the new app opens a fresh window.
+    kill_windows_processes_matching(str(DATA_DIR / "dashboard-window"))
+    kill_windows_processes_matching("tdm-mint-")
     backup = install.with_name(install.name + BACKUP_SUFFIX)
     if backup.exists():
         shutil.rmtree(backup, ignore_errors=True)

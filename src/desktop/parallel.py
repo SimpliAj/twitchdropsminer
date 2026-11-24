@@ -53,7 +53,7 @@ def launch(port: int, data_dir: Path, label: str, minimized: bool = False) -> in
     # --minimized is only for a start at login; the window flags carry over from this copy
     args = [sys.executable, *(a for a in sys.argv[1:] if a in _INHERITED_FLAGS), *(["--minimized"] if minimized else [])]
     extra: dict[str, Any] = {"creationflags": _CREATE_NEW_PROCESS_GROUP} if sys.platform == "win32" else {"start_new_session": True}
-    proc = subprocess.Popen(args, env=env, close_fds=True, **extra)  # noqa: S603
+    proc = subprocess.Popen(args, env=env, close_fds=True, cwd=str(data_dir), **extra)  # noqa: S603
     logger.info(f"Started parallel account '{label}' on port {port} ({data_dir})")
     return proc.pid
 

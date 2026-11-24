@@ -122,6 +122,8 @@ def open_dashboard(port: int, app_window: bool = False) -> subprocess.Popen | No
 
                 return subprocess.Popen(  # noqa: S603
                     env=clean_browser_env(),
+                    # not the app folder: a process working in it blocks the updater's folder swap
+                    cwd=str(DATA_DIR),
                     args=[
                         browser,
                         f"--app={url}",

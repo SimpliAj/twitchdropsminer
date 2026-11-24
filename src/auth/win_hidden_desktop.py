@@ -124,7 +124,7 @@ class HiddenDesktopProcess:
             self._kernel32.TerminateProcess(self._handle, 1)
 
 
-def spawn_on_hidden_desktop(args: list[str], env: dict[str, str]) -> HiddenDesktopProcess:
+def spawn_on_hidden_desktop(args: list[str], env: dict[str, str], cwd: str | None = None) -> HiddenDesktopProcess:
     """Start ``args`` on the miner's invisible desktop. Raises OSError if Windows refuses."""
     user32, kernel32 = _api()
     desktop = _ensure_desktop(user32)
@@ -136,7 +136,7 @@ def spawn_on_hidden_desktop(args: list[str], env: dict[str, str]) -> HiddenDeskt
     if not kernel32.CreateProcessW(
         None, command, None, None, False,
         _CREATE_UNICODE_ENVIRONMENT | _CREATE_NO_WINDOW,
-        ctypes.cast(_environment_block(env), ctypes.c_void_p), None,
+        ctypes.cast(_environment_block(env), ctypes.c_void_p), cwd,
         ctypes.byref(startup), ctypes.byref(info),
     ):
         raise ctypes.WinError(ctypes.get_last_error())
