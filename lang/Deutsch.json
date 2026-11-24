@@ -650,7 +650,8 @@
       "restarting_suffix": "⏳ Neustart läuft... Seite verbindet sich in Kürze neu.",
       "downloading": "Update wird heruntergeladen...",
       "installing": "Installation läuft, die App startet neu...",
-      "error_contacting": "Fehler beim Kontaktieren des Servers."
+      "error_contacting": "Fehler beim Kontaktieren des Servers.",
+      "title_version": "🔄 Update auf v{version}"
     },
     "main_stats": {
       "drops_today": "Drops heute",

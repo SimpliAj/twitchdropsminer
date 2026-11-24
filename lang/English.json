@@ -695,7 +695,8 @@
       "restarting_suffix": "⏳ Restarting... page will reconnect shortly.",
       "downloading": "Downloading the update...",
       "installing": "Installing, the app restarts...",
-      "error_contacting": "Error contacting server."
+      "error_contacting": "Error contacting server.",
+      "title_version": "🔄 Update to v{version}"
     },
     "sidebar": {
       "accounts": "Accounts"

@@ -120,7 +120,7 @@ async function fetchAndDisplayVersion() {
                 updateLink.addEventListener('click', (e) => {
                     e.preventDefault();
                     const notes = data.release_notes || '(no release notes)';
-                    showUpdateModal(`v${data.latest_version}\n\n${notes}`, true, data.latest_version);
+                    showUpdateModal(notes, true, data.latest_version);
                 });
 
                 console.log(`Update available: ${data.latest_version} (current: ${data.current_version})`);
@@ -6828,9 +6828,18 @@ function _renderBulkSettingsPanel(container, accounts, fieldOptions, checkboxes)
 
 function renderInlineMarkdown(line, container) {
     // Parse **bold** and `code` using DOM nodes only — no innerHTML
-    const parts = line.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
+    const parts = line.split(/(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\(https:\/\/[^)\s]+\))/g);
     parts.forEach(part => {
-        if (/^\*\*(.+)\*\*$/.test(part)) {
+        const link = part.match(/^\[([^\]]+)\]\((https:\/\/[^)\s]+)\)$/);
+        if (link) {
+            const a = document.createElement('a');
+            a.href = link[2];
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            a.style.color = 'var(--twitch-purple,#A970FF)';
+            a.textContent = link[1];
+            container.appendChild(a);
+        } else if (/^\*\*(.+)\*\*$/.test(part)) {
             const s = document.createElement('strong');
             s.style.color = '#fff';
             s.textContent = part.slice(2, -2);
@@ -6872,6 +6881,13 @@ function renderMarkdown(md) {
             el.appendChild(s);
         } else if (line.trim() === '') {
             el.style.height = '4px';
+        } else if (/^\s*[-*] /.test(line)) {
+            el.style.cssText = 'position:relative;padding-left:16px;margin:3px 0;';
+            const dot = document.createElement('span');
+            dot.textContent = '•';
+            dot.style.cssText = 'position:absolute;left:2px;color:var(--twitch-purple,#A970FF);';
+            el.appendChild(dot);
+            renderInlineMarkdown(line.replace(/^\s*[-*] /, ''), el);
         } else {
             renderInlineMarkdown(line, el);
         }
@@ -6917,14 +6933,15 @@ function showUpdateModal(text, withInstallBtn, latestVersion) {
     overlay.className = 'wq-modal-overlay';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center;overflow-y:auto;padding:24px;';
     const box = document.createElement('div');
-    box.style.cssText = 'background:var(--card-bg,#1B2029);border:1px solid var(--border-color,#262B38);border-radius:12px;padding:24px;max-width:520px;width:90%;margin:auto;';
+    box.style.cssText = 'background:var(--card-bg,#1B2029);border:1px solid var(--border-color,#262B38);border-radius:12px;padding:24px;max-width:680px;width:100%;margin:auto;display:flex;flex-direction:column;max-height:calc(100vh - 48px);box-sizing:border-box;';
     const title = document.createElement('div');
     title.textContent = um.title || '🔄 Update Available';
     title.style.cssText = 'font-size:1.1rem;font-weight:700;color:var(--twitch-purple,#A970FF);margin-bottom:12px;';
     const pre = document.createElement('div');
-    pre.style.cssText = 'background:#0B0D12;padding:12px;border-radius:8px;margin:0;';
+    pre.style.cssText = 'background:#0B0D12;padding:14px 16px;border-radius:8px;margin:0;overflow-y:auto;min-height:0;flex:1;';
     if (withInstallBtn) {
         pre.appendChild(renderMarkdown(text));
+        if (latestVersion) title.textContent = (um.title_version || '🔄 Update to v{version}').replace('{version}', latestVersion);
     } else {
         pre.style.fontFamily = 'monospace';
         pre.style.fontSize = '.8rem';
