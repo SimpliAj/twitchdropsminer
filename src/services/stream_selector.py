@@ -14,6 +14,18 @@ from src.models.game import Game
 _BENEFIT_CATEGORY_ORDER = {"BADGE": 0, "EMOTE": 1, "UNKNOWN": 2, "DIRECT_ENTITLEMENT": 3}
 
 
+def _deadline(campaign: DropsCampaign) -> datetime:
+    """When progress is lost: the campaign end, or for a daily reward campaign the end of
+    the current window (a half-watched daily goal must not wait behind a campaign that
+    still runs for days)."""
+    from src.models.reward_campaign import _reward_timestamp  # noqa: PLC0415
+
+    window = _reward_timestamp(getattr(campaign, "window_end", None), assume_utc=True)
+    if window and datetime.now(timezone.utc) < window < campaign.ends_at:
+        return window
+    return campaign.ends_at
+
+
 def _game_group_category_rank(
     wanted_campaigns: list[dict], order: dict[str, int] = _BENEFIT_CATEGORY_ORDER
 ) -> int:
@@ -167,7 +179,7 @@ class StreamSelector:
             # Auto-prioritize promises the soonest deadline first, whatever the reward type.
             wanted_games.sort(
                 key=lambda g: min(
-                    c.ends_at
+                    _deadline(c)
                     for c in campaigns
                     if c.game.name.lower() == g["game_name"].lower() and c.can_earn_within(next_hour)
                 )
