@@ -104,6 +104,13 @@ class ChannelService:
         return self._twitch.wanted_games.index(game)
 
     @staticmethod
+    def order_by_viewers(channels, prefer_small: bool = False) -> list[Channel]:
+        """Online channels first; most viewers first, or fewest with prefer_small (issue #232)."""
+        if prefer_small:
+            return sorted(channels, key=lambda ch: (ch.viewers is None, ch.viewers or 0))
+        return sorted(channels, key=ChannelService.get_viewers_key, reverse=True)
+
+    @staticmethod
     def get_viewers_key(channel: Channel) -> int:
         """
         Sort key for channels by viewer count (descending).

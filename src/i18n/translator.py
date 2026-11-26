@@ -212,6 +212,8 @@ class GUISettingsOptional(TypedDict, total=False):
     English text it carries as the fallback."""
     auto_add_linked: str
     auto_prioritize: str
+    prefer_small_streamers: str
+    prefer_small_streamers_help: str
     blacklist_ids_placeholder: str
     blacklist_placeholder: str
     blacklisted_games_placeholder: str

@@ -31,6 +31,7 @@ default_settings = {
     "language": DEFAULT_LANG,
     "inventory_list_view": False,
     "allow_unknown_link": False,
+    "prefer_small_streamers": False,
     "inventory_filters": {
         "game_name_search": [],
         "show_active": False,
@@ -102,6 +103,7 @@ class Settings:
     language: str
     inventory_list_view: bool
     allow_unknown_link: bool
+    prefer_small_streamers: bool
     inventory_filters: InventoryFilters
     minimum_refresh_interval_minutes: int
     mining_benefits: dict[str, bool]
@@ -156,6 +158,12 @@ class Settings:
                 setattr(self, key, str(value))
             else:
                 setattr(self, key, value)
+        # a hand-edited 0 refresh interval reloads the inventory nonstop
+        for key, (low, high) in {"connection_quality": (1, 6), "minimum_refresh_interval_minutes": (1, 1440)}.items():
+            value = getattr(self, key)
+            if not isinstance(value, int) or isinstance(value, bool):
+                value = default_settings[key]
+            setattr(self, key, min(high, max(low, value)))
 
     def save(self) -> None:
         json_save(SETTINGS_PATH, vars(self), sort=True)

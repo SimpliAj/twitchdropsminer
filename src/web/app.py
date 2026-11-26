@@ -22,7 +22,7 @@ import socketio
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.auth import browser_login
@@ -589,11 +589,12 @@ class SettingsUpdate(BaseModel):
     proxy: str | None = None
     integrity_helper_url: str | None = None
     integrity_helper_key: str | None = None
-    connection_quality: int | None = None
-    minimum_refresh_interval_minutes: int | None = None
+    connection_quality: int | None = Field(None, ge=1, le=6)
+    minimum_refresh_interval_minutes: int | None = Field(None, ge=1, le=1440)
     inventory_filters: dict | None = None
     inventory_list_view: bool | None = None
     allow_unknown_link: bool | None = None
+    prefer_small_streamers: bool | None = None
     mining_benefits: dict[str, bool] | None = None
     claim_channel_points: bool | None = None
     idle_channels: list[str] | None = None

@@ -6,6 +6,7 @@ import asyncio
 import datetime
 import json
 import logging
+import os
 from typing import TYPE_CHECKING
 
 from src.config.paths import DATA_DIR
@@ -37,6 +38,45 @@ def _account_data_dir():
     return DATA_DIR
 
 
+def _write_atomic(path, text: str) -> None:
+    """Write via a temp file and rename, so a crash or power loss never leaves half a file."""
+    tmp = path.with_name(path.name + ".tmp")
+    with open(tmp, "w", encoding="utf-8") as f:
+        f.write(text)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp, path)
+
+
+def _read_history(hist_file) -> list | None:
+    """The saved history; [] for none. A broken file is moved aside to .bad (never overwritten);
+    None when the file can't be read at all, so the caller doesn't save over it."""
+    if not hist_file.exists():
+        return []
+    try:
+        text = hist_file.read_text(encoding="utf-8-sig")
+    except OSError as e:
+        logger.warning(f"Drop history can't be read, not saving this claim: {e}")
+        return None
+    try:
+        history = json.loads(text)
+        if isinstance(history, list) and all(isinstance(x, dict) for x in history):
+            return history
+    except ValueError:
+        pass
+    bad = hist_file.with_name(hist_file.name + ".bad")
+    n = 0
+    while bad.exists():
+        n += 1
+        bad = hist_file.with_name(f"{hist_file.name}.bad.{n}")
+    try:
+        os.replace(hist_file, bad)
+    except OSError:
+        return None
+    logger.warning(f"Drop history was damaged; moved it to {bad.name} and started a new one")
+    return []
+
+
 def save_drop_claim(
     game_name: str, drop_name: str, reward_text: str, image_url: str | None
 ) -> bool:
@@ -50,13 +90,12 @@ def save_drop_claim(
         "reward": reward_text,
         "image_url": image_url,
     }
-    try:
-        history = json.loads(hist_file.read_text()) if hist_file.exists() else []
-    except Exception:
-        history = []
+    history = _read_history(hist_file)
+    if history is None:
+        return False
     try:
         history.insert(0, entry)
-        hist_file.write_text(json.dumps(history[:_MAX_ENTRIES], indent=2))
+        _write_atomic(hist_file, json.dumps(history[:_MAX_ENTRIES], indent=2))
     except Exception as e:
         logger.warning(f"Failed to save drop claim to history: {e}")
         return False
@@ -71,7 +110,7 @@ def save_drop_claim(
             total = json.loads(total_file.read_text()).get("count", 0)
         else:
             total = len(history) - 1  # history already has the new entry inserted above
-        total_file.write_text(json.dumps({"count": total + 1}))
+        _write_atomic(total_file, json.dumps({"count": total + 1}))
     except Exception as e:
         logger.warning(f"Failed to update drops total counter: {e}")
     return True

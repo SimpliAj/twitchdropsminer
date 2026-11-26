@@ -304,7 +304,9 @@
       "discord_health_webhook_label": "Health Alert Webhook:",
       "discord_health_webhook_help": "Fires when the Twitch login has been waiting for 30+ minutes or mining stalls, and again when it recovers. Empty: uses the drop webhook.",
       "no_games_found": "No games found",
-      "languages_failed": "Failed to load languages"
+      "languages_failed": "Failed to load languages",
+      "prefer_small_streamers": "Prefer small streamers",
+      "prefer_small_streamers_help": "Watch the channel with the fewest viewers instead of the biggest. Drop progress is the same."
     },
     "help": {
       "about": "About Twitch Drops Miner",

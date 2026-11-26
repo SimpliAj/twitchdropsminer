@@ -2157,6 +2157,8 @@ function updateSettingsUI(settings) {
     if (listViewToggle) listViewToggle.checked = settings.inventory_list_view || false;
     const unknownLinkToggle = document.getElementById('allow-unknown-link');
     if (unknownLinkToggle) unknownLinkToggle.checked = settings.allow_unknown_link || false;
+    const smallToggle = document.getElementById('prefer-small-streamers');
+    if (smallToggle) smallToggle.checked = settings.prefer_small_streamers || false;
     applyInventoryViewMode(settings.inventory_list_view || false);
     document.getElementById('connection-quality').value = settings.connection_quality || 1;
     document.getElementById('minimum-refresh-interval').value = settings.minimum_refresh_interval_minutes || 30;
@@ -3456,6 +3458,7 @@ async function _saveSettingsNow() {
         inventory_filters: getInventoryFilters(),
         inventory_list_view: document.getElementById('inventory-list-view')?.checked || false,
         allow_unknown_link: document.getElementById('allow-unknown-link')?.checked || false,
+        prefer_small_streamers: document.getElementById('prefer-small-streamers')?.checked || false,
         mining_benefits: {
             "DIRECT_ENTITLEMENT": document.getElementById('mining-benefit-item')?.checked,
             "BADGE": document.getElementById('mining-benefit-badge')?.checked,
@@ -5225,6 +5228,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('allow-unknown-link')?.addEventListener('change', (e) => {
         state.settings.allow_unknown_link = e.target.checked;
         renderGamesToWatch();
+        saveSettings();
+    });
+    document.getElementById('prefer-small-streamers')?.addEventListener('change', (e) => {
+        state.settings.prefer_small_streamers = e.target.checked;
         saveSettings();
     });
     document.getElementById('inventory-list-view')?.addEventListener('change', (e) => {

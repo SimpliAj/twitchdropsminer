@@ -215,6 +215,9 @@ class SettingsManager:
         should_trigger_update |= self.check_and_update_setting(
             "allow_unknown_link", settings_data.get("allow_unknown_link"), True
         )
+        should_trigger_update |= self.check_and_update_setting(
+            "prefer_small_streamers", settings_data.get("prefer_small_streamers"), True
+        )
         self.check_and_update_setting(
             "auto_prioritize", settings_data.get("auto_prioritize")
         )

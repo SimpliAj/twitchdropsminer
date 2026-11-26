@@ -735,8 +735,8 @@ class Twitch:
                 # sort them descending by viewers, by priority and by game priority
                 # NOTE: Viewers sort also ensures ONLINE channels are sorted to the top
                 # NOTE: We can drop using the set now, because there's no more channels being added
-                ordered_channels: list[Channel] = sorted(
-                    unbanned_channels, key=ChannelService.get_viewers_key, reverse=True
+                ordered_channels: list[Channel] = ChannelService.order_by_viewers(
+                    unbanned_channels, getattr(self.settings, "prefer_small_streamers", False) is True
                 )
                 ordered_channels.sort(key=lambda ch: ch.acl_based, reverse=True)
                 ordered_channels.sort(key=self._channel_service.get_priority)

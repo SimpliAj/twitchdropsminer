@@ -364,7 +364,9 @@
       },
       "campaign_end_notification": "⏰ Kampagne endet in ~{hours} h",
       "discord_health_webhook_label": "Health-Alarm-Webhook:",
-      "discord_health_webhook_help": "Meldet, wenn die Twitch-Anmeldung seit 30+ Minuten wartet oder das Mining hängt, und erneut, wenn es wieder läuft. Leer: nutzt den Drop-Webhook."
+      "discord_health_webhook_help": "Meldet, wenn die Twitch-Anmeldung seit 30+ Minuten wartet oder das Mining hängt, und erneut, wenn es wieder läuft. Leer: nutzt den Drop-Webhook.",
+      "prefer_small_streamers": "Kleine Streamer bevorzugen",
+      "prefer_small_streamers_help": "Schaut den Kanal mit den wenigsten Zuschauern statt den größten. Der Drop-Fortschritt ist gleich."
     },
     "help": {
       "about": "Über Twitch Drops Miner",

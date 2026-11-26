@@ -77,7 +77,11 @@ if __name__ == "__main__":
     async def main():
         # set language
         if settings.language:
-            _.set_language(settings.language)
+            try:
+                _.set_language(settings.language)
+            except ValueError:
+                logger.warning(f"Saved language {settings.language!r} isn't available; using English")
+                settings.language = ""
 
         from src.services import drop_minutes_cache as _dmc
         _dmc.load()
